@@ -1,0 +1,1019 @@
+% ==========================================================
+%  DL ARCHITECTURES & GENERATIVE TECHNIQUES — MASTER SUMMARY
+%  Design Philosophy:
+%    1. Readable running text is the default. Prose over boxes.
+%    2. Boxes are used sparingly as visual landmarks for skimming.
+%    3. Visual hierarchy: chapter > section > subsection > prose.
+%    4. Every box is breakable — no orphaned whitespace at page ends.
+%    5. A single consistent accent color ties all structure together.
+% ==========================================================
+
+\documentclass[11pt, oneside]{book}
+
+
+% ══════════════════════════════════════════════════════════
+%  PAGE GEOMETRY
+% ══════════════════════════════════════════════════════════
+\usepackage[
+  a4paper,
+  top    = 2.6cm,
+  bottom = 2.1cm,
+  left   = 2.5cm,
+  right  = 2.5cm,
+  headheight = 15pt
+]{geometry}
+
+
+% ══════════════════════════════════════════════════════════
+%  TYPOGRAPHY
+% ══════════════════════════════════════════════════════════
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Latin Modern: improved Computer Modern
+\usepackage{microtype}       % Microtypographic refinements (better justification,
+                             %   fewer overfull hboxes — invaluable for math text)
+\usepackage{inconsolata}     % Crisp monospace font for code listings
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.62em}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICS
+% ══════════════════════════════════════════════════════════
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}        % Bold math symbols: \bm{\theta}
+\usepackage{bbm}       % Blackboard bold for indicator: \mathbbm{1}
+\usepackage{mathrsfs}  % Script letters: \mathscr{F}, \mathscr{H}
+\usepackage{nicefrac}  % Compact inline fractions: \nicefrac{1}{2}
+
+
+% ══════════════════════════════════════════════════════════
+%  FIGURES, TABLES, LISTS
+% ══════════════════════════════════════════════════════════
+\usepackage{graphicx}
+\usepackage{booktabs}         % \toprule, \midrule, \bottomrule
+\usepackage{array}            % Extended column types in tabular
+\usepackage{float}            % [H] float placement
+\usepackage{enumitem}
+
+\setlist[itemize]{topsep=3pt, itemsep=2pt, leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt, itemsep=2pt, leftmargin=2.4em}
+
+
+% ══════════════════════════════════════════════════════════
+%  ALGORITHMS / PSEUDOCODE
+% ══════════════════════════════════════════════════════════
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetCommentSty{textit}
+
+
+% ══════════════════════════════════════════════════════════
+%  COLORS  (a refined, academic palette)
+% ══════════════════════════════════════════════════════════
+\usepackage{xcolor}
+
+% Primary structural accent — deep navy used for headings, rules, ToC
+\definecolor{accent}{HTML}{1B3A5C}
+
+% Box accent colors: frame and background, designed to be legible but
+% unobtrusive so running text remains the visual focus.
+\definecolor{def@frame}{HTML}{1A5276}   \definecolor{def@bg}{HTML}{EBF5FB}
+\definecolor{thm@frame}{HTML}{922B21}   \definecolor{thm@bg}{HTML}{FDEDEC}
+\definecolor{ex@frame} {HTML}{1E8449}   \definecolor{ex@bg} {HTML}{EAFAF1}
+\definecolor{int@frame}{HTML}{9A6A00}   \definecolor{int@bg}{HTML}{FEF9E7}
+\definecolor{note@frame}{HTML}{5B2C6F}  \definecolor{note@bg}{HTML}{F5EEF8}
+
+
+% ══════════════════════════════════════════════════════════
+%  CODE LISTINGS
+% ══════════════════════════════════════════════════════════
+\usepackage{listings}
+\lstset{
+  basicstyle       = \ttfamily\small,
+  breaklines       = true,
+  numbers          = left,
+  numberstyle      = \tiny\color{gray!70},
+  frame            = tb,
+  framerule        = 0.4pt,
+  rulecolor        = \color{gray!35},
+  tabsize          = 2,
+  showstringspaces = false,
+  keywordstyle     = \color{def@frame}\bfseries,
+  commentstyle     = \color{gray!55!black}\itshape,
+  stringstyle      = \color{ex@frame!90!black},
+  backgroundcolor  = \color{gray!5},
+  xleftmargin      = 2em,
+  xrightmargin     = 0.4em,
+  aboveskip        = 0.8em,
+  belowskip        = 0.5em
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  CUSTOM BOXES  (tcolorbox)
+% ══════════════════════════════════════════════════════════
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  enhanced,
+  breakable,
+  arc             = 2.5mm,
+  boxrule         = 0.5pt,
+  left            = 4.5mm,
+  right           = 4mm,
+  top             = 2.5mm,
+  bottom          = 2.5mm,
+  fonttitle       = \bfseries\small,
+  sharp corners   = west,
+  parbox          = false
+}
+
+\newtcolorbox{defbox}[1][]{
+  title  = {Definition},
+  colback = def@bg, colframe = def@frame,
+  borderline west = {3.5pt}{0pt}{def@frame},
+  #1
+}
+
+\newtcolorbox{thmbox}[1][]{
+  title  = {Theorem / Key Formula},
+  colback = thm@bg, colframe = thm@frame,
+  borderline west = {3.5pt}{0pt}{thm@frame},
+  #1
+}
+
+\newtcolorbox{exbox}[1][]{
+  title  = {Example},
+  colback = ex@bg, colframe = ex@frame,
+  borderline west = {3.5pt}{0pt}{ex@frame},
+  #1
+}
+
+\newtcolorbox{intbox}[1][]{
+  title  = {Intuition \& Mental Model},
+  colback = int@bg, colframe = int@frame,
+  borderline west = {3.5pt}{0pt}{int@frame},
+  #1
+}
+
+\newtcolorbox{notebox}[1][]{
+  title  = {Note},
+  colback = note@bg, colframe = note@frame,
+  borderline west = {3.5pt}{0pt}{note@frame},
+  #1
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  TABLE OF CONTENTS  (tocloft)
+% ══════════════════════════════════════════════════════════
+\usepackage[titles]{tocloft}
+
+\renewcommand{\cftchapfont}     {\bfseries\color{accent}}
+\renewcommand{\cftchappagefont} {\bfseries\color{accent}}
+\renewcommand{\cftchapleader}   {\bfseries\color{accent!40}\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip} {7pt}
+
+\renewcommand{\cftsecfont}      {\small}
+\renewcommand{\cftsecpagefont}  {\small}
+\setlength{\cftsecindent}      {1.8em}
+\setlength{\cftbeforesecskip}  {1.5pt}
+
+\renewcommand{\cftsubsecfont}      {\small\color{gray!65!black}}
+\renewcommand{\cftsubsecpagefont}  {\small\color{gray!65!black}}
+\setlength{\cftsubsecindent}      {3.4em}
+\setlength{\cftbeforesubsecskip}  {0.5pt}
+
+
+% ══════════════════════════════════════════════════════════
+%  CHAPTER & SECTION HEADINGS  (titlesec)
+% ══════════════════════════════════════════════════════════
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{accent}\huge}
+  {\hfill\fontsize{68}{68}\selectfont\color{accent!13}\thechapter}
+  {-10pt}
+  {}
+  [{\vspace{4pt}%
+    {\color{accent}\rule{\linewidth}{1.6pt}}\\[-2pt]%
+    {\color{accent!35}\rule{\linewidth}{0.5pt}}}]
+\titlespacing*{\chapter}{0pt}{-28pt}{22pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}
+  {\thesection}
+  {0.8em}
+  {}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.8ex plus 1ex minus .2ex}{2.2ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {\thesubsection}
+  {0.7em}
+  {}
+\titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.4ex plus .2ex}
+
+\titleformat{\paragraph}[runin]
+  {\normalfont\small\bfseries}
+  {}
+  {0em}
+  {}[.\enspace]
+\titlespacing{\paragraph}{0pt}{1.2ex plus .5ex minus .2ex}{0.5em}
+
+
+% ══════════════════════════════════════════════════════════
+%  HEADER & FOOTER
+% ══════════════════════════════════════════════════════════
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\small\color{gray!70}\thepage}
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  LINKS & REFERENCES
+% ══════════════════════════════════════════════════════════
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink, capitalize]{cleveref}
+
+
+% ══════════════════════════════════════════════════════════
+%  DOCUMENT METADATA
+% ══════════════════════════════════════════════════════════
+\newcommand{\coursetitle}{DL Architectures \& Generative Techniques}
+\newcommand{\documenttype}{Master Summary}
+\newcommand{\authorname}{Stefan Eder}
+\newcommand{\basedon}{Based on \emph{Deep Learning and Neural Networks} SS25}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICAL MACROS
+% ══════════════════════════════════════════════════════════
+
+% ── Number Sets & Spaces ──────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Q}{\mathbb{Q}}
+
+% ── Probability & Statistics ──────────────────────────────
+\newcommand{\E}{\mathbb{E}}              % Expectation
+\newcommand{\Prob}{\mathbb{P}}           % Probability measure
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Corr}{\mathrm{Corr}}
+\newcommand{\iid}{\overset{\mathrm{iid}}{\sim}}
+\newcommand{\ind}{\mathbbm{1}}           % Indicator: \ind_{\{x > 0\}}
+
+% ── Information Theory ────────────────────────────────────
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1 \,\|\, #2\right)}
+\newcommand{\Ent}{\mathrm{H}}
+\newcommand{\MI}{\mathrm{I}}
+
+% ── Calculus & Optimization ───────────────────────────────
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\grad}{\nabla}
+\newcommand{\hess}{\nabla^2}
+\newcommand{\lapl}{\Delta}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+% ── Norms, Abs, Inner Products ────────────────────────────
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\normsq}[1]{\left\lVert #1 \right\rVert^2}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% ── Linear Algebra ────────────────────────────────────────
+\newcommand{\T}{^{\mathsf{T}}}
+\newcommand{\inv}{^{-1}}
+\newcommand{\pinv}{^{\dagger}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\spanop}{\operatorname{span}}
+\newcommand{\eye}{\mathbf{I}}
+\newcommand{\zeros}{\mathbf{0}}
+\newcommand{\ones}{\mathbf{1}}
+
+% ── ML / AI Core Notation ─────────────────────────────────
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\reg}{\mathcal{R}}
+\newcommand{\dataset}{\mathcal{D}}
+\newcommand{\params}{\boldsymbol{\theta}}
+\newcommand{\weights}{\mathbf{w}}
+\newcommand{\xvec}{\mathbf{x}}
+\newcommand{\yvec}{\mathbf{y}}
+\newcommand{\zvec}{\mathbf{z}}
+\newcommand{\hvec}{\mathbf{h}}
+\newcommand{\feature}{\boldsymbol{\phi}}
+
+% Activation functions
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\relu}{ReLU}
+\DeclareMathOperator{\sign}{sign}
+
+% ── Complexity ────────────────────────────────────────────
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\bigOm}[1]{\Omega\!\left(#1\right)}
+\newcommand{\bigTh}[1]{\Theta\!\left(#1\right)}
+
+% ── Common Distributions ──────────────────────────────────
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\Uniform}{\mathcal{U}}
+\newcommand{\Bernoulli}{\mathrm{Ber}}
+\newcommand{\Categorical}{\mathrm{Cat}}
+\newcommand{\Dirichlet}{\mathrm{Dir}}
+\newcommand{\Binomial}{\mathrm{Bin}}
+
+% ── Miscellaneous ─────────────────────────────────────────
+\newcommand{\given}{\,\vert\,}
+\newcommand{\st}{\;\text{s.t.}\;}
+\newcommand{\eqdef}{\coloneqq}
+\newcommand{\eqq}{\overset{?}{=}}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+\frontmatter
+
+
+% ──────────────────────────────────────────────────────────
+%  TITLE PAGE
+% ──────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.8cm}
+
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}
+  \vspace{0.65cm}
+
+  {\fontsize{28}{34}\selectfont\bfseries\color{accent}\coursetitle\par}
+  \vspace{0.25cm}
+  {\large\color{gray!80!black}\documenttype\par}
+
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}
+  \vspace{0.55cm}
+
+  {\large\authorname\par}
+  \vspace{0.2cm}
+  {\small\color{gray!70}\basedon\par}
+\end{center}
+
+\vspace{1.6cm}
+
+\begin{center}
+\begin{minipage}{0.84\textwidth}
+  \small\color{gray!80!black}
+  \textbf{How to use this document.}\enspace
+  This is a structured summary built around \emph{running text}.
+  Explanations, derivations, and logical flow between ideas live
+  in the prose — colored boxes are reserved for the few things
+  that must stand out at a glance.
+
+  \medskip
+  \begin{itemize}
+    \item \textbf{Running text} — read for understanding, derivations, and context.
+    \item \textbf{Colored boxes} — scan for key definitions, theorems, examples, and exam notes.
+  \end{itemize}
+
+  \smallskip
+  Boxes lose their impact when overused. When in doubt, write prose.
+\end{minipage}
+\end{center}
+
+\vfill
+{\centering\small\color{gray!65} Compiled \today\par}
+\clearpage
+
+
+% ──────────────────────────────────────────────────────────
+%  TABLE OF CONTENTS
+% ──────────────────────────────────────────────────────────
+\setcounter{tocdepth}{2}
+
+\begingroup
+  \let\cleardoublepage\relax
+  \let\clearpage\relax
+  \tableofcontents
+\endgroup
+
+\mainmatter
+
+
+% ==========================================================
+%  CHAPTER 1 — IMAGE CLASSIFICATION
+% ==========================================================
+\chapter{Image Classification}
+
+Computer vision tasks span a spectrum of difficulty.
+In \emph{image classification} a single class label is predicted
+for the most prominent object in an image.
+\emph{Object detection} additionally localizes each instance with a bounding box,
+\emph{semantic segmentation} assigns class labels per pixel, and
+\emph{instance segmentation} combines both.
+This chapter traces the rapid evolution of CNN-based image classification,
+from AlexNet's breakthrough in 2012 to transformer-based approaches a decade later.
+The top-5 error on ImageNet fell from roughly 26\% to under 3\% in five years,
+eventually reaching and surpassing the human error rate of $\approx 3.5\%$.
+
+\section{The ImageNet Benchmark}
+
+The ImageNet Large-Scale Visual Recognition Challenge (ILSVRC) became the
+standard yardstick for image classification progress.
+Each image is labeled with its dominant object class; the dataset covers 1000 classes.
+Two evaluation protocols are used:
+\textbf{top-1 error} — the highest-ranked prediction must be correct — and
+\textbf{top-5 error} — the correct class must appear within the five highest-ranked predictions.
+Most papers report top-5 error, which is less sensitive to label ambiguity.
+
+Before 2012 the leading methods relied on hand-crafted features
+(SIFT, HoG, Haar-like features); CNNs changed that completely.
+A key additional observation is that features learned for ImageNet
+transfer remarkably well to other datasets:
+pre-training on ImageNet and fine-tuning on a smaller target dataset
+consistently outperforms training from scratch, especially when the target set is small.
+
+\begin{defbox}[title={Top-$k$ Error}]
+A prediction is correct under the \emph{top-$k$ criterion} if the true class label
+appears among the $k$ highest-scoring predictions of the model.
+Top-5 error is the fraction of test images for which this criterion fails.
+\end{defbox}
+
+\section{AlexNet (2012)}
+
+AlexNet (Krizhevsky et al., 2012) won ILSVRC-2012 with a top-5 error of \textbf{15.3\%},
+far below the runner-up's 26.2\%, and marked the start of the deep-learning era in vision.
+
+The network consists of 5 convolutional layers followed by 3 fully-connected layers,
+totaling 60 million parameters and 650k neurons.
+The input is a $224 \times 224 \times 3$ image.
+Training ran for 5–6 days on two GTX~580 3\,GB GPUs; GPU memory was the binding constraint.
+
+\begin{defbox}[title={AlexNet Architecture}]
+\begin{itemize}
+  \item \textbf{8 learned layers}: 5 convolutional + 3 fully-connected
+  \item \textbf{Parameters}: $\approx 60 \times 10^6$
+  \item \textbf{Input}: $224 \times 224 \times 3$
+  \item \textbf{Output}: 1000-way softmax
+\end{itemize}
+\end{defbox}
+
+Four innovations drove AlexNet's success.
+\textbf{ReLU activations} replaced tanh, providing substantial speed-up in training.
+\textbf{Dropout} in the fully-connected layers acted as a strong regularizer against overfitting.
+\textbf{Overlapping max-pooling} used $3\times3$ windows with stride 2.
+Finally, \textbf{Local Response Normalization} (LRN) provided competitive lateral inhibition
+across neighboring feature maps, loosely inspired by cortical inhibition —
+though later work showed LRN does not actually help and it was abandoned.
+
+\begin{notebox}[title={LRN is obsolete}]
+Local Response Normalization was used in AlexNet and ZfNet but shown by VGGNet
+not to improve performance. Batch Normalization replaced it entirely.
+\end{notebox}
+
+\section{ZfNet (2013)}
+
+ZfNet (Zeiler \& Fergus, 2013) achieved \textbf{13.5\%} top-5 error.
+Its main contribution was a \emph{deconvolution-based visualization} technique:
+by reversing the forward pass through convolution, pooling, and ReLU layers,
+one can project feature maps back to pixel space and inspect what each filter responds to.
+
+This analysis revealed that AlexNet's first-layer $11\times11$ kernels with stride 4
+created aliasing artifacts and many ``dead'' (never-activated) filters.
+ZfNet replaced them with $7\times7$ kernels and stride 2,
+yielding cleaner low-level features and better accuracy with comparable architecture depth.
+ZfNet also performed the first systematic \emph{transfer learning} experiments,
+showing that fine-tuning a pre-trained model on CalTech-101/256
+quickly surpassed previous state-of-the-art on those benchmarks.
+
+\section{VGGNet (2014)}
+
+VGGNet (Simonyan \& Zisserman, 2014) won the localization task and placed second in
+classification at ILSVRC-2014 with \textbf{7.3\%} top-5 error.
+It was directly motivated by ZfNet's finding that large kernels are suboptimal.
+
+\begin{thmbox}[title={Receptive-Field Equivalence of Stacked $3\times3$ Kernels}]
+Two stacked $3\times3$ convolutional layers (stride 1) cover the same receptive field as
+a single $5\times5$ layer, and three $3\times3$ layers equal one $7\times7$ layer.
+The stacked design is strictly better: it introduces more non-linearities and has
+\emph{fewer} parameters
+($2 \times 3^2 C^2 = 18C^2$ vs.\ $5^2 C^2 = 25C^2$ for $C$ channels).
+\end{thmbox}
+
+VGGNet uses \emph{exclusively} $3\times3$ convolutions with stride 1.
+The two most common variants are \textbf{VGG-16} (best single-crop top-5)
+and \textbf{VGG-19} (marginally better with multi-crop evaluation).
+The study also confirmed that LRN does not help and that $1\times1$ convolutions
+alone (without depth increase) do not improve performance.
+
+A serious flaw: the first fully-connected layer takes the
+$7\times7\times512$ feature map and maps it to 4096 units
+\emph{without} spatial weight sharing, creating a single layer with
+$> 100 \times 10^6$ parameters — more than 80\% of the entire network.
+This makes VGGNet prone to overfitting and expensive to deploy.
+
+\section{Network in Network (2014)}
+
+Network in Network (NiN; Lin et al., 2014) did not enter ILSVRC but introduced two ideas
+that shaped all subsequent architectures.
+
+\paragraph{MLPconv layers} Replace the linear filter in a standard convolution
+with a small MLP applied to each local patch.
+In practice this equals a $k\times k$ convolution followed by two $1\times1$
+convolutions with ReLU — increasing non-linear representational power without
+enlarging the receptive field.
+
+\paragraph{Global Average Pooling (GAP)} Instead of flattening spatial feature maps
+into a vector and feeding fully-connected layers, the final convolutional layer
+produces one feature map per class; GAP then reduces each map to a scalar by averaging.
+
+\begin{defbox}[title={Global Average Pooling}]
+Given a feature tensor of shape $H \times W \times C$,
+GAP outputs a $C$-dimensional vector where the $c$-th entry is
+$\frac{1}{HW}\sum_{i,j} x_{i,j,c}$.
+Applied to a $C$-class classification head this yields \emph{zero} extra parameters
+while providing spatial translation invariance and making each channel directly
+interpretable as a class confidence map.
+\end{defbox}
+
+\begin{intbox}
+GAP can be seen as enforcing the network to make its last feature maps ``honest'':
+channel $c$ must actually encode evidence for class $c$, because
+the spatial average of that channel is the final logit.
+\end{intbox}
+
+\section{GoogLeNet / Inception v1 (2014)}
+
+GoogLeNet (Szegedy et al., 2014) won ILSVRC-2014 classification with
+\textbf{6.7\%} top-5 error using 22 layers and only \textbf{6.9 million parameters}
+— less than 6\% of VGGNet's 122 million.
+The key insight: 85\% of AlexNet/VGG parameters lived in the fully-connected layers
+and mainly contributed to overfitting; replacing them with GAP plus one FC layer
+saves $> 99\%$ of those parameters.
+
+\subsection{Inception Modules}
+
+The building block is the \emph{Inception module}, which processes the input
+in parallel through $1\times1$, $3\times3$, and $5\times5$ convolutions
+as well as a max-pooling branch, then concatenates all outputs along the channel dimension.
+This lets the network choose its own filter sizes rather than committing to one scale.
+
+The naive version has two problems:
+(i) the channel dimension grows at every module since pooling cannot reduce channels, and
+(ii) $5\times5$ convolutions on a large feature map are expensive.
+Both are solved by \textbf{bottleneck $1\times1$ convolutions}:
+placed before the $3\times3$ and $5\times5$ branches they reduce the input channel count,
+and placed after the pooling branch they prevent channel explosion.
+
+\begin{thmbox}[title={Bottleneck Parameter Savings (Inception 4a example)}]
+Without bottleneck:
+\[
+  3\!\times\!3\text{ branch}: 3^2 \times 480 \times 208 \approx 898\text{k params};\quad
+  5\!\times\!5\text{ branch}: 5^2 \times 480 \times 48 \approx 576\text{k params}.
+\]
+With $1\times1$ bottleneck (96 and 16 intermediate channels respectively):
+\[
+  3\!\times\!3: 480 \times 96 + 3^2 \times 96 \times 208 \approx 225\text{k};\quad
+  5\!\times\!5: 480 \times 16 + 5^2 \times 16 \times 48 \approx 27\text{k}.
+\]
+Savings of roughly $4\times$ and $20\times$ per branch.
+\end{thmbox}
+
+Because the network is 22 layers deep, the gradient signal can weaken before
+reaching the early layers (vanishing gradient).
+GoogLeNet addresses this with two \textbf{auxiliary loss heads} attached to
+intermediate layers during training; they are discarded at inference.
+
+\section{Batch-Normalized Inception / Inception v2 (2015)}
+
+The 2015 Inception variant integrated Batch Normalization (BN) after every
+convolution, achieving \textbf{4.8\%} top-5 error.
+The headline result is speed: BN reduced the number of training steps needed to
+reach 72\% accuracy by a factor of \textbf{14}.
+BN also replaced Dropout as the primary regularizer in this architecture.
+An improved down-sampling block ran max-pooling and a stride-2 bottleneck
+convolution in parallel, then concatenated the results.
+
+\section{Highway Networks (2015)}
+
+Highway Networks (Srivastava et al., 2015) asked: can gradient descent train
+networks with \emph{hundreds} of layers?
+The answer is yes, with \emph{gating} borrowed from LSTMs.
+
+A standard feedforward layer computes $\hvec = H(\xvec; \mathbf{W}_H)$.
+A Highway layer adds learnable transform and carry gates:
+
+\begin{thmbox}[title={Highway Network Layer}]
+\[
+  \hvec = H(\xvec;\mathbf{W}_H) \odot T(\xvec;\mathbf{W}_T)
+        + \xvec \odot \bigl(1 - T(\xvec;\mathbf{W}_T)\bigr),
+\]
+where $T(\xvec;\mathbf{W}_T) = \sigma(\mathbf{W}_T\xvec + \mathbf{b}_T)$ is the
+\emph{transform gate} and $\odot$ is element-wise multiplication.
+Initializing $\mathbf{b}_T$ to a large negative value biases the network to carry
+information forward early in training, allowing gradients to flow unimpeded.
+\end{thmbox}
+
+100-layer Highway Networks were successfully trained on CIFAR-10 and CIFAR-100,
+directly motivating residual networks.
+
+\section{ResNet (2015)}
+
+ResNet (He et al., 2015) won every track of ILSVRC-2015, achieving
+\textbf{3.57\%} top-5 error on classification — below the human error rate —
+and won 194 of 200 categories in detection.
+It became the dominant backbone for downstream vision tasks.
+
+\subsection{Residual Learning}
+
+The central observation: plain networks degrade in accuracy as depth increases
+beyond a certain point, even on the training set, suggesting an optimization problem
+rather than overfitting.
+If a shallower network achieves accuracy $A$, a deeper one should be able to
+match it by learning identity mappings in the added layers — yet this does not happen.
+
+The fix: instead of asking $k$ stacked layers to approximate the target function $F(\xvec)$
+directly, ask them to approximate the \emph{residual} $F(\xvec) - \xvec$,
+then add the input back via a \emph{skip connection}.
+
+\begin{defbox}[title={Residual Block}]
+\[
+  \hvec = \mathcal{F}(\xvec;\{\mathbf{W}_i\}) + \xvec,
+\]
+where $\mathcal{F}$ is the residual mapping (two or three convolutional layers)
+and $\xvec$ is the identity shortcut.
+\emph{No extra parameters} are added by the shortcut.
+\end{defbox}
+
+\begin{intbox}
+If the optimal function is close to identity, it is easier to push $\mathcal{F}$ toward
+zero than to learn an identity from scratch through a stack of non-linear layers.
+Gradients can also flow directly through the shortcut to lower layers,
+mitigating vanishing gradients.
+\end{intbox}
+
+\subsection{Bottleneck Blocks}
+
+For ResNet-50 and deeper, the basic $3\times3$/$3\times3$ block is replaced by
+a \emph{bottleneck} block: $1\times1$ (reduce channels) $\to$ $3\times3$ $\to$
+$1\times1$ (restore channels).
+For example, ResNet-50 processes $256 \to 64 \to 64 \to 256$ channels per block.
+This keeps computation comparable to ResNet-34 while tripling depth.
+
+\subsection{Projection Shortcuts}
+
+When a skip connection crosses a change in spatial resolution or channel count
+(e.g., between stages), the identity shortcut is replaced by a $1\times1$
+convolution with stride 2, matching dimensions for the addition.
+
+\subsection{Variants and FLOPs}
+
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+\textbf{Variant} & \textbf{Parameters} & \textbf{FLOPs} \\
+\midrule
+ResNet-18  & $11.7 \times 10^6$ & $1.8 \times 10^9$ \\
+ResNet-34  & $21.8 \times 10^6$ & $3.6 \times 10^9$ \\
+ResNet-50  & $25.6 \times 10^6$ & $3.8 \times 10^9$ \\
+ResNet-101 & $44.5 \times 10^6$ & $7.6 \times 10^9$ \\
+ResNet-152 & $60.2 \times 10^6$ & $11.3 \times 10^9$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+ResNets are more popular than Inception as backbones for transfer learning
+because their generic, modular design is easier to adapt and modify.
+
+\begin{notebox}[title={Batch Normalization is Critical}]
+Batch Normalization is applied after every convolution and before the activation.
+Without BN, training a 50$+$-layer ResNet is infeasible.
+Recent work (Huang et al., 2019) showed that self-normalizing activations can
+substitute for BN and skip connections simultaneously, but BN + skip connections
+remains the standard recipe.
+\end{notebox}
+
+\section{Pre-activation ResNet / ResNet-v2 (2016)}
+
+He et al.\ studied identity mapping variants and proposed moving BN and ReLU
+\emph{before} the weight layers (pre-activation) rather than after.
+The identity shortcut then passes completely unmodified:
+
+\[
+  \hvec = \xvec + \mathcal{F}\!\left(\mathrm{BN}\!\left(\relu(\xvec)\right)\right).
+\]
+
+On CIFAR-10, ResNet-1001 improves from 7.61\% (original) to \textbf{4.92\%} (pre-activation)
+with no parameter change, demonstrating that the exact placement of normalization
+matters for very deep networks.
+
+\section{ResNeXt (2016)}
+
+ResNeXt (Xie et al., 2016) achieved \textbf{3.0\%} top-5 error at ILSVRC-2016
+(second place; first was an ensemble at 2.9\%).
+It introduces \emph{grouped convolutions} controlled by a \emph{cardinality} parameter $C$:
+instead of one large $3\times3$ convolution operating on all channels,
+$C$ independent groups each operate on $1/C$ of the channels.
+
+\begin{thmbox}[title={Grouped Convolution Parameter Count}]
+For a $3\times3$ convolution with $C_\mathrm{in}$ input and $C_\mathrm{out}$ output channels
+split into $C$ groups:
+\[
+  \text{Parameters} = C \times \frac{C_\mathrm{in}}{C} \times 3^2 \times \frac{C_\mathrm{out}}{C}
+  = \frac{3^2\, C_\mathrm{in}\, C_\mathrm{out}}{C}.
+\]
+Cardinality $C=32$ reduces the $3\times3$ cost by $32\times$ while
+doubling the $1\times1$ costs, keeping the total roughly constant.
+\end{thmbox}
+
+Grouped convolutions date back to AlexNet, where they were a GPU memory workaround.
+ResNeXt repurposed them as an intentional architectural design principle.
+The sparseness ratio of each block is $1 - 1/C$.
+
+\section{DenseNet (2016)}
+
+DenseNet (Huang et al., 2016) extends the skip-connection idea to its logical extreme:
+\emph{every layer receives the concatenated feature maps of all preceding layers}.
+Layer $l$ takes $\mathbf{x}_0, \mathbf{x}_1, \ldots, \mathbf{x}_{l-1}$ as input
+and produces an output of \emph{growth rate} $G$ channels.
+
+\begin{defbox}[title={Dense Block Connectivity}]
+\[
+  \mathbf{x}_l = H_l\!\left([\mathbf{x}_0,\, \mathbf{x}_1,\, \ldots,\, \mathbf{x}_{l-1}]\right),
+\]
+where $[\cdot]$ denotes channel-wise concatenation and
+$H_l : \R^{G(l-1)} \to \R^G$ is a BN$\to$ReLU$\to$Conv block.
+\end{defbox}
+
+Dense connectivity enables feature reuse, provides implicit deep supervision
+(gradients reach early layers directly through concatenation paths),
+and reduces overfitting.
+DenseNets achieve better top-1 accuracy than ResNets of comparable parameter count:
+DenseNet-169 beats ResNet-50 on ImageNet while using fewer parameters.
+
+\section{Squeeze-and-Excitation Network (SENet, 2017)}
+
+SENet (Hu et al., 2017) won ILSVRC-2017 — the final year — with \textbf{2.2\%} top-5 error.
+It adds a lightweight \emph{channel-attention} module to any existing block.
+
+\begin{defbox}[title={SE Block}]
+Given a feature map $\mathbf{U} \in \R^{H \times W \times C}$:
+\begin{enumerate}
+  \item \textbf{Squeeze}: Global average pooling $\to$ descriptor $\mathbf{z} \in \R^C$.
+  \item \textbf{Excitation}: $\mathbf{s} = \sigma\!\left(\mathbf{W}_2\,\relu(\mathbf{W}_1\mathbf{z})\right)$,
+        with $\mathbf{W}_1 \in \R^{C/r \times C}$ and $\mathbf{W}_2 \in \R^{C \times C/r}$
+        (reduction ratio $r$, typically 16).
+  \item \textbf{Scale}: $\widetilde{\mathbf{u}}_c = s_c \cdot \mathbf{u}_c$ (channel-wise scaling).
+\end{enumerate}
+\end{defbox}
+
+The SE block adds only $\frac{2C^2}{r}$ parameters but lets the network
+re-weight channels based on global image statistics.
+It can be attached to Inception modules (SE-Inception) or ResNet blocks (SE-ResNet)
+with minimal overhead.
+
+\section{MobileNet V2 (2018)}
+
+MobileNet V2 targets \emph{mobile inference}: competitive accuracy with minimal
+multiply-accumulate operations.
+The core building block is the \emph{inverted residual with linear bottleneck}.
+
+\subsection{Depthwise Separable Convolutions}
+
+A standard $R\times R$ convolution with $C_l$ input and $C_{l+1}$ output channels
+costs $R^2 C_l C_{l+1}$ parameters.
+\emph{Depthwise separable convolutions} factor this into:
+\begin{enumerate}
+  \item A \emph{depthwise} $R\times R$ convolution applied independently per channel: $R^2 C_l$ params.
+  \item A \emph{pointwise} $1\times1$ convolution mixing channels: $C_l C_{l+1}$ params.
+\end{enumerate}
+Total: $R^2 C_l + C_l C_{l+1}$, vs.\ $R^2 C_l C_{l+1}$ — roughly $R^2 \times$ cheaper.
+Depthwise separable convolutions are the extreme case of grouped convolutions
+(cardinality $= C_l$).
+
+\subsection{Inverted Residuals}
+
+Standard ResNet bottlenecks shrink channels, apply a $3\times3$, then expand.
+MobileNet V2 \emph{inverts} this: expand (cheap $1\times1$) $\to$ depthwise $3\times3$
+$\to$ project back to small dimension ($1\times1$).
+The skip connection runs between the low-dimensional \emph{bottleneck} representations,
+not across the high-dimensional expansion.
+
+\begin{notebox}[title={No ReLU after Bottleneck Projection}]
+The final $1\times1$ projection uses a \emph{linear} activation.
+Applying ReLU to a low-dimensional representation collapses the information irreversibly
+(it sets half the values to zero while the subspace has little redundancy).
+\end{notebox}
+
+\section{EfficientNet (2019)}
+
+EfficientNet (Tan \& Le, 2019) asks: given a fixed compute budget, how should one
+scale a CNN along depth $d$, width $w$, and input resolution $r$?
+The three dimensions are not independent: a higher-resolution image needs a deeper
+network (larger receptive field) and a wider one (more fine-grained features).
+
+\begin{thmbox}[title={Compound Scaling}]
+Let $\phi$ be a user-specified resource coefficient. Scale:
+\[
+  d = \alpha^\phi,\quad w = \beta^\phi,\quad r = \gamma^\phi,
+\]
+subject to $\alpha \cdot \beta^2 \cdot \gamma^2 \approx 2$, with $\alpha,\beta,\gamma \geq 1$.
+Since FLOPs $\propto d \cdot w^2 \cdot r^2$, total FLOPs scale as $2^\phi$.
+Constants $\alpha, \beta, \gamma$ are found once by a small grid search on the
+baseline architecture (EfficientNet-B0); $\phi$ is then varied to obtain B1–B7.
+\end{thmbox}
+
+The baseline B0 uses inverted residuals (MobileNet V2) with SE blocks (SENet).
+\textbf{EfficientNet-B7} achieves \textbf{84.4\%} top-1 accuracy on ImageNet with
+66M parameters — 8.4$\times$ smaller and 6.1$\times$ faster than the previous
+state-of-the-art GPipe.
+B0 already beats ResNet-50 with 4.9$\times$ fewer parameters and 11$\times$ fewer FLOPs.
+
+\section{Vision Transformer (ViT, 2020)}
+
+ViT (Dosovitskiy et al., 2020) applies a pure Transformer — no convolutions —
+to image classification by treating an image as a sequence of patches.
+
+An image is divided into non-overlapping $16\times16$-pixel patches,
+each linearly projected to a $d$-dimensional embedding;
+a learnable \texttt{[CLS]} token is prepended and positional encodings are added.
+The sequence is processed by a standard Transformer encoder.
+
+\begin{defbox}[title={Self-Attention (single head)}]
+Given input set $\mathbf{H}^{(0)} \in \R^{d\times T}$ ($T$ patches):
+\[
+  \mathbf{Q}^{(l)} = \mathbf{W}_Q \mathbf{H}^{(l-1)},\quad
+  \mathbf{K}^{(l)} = \mathbf{W}_K \mathbf{H}^{(l-1)},\quad
+  \mathbf{V}^{(l)} = \mathbf{W}_V \mathbf{H}^{(l-1)},
+\]
+\[
+  \mathbf{H}^{(l)} = \softmax\!\left(\frac{\mathbf{Q}^{(l)} {\mathbf{K}^{(l)}}^\T}{\sqrt{d_k}}\right)\mathbf{V}^{(l)}.
+\]
+The attention matrix is $T\times T$, so complexity is $\bigO{T^2}$ —
+quadratic in the number of patches (and prohibitive for full-resolution images).
+\end{defbox}
+
+\begin{notebox}[title={ViT requires large-scale pre-training}]
+Unlike CNNs, ViT lacks the spatial inductive biases (locality, translation equivariance)
+that make CNNs data-efficient.
+ViT only matches or beats CNNs when pre-trained on very large datasets
+(JFT-300M, 300 million images) and then fine-tuned on ImageNet.
+\end{notebox}
+
+\section{Self-Supervised Learning (from $\sim$2020)}
+
+Self-supervised pre-training learns representations from \emph{unlabeled} data
+using a \emph{pretext task} that requires semantic understanding.
+Two main paradigms have emerged.
+
+\subsection{Contrastive Learning (e.g., SimCLR)}
+
+Two different augmentations of the same image form a \emph{positive pair};
+augmentations from different images form \emph{negative pairs}.
+The network is trained to maximize similarity of positive pairs and
+minimize similarity of negatives.
+
+\begin{thmbox}[title={InfoNCE Loss (NT-Xent)}]
+\[
+  \loss\!\left((\hvec_0, \hvec_j),\, \{\hvec_l\}_{l=1}^L\right)
+  = -\log \frac{\exp\!\bigl(\cos(\hvec_0,\hvec_j)/\tau\bigr)}
+               {\sum_{l=1}^{L} \exp\!\bigl(\cos(\hvec_0,\hvec_l)/\tau\bigr)},
+\]
+where $\cos(\hvec_i,\hvec_j) = \frac{\hvec_i^\T \hvec_j}{\norm{\hvec_i}\norm{\hvec_j}}$
+is cosine similarity and $\tau > 0$ is a temperature hyperparameter.
+\end{thmbox}
+
+\subsection{Masked Image Modeling (e.g., MAE)}
+
+Random patches of an image are masked; the model must reconstruct them.
+Analogous to BERT's masked language modeling, this forces the network to learn
+global semantic structure.
+
+\section{Key Architectural Lessons}
+
+The drop from $\sim$26\% to $\sim$2\% top-5 error between 2012 and 2017
+was driven by a small set of recurring design principles:
+
+\begin{enumerate}
+  \item \textbf{Small kernels}: Stack $3\times3$ convolutions instead of large ones —
+        same receptive field, more non-linearities, fewer parameters.
+  \item \textbf{Skip connections}: Highway gates or identity shortcuts enable
+        gradient flow and training of very deep networks.
+  \item \textbf{Global Average Pooling}: Replace FC layers with GAP to eliminate
+        spatial-dimension parameters and reduce overfitting.
+  \item \textbf{$1\times1$ convolutions}: Change channel count without altering
+        spatial dimensions; enable bottlenecks.
+  \item \textbf{Bottleneck blocks}: Compress channels before costly $3\times3$ operations,
+        simulating sparse connectivity on dense hardware.
+  \item \textbf{Grouped / depthwise convolutions}: Redistribute computation toward
+        channel mixing; enable extreme parameter efficiency (MobileNet).
+  \item \textbf{Compound scaling}: Depth, width, and resolution are interdependent;
+        balance them together for optimal efficiency (EfficientNet).
+  \item \textbf{Attention}: Channel-wise (SE) and spatial (Transformer) attention
+        lets the network focus resources on the most informative parts of the input.
+\end{enumerate}
+
+
+% ==========================================================
+%  CHAPTER 2 — SEMANTIC SEGMENTATION
+% ==========================================================
+\chapter{Semantic Segmentation}
+
+% TODO: Fill in from lecture (20.3.)
+
+
+% ==========================================================
+%  CHAPTER 3 — OBJECT DETECTION AND LOCALIZATION
+% ==========================================================
+\chapter{Object Detection and Localization}
+
+% TODO: Fill in from lecture (27.3.)
+
+
+% ==========================================================
+%  CHAPTER 4 — AUTOENCODERS
+% ==========================================================
+\chapter{Autoencoders}
+
+% TODO: Fill in from lecture (17.4.)
+
+
+% ==========================================================
+%  CHAPTER 5 — VARIATIONAL AUTOENCODERS
+% ==========================================================
+\chapter{Variational Autoencoders}
+
+% TODO: Fill in from lecture (24.4.)
+
+
+% ==========================================================
+%  CHAPTER 6 — GANs AND W-GANs
+% ==========================================================
+\chapter{GANs and W-GANs}
+
+% TODO: Fill in from lecture (8.5.)
+
+
+% ==========================================================
+%  CHAPTER 7 — METRICS (FID) AND NORMALIZING FLOWS
+% ==========================================================
+\chapter{Metrics (FID) and Normalizing Flows}
+
+% TODO: Fill in from lecture (15.5.)
+
+
+% ==========================================================
+%  CHAPTER 8 — DIFFUSION PROBABILISTIC MODELS
+% ==========================================================
+\chapter{Diffusion Probabilistic Models}
+
+% TODO: Fill in from lecture (22.5.)
+
+
+% ==========================================================
+%  CHAPTER 9 — BAYESIAN DEEP LEARNING AND UNCERTAINTY
+% ==========================================================
+\chapter{Bayesian Deep Learning and Uncertainty}
+
+% TODO: Fill in from lecture recording (29.5.)
+
+
+% ==========================================================
+%  CHAPTER 10 — GRAPH NEURAL NETWORKS
+% ==========================================================
+\chapter{Graph Neural Networks}
+
+% TODO: Fill in from lecture (12.6.)
+
+
+% ==========================================================
+%  CHAPTER 11 — THEORY
+% ==========================================================
+\chapter{Theory}
+
+% TODO: Fill in from lecture (19.6.)
+
+
+\end{document}

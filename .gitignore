@@ -1,0 +1,94 @@
+# ── macOS ──────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── LaTeX build artifacts ──────────────────────────────────
+# Auxiliary / cross-reference
+*.aux
+*.toc
+*.lot
+*.lof
+*.out
+*.idx
+*.ind
+*.ilg
+
+# Log files
+*.log
+*.fls
+*.fdb_latexmk
+
+# BibTeX / BibLaTeX
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# Synctex (editor sync)
+*.synctex.gz
+*.synctex(busy)
+
+# latexmk / rubber build directories
+build/
+_build/
+
+# XeLaTeX intermediate
+*.xdv
+
+# Beamer navigation & overlays
+*.nav
+*.snm
+*.vrb
+
+# listings / minted cache
+_minted-*/
+*.pyg
+
+# tcolorbox / pgfplots externalise cache
+_tikz*/
+*.dpth
+*.md5
+
+# glossaries
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+
+# nomencl
+*.nlo
+*.nls
+
+# index tools
+*.ist
+
+# makeglossaries
+*.xdy
+
+# minitoc
+*.maf
+*.mtc
+*.mtc*
+
+# algorithm2e
+*.listing
+
+# Fonts
+*.pfb
+*.pfm
+
+# Editor-specific ──────────────────────────────────────────
+# TeXShop
+*.pdfsync
+
+# Overleaf / LaTeX Workshop (VS Code) – keep .latexmkrc if present
+.texpadtmp/
+
+# ── Compiled PDFs ──────────────────────────────────────────
+*.pdf
+
+# ── Images ───────────────────────────
+*.png
