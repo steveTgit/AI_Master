@@ -17,7 +17,7 @@ AI_Master/
 ├── Deep Reinforcement Leaning/
 ├── DL Architectures & Generative Techniques/
 ├── Genome Analysis & Transcriptomics/
-├── ML Supervised Techniques/
+├── ML Unsupervised Techniques/
 ├── Robopsychology/
 └── Structural Bioinformatics/
 ```
