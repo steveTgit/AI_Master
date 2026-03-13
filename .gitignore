@@ -87,8 +87,5 @@ _tikz*/
 # Overleaf / LaTeX Workshop (VS Code) – keep .latexmkrc if present
 .texpadtmp/
 
-# ── Compiled PDFs ──────────────────────────────────────────
-*.pdf
-
-# ── Images ───────────────────────────
-*.png
+# ── Slide PDFs (large, not tracked) ───────────────────────
+**/slides/

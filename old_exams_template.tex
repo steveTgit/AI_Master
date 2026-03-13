@@ -1,0 +1,188 @@
+% ==========================================================
+%  OLD EXAM QUESTIONS TEMPLATE — AI / ML / MATHEMATICS
+%  Design Philosophy:
+%    Shares the visual language of summary.tex (same accent,
+%    same box style, same typography) but uses article class
+%    — no chapters, just sections and question boxes.
+%
+%  HOW TO USE:
+%    1. Copy this file into the course folder: old_exams.tex
+%    2. Set \coursetitle below.
+%    3. Add \section{} per topic, questions inside
+%       \questiontitle{…} … \closequestion blocks.
+% ==========================================================
+
+\documentclass[11pt,oneside]{article}
+
+\usepackage[
+  a4paper,
+  top=2.4cm,
+  bottom=2.1cm,
+  left=2.3cm,
+  right=2.3cm,
+  headheight=15pt
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{enumitem}
+\usepackage{booktabs,array,multicol,longtable}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+
+% ── Colors ───────────────────────────────────────────────
+% Shared accent with summary.tex — do not change.
+\definecolor{accent}{HTML}{1B3A5C}
+\definecolor{q@frame}{HTML}{1A5276}
+\definecolor{q@bg}{HTML}{F6FAFD}
+\definecolor{key@frame}{HTML}{1E8449}
+\definecolor{key@bg}{HTML}{F4FBF6}
+\definecolor{note@frame}{HTML}{9A6A00}
+\definecolor{note@bg}{HTML}{FEF9E7}
+
+% ── Box global style ─────────────────────────────────────
+\tcbset{
+  enhanced,
+  breakable,
+  arc=2.5mm,
+  boxrule=0.5pt,
+  left=4.5mm,
+  right=4mm,
+  top=2.5mm,
+  bottom=2.5mm,
+  fonttitle=\bfseries\small,
+  sharp corners=west,
+  parbox=false
+}
+
+% Question box (blue) — one per exam question.
+\newtcolorbox{qbox}[1][]{
+  colback=q@bg,
+  colframe=q@frame,
+  borderline west={3.5pt}{0pt}{q@frame},
+  title={#1}
+}
+
+% Key insight box (green) — answer hints, key results.
+\newtcolorbox{keybox}[1][]{
+  colback=key@bg,
+  colframe=key@frame,
+  borderline west={3.5pt}{0pt}{key@frame},
+  title={#1}
+}
+
+% Organizational note box (amber) — structural remarks only.
+\newtcolorbox{notebox}[1][]{
+  colback=note@bg,
+  colframe=note@frame,
+  borderline west={3.5pt}{0pt}{note@frame},
+  title={#1}
+}
+
+% ── Section headings ─────────────────────────────────────
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{accent}}
+  {}{0em}{}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.2ex plus 1ex minus .2ex}{1.8ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {}{0em}{}
+\titlespacing*{\subsection}{0pt}{2.2ex plus 1ex minus .2ex}{1.0ex plus .2ex}
+
+% ── Header & footer ──────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}Old Exam Questions — \coursetitle}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Document metadata ─────────────────────────────────────
+\newcommand{\coursetitle}{[Course Title Here]}
+
+% ── Question counter & macros ────────────────────────────
+\newcounter{question}
+\newcommand{\questiontitle}[1]{%
+  \stepcounter{question}\begin{qbox}[Question \thequestion: #1]}
+\newcommand{\closequestion}{\end{qbox}}
+
+% Mark questions that appeared on multiple exams.
+\newcommand{\repeatnote}{\textit{\color{gray!70}Asked multiple times.}}
+
+% Multiple-choice checkbox bullet.
+\newcommand{\choice}{\item[$\square$] }
+
+% Fill-in answer line. Usage: \answerline{3cm}
+\newcommand{\answerline}[1]{\makebox[#1]{\hrulefill}}
+
+% ── Math macros (minimal subset for exam questions) ──────
+% Add from template.tex as needed.
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1\,\|\,#2\right)}
+\newcommand{\dd}{\,\mathrm{d}}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+% ── Title page ───────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.4cm}
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}\par
+  \vspace{0.65cm}
+  {\fontsize{26}{32}\selectfont\bfseries\color{accent}Old Exam Questions\\[2pt] \coursetitle\par}
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}\par
+  \vspace{0.55cm}
+  {\large Stefan Eder\par}
+  \vspace{0.15cm}
+  {\small\color{gray!70}\today\par}
+\end{center}
+
+\vspace{0.9cm}
+\begin{notebox}[How this file is organized]
+This file is separate from the course summary and is meant as a clean practice set.
+Exact duplicates were removed. When essentially the same question appeared in multiple old exams,
+that is marked with \repeatnote\ inside the question box.
+The wording was lightly normalized where the scans were messy, but the mathematical content
+and answer choices were kept intact.
+\end{notebox}
+
+\tableofcontents
+\newpage
+
+
+% ==========================================================
+%  CONTENT — one \section{} per topic area
+%  Use \questiontitle{Short title} … \closequestion for each question.
+% ==========================================================
+
+\section{[First Topic Area]}
+
+\questiontitle{[Question title]}
+[Question text here.]
+\[
+  \answerline{4cm}
+\]
+\closequestion
+
+
+\end{document}

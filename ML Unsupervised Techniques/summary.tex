@@ -1,0 +1,1642 @@
+% ==========================================================
+%  ML UNSUPERVISED TECHNIQUES — MASTER SUMMARY
+%  Based on: Hochreiter, Machine Learning: Unsupervised Methods, JKU Linz
+% ==========================================================
+
+\documentclass[11pt, oneside]{book}
+
+\usepackage[
+  a4paper,
+  top    = 2.6cm,
+  bottom = 2.1cm,
+  left   = 2.5cm,
+  right  = 2.5cm,
+  headheight = 15pt
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{inconsolata}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.62em}
+
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}
+\usepackage{bbm}
+\usepackage{mathrsfs}
+\usepackage{nicefrac}
+\usepackage{cancel}
+
+\usepackage{siunitx}
+\sisetup{per-mode = symbol}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{enumitem}
+
+\setlist[itemize]{topsep=3pt, itemsep=2pt, leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt, itemsep=2pt, leftmargin=2.4em}
+
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetCommentSty{textit}
+
+\usepackage{xcolor}
+
+\definecolor{accent}{HTML}{1B3A5C}
+\definecolor{def@frame}{HTML}{1A5276}   \definecolor{def@bg}{HTML}{EBF5FB}
+\definecolor{thm@frame}{HTML}{922B21}   \definecolor{thm@bg}{HTML}{FDEDEC}
+\definecolor{ex@frame} {HTML}{1E8449}   \definecolor{ex@bg} {HTML}{EAFAF1}
+\definecolor{int@frame}{HTML}{9A6A00}   \definecolor{int@bg}{HTML}{FEF9E7}
+\definecolor{note@frame}{HTML}{5B2C6F}  \definecolor{note@bg}{HTML}{F5EEF8}
+
+\usepackage{listings}
+\lstset{
+  basicstyle       = \ttfamily\small,
+  breaklines       = true,
+  numbers          = left,
+  numberstyle      = \tiny\color{gray!70},
+  frame            = tb,
+  framerule        = 0.4pt,
+  rulecolor        = \color{gray!35},
+  tabsize          = 2,
+  showstringspaces = false,
+  keywordstyle     = \color{def@frame}\bfseries,
+  commentstyle     = \color{gray!55!black}\itshape,
+  stringstyle      = \color{ex@frame!90!black},
+  backgroundcolor  = \color{gray!5},
+  xleftmargin      = 2em,
+  xrightmargin     = 0.4em,
+  aboveskip        = 0.8em,
+  belowskip        = 0.5em
+}
+
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  enhanced,
+  breakable,
+  arc             = 2.5mm,
+  boxrule         = 0.5pt,
+  left            = 4.5mm,
+  right           = 4mm,
+  top             = 2.5mm,
+  bottom          = 2.5mm,
+  fonttitle       = \bfseries\small,
+  sharp corners   = west,
+  parbox          = false
+}
+
+\newtcolorbox{defbox}[1][]{
+  title  = {Definition},
+  colback = def@bg, colframe = def@frame,
+  borderline west = {3.5pt}{0pt}{def@frame},
+  #1
+}
+
+\newtcolorbox{thmbox}[1][]{
+  title  = {Theorem / Key Formula},
+  colback = thm@bg, colframe = thm@frame,
+  borderline west = {3.5pt}{0pt}{thm@frame},
+  #1
+}
+
+\newtcolorbox{exbox}[1][]{
+  title  = {Example},
+  colback = ex@bg, colframe = ex@frame,
+  borderline west = {3.5pt}{0pt}{ex@frame},
+  #1
+}
+
+\newtcolorbox{intbox}[1][]{
+  title  = {Intuition \& Mental Model},
+  colback = int@bg, colframe = int@frame,
+  borderline west = {3.5pt}{0pt}{int@frame},
+  #1
+}
+
+\newtcolorbox{notebox}[1][]{
+  title  = {Note},
+  colback = note@bg, colframe = note@frame,
+  borderline west = {3.5pt}{0pt}{note@frame},
+  #1
+}
+
+\usepackage[titles]{tocloft}
+
+\renewcommand{\cftchapfont}     {\bfseries\color{accent}}
+\renewcommand{\cftchappagefont} {\bfseries\color{accent}}
+\renewcommand{\cftchapleader}   {\bfseries\color{accent!40}\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip} {7pt}
+
+\renewcommand{\cftsecfont}      {\small}
+\renewcommand{\cftsecpagefont}  {\small}
+\setlength{\cftsecindent}      {1.8em}
+\setlength{\cftbeforesecskip}  {1.5pt}
+
+\renewcommand{\cftsubsecfont}      {\small\color{gray!65!black}}
+\renewcommand{\cftsubsecpagefont}  {\small\color{gray!65!black}}
+\setlength{\cftsubsecindent}      {3.4em}
+\setlength{\cftbeforesubsecskip}  {0.5pt}
+
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{accent}\huge}
+  {\hfill\fontsize{68}{68}\selectfont\color{accent!13}\thechapter}
+  {-10pt}
+  {}
+  [{\vspace{4pt}%
+    {\color{accent}\rule{\linewidth}{1.6pt}}\\[-2pt]%
+    {\color{accent!35}\rule{\linewidth}{0.5pt}}}]
+\titlespacing*{\chapter}{0pt}{-28pt}{22pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}
+  {\thesection}
+  {0.8em}
+  {}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.8ex plus 1ex minus .2ex}{2.2ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {\thesubsection}
+  {0.7em}
+  {}
+\titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.4ex plus .2ex}
+
+\titleformat{\paragraph}[runin]
+  {\normalfont\small\bfseries}
+  {}
+  {0em}
+  {}[.\enspace]
+\titlespacing{\paragraph}{0pt}{1.2ex plus .5ex minus .2ex}{0.5em}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\small\color{gray!70}\thepage}
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink, capitalize]{cleveref}
+
+
+% ══════════════════════════════════════════════════════════
+%  DOCUMENT METADATA
+% ══════════════════════════════════════════════════════════
+\newcommand{\coursetitle}{ML Unsupervised Techniques}
+\newcommand{\documenttype}{Master Summary}
+\newcommand{\authorname}{Stefan Eder}
+\newcommand{\basedon}{Based on Hochreiter, \emph{Machine Learning: Unsupervised Methods}, JKU Linz}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICAL MACROS
+% ══════════════════════════════════════════════════════════
+
+% ── Number Sets ───────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+
+% ── Probability & Statistics ──────────────────────────────
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\iid}{\overset{\mathrm{iid}}{\sim}}
+\newcommand{\ind}{\mathbbm{1}}
+
+% ── Information Theory ────────────────────────────────────
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1 \,\|\, #2\right)}
+\newcommand{\Ent}{\mathrm{H}}
+\newcommand{\MI}{\mathrm{I}}
+
+% ── Calculus & Optimization ───────────────────────────────
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\grad}{\nabla}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+% ── Linear Algebra ────────────────────────────────────────
+\newcommand{\T}{^{\top}}
+\newcommand{\inv}{^{-1}}
+\newcommand{\tr}{\mathrm{tr}}
+\newcommand{\diag}{\mathrm{diag}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% ── Course-specific notation ──────────────────────────────
+% Parameter vector and estimate
+\newcommand{\wvec}{\bm{w}}
+\newcommand{\what}{\hat{\bm{w}}}
+% Data vector and matrix
+\newcommand{\xvec}{\bm{x}}
+\newcommand{\Xmat}{\bm{X}}
+% Latent / source variable
+\newcommand{\uvec}{\bm{u}}
+% Likelihood and free energy
+\newcommand{\lhood}{\mathcal{L}}
+\newcommand{\Fbound}{\mathcal{F}}
+% MSE and bias operators
+\newcommand{\mse}{\mathrm{mse}}
+\newcommand{\bias}{b}
+% Distributions
+\newcommand{\Normal}{\mathcal{N}}
+
+% ── Misc ─────────────────────────────────────────────────
+\newcommand{\given}{\,\vert\,}
+\newcommand{\st}{\;\text{s.t.}\;}
+\newcommand{\eqdef}{\coloneqq}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+\frontmatter
+
+
+% ── Title Page ────────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.8cm}
+
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}
+  \vspace{0.65cm}
+
+  {\fontsize{28}{34}\selectfont\bfseries\color{accent}\coursetitle\par}
+  \vspace{0.25cm}
+  {\large\color{gray!80!black}\documenttype\par}
+
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}
+  \vspace{0.55cm}
+
+  {\large\authorname\par}
+  \vspace{0.2cm}
+  {\small\color{gray!70}\basedon\par}
+\end{center}
+
+\vspace{1.6cm}
+
+\begin{center}
+\begin{minipage}{0.84\textwidth}
+  \small\color{gray!80!black}
+  This document is a compact summary of the course.
+  It aims to cover all relevant concepts and results, but long derivations,
+  detailed proofs, and worked examples are often condensed or omitted in
+  favour of clarity and conciseness.
+  Use it as a study aid alongside the lecture notes and slides, not as a
+  replacement for them.
+
+  \medskip
+  If you spot an error or a gap, please open an issue or pull request at
+  \textbf{github.com/stevetgit} --- corrections are always welcome.
+
+  \medskip
+  \color{gray!60!black}
+  Good study materials should be shared, not gatekept.
+  If this helped you, take it as a reason to help the next colleague you see struggling with something.
+\end{minipage}
+\end{center}
+
+\vfill
+{\centering\small\color{gray!65} Compiled \today\par}
+\clearpage
+
+
+% ── Table of Contents ─────────────────────────────────────
+\setcounter{tocdepth}{2}
+
+\begingroup
+  \let\cleardoublepage\relax
+  \let\clearpage\relax
+  \tableofcontents
+\endgroup
+
+\mainmatter
+
+
+% ==========================================================
+\chapter{Introduction}
+% ==========================================================
+
+\section{Machine Learning Introduction}
+
+Machine learning is currently a major research topic in academia and industry alike.
+Applications span computer vision, speech recognition, recommender systems, and the
+analysis of large biological datasets.
+In the biomedical context, modern measurement technologies --- mRNA concentrations
+measured via microarrays or next-generation sequencing, SNP arrays, copy number
+variation data --- create a demand for methods that can extract structure from
+high-dimensional data without relying on labeled training examples.
+
+The machine learning course series at JKU Linz comprises four complementary courses:
+\begin{itemize}
+  \item \textbf{Basic Methods of Data Analysis:} summary statistics, PCA, ICA,
+        multidimensional scaling, clustering, biclustering.
+  \item \textbf{ML Supervised Methods:} classification and regression, SVMs, neural
+        networks, deep learning, LSTM, ARMA/ARIMA.
+  \item \textbf{ML Unsupervised Methods} (this course): MLE, MAP, maximum entropy,
+        EM, PCA, ICA, factor analysis, mixture models, HMMs, Boltzmann machines.
+  \item \textbf{Theoretical Concepts of Machine Learning:} estimation theory,
+        VC-dimension, generalization bounds, convex optimization, Bayes theory.
+\end{itemize}
+
+The goal is not only to know individual methods, but to be able to \emph{choose}
+the right approach for a given problem, understand the mathematical foundations well
+enough to adapt standard algorithms, and recognize when a model is likely to fail.
+
+
+\section{Course Specific Introduction}
+
+A learning problem is called \emph{unsupervised} when the desired output is not given
+for the training data.
+In contrast to supervised learning, quality on unsupervised problems is measured as a
+\emph{cumulative} quantity over all samples --- there is no per-sample ground truth.
+Modern Generative AI (VAEs, GANs, diffusion models) is a prominent subtopic.
+
+\paragraph{Objectives} Unsupervised methods are driven by different optimality criteria,
+depending on the problem:
+\begin{itemize}
+  \item information content (maximizing information preserved after projection)
+  \item orthogonality of extracted components
+  \item statistical independence of components
+  \item explained variance
+  \item entropy of the representation
+  \item likelihood: probability that the model produces the observed data
+  \item distances within and between clusters
+\end{itemize}
+
+\paragraph{Use cases} Unsupervised methods are used to:
+explore data, find latent structure, visualize high-dimensional data in low dimensions,
+and compress representations.
+The unifying goal is to \emph{understand and explore the data and generate new knowledge}.
+
+\paragraph{Key concepts in this course}
+Maximum likelihood (ML), maximum a posteriori (MAP), maximum entropy, expectation
+maximization (EM), maximal variance, statistical independence, non-Gaussianity,
+sub- and super-Gaussian distributions, sparse codes and population codes.
+
+\paragraph{Model selection and overfitting}
+The goal of learning is to select, from a model class, the model with the highest
+\emph{generalization performance} --- the model that best explains \emph{future} data.
+Model selection, training, and learning are all the same thing.
+\emph{Overfitting} occurs when the model is fitted to idiosyncratic training
+characteristics (noise, outliers, labeling errors) rather than to the true underlying
+structure; the model has high training performance but poor generalization.
+
+\begin{intbox}
+  Underfitting (model too simple) and overfitting (model too complex) are the two
+  failure modes. The goal is the best bias-variance trade-off: a model complex enough
+  to capture the true structure but not so complex that it memorizes noise.
+\end{intbox}
+
+\paragraph{Parametric vs.\ nonparametric models}
+An important early decision is the \emph{model class}:
+
+\begin{itemize}
+  \item \textbf{Parametric models:} each parameter vector $\wvec$ represents one model.
+        Examples: neural networks (synaptic weights), SVMs (weight vector $\wvec$), factor
+        analysis. Learning corresponds to a path through parameter space.
+        Disadvantages: different parameterizations can represent the same function; model
+        complexity is implicitly controlled through the parameters.
+
+  \item \textbf{Nonparametric models:} the model is locally constant or a superimposition
+        of local pieces. Examples: $k$-nearest-neighbor (where $k$ is a hyperparameter fixed
+        before training), kernel density estimation, decision trees.
+        The constant rules/kernels must be chosen a priori; hyperparameters ($k$, kernel
+        width, splitting rules) are not learned from data.
+\end{itemize}
+
+\paragraph{Unsupervised methods covered in this course}
+Principal component analysis (PCA), independent component analysis (ICA), factor analysis,
+projection pursuit, $k$-means clustering, hierarchical clustering, mixture models
+(Gaussian, Poisson), self-organizing maps (SOMs), kernel density estimation, hidden Markov
+models (HMMs, factorial HMMs, IO-HMMs), Markov networks, restricted Boltzmann machines,
+auto-associators.
+
+Methods fall into two broad families:
+\begin{itemize}
+  \item \textbf{Projection methods:} produce a new representation of objects by
+        down-projecting feature vectors into a lower-dimensional space while preserving
+        neighborhoods or other desired properties.
+        Examples: PCA (orthogonal components of maximal variance), ICA (statistically
+        independent components), factor analysis (PCA with noise).
+  \item \textbf{Generative models:} build an explicit probabilistic model of the observed
+        data; the fitted model should match the observed data density.
+\end{itemize}
+
+
+\section{Generative vs.\ Descriptive Models}
+\label{sec:gen-vs-desc}
+
+\begin{defbox}[title={Descriptive (Recoding) Model}]
+A \textbf{descriptive model} provides an alternative representation or description of the
+data. It maps observations to a new space with desired properties (e.g.\ orthogonality,
+independence). Examples: PCA, ICA.
+\end{defbox}
+
+\begin{defbox}[title={Generative Model}]
+A \textbf{generative model} explicitly models the data generation process.
+It should produce the same distribution as the observed data: random source components
+$\uvec$ are drawn from a prior $p_{\uvec}$, passed through a model
+$g(\uvec;\wvec)$, and the resulting distribution $p(\xvec;\wvec)$ should match the
+empirical distribution $p(\xvec)$.
+Examples: factor analysis, latent variable models, Boltzmann machines, HMMs.
+\end{defbox}
+
+Generative models allow the use of prior knowledge about the world and enable the
+prediction of new states of the data-generating process (e.g.\ predicting gene expression
+or brain activity). The natural training objective is maximum likelihood or MAP.
+
+Descriptive models aim to find a richer or more interpretable representation rather than
+to model the generative process.
+Their objectives are properties of the representation: maximal variance (PCA),
+statistical independence (ICA), maximal non-Gaussianity (projection pursuit).
+
+\begin{notebox}[title={Exam trap}]
+Parametric/nonparametric is \emph{not} the same as generative/descriptive.
+Factor analysis is parametric \emph{and} generative.
+$k$-NN is nonparametric \emph{and} descriptive (no explicit density).
+\end{notebox}
+
+
+% ==========================================================
+\chapter{Basic Terms and Concepts}
+% ==========================================================
+
+\section{Unsupervised Learning in Bioinformatics}
+
+The primary driving application for many unsupervised methods is gene expression data.
+A microarray experiment produces a matrix of expression values: rows are genes (features),
+columns are samples (conditions, patients, time points).
+The data are high-dimensional (thousands of genes), noisy, and unlabeled.
+
+Typical tasks include:
+\begin{itemize}
+  \item finding groups of co-expressed genes (clustering, biclustering)
+  \item identifying tissue types or disease subtypes (mixture models, ICA)
+  \item visualizing the data in 2--3 dimensions (PCA, $t$-SNE, Isomap)
+  \item detecting regulatory modules that activate in a subset of samples (FABIA)
+\end{itemize}
+
+A classical result is Spellman's cell-cycle data: PCA applied to yeast expression data
+over the cell cycle reveals the dominant temporal oscillation in the first two principal
+components, confirming the cyclic structure.
+Hierarchical clustering of microarray data yields dendrograms that group both genes and
+samples; the correlation coefficient bar on the dendrogram indicates relatedness of branches.
+
+
+\section{Unsupervised Learning Categories}
+
+All unsupervised methods fall into one of two frameworks:
+
+\begin{defbox}[title={Two Frameworks of Unsupervised Learning}]
+\begin{itemize}
+  \item \textbf{Generative framework:} density estimation, hidden Markov models, mixture
+        models. Objective: \emph{maximum likelihood} or \emph{maximum a posteriori}.
+  \item \textbf{Recoding (descriptive) framework:} projection methods, PCA, ICA.
+        Objective: \emph{maximal variance}, orthogonality, independence, \emph{maximum entropy}.
+\end{itemize}
+\end{defbox}
+
+\subsection{Generative Framework}
+
+In the generative framework, the world is modeled as a stochastic process:
+latent (hidden) sources $\uvec$ are drawn from a source distribution $p_{\uvec}$,
+passed through a world model $g(\uvec;\wvec)$, and produce observations $\xvec$.
+The learned model distribution $p(\xvec;\wvec)$ must match the observed distribution $p(\xvec)$.
+
+\begin{thmbox}[title={Generative Model Objective}]
+Find parameters $\wvec$ such that the model distribution
+\[
+  p(\xvec;\wvec) = \int_U p_{\uvec}(\uvec)\,\delta\!\bigl(\xvec = g(\uvec;\wvec)\bigr)\dd\uvec
+\]
+is as close as possible to the empirical distribution $p(\xvec)$.
+The loss function measures the distance between these two distributions; typically this
+is minimized via \emph{maximum likelihood}.
+\end{thmbox}
+
+Key examples of generative models: factor analysis, latent variable models,
+Boltzmann machines, hidden Markov models.
+
+\subsection{Recoding Framework}
+
+In the recoding (descriptive) framework, a model $g(\xvec;\wvec)$ maps observations
+$\xvec \sim p(\xvec)$ to projections $\uvec$.
+The resulting distribution $p(\uvec;\wvec)$ should match a desired \emph{target}
+distribution $p_t(\uvec)$:
+
+\begin{itemize}
+  \item \textbf{PCA:} projects to a low-dimensional space with maximal information
+        conservation (maximal variance). Target: components are orthogonal and uncorrelated.
+
+  \item \textbf{ICA:} projects into a space with statistically \emph{independent}
+        components (factorial code). Often characteristics of a factorial distribution are
+        optimized: maximal entropy given fixed variance, or cumulants (kurtosis).
+        Alternatively, the projection distribution is matched to a product of
+        super-Gaussians.
+
+  \item \textbf{Projection Pursuit:} projects such that components are maximally
+        non-Gaussian (since Gaussian components arise from random projections of any
+        distribution, by the CLT; non-Gaussian components are informative).
+\end{itemize}
+
+\subsection{Recoding and Generative Framework Unified}
+
+Both frameworks can be seen as two sides of the same coin.
+In the generative direction: sources $\uvec \xrightarrow{g(\uvec;\wvec)} \xvec$
+(sources produce observations).
+In the recoding direction: observations $\xvec \xrightarrow{g^{-1}(\xvec;\wvec)} \uvec$
+(observations are encoded into sources).
+When the model $g$ is invertible, these two views are mathematically equivalent and
+yield the same parameter estimates.
+This unification is exploited in ICA: the INFOMAX and likelihood approaches give
+identical learning rules for invertible linear models.
+
+
+\section{Quality of Parameter Estimation}
+\label{sec:quality-estimation}
+
+Generative models must estimate true (but unknown) model parameters.
+Let the training data be $\{\xvec\} = \{\xvec^1,\ldots,\xvec^l\}$, collected into the
+matrix $\Xmat = (\xvec^1,\ldots,\xvec^l)\T \in \R^{l \times d}$.
+The true (unknown) parameter vector is $\wvec$; an estimator maps the data to $\what$.
+
+\begin{defbox}[title={Estimator Quality Measures}]
+\begin{align*}
+  \text{Unbiased:} \quad & \E_{\Xmat}[\what] = \wvec \\[4pt]
+  \text{Bias:} \quad & \bias(\what) = \E_{\Xmat}[\what] - \wvec \\[4pt]
+  \text{Variance:} \quad & \Var(\what) = \E_{\Xmat}\!\left[(\what - \E_{\Xmat}[\what])\T(\what - \E_{\Xmat}[\what])\right] \\[4pt]
+  \text{MSE:} \quad & \mse(\what) = \E_{\Xmat}\!\left[(\what - \wvec)\T(\what - \wvec)\right]
+\end{align*}
+\end{defbox}
+
+The fundamental bias-variance decomposition of the MSE is:
+
+\begin{thmbox}[title={Bias-Variance Decomposition}]
+\[
+  \mse(\what) = \Var(\what) + \bias^2(\what)
+\]
+\emph{Derivation sketch:} Write $\what - \wvec = (\what - \E[\what]) + (\E[\what] - \wvec)$,
+expand the squared norm, and note that the cross-term vanishes because
+$\E_{\Xmat}[(\what - \E[\what])(\E[\what] - \wvec)\T] = 0$
+(since $\E[\what] - \wvec$ is a constant w.r.t.\ the expectation).
+\end{thmbox}
+
+The objective is to minimize the MSE.
+Note: the MSE in the parameter estimation sense (expected squared distance to true
+parameter) is different from the supervised regression loss (expected squared distance
+to true output).
+
+\begin{intbox}
+  Unbiasedness and consistency are different properties.
+  An \emph{unbiased} estimator has $\E[\what] = \wvec$ for \emph{any} dataset size.
+  A \emph{consistent} estimator satisfies $\what \to \wvec$ as $l \to \infty$ ---
+  its variance shrinks with more data, but it may be biased for finite $l$.
+\end{intbox}
+
+
+\section{Maximum Likelihood Estimator}
+\label{sec:mle}
+
+\begin{defbox}[title={Likelihood}]
+The \textbf{likelihood} of the dataset $\{\xvec\} = \{\xvec^1,\ldots,\xvec^l\}$ under
+model parameters $\wvec$ is
+\[
+  \lhood(\{\xvec\};\wvec) \;=\; p(\{\xvec\};\wvec),
+\]
+the probability that the model $p(\xvec;\wvec)$ produces the observed data.
+For \textbf{iid} (independent, identically distributed) data this factorizes:
+\[
+  \lhood(\{\xvec\};\wvec) \;=\; \prod_{i=1}^{l} p(\xvec^i;\wvec).
+\]
+Working in log-space converts the product to a sum (negative log-likelihood, NLL):
+\[
+  -\ln \lhood(\{\xvec\};\wvec) \;=\; -\sum_{i=1}^{l} \ln p(\xvec^i;\wvec).
+\]
+\end{defbox}
+
+Maximum likelihood estimation (MLE) is the dominant objective in unsupervised learning.
+It finds the parameters $\wvec$ that make the observed data most probable under the model:
+\[
+  \what_{\mathrm{ML}} = \argmax_{\wvec} \lhood(\{\xvec\};\wvec) = \argmin_{\wvec} \bigl[-\ln\lhood(\{\xvec\};\wvec)\bigr].
+\]
+
+\begin{thmbox}[title={Properties of the MLE}]
+The maximum likelihood estimator is:
+\begin{itemize}
+  \item \textbf{Invariant under reparameterization:} if $\hat{\wvec}$ is the MLE of
+        $\wvec$, then $f(\hat{\wvec})$ is the MLE of $f(\wvec)$ for any function $f$.
+  \item \textbf{Asymptotically unbiased and efficient:} for large $l$, the MLE achieves
+        the Cram\'{e}r-Rao lower bound, i.e.\ it has the smallest possible variance among
+        all unbiased estimators. It is asymptotically optimal.
+  \item \textbf{Asymptotically consistent:} $\what \to \wvec$ as $l \to \infty$.
+\end{itemize}
+\end{thmbox}
+
+\begin{notebox}[title={MLE caveats}]
+MLE can overfit for small datasets (it uses no prior information).
+For finite $l$, MLE may be biased: the classic example is the MLE of the variance of a
+Gaussian, $\hat{\sigma}^2 = \frac{1}{l}\sum(x_i - \bar{x})^2$, which underestimates
+the true variance (the unbiased estimator uses $l-1$).
+\end{notebox}
+
+
+\section{Expectation Maximization}
+\label{sec:em}
+
+Many generative models include \emph{latent (hidden) variables} $\uvec$ that are not
+directly observed.
+The marginal likelihood then requires integrating over all latent configurations:
+\[
+  p(\xvec;\wvec) = \int_U p_{\uvec}(\uvec)\,\delta\!\bigl(\xvec = g(\uvec;\wvec)\bigr)\dd\uvec.
+\]
+This integral is in general intractable due to:
+\begin{itemize}
+  \item hidden states (discrete or continuous latent variables),
+  \item many-to-one output mappings ($g$ is not injective),
+  \item non-linearities in $g$.
+\end{itemize}
+
+The \textbf{Expectation Maximization (EM)} algorithm circumvents this by working with
+the \emph{joint} distribution $p(\xvec, \uvec;\wvec)$, which is easier to handle, and
+by constructing a tractable lower bound on the log-likelihood.
+
+\paragraph{Derivation of the lower bound}
+Introduce an arbitrary distribution $Q(\uvec \given \{\xvec\})$ over latent variables.
+Apply Jensen's inequality to the concave logarithm:
+\begin{align*}
+  \ln \lhood(\{\xvec\};\wvec)
+  &= \ln \int_U p(\{\xvec\},\uvec;\wvec)\,\dd\uvec \\
+  &= \ln \int_U Q(\uvec \given \{\xvec\})\,
+     \frac{p(\{\xvec\},\uvec;\wvec)}{Q(\uvec \given \{\xvec\})}\,\dd\uvec \\
+  &\geq \int_U Q(\uvec \given \{\xvec\})\,
+     \ln\frac{p(\{\xvec\},\uvec;\wvec)}{Q(\uvec \given \{\xvec\})}\,\dd\uvec
+  \;\eqdef\; \Fbound(Q,\wvec).
+\end{align*}
+$\Fbound(Q,\wvec)$ is the \textbf{free energy} (ELBO: evidence lower bound).
+
+\begin{thmbox}[title={EM Algorithm}]
+EM alternates between two steps until convergence:
+\begin{align*}
+  \textbf{E-step:} \quad & Q_{k+1} = \argmax_{Q}\; \Fbound(Q,\wvec_k)
+    \quad \Rightarrow \quad Q_{k+1} = p(\uvec \given \{\xvec\};\wvec_k) \\[4pt]
+  \textbf{M-step:} \quad & \wvec_{k+1} = \argmax_{\wvec}\; \Fbound(Q_{k+1},\wvec)
+\end{align*}
+\end{thmbox}
+
+\paragraph{Monotone convergence}
+Both steps can only increase (or leave unchanged) the lower bound $\Fbound$.
+The E-step tightens the bound: at the beginning of the M-step,
+$\Fbound(Q_{k+1},\wvec_k) = \ln\lhood(\{\xvec\};\wvec_k)$ (the bound is tight).
+The M-step then increases $\Fbound$, which implies:
+\[
+  \ln\lhood(\{\xvec\};\wvec_k) \;\leq\; \Fbound(Q_{k+1},\wvec_{k+1}) \;\leq\; \ln\lhood(\{\xvec\};\wvec_{k+1}).
+\]
+Therefore the log-likelihood is guaranteed to be non-decreasing at every EM iteration.
+
+\begin{intbox}
+  The E-step does not change model parameters --- it only updates the posterior
+  distribution over latent variables. The M-step maximizes the expected complete-data
+  log-likelihood, which for exponential family models has a closed-form solution.
+  EM converges to a local maximum (not necessarily global).
+\end{intbox}
+
+EM is applied throughout this course: Baum-Welch algorithm for HMMs, fitting Gaussian
+mixtures, factor analysis, and (soft) ICA variants.
+
+
+\section{Maximum Entropy}
+\label{sec:maxent}
+
+\begin{defbox}[title={Shannon Entropy (discrete case)}]
+For a discrete distribution $(p_1, p_2, \ldots)$:
+\[
+  H = -\sum_{k \geq 1} p_k \log p_k,
+  \qquad \text{with the convention } 0 \cdot \log 0 = 0.
+\]
+\end{defbox}
+
+The \textbf{principle of maximum entropy} (Jaynes, 1957) states: among all distributions
+consistent with the available constraints (e.g.\ known moments), choose the one with
+\emph{maximum entropy}.
+This distribution:
+\begin{itemize}
+  \item makes the minimal assumptions beyond the stated constraints,
+  \item corresponds to the most likely empirical distribution that could give rise to the
+        observed features,
+  \item connects statistical mechanics (thermodynamic equilibrium) and information theory.
+\end{itemize}
+
+\begin{notebox}[title={Existence caveat}]
+Not every class of distributions contains a maximum entropy member.
+For example, the class of all distributions with a given mean has arbitrarily large
+entropy (entropy can be pushed to $\infty$).
+The class of distributions with mean zero, second moment one, and third moment one has
+entropy bounded from above but the supremum is not attained.
+\end{notebox}
+
+\paragraph{Maximum entropy with moment constraints}
+Given moment constraints $\sum_{i=1}^n p(x_i)\,f_k(x_i) = F_k$ for $k=1,\ldots,m$
+and normalization $\sum_{i=1}^n p(x_i) = 1$, the maximum entropy solution is the
+\textbf{Gibbs distribution}:
+
+\begin{thmbox}[title={Gibbs Distribution (MaxEnt Solution)}]
+\[
+  p(x_i) = \frac{1}{Z(\lambda_1,\ldots,\lambda_m)}
+  \exp\!\bigl(\lambda_1 f_1(x_i) + \cdots + \lambda_m f_m(x_i)\bigr),
+\]
+with \textbf{partition function}
+\[
+  Z(\lambda_1,\ldots,\lambda_m) = \sum_{i=1}^n \exp\!\bigl(\lambda_1 f_1(x_i) + \cdots + \lambda_m f_m(x_i)\bigr).
+\]
+The Lagrange multipliers $\lambda_k$ are determined by the constraint equations:
+\[
+  F_k = \pd{}{\lambda_k} \log Z(\lambda_1,\ldots,\lambda_m), \qquad k = 1,\ldots,m.
+\]
+\end{thmbox}
+
+\begin{exbox}[title={Standard MaxEnt examples}]
+\begin{itemize}
+  \item \textbf{Normal distribution:} maximum entropy distribution given fixed mean and
+        variance. Constraints: $\E[X] = \mu$ and $\E[X^2] = \mu^2 + \sigma^2$.
+  \item \textbf{Uniform distribution:} maximum entropy on a bounded interval $[a,b]$.
+        Only constraint: support.
+  \item \textbf{Exponential distribution:} maximum entropy on $[0,\infty)$ given fixed mean.
+        Constraint: $\E[X] = 1/\lambda$.
+\end{itemize}
+\end{exbox}
+
+\begin{intbox}
+  The MaxEnt principle explains why Gaussian distributions appear so frequently in
+  nature: they are the maximum entropy distributions for processes with finite variance.
+  Any physical system evolving under energy constraints (finite second moment) will
+  converge to a Gaussian-like distribution.
+  In ICA, maximizing entropy of a nonlinear transform of the data is equivalent to
+  maximizing likelihood of an independent-component model (INFOMAX).
+\end{intbox}
+
+
+% ==========================================================
+\chapter{Principal Component Analysis}
+% ==========================================================
+
+\section{The Method}
+
+Let the data matrix be $\bm{X} \in \R^{n \times m}$, where $n$ is the number of samples
+and $m$ is the number of features (the rows $\bm{x}_i \in \R^m$ are centered so that
+$\sum_i \bm{x}_i = \bm{0}$).
+
+The \textbf{sample covariance matrix} is
+\[
+  \bm{C} = \frac{1}{n}\bm{X}\T\bm{X} \in \R^{m \times m}.
+\]
+Its eigendecomposition $\bm{C} = \frac{1}{n}\bm{U}\bm{D}_m\bm{U}\T$ yields an orthogonal
+matrix $\bm{U}$ whose columns $\bm{u}_k$ are the principal directions (\emph{loadings}),
+and a diagonal matrix $\bm{D}_m = \mathrm{diag}(\lambda_1,\ldots,\lambda_m)$ of
+eigenvalues sorted in decreasing order.
+
+The \textbf{SVD} of $\bm{X}$ gives the same result: $\bm{X} = \bm{V}\bm{D}\bm{U}\T$
+with $\bm{V} \in \R^{n \times n}$, $\bm{D} \in \R^{n \times m}$ diagonal, and
+$\bm{U} \in \R^{m \times m}$ orthogonal.
+The eigenvalues of $\bm{C}$ are $\lambda_k = d_k^2/n$ where $d_k$ are the singular values.
+
+\begin{defbox}[title={PCA Projection}]
+The \textbf{principal component scores} (projections) are collected in
+\[
+  \bm{Y} = \bm{X}\bm{U} = \bm{V}\bm{D} \in \R^{n \times m}.
+\]
+The $k$-th column $\bm{y}_k = \bm{X}\bm{u}_k$ is the projection of all data points
+onto the $k$-th principal direction.
+The original data can be reconstructed as the outer product sum
+\[
+  \bm{X} = \sum_{k=1}^{m} \bm{y}_k \bm{u}_k\T.
+\]
+\end{defbox}
+
+\paragraph{Online learning: Oja's rule}
+A single-component PCA can be learned online (one sample at a time) using
+\textbf{Oja's rule}:
+\[
+  \bm{u}^{\mathrm{new}} = \bm{u} + \eta\bigl(t\,\bm{x} - t^2\,\bm{u}\bigr),
+  \qquad t = \bm{u}\T\bm{x}.
+\]
+This is a fixed-point iteration analogous to the power method.
+
+
+\section{Variance Maximization}
+
+PCA can be motivated as the projection that maximizes the variance of the projected data.
+
+The first principal direction solves
+\[
+  \bm{u}_1 = \argmax_{\|\bm{u}\|=1} \sum_{i=1}^{n}(\bm{u}\T\bm{x}_i)^2
+  = \argmax_{\|\bm{u}\|=1} \bm{u}\T\bm{C}\bm{u}.
+\]
+
+\begin{thmbox}[title={Variance Maximization Solution}]
+Using the eigendecomposition $\bm{C} = \sum_k \lambda_k \bm{u}_k\bm{u}_k\T$ and writing
+$\bm{u} = \sum_k a_k \bm{u}_k$, the objective becomes
+$\bm{u}\T\bm{C}\bm{u} = \sum_k a_k^2 \lambda_k$ subject to $\sum_k a_k^2 = 1$.
+This is maximized by $a_1 = 1$, all others zero:
+\[
+  \bm{u}_1 = \text{eigenvector of } \bm{C} \text{ with largest eigenvalue } \lambda_1.
+\]
+The $k$-th principal direction is the direction of maximal variance \emph{orthogonal} to
+all previous $k-1$ directions.
+The variance explained by the $k$-th component equals $\lambda_k$.
+\end{thmbox}
+
+
+\section{Uniqueness}
+
+PCA is \textbf{unique up to sign flips} of the principal directions, provided all
+eigenvalues are distinct.
+If two or more eigenvalues are equal (degenerate case), the corresponding eigenvectors
+span a subspace but their individual directions are arbitrary; any orthonormal basis
+of that subspace is equally valid.
+
+\begin{notebox}[title={Zero eigenvalue}]
+At most one eigenvalue can be zero (a zero eigenvalue means the data lies in a
+lower-dimensional affine subspace; in that case the corresponding feature can be dropped
+before running PCA).
+\end{notebox}
+
+
+\section{Properties of PCA}
+\label{sec:pca-properties}
+
+Let $\bm{y}^{(i)} = \bm{U}\T\bm{x}_i$ be the projection of sample $i$.
+
+\begin{thmbox}[title={Key Properties of PCA Projections}]
+\begin{itemize}
+  \item \textbf{Zero mean:} $\sum_i y_k^{(i)} = 0$ for all $k$ (because the data are centered).
+  \item \textbf{Uncorrelated:} $\mathrm{Cov}(y_k, y_l) = 0$ for $k \neq l$
+        (follows from orthogonality of $\bm{U}$).
+  \item \textbf{Variance:} $\mathrm{Var}(y_k) = \lambda_k$ (the $k$-th eigenvalue).
+  \item \textbf{Optimal reconstruction:} truncating to the first $l$ components gives
+        the best rank-$l$ approximation in terms of MSE:
+        \[
+          \mathrm{MSE}_l = \sum_{k=l+1}^{m} \lambda_k.
+        \]
+  \item \textbf{Fraction of variance} explained by the first $l$ components:
+        $\frac{\sum_{k=1}^l \lambda_k}{\sum_{k=1}^m \lambda_k}$.
+\end{itemize}
+\end{thmbox}
+
+
+\section{Examples}
+
+\subsection{Iris Data Set}
+
+The Iris dataset has $n = 150$ samples (50 per species: \textit{setosa}, \textit{versicolor},
+\textit{virginica}) and $m = 4$ features (sepal length, sepal width, petal length, petal width).
+
+PC1 accounts for approximately \textbf{92\% of variance} and is the only component that
+separates the three species.
+Pairwise scatter plots of all four PCs show that only plots involving PC1 reveal a
+clear three-group structure; all other pairs (PC2 vs.\ PC3, etc.)\ show no meaningful
+separation.
+This tells us the discriminative signal is essentially one-dimensional.
+
+\subsection{Multiple Tissue Data Set}
+
+This microarray dataset contains expression values for 5{,}565 genes across 102 samples
+from four human tissue types: \textbf{breast} (Br), \textbf{prostate} (Pr),
+\textbf{lung} (Lu), and \textbf{colon} (Co).
+
+Applied to all genes simultaneously:
+\begin{itemize}
+  \item PC1 (5\% variance) separates prostate from the rest.
+  \item PC2 (3\%) separates colon and also breast samples.
+  \item PC3 (3\%) partially separates lung.
+\end{itemize}
+
+\paragraph{Variance filtering}
+Selecting only the top-variance genes before PCA is justified for microarray data
+(most genes are essentially constant noise).
+Three filtered subsets were compared:
+\begin{itemize}
+  \item \textbf{101 genes} (highest variance, XMultiF1): PC1 (36\%) separates prostate;
+        PC2 (14\%) separates colon; PC3 (8\%) separates breast and lung.
+        Much cleaner separation than the full set.
+  \item \textbf{13 genes} (XMultiF2, 57\% PC1): similar tissue-level separation.
+  \item \textbf{5 genes} (XMultiF3, 77\% PC1): still separates prostate clearly but
+        other tissues become hard to distinguish.
+        Inspection reveals 4 of the 5 selected genes are highly correlated (ACPP, KLK2,
+        MSMB, TRGC2 --- all prostate-related; KRT5 is not).
+\end{itemize}
+
+\paragraph{Gene clustering}
+Applying hierarchical clustering with correlation as distance metric, then selecting the
+gene with maximal variance per cluster (\textbf{92 uncorrelated genes of maximal variance})
+gives very similar results to variance-based filtering.
+The approach ensures genes are not redundant (correlated genes contribute the same
+information to PCA) while still selecting high-variance representatives.
+
+
+\section{Kernel Principal Component Analysis}
+
+\subsection{The Method}
+
+\textbf{Kernel PCA} (KPCA) extends PCA to nonlinear projections by performing the
+linear operations of PCA inside a \emph{reproducing kernel Hilbert space} (RKHS), to
+which the data are first mapped non-linearly:
+\[
+  \bm{x} \;\mapsto\; \Phi(\bm{x}).
+\]
+
+Assuming the mapped data are centered ($\sum_i \Phi(\bm{x}_i) = \bm{0}$), the
+covariance in feature space is
+$\bm{C} = \frac{1}{n}\sum_i \Phi(\bm{x}_i)\Phi(\bm{x}_i)\T$,
+and the Gram (kernel) matrix has entries $K_{ij} = \Phi(\bm{x}_j)\T\Phi(\bm{x}_i) = k(\bm{x}_i,\bm{x}_j)$.
+
+The eigenvalue problem $\bm{C}\bm{w} = \lambda\bm{w}$ cannot be solved in feature space
+directly (we only have $K_{ij}$), but the solution must lie in the span of the mapped
+data:
+\[
+  \bm{w} = \sum_{i=1}^n \alpha_i\,\Phi(\bm{x}_i).
+\]
+Substituting and using $K_{ij}$ yields the \textbf{kernel eigenvalue problem}:
+\[
+  n\lambda\,\bm{K}\bm{\alpha} = \bm{K}^2\bm{\alpha}
+  \;\;\Rightarrow\;\;
+  n\lambda\,\bm{\alpha} = \bm{K}\bm{\alpha}.
+\]
+Normalization $\|\bm{w}\|=1$ requires $\|\bm{\alpha}\| = 1/\sqrt{\tilde\lambda}$ where
+$\tilde\lambda = n\lambda$, so
+\[
+  \bm{\alpha} = \frac{\tilde{\bm{\alpha}}}{\sqrt{\tilde\lambda}}.
+\]
+
+The projection of a new point $\bm{x}$ onto a kernel principal direction is then
+\[
+  \bm{w}\T\Phi(\bm{x}) = \sum_{i=1}^n \alpha_i\,k(\bm{x}_i,\bm{x}).
+\]
+
+\begin{thmbox}[title={Kernel PCA Algorithm}]
+\begin{enumerate}
+  \item \textbf{Center} the Gram matrix:
+        $\tilde{\bm{K}} = \bm{K} - \frac{1}{n}\bm{K}\bm{1}\bm{1}\T - \frac{1}{n}\bm{1}\bm{1}\T\bm{K} + \frac{1}{n^2}(\bm{1}\T\bm{K}\bm{1})\bm{1}\bm{1}\T$.
+  \item \textbf{Eigenvalues}: compute eigenvectors $\bm{\alpha}$ and eigenvalues
+        $\tilde\lambda$ of $\tilde{\bm{K}}$.
+  \item \textbf{Normalize}: $\alpha_i^{\mathrm{new}} = \alpha_i/(\|\bm{\alpha}\|\sqrt{n\lambda})$.
+  \item \textbf{Project} a new vector $\bm{x}$: center its kernel vector and compute
+        $\bm{w}\T\Phi(\bm{x}) = \sum_i \alpha_i\,k(\bm{x}_i,\bm{x})$.
+\end{enumerate}
+\end{thmbox}
+
+\begin{intbox}
+  Kernel PCA can detect nonlinear structure that linear PCA misses.
+  For example, concentric rings are linearly inseparable but perfectly separable in
+  the RKHS of an RBF kernel.
+  The price is that the representation depends on all training points (no compact weight
+  vector $\bm{u}$), and choosing the right kernel function requires domain knowledge.
+\end{intbox}
+
+
+% ==========================================================
+\chapter{Independent Component Analysis}
+% ==========================================================
+
+Independent component analysis (ICA) seeks a representation of the data as a linear
+mixture of \textbf{statistically independent} non-Gaussian sources.
+
+\begin{defbox}[title={ICA Model}]
+\textbf{Generative (mixing) model:}
+\[
+  \bm{x} = \bm{U}\,\bm{y}, \qquad p(\bm{y}) = \prod_{j=1}^l p(y_j).
+\]
+$\bm{U} \in \R^{m \times l}$ is the mixing matrix; the sources $y_j$ are statistically
+independent.
+
+\textbf{Descriptive (demixing) model:}
+\[
+  \bm{y} = \bm{W}\,\bm{x}, \qquad \bm{W} = \bm{U}^{-1}
+  \quad (\text{for } l = m).
+\]
+Matrix form: $\bm{X} = \bm{Y}\bm{U}\T$, with $\bm{Y}\T\bm{Y} = \bm{D}_m$ (decorrelated,
+and in fact statistically independent).
+Unlike PCA, $\bm{U}$ is \textbf{not required to be orthogonal}.
+\end{defbox}
+
+The canonical motivation is \textbf{blind source separation}: two speakers talk
+simultaneously; multiple microphones record linear mixtures of the two voices.
+ICA recovers the original signals from the mixtures without knowing the mixing matrix.
+
+
+\section{Identifiability and Uniqueness}
+\label{sec:ica-uniqueness}
+
+The ICA solution is generally \textbf{not fully unique}: $\bm{x} = \bm{U}\bm{P}^{-1}\bm{P}\bm{y}$
+gives another valid decomposition for any invertible $\bm{P}$.
+However, if $\bm{P}$ cannot mix the statistically independent components of $\bm{y}$,
+then $\bm{P}$ must be a product of a permutation matrix and a diagonal scaling matrix.
+
+\begin{thmbox}[title={Darmois' Theorem (1953) --- ICA Identifiability}]
+Define $x_1 = \sum_j a_j y_j$ and $x_2 = \sum_j b_j y_j$ where $y_j$ are independent
+random variables.
+If $x_1$ and $x_2$ are independent, then all $y_j$ for which $a_j b_j \neq 0$ are
+\emph{Gaussian}.
+
+\medskip
+Consequence: for \textbf{non-Gaussian sources}, the ICA solution is unique up to
+permutation and scaling.
+The Gaussian case is the only exception.
+\end{thmbox}
+
+\paragraph{ICA assumptions}
+\begin{itemize}
+  \item Sources are \textbf{non-Gaussian} (at most one source can be Gaussian).
+  \item $l \leq m$ (at least as many observations as sources).
+  \item $\bm{U}$ has full rank $l$.
+\end{itemize}
+Source densities $p(y_i)$ are typically approximated by super-Gaussian or unimodal
+distributions (generative framework).
+
+\paragraph{Two criteria for independence}
+\begin{enumerate}
+  \item \textbf{Mutual information} between components.
+  \item \textbf{Non-Gaussianity} of components.
+\end{enumerate}
+
+
+\section{Measuring Independence}
+
+\subsection{Mutual Information}
+
+The \textbf{mutual information} of a vector-valued random variable measures how far the
+joint distribution is from a factorial (product) distribution:
+\[
+  I(y_1,\ldots,y_l) = \sum_{j=1}^l H(y_j) - H(\bm{y}),
+\]
+where $H(\bm{a}) = -\int p(\bm{a})\ln p(\bm{a})\dd\bm{a}$ is the (differential) entropy.
+$I \geq 0$, with equality if and only if all components are statistically independent.
+
+For the linear demixing $\bm{y} = \bm{W}\bm{x}$, using the change-of-variables formula
+$p(\bm{y}) = p(\bm{x})/|\bm{W}|$:
+\[
+  I(y_1,\ldots,y_m) = \sum_{j=1}^m H(y_j) - H(\bm{x}) - \ln|\bm{W}|.
+\]
+Since $H(\bm{x})$ is constant in $\bm{W}$, minimizing mutual information amounts to
+maximizing $\ln|\bm{W}| - \sum_j H(y_j)$, which is the ICA objective.
+
+\subsection{Non-Gaussianity}
+
+\paragraph{Negentropy}
+The \textbf{negentropy} measures how non-Gaussian a distribution is:
+\[
+  J(\bm{y}) = H(\bm{y}_{\mathrm{gauss}}) - H(\bm{y}),
+\]
+where $\bm{y}_{\mathrm{gauss}}$ is a Gaussian with the same covariance as $\bm{y}$.
+$J \geq 0$ (Gaussian has maximum entropy for fixed variance); maximizing negentropy
+minimizes mutual information.
+Direct estimation of negentropy is difficult in practice.
+
+\paragraph{Kurtosis}
+Non-Gaussianity can be quantified via cumulants, in particular the
+\textbf{kurtosis} (fourth cumulant):
+\[
+  \kappa_4 = \E(x^4) - 3\bigl(\E(x^2)\bigr)^2.
+\]
+For a Gaussian, $\kappa_3 = \kappa_4 = 0$.
+\begin{itemize}
+  \item $\kappa_4 > 0$: \textbf{super-Gaussian} (heavier tails than Gaussian, e.g.\
+        Laplace distribution).
+  \item $\kappa_4 < 0$: \textbf{sub-Gaussian} (lighter tails, e.g.\ uniform distribution).
+\end{itemize}
+Key properties:
+\begin{itemize}
+  \item Additivity: $\kappa_4(x_1 + x_2) = \kappa_4(x_1) + \kappa_4(x_2)$ for
+        independent $x_1, x_2$.
+  \item Scaling: $\kappa_4(\alpha x) = \alpha^4 \kappa_4(x)$.
+  \item Mixing \emph{reduces} kurtosis toward zero (towards Gaussian by CLT).
+        Therefore \textbf{maximizing kurtosis} recovers the unmixed sources.
+\end{itemize}
+Kurtosis is not robust: as a fourth-order moment, it is heavily influenced by outliers.
+
+\paragraph{Sparseness}
+Maximizing kurtosis is equivalent to maximizing \textbf{sparseness}: a sparse variable
+is almost always near zero but occasionally takes large values (relative to a Gaussian
+with the same variance).
+Sparseness does \emph{not} imply small variance.
+
+\paragraph{Contrast functions}
+Several contrast functions are used in practice to measure non-Gaussianity:
+\begin{itemize}
+  \item Kurtosis: $\kappa_4(y)$.
+  \item Mixed cumulants: $\frac{1}{12}\kappa_3^2(y) + \frac{1}{48}\kappa_4^2(y)$
+        (normalized to zero mean, unit variance).
+  \item $\left|\E_y[G(y)] - \E_\nu[G(\nu)]\right|^p$ where $\nu$ is a standard Gaussian
+        and $G$ is a nonlinearity; robust choices include
+        $G(x) = \log\cosh(ax)$ and $G(x) = \exp(-ax^2/2)$ with $a \geq 1$.
+\end{itemize}
+
+
+\section{Whitening and Rotation Algorithms}
+
+ICA is not unique up to scaling, so the standard approach is to first remove the
+scaling ambiguity by \textbf{whitening} (also called sphering), then find an
+orthogonal \textbf{rotation} that maximizes non-Gaussianity.
+
+\textbf{Whitened} data satisfies $\bm{Y}\T\bm{Y} = \bm{I}$.
+Starting from $\bm{X} = \bm{Y}\bm{U}\T$ with $\bm{C} = \frac{1}{n}\bm{X}\T\bm{X}$:
+\[
+  \bm{I} = \bm{C}^{-1/2}\,\frac{1}{n}\bm{X}\T\bm{X}\,\bm{C}^{-1/2}
+  = \frac{1}{n}\bm{C}^{-1/2}\bm{U}\,\bm{Y}\T\bm{Y}\,\bm{U}\T\bm{C}^{-1/2}.
+\]
+This means $\hat{\bm{U}} = \frac{1}{\sqrt{n}}\bm{C}^{-1/2}\bm{U}$ is orthogonal, and
+the ICA solution decomposes as:
+\[
+  \bm{Y} = \frac{1}{\sqrt{n}}\,\bm{X}\,\bm{C}^{-1/2}\,\hat{\bm{U}}.
+\]
+The two-step procedure is:
+\begin{enumerate}
+  \item \textbf{Whiten:} compute $\tilde{\bm{X}} = \bm{X}\bm{C}^{-1/2}$.
+  \item \textbf{Rotate:} find the orthogonal matrix $\hat{\bm{U}}$ that maximizes
+        the contrast function (super-Gaussianity / sparseness).
+\end{enumerate}
+
+
+\section{INFOMAX Algorithm}
+
+\textbf{INFOMAX} (Bell \& Sejnowski, 1995) minimizes mutual information by maximizing
+the entropy of a nonlinear transform of $\bm{y}$:
+\[
+  \bm{y} = \bm{W}\bm{x}, \qquad
+  H(\bm{g}(\bm{y})) \text{ is maximized},
+  \quad \bm{g}(\bm{y}) = (g(y_1),\ldots,g(y_l))\T.
+\]
+At maximum entropy the mutual information $I(g(y_1),\ldots,g(y_l)) = 0$, so the
+components are independent.
+The nonlinearity $g$ is chosen to approximate the CDF of the source distribution;
+a common choice is $g(y_i) = \tanh(y_i)$ (super-Gaussian sources).
+
+The entropy expands as
+\[
+  H(\bm{g}(\bm{y})) \approx H(\bm{x}) + \frac{1}{n}\sum_{i=1}^n\sum_{j=1}^l
+  |\ln g'(y_{ij})| + \ln|\bm{W}|.
+\]
+
+\begin{thmbox}[title={INFOMAX Update Rules (Natural Gradient)}]
+\textbf{tanh} ($g(y_j) = \tanh(y_j)$):
+\[
+  \Delta\bm{W} \;\propto\; \bigl(\bm{I} - 2\,\bm{g}(\bm{y})\,\bm{y}\T\bigr)\bm{W}
+\]
+\textbf{sigmoid} ($g(y_j) = 1/(1+e^{-y_j})$):
+\[
+  \Delta\bm{W} \;\propto\; \bigl(\bm{I} + (1 - 2\,\bm{g}(\bm{y}))\,\bm{y}\T\bigr)\bm{W}
+\]
+INFOMAX is equivalent to a generative approach using \textbf{maximum likelihood}.
+\end{thmbox}
+
+\begin{intbox}
+  The natural gradient (premultiplication by $\bm{W}\T\bm{W}$) converts the
+  standard gradient $(\bm{W}\T)^{-1} \pm \ldots\bm{x}\T$ into the more elegant
+  update involving $\bm{y} = \bm{W}\bm{x}$.
+  It also makes the algorithm \emph{equivariant}: performance does not depend on the
+  scaling or conditioning of the input.
+\end{intbox}
+
+
+\section{EASI Algorithm}
+
+\textbf{EASI} (Equivariant Adaptive Separation via Independence, Cardoso \& Laheld, 1996)
+uses the update rule
+\[
+  \Delta\bm{W} \;\propto\; \bigl(\bm{I} - \bm{y}\bm{y}\T - \bm{g}(\bm{y})\bm{y}\T
+  + \bm{y}\,\bm{g}\T(\bm{y})\bigr)\bm{W},
+\]
+where $\bm{g}$ is the same class of contrast functions as in INFOMAX (tanh or sigmoid).
+EASI is designed for online learning and is also equivariant by construction.
+
+
+\section{FastICA Algorithm}
+
+\textbf{FastICA} (Hyvärinen, 1999) is probably the most widely used ICA algorithm.
+It is a \emph{fixed-point} iteration (analogous to Oja's rule for PCA) that maximizes
+non-Gaussianity as measured by a contrast function $g$ with derivative $g'$:
+
+\begin{thmbox}[title={FastICA Update}]
+\[
+  \bm{w}^{\mathrm{new}} = \E\bigl[\bm{x}\,g(\bm{w}\T\bm{x})\bigr]
+  - \E\bigl[g'(\bm{w}\T\bm{x})\bigr]\,\bm{w}.
+\]
+The new $\bm{w}^{\mathrm{new}}$ is then normalized to unit length.
+\end{thmbox}
+
+Key properties:
+\begin{itemize}
+  \item Whitening and rotation algorithm.
+  \item Generalizes kurtosis maximization to arbitrary contrast functions $g$.
+  \item Extended to extract multiple independent components simultaneously
+        (deflation or symmetric extraction).
+\end{itemize}
+
+
+\section{ICA Extensions}
+
+Beyond the basic square, invertible model several extensions exist:
+\begin{itemize}
+  \item \textbf{Generative approach:} assumptions on the source densities $p(y_i)$,
+        sub-Gaussian sources with specific priors.
+  \item \textbf{Non-linear ICA:} mixing function $\bm{x} = g(\bm{y})$ is nonlinear;
+        solutions are often not unique without additional constraints.
+  \item \textbf{Overcomplete ICA:} more sources than observations ($l > m$); the system
+        is underdetermined but useful for sparse representations of signals.
+  \item \textbf{Undercomplete ICA:} fewer sources than observations ($l < m$); reduces
+        to a lower-dimensional model.
+\end{itemize}
+
+
+\section{ICA vs.\ PCA}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{ll}
+  \toprule
+  \textbf{ICA} & \textbf{PCA} \\
+  \midrule
+  Seeks \emph{causes} of the data & Seeks \emph{geometrical abstractions} \\
+  Statistically independent components & Decorrelated (orthogonal) components \\
+  Explains super-Gaussian structure & Explains all variance \\
+  Scale invariant & Not scale invariant \\
+  Unique up to scaling and permutation & Unique (up to sign) \\
+  Assumes super-Gaussian sources & No distributional assumptions \\
+  Components not ranked & Components ranked by eigenvalue \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{intbox}
+  PCA gives the best linear dimensionality reduction in terms of MSE; ICA finds the
+  interpretation that is statistically most meaningful for independent source models.
+  For Gaussian data both methods give the same result (any rotation of decorrelated
+  Gaussians is equally independent), which is why ICA requires non-Gaussianity.
+\end{intbox}
+
+
+\section{Artificial ICA Examples}
+
+Starting with 1{,}000 points from two independent \textbf{uniform distributions}
+(uniform = sub-Gaussian, $\kappa_4 < 0$), the three processing stages can be visualized:
+
+\begin{enumerate}
+  \item \textbf{Original sources:} square-shaped scatter (axes-aligned).
+  \item \textbf{Mixing} ($\bm{X} = \bm{Y}\bm{U}\T$): the square is rotated and sheared
+        into a parallelogram/diamond shape --- the components are now dependent.
+  \item \textbf{Whitening} ($\bm{X}\bm{C}^{-1/2}$): the shape becomes circular
+        (unit covariance); correlation is removed but statistical dependence remains.
+  \item \textbf{Rotation} (ICA): the circle is aligned back to a square, recovering
+        the original independent sources.
+\end{enumerate}
+
+Both INFOMAX and FastICA recover the original square (up to permutation and sign).
+For super-Gaussian sources (Laplace distribution), the shape is a four-pointed star,
+and the same pipeline recovers it correctly.
+
+
+\section{Real World ICA Examples}
+
+\subsection{Iris Data Set}
+
+On the Iris data, ICs are \textbf{ordered by their impact on the observations}
+(column norms of the mixing matrix $\bm{U}$), \emph{not} by variance.
+The first independent component explains approximately 90\% of the variance in the
+data and likely encodes the \emph{size of the blossom} (a single dominant biological
+factor).
+Unlike PCA, ICA does not guarantee components are ranked by variance.
+
+\subsection{Multiple Tissue Data Set}
+
+Applied to the multiple tissue microarray data (102 samples, 4 tissue types), the
+first three ICs provide biologically meaningful separations:
+\begin{itemize}
+  \item \textbf{IC1} (29\% variance): separates \emph{secretory/reproductive} tissue
+        (prostate and breast) from \emph{internal organ} tissue (colon and lung) ---
+        a biologically interpretable axis.
+  \item \textbf{IC2} (28\%): separates prostate + lung from breast + colon.
+  \item \textbf{IC3} (27\%): separates prostate + colon from breast + lung.
+  \item All combinations of the first three ICs yield clean separations except for
+        partial overlap between breast and lung samples.
+\end{itemize}
+Genes most correlated to IC1 include SERPINA7, LAMB3, \textbf{AR}, CCNG2, KLF5, CCL20,
+SLC39A14, ATP1B1, GSTP1, LAD1.
+The \textbf{androgen receptor} (AR) is the 3rd most related gene to IC1 --- consistent
+with IC1 separating reproductive/secretory tissues, since androgen signaling drives
+prostate gland differentiation and also plays a role in normal breast physiology.
+
+
+\section{Kurtosis Maximization Results in Independent Components}
+
+The theoretical justification for kurtosis-based ICA rests on a key inequality:
+the kurtosis of a linear mixture of independent variables is always less than or equal
+to the \emph{maximum} kurtosis of the individual sources.
+Formally, for $x = \bm{a}\T\bm{y}$ with $\|\bm{a}\| = 1$ and $y_j$ independent:
+\[
+  \kappa_4(x) = \sum_j a_j^4\,\kappa_4(y_j) \;\leq\; \max_j |\kappa_4(y_j)|.
+\]
+Equality holds when one $|a_j| = 1$ and all others are zero --- i.e.\ when the
+projection aligns exactly with one source.
+Therefore \textbf{maximizing $|\kappa_4|$ over all unit-norm projections recovers a
+single source component}.
+Iterating (deflating each recovered component) separates all sources.
+
+\begin{notebox}[title={Limitations of kurtosis}]
+Because kurtosis involves fourth moments, it is sensitive to outliers: a single
+extreme data point can dominate the estimate.
+More robust contrast functions such as $G(x) = \log\cosh(x)$ (used in FastICA) are
+preferred in practice when outliers are expected.
+\end{notebox}
+
+
+% ==========================================================
+\chapter{Factor Analysis}
+% ==========================================================
+
+\section{The Factor Analysis Model}
+
+% TODO
+
+\section{Maximum Likelihood Factor Analysis}
+
+% TODO
+
+\section{Factor Analysis vs.\ PCA and ICA}
+
+% TODO
+
+\section{Artificial Factor Analysis Examples}
+
+% TODO
+
+\section{Real World Factor Analysis Examples}
+
+\subsection{Iris Data Set}
+
+% TODO
+
+\subsection{Multiple Tissue Data Set}
+
+% TODO
+
+
+% ==========================================================
+\chapter{Scaling and Projection Methods}
+% ==========================================================
+
+\section{Projection Pursuit}
+
+% TODO
+
+\section{Multidimensional Scaling}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{Non-negative Matrix Factorization}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{Locally Linear Embedding}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{Isomap}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{The Generative Topographic Mapping}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{\textit{t}-Distributed Stochastic Neighbor Embedding}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{Self-Organizing Maps}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+
+% ==========================================================
+\chapter{Clustering}
+% ==========================================================
+
+\section{Mixture Models}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Mixture of Gaussians}
+
+% TODO
+
+\subsection{Mixture of Poissons}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{\textit{k}-Means Clustering}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{Hierarchical Clustering}
+
+\subsection{The Method}
+
+% TODO
+
+\subsection{Examples}
+
+% TODO
+
+\section{Similarity-Based Clustering}
+
+\subsection{Aspect Model}
+
+% TODO
+
+\subsection{Affinity Propagation}
+
+\subsubsection{The Method}
+
+% TODO
+
+\subsubsection{Examples}
+
+% TODO
+
+\subsection{Similarity-based Mixture Models}
+
+\subsubsection{Similarity-based Mixture of Gaussians}
+
+% TODO
+
+\subsubsection{Representing the Centers}
+
+% TODO
+
+\subsubsection{Update Rules}
+
+% TODO
+
+\subsubsection{Examples}
+
+% TODO
+
+
+% ==========================================================
+\chapter{Biclustering}
+% ==========================================================
+
+\section{Types of Biclusters}
+
+% TODO
+
+\section{Overview of Biclustering Methods}
+
+% TODO
+
+\section{FABIA Biclustering}
+
+% TODO
+
+\section{Examples}
+
+% TODO
+
+
+% ==========================================================
+\chapter{Hidden Markov Models}
+% ==========================================================
+
+\section{Hidden Markov Models in Bioinformatics}
+
+% TODO
+
+\section{Hidden Markov Model Basics}
+
+% TODO
+
+\section{Expectation Maximization for HMM: Baum-Welch Algorithm}
+
+% TODO
+
+\section{Viterbi Algorithm}
+
+% TODO
+
+\section{Input Output Hidden Markov Models}
+
+% TODO
+
+\section{Factorial Hidden Markov Models}
+
+% TODO
+
+\section{Memory Input Output Factorial Hidden Markov Models}
+
+% TODO
+
+\section{Tricks of the Trade}
+
+% TODO
+
+\section{Profile Hidden Markov Models}
+
+% TODO
+
+
+% ==========================================================
+\chapter{Boltzmann Machines}
+% ==========================================================
+
+\section{The Boltzmann Machine}
+
+% TODO
+
+\section{Learning in the Boltzmann Machine}
+
+% TODO
+
+\section{The Restricted Boltzmann Machine}
+
+% TODO
+
+
+\end{document}
