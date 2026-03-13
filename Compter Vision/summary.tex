@@ -796,7 +796,7 @@ compare to the detected pixel $\vct{p}_i$, and minimize:
 \min_{\mat{K},\,\text{dist},\,\{\mat{R}_j,\vct{t}_j\}}
 \sum_{j}\sum_{i}\norm{\vct{p}_{i,j} - \pi(\mat{K},\text{dist},\mat{R}_j,\vct{t}_j;\vct{P}_i)}^2.
 \]
-\end{thmbox>
+\end{thmbox}
 
 Calibration quality is often judged by the final RMS reprojection error (smaller is better),
 interpreted together with image resolution and corner detection accuracy.
@@ -864,7 +864,7 @@ y[m,n] = \sum_{k,l} x[m+k,n+l]\;h[k,l].
 (y = x * h)\quad\Rightarrow\quad
 y[m,n] = \sum_{k,l} x[m+k,n+l]\;h[-k,-l].
 \]
-\end{defbox>
+\end{defbox}
 
 Many CV libraries implement ``convolution'' routines that actually compute correlation
 (because the kernel is learned or defined accordingly). Always check the convention.
@@ -1172,7 +1172,7 @@ Sliding the same filter over the whole image gives \textbf{translation equivaria
   \item \textbf{Pooling (e.g., max-pool):} downsamples feature maps; increases robustness to small translations,
   reduces computation, and increases receptive field.
 \end{itemize}
-\end{defbox>
+\end{defbox}
 
 \begin{itemize}
   \item \textbf{Stride:} step size of the kernel; larger stride produces downsampling.
@@ -1310,7 +1310,7 @@ The output is a label per pixel (a mask).
   \item \textbf{Instance segmentation:} separates \emph{individual object instances} (car \#1 vs.\ car \#2).
   \item \textbf{Panoptic segmentation:} combines both: semantic classes \emph{and} instance IDs where applicable.
 \end{itemize}
-\end{defbox>
+\end{defbox}
 
 Classification has no spatial extent; detection outputs boxes; segmentation outputs pixel masks.
 Do not confuse \emph{semantic segmentation} (pixel-wise class labels) with \emph{instance segmentation} (separate object IDs) --- a common exam pitfall.
@@ -1351,7 +1351,7 @@ Typical failure modes: must choose $k$ in advance; sensitive to initialization (
 \begin{defbox}[title={Graph-Based Segmentation}]
 Build a graph $G=(V,E)$ where nodes are pixels (or superpixels) and edges connect neighbors with affinity weights
 encoding similarity. Affinity weight $a_{ij}$ is large if pixels are similar in color and close in space.
-\end{defbox>
+\end{defbox}
 
 \subsection{Spectral Clustering}
 
@@ -1440,7 +1440,7 @@ no downsampling (expensive) or encoder--decoder (downsample then upsample).
 \begin{defbox}[title={U-Net}]
 Plain encoder--decoder (autoencoder) can produce blurry or imprecise boundaries because fine spatial detail is lost.
 \textbf{U-Net} improves this via \textbf{skip connections} that pass high-resolution encoder features directly to the decoder.
-\end{defbox>
+\end{defbox}
 
 Skip connections let the decoder combine: \textbf{(i)} global semantic understanding (deep, low-resolution features)
 with \textbf{(ii)} local detail (shallow, high-resolution features), yielding sharper masks.
@@ -1726,7 +1726,7 @@ A better detector has a curve closer to the top-right corner (high precision at 
 \begin{defbox}[title={AP and mAP}]
 \textbf{Average Precision (AP)} is the area under the Precision--Recall curve for a class.
 \textbf{mAP} is the mean AP over all classes (and sometimes over multiple IoU thresholds).
-\end{defbox>
+\end{defbox}
 
 \section{Vision Transformers}
 
@@ -1879,7 +1879,7 @@ where $Z$ is depth, $f$ is focal length, $B$ is baseline (camera separation), an
 \begin{defbox}[title={Sparse vs.\ Dense Stereo}]
 \textbf{Sparse stereo:} compute depth only at matched keypoints (robust, low density).
 \textbf{Dense stereo:} estimate depth for (almost) every pixel using matching costs and regularization.
-\end{defbox>
+\end{defbox}
 
 Dense stereo struggles in textureless regions, repetitive patterns, and at occlusion boundaries.
 
@@ -1899,7 +1899,7 @@ where the extra $+9$ reflects the inherent $3\times3$ affine ambiguity in factor
 \[
 \text{detect/match features} \rightarrow \text{estimate relative motion} \rightarrow \text{triangulate} \rightarrow \text{refine (bundle adjustment)}.
 \]
-\end{defbox>
+\end{defbox}
 
 \begin{itemize}
   \item Start from an initial image pair with good baseline.
@@ -1959,7 +1959,7 @@ but we only want shape, making correspondence (and thus depth) ill-posed in prac
 \begin{defbox}[title={Depth from X}]
 Depth estimation using cues other than multi-view parallax, e.g.\ \textbf{shading} or \textbf{defocus}
 (focus blur). Each cue requires additional assumptions about image formation.
-\end{defbox>
+\end{defbox}
 
 Depth from defocus (DfD) requires \textbf{texture/high-frequency content}; in \textbf{uniform regions} blur is ambiguous.
 CNN features (including early/mid conv layers) can correlate with focus/blur primarily in \textbf{non-uniform (textured)} regions.
@@ -2050,7 +2050,7 @@ A common loss uses the dot product (cosine similarity) per pixel.
 \begin{defbox}[title={Voxel Grid}]
 Discretize 3D space into a $V\times V\times V$ grid; each voxel stores occupancy (or related properties).
 Conceptually ``segmentation in 3D''.
-\end{defbox>
+\end{defbox}
 \begin{itemize}
   \item (+) Simple, regular structure; can use 3D CNNs.
   \item (--) Memory scales as $O(V^3)$; high resolution is expensive.
@@ -2061,7 +2061,7 @@ Example learning pipeline: 2D CNN features $\rightarrow$ 3D CNN $\rightarrow$ vo
 
 \begin{defbox}[title={Point Cloud}]
 A \textbf{point cloud} represents a shape as a set of $P$ 3D points, typically on the surface.
-\end{defbox>
+\end{defbox}
 \begin{itemize}
   \item (+) Efficient for fine structures without a dense 3D grid.
   \item (--) Unordered set $\Rightarrow$ needs special architectures/losses; no explicit connectivity or surface.
@@ -2075,7 +2075,7 @@ Naive correspondence search is $O(N^2)$; with a k-d tree it is roughly $O(N\log 
 
 \begin{defbox}[title={Mesh}]
 \textbf{Mesh:} vertices + faces (usually triangles). Standard representation in graphics; explicitly encodes surface connectivity.
-\end{defbox>
+\end{defbox}
 \begin{itemize}
   \item (+) Adaptive: allocate more triangles where detail is high; can attach attributes (RGB, texture, normals).
   \item (--) Learning/optimization is harder than voxels due to topology/connectivity constraints.
