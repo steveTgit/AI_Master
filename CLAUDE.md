@@ -11,7 +11,7 @@ contains two documents:
 
 | File | Class | Template |
 |------|-------|----------|
-| `summary.tex` | `book` | `template.tex` |
+| `summary.tex` | `book` | `summary_template.tex` |
 | `old_exams.tex` | `article` | `old_exams_template.tex` |
 
 ---
@@ -69,7 +69,7 @@ the signalling value of all boxes.
 
 ### Math macros included in old_exams.tex
 
-`\R`, `\E`, `\Prob`, `\KL{q}{p}`, `\dd` — add from `template.tex` as needed.
+`\R`, `\E`, `\Prob`, `\KL{q}{p}`, `\dd` — add from `summary_template.tex` as needed.
 
 ---
 
@@ -100,7 +100,7 @@ Always commit both `.tex` and `.pdf`.
 
 ## What NOT to do
 
-- Do not edit `template.tex` or `old_exams_template.tex` in-place — copy first.
+- Do not edit `summary_template.tex` or `old_exams_template.tex` in-place — copy first.
 - Do not add `\answers` or solution content to `old_exams.tex` — it is
   intentionally a practice set without solutions.
 - Do not change accent colors or box color definitions per-document.

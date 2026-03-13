@@ -1,0 +1,570 @@
+% ==========================================================
+%  MASTER SUMMARY TEMPLATE — AI / ML / MATHEMATICS
+%  Design Philosophy:
+%    1. Readable running text is the default. Prose over boxes.
+%    2. Boxes are used sparingly as visual landmarks for skimming.
+%    3. Visual hierarchy: chapter > section > subsection > prose.
+%    4. Every box is breakable — no orphaned whitespace at page ends.
+%    5. A single consistent accent color ties all structure together.
+% ==========================================================
+
+\documentclass[11pt, oneside]{book}
+
+
+% ══════════════════════════════════════════════════════════
+%  PAGE GEOMETRY
+% ══════════════════════════════════════════════════════════
+\usepackage[
+  a4paper,
+  top    = 2.6cm,
+  bottom = 2.1cm,
+  left   = 2.5cm,
+  right  = 2.5cm,
+  headheight = 15pt
+]{geometry}
+
+
+% ══════════════════════════════════════════════════════════
+%  TYPOGRAPHY
+% ══════════════════════════════════════════════════════════
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Latin Modern: improved Computer Modern
+\usepackage{microtype}       % Microtypographic refinements (better justification,
+                             %   fewer overfull hboxes — invaluable for math text)
+
+% If inconsolata is not installed, simply remove this line.
+% It provides a crisper monospace font for code listings.
+\usepackage{inconsolata}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.62em}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICS
+% ══════════════════════════════════════════════════════════
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}        % Bold math symbols: \bm{\theta}
+\usepackage{bbm}       % Blackboard bold for indicator: \mathbbm{1}
+\usepackage{mathrsfs}  % Script letters: \mathscr{F}, \mathscr{H}
+\usepackage{nicefrac}  % Compact inline fractions: \nicefrac{1}{2}
+\usepackage{cancel}    % Strike-through in math: \cancel{x}
+
+
+% ══════════════════════════════════════════════════════════
+%  SCIENTIFIC NOTATION
+% ══════════════════════════════════════════════════════════
+% siunitx — consistent typesetting of numbers and SI units.
+%   Usage: \SI{1.5}{\micro\meter}  \SI{50}{\kilo\hertz}  \num{6.022e23}
+\usepackage{siunitx}
+\sisetup{per-mode = symbol}   % render "per unit" as e.g. m/s rather than m s^{-1}
+
+% mhchem — chemical formulas and reaction equations.
+%   Usage: \ce{H2O}   \ce{ATP -> ADP + P_i}   \ce{^{14}C}
+\usepackage[version=4]{mhchem}
+
+
+% ══════════════════════════════════════════════════════════
+%  FIGURES, TABLES, LISTS
+% ══════════════════════════════════════════════════════════
+\usepackage{graphicx}
+\usepackage{booktabs}         % \toprule, \midrule, \bottomrule
+\usepackage{array}            % Extended column types in tabular
+\usepackage{float}            % [H] float placement
+\usepackage{enumitem}
+
+\setlist[itemize]{topsep=3pt, itemsep=2pt, leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt, itemsep=2pt, leftmargin=2.4em}
+
+
+% ══════════════════════════════════════════════════════════
+%  ALGORITHMS / PSEUDOCODE
+% ══════════════════════════════════════════════════════════
+% Remove this block if you do not need pseudocode.
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetCommentSty{textit}
+
+
+% ══════════════════════════════════════════════════════════
+%  COLORS  (a refined, academic palette)
+% ══════════════════════════════════════════════════════════
+\usepackage{xcolor}
+
+% Primary structural accent — deep navy used for headings, rules, ToC
+\definecolor{accent}{HTML}{1B3A5C}
+
+% Box accent colors: frame and background, designed to be legible but
+% unobtrusive so running text remains the visual focus.
+\definecolor{def@frame}{HTML}{1A5276}   \definecolor{def@bg}{HTML}{EBF5FB}
+\definecolor{thm@frame}{HTML}{922B21}   \definecolor{thm@bg}{HTML}{FDEDEC}
+\definecolor{ex@frame} {HTML}{1E8449}   \definecolor{ex@bg} {HTML}{EAFAF1}
+\definecolor{int@frame}{HTML}{9A6A00}   \definecolor{int@bg}{HTML}{FEF9E7}
+\definecolor{note@frame}{HTML}{5B2C6F}  \definecolor{note@bg}{HTML}{F5EEF8}
+
+
+% ══════════════════════════════════════════════════════════
+%  CODE LISTINGS
+% ══════════════════════════════════════════════════════════
+\usepackage{listings}
+\lstset{
+  basicstyle       = \ttfamily\small,
+  breaklines       = true,
+  numbers          = left,
+  numberstyle      = \tiny\color{gray!70},
+  frame            = tb,
+  framerule        = 0.4pt,
+  rulecolor        = \color{gray!35},
+  tabsize          = 2,
+  showstringspaces = false,
+  keywordstyle     = \color{def@frame}\bfseries,
+  commentstyle     = \color{gray!55!black}\itshape,
+  stringstyle      = \color{ex@frame!90!black},
+  backgroundcolor  = \color{gray!5},
+  xleftmargin      = 2em,
+  xrightmargin     = 0.4em,
+  aboveskip        = 0.8em,
+  belowskip        = 0.5em
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  CUSTOM BOXES  (tcolorbox)
+%
+%  KEY DESIGN DECISIONS:
+%  1. enhanced   — enables advanced tcolorbox features (borderline etc.)
+%  2. breakable  — box may split across a page break; eliminates the ugly
+%                  white gap that appears when a long box would overflow.
+%  3. Left-accent bar style — a thick colored stripe on the left margin.
+%                  This is legible, modern, and unobtrusive relative to
+%                  a full colored frame. The box background is a very
+%                  light tint, keeping the reading experience calm.
+%  4. sharp corners=west — left side is flat (squared), right is rounded.
+%                  This mirrors the visual logic of the left accent bar.
+%  5. parbox=false — allows display math to stretch properly inside boxes.
+% ══════════════════════════════════════════════════════════
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  enhanced,
+  breakable,
+  arc             = 2.5mm,
+  boxrule         = 0.5pt,
+  left            = 4.5mm,
+  right           = 4mm,
+  top             = 2.5mm,
+  bottom          = 2.5mm,
+  fonttitle       = \bfseries\small,
+  sharp corners   = west,
+  parbox          = false
+}
+
+\newtcolorbox{defbox}[1][]{
+  title  = {Definition},
+  colback = def@bg, colframe = def@frame,
+  borderline west = {3.5pt}{0pt}{def@frame},
+  #1
+}
+
+\newtcolorbox{thmbox}[1][]{
+  title  = {Theorem / Key Formula},
+  colback = thm@bg, colframe = thm@frame,
+  borderline west = {3.5pt}{0pt}{thm@frame},
+  #1
+}
+
+\newtcolorbox{exbox}[1][]{
+  title  = {Example},
+  colback = ex@bg, colframe = ex@frame,
+  borderline west = {3.5pt}{0pt}{ex@frame},
+  #1
+}
+
+\newtcolorbox{intbox}[1][]{
+  title  = {Intuition \& Mental Model},
+  colback = int@bg, colframe = int@frame,
+  borderline west = {3.5pt}{0pt}{int@frame},
+  #1
+}
+
+\newtcolorbox{notebox}[1][]{
+  title  = {Note},
+  colback = note@bg, colframe = note@frame,
+  borderline west = {3.5pt}{0pt}{note@frame},
+  #1
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  TABLE OF CONTENTS  (tocloft)
+%
+%  The [titles] option prevents tocloft from conflicting
+%  with titlesec's redefinition of chapter/section titles.
+% ══════════════════════════════════════════════════════════
+\usepackage[titles]{tocloft}
+
+% Chapter entries: accented, bold, with dots leading to page number
+\renewcommand{\cftchapfont}     {\bfseries\color{accent}}
+\renewcommand{\cftchappagefont} {\bfseries\color{accent}}
+\renewcommand{\cftchapleader}   {\bfseries\color{accent!40}\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip} {7pt}
+
+% Section entries: standard weight, small size
+\renewcommand{\cftsecfont}      {\small}
+\renewcommand{\cftsecpagefont}  {\small}
+\setlength{\cftsecindent}      {1.8em}
+\setlength{\cftbeforesecskip}  {1.5pt}
+
+% Subsection entries: muted gray to visually recede
+\renewcommand{\cftsubsecfont}      {\small\color{gray!65!black}}
+\renewcommand{\cftsubsecpagefont}  {\small\color{gray!65!black}}
+\setlength{\cftsubsecindent}      {3.4em}
+\setlength{\cftbeforesubsecskip}  {0.5pt}
+
+
+% ══════════════════════════════════════════════════════════
+%  CHAPTER & SECTION HEADINGS  (titlesec)
+%
+%  Chapter: large faded chapter number floated right, title
+%           left-aligned beneath it, then a double rule.
+%           The oversized ghost number is a quiet nod to
+%           modern textbook design without being gimmicky.
+%
+%  Section: accent-colored, with a thin rule beneath.
+%           The rule draws the eye without shouting.
+%
+%  Subsection: slightly smaller accent color, no rule — the
+%           rule at section level is already enough structure.
+% ══════════════════════════════════════════════════════════
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{accent}\huge}
+  {\hfill\fontsize{68}{68}\selectfont\color{accent!13}\thechapter}
+  {-10pt}
+  {}
+  [{\vspace{4pt}%
+    {\color{accent}\rule{\linewidth}{1.6pt}}\\[-2pt]%
+    {\color{accent!35}\rule{\linewidth}{0.5pt}}}]
+\titlespacing*{\chapter}{0pt}{-28pt}{22pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}
+  {\thesection}
+  {0.8em}
+  {}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.8ex plus 1ex minus .2ex}{2.2ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {\thesubsection}
+  {0.7em}
+  {}
+\titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.4ex plus .2ex}
+
+% Run-in paragraph label — useful for named sub-items in a derivation.
+\titleformat{\paragraph}[runin]
+  {\normalfont\small\bfseries}
+  {}
+  {0em}
+  {}[.\enspace]
+\titlespacing{\paragraph}{0pt}{1.2ex plus .5ex minus .2ex}{0.5em}
+
+
+% ══════════════════════════════════════════════════════════
+%  HEADER & FOOTER
+% ══════════════════════════════════════════════════════════
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Chapter-opening pages use LaTeX's 'plain' style — redefine it here
+% to match the rest of the document (page number at foot, no header line).
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\small\color{gray!70}\thepage}
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  LINKS & REFERENCES
+% ══════════════════════════════════════════════════════════
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink, capitalize]{cleveref}
+
+
+% ══════════════════════════════════════════════════════════
+%  DOCUMENT METADATA  (fill in for each new subject)
+% ══════════════════════════════════════════════════════════
+\newcommand{\coursetitle}{AI in Life Sciences}
+\newcommand{\documenttype}{Master Summary}
+\newcommand{\authorname}{Stefan Eder}
+\newcommand{\basedon}{Based on Lecture \emph{AI in Life Sciences} SS26}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICAL MACROS
+%  Organized by domain. Add your own at the end of each group.
+% ══════════════════════════════════════════════════════════
+
+% ── Number Sets & Spaces ──────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Q}{\mathbb{Q}}
+
+% ── Probability & Statistics ──────────────────────────────
+\newcommand{\E}{\mathbb{E}}              % Expectation
+\newcommand{\Prob}{\mathbb{P}}           % Probability measure
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Corr}{\mathrm{Corr}}
+\newcommand{\iid}{\overset{\mathrm{iid}}{\sim}}
+% Indicator function. Usage: \ind_{\{x > 0\}}
+\newcommand{\ind}{\mathbbm{1}}
+
+% ── Information Theory ────────────────────────────────────
+% KL divergence. Usage: \KL{q}{p}  →  D_KL(q ‖ p)
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1 \,\|\, #2\right)}
+\newcommand{\Ent}{\mathrm{H}}            % Entropy:         \Ent(X)
+\newcommand{\MI}{\mathrm{I}}             % Mutual information: \MI(X;Y)
+
+% ── Calculus & Optimization ───────────────────────────────
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\grad}{\nabla}               % Gradient
+\newcommand{\hess}{\nabla^2}             % Hessian
+\newcommand{\lapl}{\Delta}               % Laplacian
+% Differential (upright d). Usage: \int f(x) \dd x
+\newcommand{\dd}{\,\mathrm{d}}
+% Partial derivatives. Usage: \pd{f}{x}  or  \pdd{f}{x}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+% ── Norms, Abs, Inner Products ────────────────────────────
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\normsq}[1]{\left\lVert #1 \right\rVert^2}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% ── Linear Algebra ────────────────────────────────────────
+\newcommand{\T}{^{\mathsf{T}}}           % Transpose:        \mathbf{A}\T
+\newcommand{\inv}{^{-1}}                 % Inverse:          A\inv
+\newcommand{\pinv}{^{\dagger}}           % Pseudo-inverse:   A\pinv
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\spanop}{\operatorname{span}}
+\newcommand{\eye}{\mathbf{I}}            % Identity matrix
+\newcommand{\zeros}{\mathbf{0}}
+\newcommand{\ones}{\mathbf{1}}
+
+% ── ML / AI Core Notation ────────────────────────────────
+\newcommand{\loss}{\mathcal{L}}          % Loss:          \loss(\params)
+\newcommand{\reg}{\mathcal{R}}           % Regularizer:   \reg(\params)
+\newcommand{\dataset}{\mathcal{D}}       % Dataset:       \dataset
+\newcommand{\params}{\boldsymbol{\theta}}   % Parameters
+\newcommand{\weights}{\mathbf{w}}
+\newcommand{\xvec}{\mathbf{x}}
+\newcommand{\yvec}{\mathbf{y}}
+\newcommand{\zvec}{\mathbf{z}}
+\newcommand{\hvec}{\mathbf{h}}           % Hidden state
+\newcommand{\feature}{\boldsymbol{\phi}} % Feature map
+
+% Activation functions
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\relu}{ReLU}
+\DeclareMathOperator{\sign}{sign}
+% sigmoid: just use \sigma (standard Greek letter)
+
+% ── Complexity ────────────────────────────────────────────
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\bigOm}[1]{\Omega\!\left(#1\right)}
+\newcommand{\bigTh}[1]{\Theta\!\left(#1\right)}
+
+% ── Common Distributions ──────────────────────────────────
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\Uniform}{\mathcal{U}}
+\newcommand{\Bernoulli}{\mathrm{Ber}}
+\newcommand{\Categorical}{\mathrm{Cat}}
+\newcommand{\Dirichlet}{\mathrm{Dir}}
+\newcommand{\Binomial}{\mathrm{Bin}}
+
+% ── Miscellaneous ─────────────────────────────────────────
+\newcommand{\given}{\,\vert\,}           % Conditional: \Prob(A \given B)
+\newcommand{\st}{\;\text{s.t.}\;}        % "subject to"
+\newcommand{\eqdef}{\coloneqq}           % Definitional equality  :=
+\newcommand{\eqq}{\overset{?}{=}}        % "Does this equal?"
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+\frontmatter  % Roman-numeral page numbers for front matter
+
+
+% ──────────────────────────────────────────────────────────
+%  TITLE PAGE
+% ──────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.8cm}
+
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}
+  \vspace{0.65cm}
+
+  {\fontsize{28}{34}\selectfont\bfseries\color{accent}\coursetitle\par}
+  \vspace{0.25cm}
+  {\large\color{gray!80!black}\documenttype\par}
+
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}
+  \vspace{0.55cm}
+
+  {\large\authorname\par}
+  \vspace{0.2cm}
+  {\small\color{gray!70}\basedon\par}
+\end{center}
+
+\vspace{1.6cm}
+
+\begin{center}
+\begin{minipage}{0.84\textwidth}
+  \small\color{gray!80!black}
+  This document is a compact summary of the course.
+  It aims to cover all relevant concepts and results, but long derivations,
+  detailed proofs, and worked examples are often condensed or omitted in
+  favour of clarity and conciseness.
+  Use it as a study aid alongside the lecture notes and slides, not as a
+  replacement for them.
+
+  \medskip
+  If you spot an error or a gap, please open an issue or pull request at
+  \textbf{github.com/stevetgit} --- corrections are always welcome.
+
+  \medskip
+  \color{gray!60!black}
+  Good study materials should be shared, not gatekept.
+  If this helped you, take it as a reason to help the next colleague you see struggling with something.
+\end{minipage}
+\end{center}
+
+\vfill
+{\centering\small\color{gray!65} \today\par}
+\clearpage
+
+
+% ──────────────────────────────────────────────────────────
+%  TABLE OF CONTENTS
+% ──────────────────────────────────────────────────────────
+\setcounter{tocdepth}{2}  % Show: chapters, sections, subsections only
+
+\begingroup
+  \let\cleardoublepage\relax
+  \let\clearpage\relax
+  \tableofcontents
+\endgroup
+
+\mainmatter  % Switch to Arabic numerals
+
+
+% ==========================================================
+%  CHAPTER 1 — EXAMPLE STRUCTURE
+%  This chapter demonstrates the template. Delete or replace.
+% ==========================================================
+\chapter{Example Chapter Title}
+
+This is the introductory running text for the chapter.
+Chapters always begin on a new page.
+Use this space to frame the chapter's goal at a high level
+before descending into sections.
+
+\section{First Main Concept}
+
+Lead every section with prose.
+Introduce the idea, its motivation, and any notation before
+defining it formally in a box.
+Inline math flows naturally: a model parameterized by
+$\params \in \R^d$ maps an input $\xvec$ to a prediction via
+$f_{\params}(\xvec)$.
+Display math is used when an expression needs space:
+\[
+  \loss(\params) \eqdef -\frac{1}{N}\sum_{i=1}^{N}
+    \log p_{\params}(y_i \given \xvec_i).
+\]
+
+\begin{defbox}[title={Cross-Entropy Loss}]
+For a model with parameters $\params$ trained on
+$\dataset = \{(\xvec_i, y_i)\}_{i=1}^{N}$,
+the \emph{cross-entropy loss} is:
+\[
+  \loss(\params) \eqdef -\frac{1}{N}\sum_{i=1}^{N}
+    \log p_{\params}(y_i \given \xvec_i).
+\]
+\end{defbox}
+
+After a definition box, always continue with prose.
+Here you would explain what this loss measures, why
+minimizing it corresponds to maximum likelihood estimation,
+and how it connects to what comes next.
+
+\subsection{A Deeper Dive}
+
+\begin{thmbox}[title={Bayes' Theorem}]
+\[
+  p(\params \given \dataset)
+  = \frac{p(\dataset \given \params)\;p(\params)}{p(\dataset)}
+  \;\propto\; p(\dataset \given \params)\;p(\params).
+\]
+The posterior is proportional to the likelihood times the prior.
+\end{thmbox}
+
+Note how the theorem box below does not immediately follow a
+section heading — there is always at least a sentence of prose
+first to give it context.
+
+\section{Practical Applications}
+
+Running text sets up the example and the intuition before
+those boxes appear.
+Consider what the KL divergence $\KL{q}{p}$ actually measures.
+
+\begin{intbox}
+Think of $\KL{q}{p}$ not as a symmetric distance
+(it isn't — $\KL{q}{p} \neq \KL{p}{q}$ in general),
+but as the \emph{extra bits} needed to encode samples from $q$
+using a code optimized for $p$.
+The asymmetry is exactly why direction matters in
+variational inference and the EM algorithm.
+\end{intbox}
+
+\begin{exbox}[title={Simple Integration}]
+Let $f(x) = 2x$.
+Compute $\int_0^2 f(x)\dd x$:
+\[
+  \int_{0}^{2} 2x \dd x
+  = \bigl[x^2\bigr]_{0}^{2}
+  = 4 - 0 = 4.
+\]
+\end{exbox}
+
+\begin{notebox}[title={Exam Trap}]
+Do \emph{not} confuse $\KL{p}{q}$ with $\KL{q}{p}$.
+In variational inference we minimize $\KL{q}{p_{\params}}$
+(forward KL $\to$ mass-covering)
+vs.\ $\KL{p_{\params}}{q}$ (reverse KL $\to$ mode-seeking).
+The behavior of the approximation differs dramatically.
+\end{notebox}
+
+
+\end{document}

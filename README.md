@@ -11,7 +11,7 @@ collection of old exam questions.
 
 ```
 AI_Master/
-├── template.tex                          # Shared LaTeX template (copy, never edit in-place)
+├── summary_template.tex                          # Shared LaTeX template (copy, never edit in-place)
 ├── old_exams_template.tex                # Shared old-exams template (copy, never edit in-place)
 ├── CLAUDE.md                             # Instructions for Claude Code
 │
@@ -26,7 +26,7 @@ Each course folder will contain:
 
 | File | Purpose |
 |------|---------|
-| `summary.tex` | Main summary document (copied from `template.tex`) |
+| `summary.tex` | Main summary document (copied from `summary_template.tex`) |
 | `summary.pdf` | Compiled output — tracked for easy sharing |
 | `old_exams.tex` | Curated old exam questions (copied from `old_exams_template.tex`) |
 | `old_exams.pdf` | Compiled output — tracked for easy sharing |
@@ -41,7 +41,7 @@ Each course folder will contain:
 
 1. **Copy the template** into the course folder and rename it:
    ```bash
-   cp template.tex "ML Supervised Techniques/summary.tex"
+   cp summary_template.tex "ML Supervised Techniques/summary.tex"
    ```
 
 2. **Fill in the metadata** near the top of the file:
@@ -84,9 +84,9 @@ Each course folder will contain:
 
 ## Template overview
 
-### `summary.tex` (`template.tex`)
+### `summary.tex` (`summary_template.tex`)
 
-`template.tex` is a self-contained `book`-class document designed around
+`summary_template.tex` is a self-contained `book`-class document designed around
 these principles:
 
 - **Readable running text is the default.** Explanations, derivations, and
@@ -123,7 +123,7 @@ these principles:
 | `\bigO{n}`, `\bigOm{n}`, `\bigTh{n}` | Complexity notation |
 | `\Normal`, `\Bernoulli`, `\Dirichlet`, … | Common distributions |
 
-Full macro list is in `template.tex` under the *Mathematical Macros* section.
+Full macro list is in `summary_template.tex` under the *Mathematical Macros* section.
 
 ### `old_exams.tex` (`old_exams_template.tex`)
 
