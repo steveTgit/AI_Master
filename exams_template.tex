@@ -1,12 +1,12 @@
 % ==========================================================
-%  OLD EXAM QUESTIONS TEMPLATE — AI / ML / MATHEMATICS
+%  EXAM QUESTIONS TEMPLATE — AI / ML / MATHEMATICS
 %  Design Philosophy:
 %    Shares the visual language of summary.tex (same accent,
 %    same box style, same typography) but uses article class
 %    — no chapters, just sections and question boxes.
 %
 %  HOW TO USE:
-%    1. Copy this file into the course folder: old_exams.tex
+%    1. Copy this file into the course folder: exams.tex
 %    2. Set \coursetitle below.
 %    3. Add \section{} per topic, questions inside
 %       \questiontitle{…} … \closequestion blocks.
@@ -128,6 +128,27 @@
 % Fill-in answer line. Usage: \answerline{3cm}
 \newcommand{\answerline}[1]{\makebox[#1]{\hrulefill}}
 
+% Blank working area — dashed-border box for student calculations.
+% \workingspace{4cm}   short calculation / derivation
+% \workingspace{7cm}   open-ended / long answer
+\newcommand{\workingspace}[1]{%
+  \par\vspace{2pt}%
+  \begin{tcolorbox}[
+    enhanced,
+    breakable=false,
+    colback=white,
+    colframe=gray!40,
+    boxrule=0.45pt,
+    arc=0pt,
+    sharp corners,
+    height=#1,
+    left=3mm, right=3mm, top=3mm, bottom=3mm,
+    frame style={dashed}
+  ]%
+  \end{tcolorbox}%
+  \vspace{2pt}%
+}
+
 % ── Math macros (minimal subset for exam questions) ──────
 % Add from template.tex as needed.
 \newcommand{\R}{\mathbb{R}}
@@ -177,12 +198,48 @@ and answer choices were kept intact.
 
 \section{[First Topic Area]}
 
-\questiontitle{[Question title]}
+% --- Multiple-choice ---
+\questiontitle{[MCQ title]}
 [Question text here.]
-\[
-  \answerline{4cm}
-\]
+\begin{itemize}[leftmargin=1.8em]
+  \choice Option A
+  \choice Option B
+  \choice Option C
+  \choice Option D
+\end{itemize}
 \closequestion
+
+% --- Single number / short expression ---
+\questiontitle{[Fill-in title]}
+[Question text.] \answerline{3cm}
+\closequestion
+
+% --- Calculation / short derivation ---
+\questiontitle{[Derivation title]}
+[Question text.]
+\workingspace{4cm}
+\closequestion
+
+% --- Open / long answer ---
+\questiontitle{[Open question title]}
+[Question text.]
+\workingspace{7cm}
+\closequestion
+
+
+% ==========================================================
+%  ANSWER KEY — always the last section; never add answers
+%  inside \questiontitle / \closequestion blocks above.
+% ==========================================================
+\newpage
+\section*{Answer Key}
+
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=4pt]
+  \item \textbf{B}
+  \item $x = 0.5$
+  \item [key steps: \dots]
+  \item [key points: \dots]
+\end{enumerate}
 
 
 \end{document}

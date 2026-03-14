@@ -1,0 +1,1521 @@
+% ==========================================================
+%  MASTER SUMMARY TEMPLATE — AI / ML / MATHEMATICS
+%  Design Philosophy:
+%    1. Readable running text is the default. Prose over boxes.
+%    2. Boxes are used sparingly as visual landmarks for skimming.
+%    3. Visual hierarchy: chapter > section > subsection > prose.
+%    4. Every box is breakable — no orphaned whitespace at page ends.
+%    5. A single consistent accent color ties all structure together.
+% ==========================================================
+
+\documentclass[11pt, oneside]{book}
+
+
+% ══════════════════════════════════════════════════════════
+%  PAGE GEOMETRY
+% ══════════════════════════════════════════════════════════
+\usepackage[
+  a4paper,
+  top    = 2.6cm,
+  bottom = 2.1cm,
+  left   = 2.5cm,
+  right  = 2.5cm,
+  headheight = 15pt
+]{geometry}
+
+
+% ══════════════════════════════════════════════════════════
+%  TYPOGRAPHY
+% ══════════════════════════════════════════════════════════
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Latin Modern: improved Computer Modern
+\usepackage{microtype}       % Microtypographic refinements (better justification,
+                             %   fewer overfull hboxes — invaluable for math text)
+
+% If inconsolata is not installed, simply remove this line.
+% It provides a crisper monospace font for code listings.
+\usepackage{inconsolata}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.62em}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICS
+% ══════════════════════════════════════════════════════════
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}        % Bold math symbols: \bm{\theta}
+\usepackage{bbm}       % Blackboard bold for indicator: \mathbbm{1}
+\usepackage{mathrsfs}  % Script letters: \mathscr{F}, \mathscr{H}
+\usepackage{nicefrac}  % Compact inline fractions: \nicefrac{1}{2}
+\usepackage{cancel}    % Strike-through in math: \cancel{x}
+
+
+% ══════════════════════════════════════════════════════════
+%  SCIENTIFIC NOTATION
+% ══════════════════════════════════════════════════════════
+% siunitx — consistent typesetting of numbers and SI units.
+%   Usage: \SI{1.5}{\micro\meter}  \SI{50}{\kilo\hertz}  \num{6.022e23}
+\usepackage{siunitx}
+\sisetup{per-mode = symbol}   % render "per unit" as e.g. m/s rather than m s^{-1}
+
+% mhchem — chemical formulas and reaction equations.
+%   Usage: \ce{H2O}   \ce{ATP -> ADP + P_i}   \ce{^{14}C}
+\usepackage[version=4]{mhchem}
+
+
+% ══════════════════════════════════════════════════════════
+%  FIGURES, TABLES, LISTS
+% ══════════════════════════════════════════════════════════
+\usepackage{graphicx}
+\usepackage{booktabs}         % \toprule, \midrule, \bottomrule
+\usepackage{array}            % Extended column types in tabular
+\usepackage{float}            % [H] float placement
+\usepackage{enumitem}
+
+\setlist[itemize]{topsep=3pt, itemsep=2pt, leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt, itemsep=2pt, leftmargin=2.4em}
+
+
+% ══════════════════════════════════════════════════════════
+%  ALGORITHMS / PSEUDOCODE
+% ══════════════════════════════════════════════════════════
+% Remove this block if you do not need pseudocode.
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetCommentSty{textit}
+
+
+% ══════════════════════════════════════════════════════════
+%  COLORS  (a refined, academic palette)
+% ══════════════════════════════════════════════════════════
+\usepackage{xcolor}
+
+% Primary structural accent — deep navy used for headings, rules, ToC
+\definecolor{accent}{HTML}{1B3A5C}
+
+% Box accent colors: frame and background, designed to be legible but
+% unobtrusive so running text remains the visual focus.
+\definecolor{def@frame}{HTML}{1A5276}   \definecolor{def@bg}{HTML}{EBF5FB}
+\definecolor{thm@frame}{HTML}{922B21}   \definecolor{thm@bg}{HTML}{FDEDEC}
+\definecolor{ex@frame} {HTML}{1E8449}   \definecolor{ex@bg} {HTML}{EAFAF1}
+\definecolor{int@frame}{HTML}{9A6A00}   \definecolor{int@bg}{HTML}{FEF9E7}
+\definecolor{note@frame}{HTML}{5B2C6F}  \definecolor{note@bg}{HTML}{F5EEF8}
+
+
+% ══════════════════════════════════════════════════════════
+%  CODE LISTINGS
+% ══════════════════════════════════════════════════════════
+\usepackage{listings}
+\lstset{
+  basicstyle       = \ttfamily\small,
+  breaklines       = true,
+  numbers          = left,
+  numberstyle      = \tiny\color{gray!70},
+  frame            = tb,
+  framerule        = 0.4pt,
+  rulecolor        = \color{gray!35},
+  tabsize          = 2,
+  showstringspaces = false,
+  keywordstyle     = \color{def@frame}\bfseries,
+  commentstyle     = \color{gray!55!black}\itshape,
+  stringstyle      = \color{ex@frame!90!black},
+  backgroundcolor  = \color{gray!5},
+  xleftmargin      = 2em,
+  xrightmargin     = 0.4em,
+  aboveskip        = 0.8em,
+  belowskip        = 0.5em
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  CUSTOM BOXES  (tcolorbox)
+%
+%  KEY DESIGN DECISIONS:
+%  1. enhanced   — enables advanced tcolorbox features (borderline etc.)
+%  2. breakable  — box may split across a page break; eliminates the ugly
+%                  white gap that appears when a long box would overflow.
+%  3. Left-accent bar style — a thick colored stripe on the left margin.
+%                  This is legible, modern, and unobtrusive relative to
+%                  a full colored frame. The box background is a very
+%                  light tint, keeping the reading experience calm.
+%  4. sharp corners=west — left side is flat (squared), right is rounded.
+%                  This mirrors the visual logic of the left accent bar.
+%  5. parbox=false — allows display math to stretch properly inside boxes.
+% ══════════════════════════════════════════════════════════
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  enhanced,
+  breakable,
+  arc             = 2.5mm,
+  boxrule         = 0.5pt,
+  left            = 4.5mm,
+  right           = 4mm,
+  top             = 2.5mm,
+  bottom          = 2.5mm,
+  fonttitle       = \bfseries\small,
+  sharp corners   = west,
+  parbox          = false
+}
+
+\newtcolorbox{defbox}[1][]{
+  title  = {Definition},
+  colback = def@bg, colframe = def@frame,
+  borderline west = {3.5pt}{0pt}{def@frame},
+  #1
+}
+
+\newtcolorbox{thmbox}[1][]{
+  title  = {Theorem / Key Formula},
+  colback = thm@bg, colframe = thm@frame,
+  borderline west = {3.5pt}{0pt}{thm@frame},
+  #1
+}
+
+\newtcolorbox{exbox}[1][]{
+  title  = {Example},
+  colback = ex@bg, colframe = ex@frame,
+  borderline west = {3.5pt}{0pt}{ex@frame},
+  #1
+}
+
+\newtcolorbox{intbox}[1][]{
+  title  = {Intuition \& Mental Model},
+  colback = int@bg, colframe = int@frame,
+  borderline west = {3.5pt}{0pt}{int@frame},
+  #1
+}
+
+\newtcolorbox{notebox}[1][]{
+  title  = {Note},
+  colback = note@bg, colframe = note@frame,
+  borderline west = {3.5pt}{0pt}{note@frame},
+  #1
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  TABLE OF CONTENTS  (tocloft)
+%
+%  The [titles] option prevents tocloft from conflicting
+%  with titlesec's redefinition of chapter/section titles.
+% ══════════════════════════════════════════════════════════
+\usepackage[titles]{tocloft}
+
+% Chapter entries: accented, bold, with dots leading to page number
+\renewcommand{\cftchapfont}     {\bfseries\color{accent}}
+\renewcommand{\cftchappagefont} {\bfseries\color{accent}}
+\renewcommand{\cftchapleader}   {\bfseries\color{accent!40}\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip} {7pt}
+
+% Section entries: standard weight, small size
+\renewcommand{\cftsecfont}      {\small}
+\renewcommand{\cftsecpagefont}  {\small}
+\setlength{\cftsecindent}      {1.8em}
+\setlength{\cftbeforesecskip}  {1.5pt}
+
+% Subsection entries: muted gray to visually recede
+\renewcommand{\cftsubsecfont}      {\small\color{gray!65!black}}
+\renewcommand{\cftsubsecpagefont}  {\small\color{gray!65!black}}
+\setlength{\cftsubsecindent}      {3.4em}
+\setlength{\cftbeforesubsecskip}  {0.5pt}
+
+
+% ══════════════════════════════════════════════════════════
+%  CHAPTER & SECTION HEADINGS  (titlesec)
+%
+%  Chapter: large faded chapter number floated right, title
+%           left-aligned beneath it, then a double rule.
+%           The oversized ghost number is a quiet nod to
+%           modern textbook design without being gimmicky.
+%
+%  Section: accent-colored, with a thin rule beneath.
+%           The rule draws the eye without shouting.
+%
+%  Subsection: slightly smaller accent color, no rule — the
+%           rule at section level is already enough structure.
+% ══════════════════════════════════════════════════════════
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{accent}\huge}
+  {\hfill\fontsize{68}{68}\selectfont\color{accent!13}\thechapter}
+  {-10pt}
+  {}
+  [{\vspace{4pt}%
+    {\color{accent}\rule{\linewidth}{1.6pt}}\\[-2pt]%
+    {\color{accent!35}\rule{\linewidth}{0.5pt}}}]
+\titlespacing*{\chapter}{0pt}{-28pt}{22pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}
+  {\thesection}
+  {0.8em}
+  {}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.8ex plus 1ex minus .2ex}{2.2ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {\thesubsection}
+  {0.7em}
+  {}
+\titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.4ex plus .2ex}
+
+% Run-in paragraph label — useful for named sub-items in a derivation.
+\titleformat{\paragraph}[runin]
+  {\normalfont\small\bfseries}
+  {}
+  {0em}
+  {}[.\enspace]
+\titlespacing{\paragraph}{0pt}{1.2ex plus .5ex minus .2ex}{0.5em}
+
+
+% ══════════════════════════════════════════════════════════
+%  HEADER & FOOTER
+% ══════════════════════════════════════════════════════════
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Chapter-opening pages use LaTeX's 'plain' style — redefine it here
+% to match the rest of the document (page number at foot, no header line).
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\small\color{gray!70}\thepage}
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  LINKS & REFERENCES
+% ══════════════════════════════════════════════════════════
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink, capitalize]{cleveref}
+
+
+% ══════════════════════════════════════════════════════════
+%  DOCUMENT METADATA  (fill in for each new subject)
+% ══════════════════════════════════════════════════════════
+\newcommand{\coursetitle}{ML Supervised Techniques}
+\newcommand{\documenttype}{Master Summary}
+\newcommand{\authorname}{Stefan Eder}
+\newcommand{\basedon}{Based on Lecture \emph{Supervised Learning} SS25}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICAL MACROS
+%  Organized by domain. Add your own at the end of each group.
+% ══════════════════════════════════════════════════════════
+
+% ── Number Sets & Spaces ──────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Q}{\mathbb{Q}}
+
+% ── Probability & Statistics ──────────────────────────────
+\newcommand{\E}{\mathbb{E}}              % Expectation
+\newcommand{\Prob}{\mathbb{P}}           % Probability measure
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Corr}{\mathrm{Corr}}
+\newcommand{\iid}{\overset{\mathrm{iid}}{\sim}}
+% Indicator function. Usage: \ind_{\{x > 0\}}
+\newcommand{\ind}{\mathbbm{1}}
+
+% ── Information Theory ────────────────────────────────────
+% KL divergence. Usage: \KL{q}{p}  →  D_KL(q ‖ p)
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1 \,\|\, #2\right)}
+\newcommand{\Ent}{\mathrm{H}}            % Entropy:         \Ent(X)
+\newcommand{\MI}{\mathrm{I}}             % Mutual information: \MI(X;Y)
+
+% ── Calculus & Optimization ───────────────────────────────
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\grad}{\nabla}               % Gradient
+\newcommand{\hess}{\nabla^2}             % Hessian
+\newcommand{\lapl}{\Delta}               % Laplacian
+% Differential (upright d). Usage: \int f(x) \dd x
+\newcommand{\dd}{\,\mathrm{d}}
+% Partial derivatives. Usage: \pd{f}{x}  or  \pdd{f}{x}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+% ── Norms, Abs, Inner Products ────────────────────────────
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\normsq}[1]{\left\lVert #1 \right\rVert^2}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% ── Linear Algebra ────────────────────────────────────────
+\newcommand{\T}{^{\mathsf{T}}}           % Transpose:        \mathbf{A}\T
+\newcommand{\inv}{^{-1}}                 % Inverse:          A\inv
+\newcommand{\pinv}{^{\dagger}}           % Pseudo-inverse:   A\pinv
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\spanop}{\operatorname{span}}
+\newcommand{\eye}{\mathbf{I}}            % Identity matrix
+\newcommand{\zeros}{\mathbf{0}}
+\newcommand{\ones}{\mathbf{1}}
+
+% ── ML / AI Core Notation ────────────────────────────────
+\newcommand{\loss}{\mathcal{L}}          % Loss:          \loss(\params)
+\newcommand{\reg}{\mathcal{R}}           % Regularizer:   \reg(\params)
+\newcommand{\dataset}{\mathcal{D}}       % Dataset:       \dataset
+\newcommand{\params}{\boldsymbol{\theta}}   % Parameters
+\newcommand{\weights}{\mathbf{w}}
+\newcommand{\xvec}{\mathbf{x}}
+\newcommand{\yvec}{\mathbf{y}}
+\newcommand{\zvec}{\mathbf{z}}
+\newcommand{\hvec}{\mathbf{h}}           % Hidden state
+\newcommand{\feature}{\boldsymbol{\phi}} % Feature map
+
+% Activation functions
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\relu}{ReLU}
+\DeclareMathOperator{\sign}{sign}
+% sigmoid: just use \sigma (standard Greek letter)
+
+% ── Complexity ────────────────────────────────────────────
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\bigOm}[1]{\Omega\!\left(#1\right)}
+\newcommand{\bigTh}[1]{\Theta\!\left(#1\right)}
+
+% ── Common Distributions ──────────────────────────────────
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\Uniform}{\mathcal{U}}
+\newcommand{\Bernoulli}{\mathrm{Ber}}
+\newcommand{\Categorical}{\mathrm{Cat}}
+\newcommand{\Dirichlet}{\mathrm{Dir}}
+\newcommand{\Binomial}{\mathrm{Bin}}
+
+% ── Miscellaneous ─────────────────────────────────────────
+\newcommand{\given}{\,\vert\,}           % Conditional: \Prob(A \given B)
+\newcommand{\st}{\;\text{s.t.}\;}        % "subject to"
+\newcommand{\eqdef}{\coloneqq}           % Definitional equality  :=
+\newcommand{\eqq}{\overset{?}{=}}        % "Does this equal?"
+
+% Compatibility aliases for content macros
+\newcommand{\1}{\ind}                       % indicator function (old notation)
+\newcommand{\ip}[2]{\inner{#1}{#2}}        % inner product (old notation)
+\newcommand{\sigmoid}{\sigma}               % sigmoid function
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+\frontmatter  % Roman-numeral page numbers for front matter
+
+
+% ──────────────────────────────────────────────────────────
+%  TITLE PAGE
+% ──────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.8cm}
+
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}
+  \vspace{0.65cm}
+
+  {\fontsize{28}{34}\selectfont\bfseries\color{accent}\coursetitle\par}
+  \vspace{0.25cm}
+  {\large\color{gray!80!black}\documenttype\par}
+
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}
+  \vspace{0.55cm}
+
+  {\large\authorname\par}
+  \vspace{0.2cm}
+  {\small\color{gray!70}\basedon\par}
+\end{center}
+
+\vspace{1.6cm}
+
+\begin{center}
+\begin{minipage}{0.84\textwidth}
+  \small\color{gray!80!black}
+  This document is a compact summary of the course.
+  It aims to cover all relevant concepts and results, but long derivations,
+  detailed proofs, and worked examples are often condensed or omitted in
+  favour of clarity and conciseness.
+  Use it as a study aid alongside the lecture notes and slides, not as a
+  replacement for them.
+
+  \medskip
+  If you spot an error or a gap, please open an issue or pull request at
+  \textbf{github.com/stevetgit} --- corrections are always welcome.
+
+  \medskip
+  \color{gray!60!black}
+  Good study materials should be shared, not gatekept.
+  If this helped you, take it as a reason to help the next colleague you see struggling with something.
+\end{minipage}
+\end{center}
+
+\vfill
+{\centering\small\color{gray!65} \today\par}
+\clearpage
+
+
+% ──────────────────────────────────────────────────────────
+%  TABLE OF CONTENTS
+% ──────────────────────────────────────────────────────────
+\setcounter{tocdepth}{2}
+
+\begingroup
+  \let\cleardoublepage\relax
+  \let\clearpage\relax
+  \tableofcontents
+\endgroup
+
+\mainmatter  % Switch to Arabic numerals
+
+
+% ==========================================================
+% 1) INTRODUCTION & BASICS (Units 1 + 2)
+% ==========================================================
+\chapter{Introduction \& Basics}
+
+\section{Supervised learning setup and notation}
+Supervised learning uses labeled data to learn a predictive model.
+We observe a dataset
+\[
+  Z = \{(x_i,y_i)\}_{i=1}^l,\quad x_i\in\mathcal{X}\subseteq\R^d,\quad y_i\in\mathcal{Y},
+\]
+and choose a model class (hypothesis class) of functions
+\[
+  g(\cdot;\,w):\mathcal{X}\to \hat{\mathcal{Y}},
+\]
+parametrized by weights/parameters $w$.
+
+Typical tasks:
+\begin{itemize}
+  \item \textbf{Classification:} $\mathcal{Y}$ is discrete (binary or multi-class). Often $\hat{\mathcal{Y}}=\mathcal{Y}$ or predicted probabilities.
+  \item \textbf{Regression:} $\mathcal{Y}\subseteq\R$ (or $\R^m$); predict real-valued targets.
+\end{itemize}
+
+\section{Loss, generalization error (risk), and empirical risk}
+We measure prediction quality with a loss function $L(y,\hat y)$.
+The central quantity is the \textbf{generalization error} (also called \textbf{risk}):
+\[
+  R(w)=\E_{(x,y)\sim p(x,y)}\Big[L\big(y, g(x;w)\big)\Big].
+\]
+Since $p(x,y)$ is unknown, we approximate it from samples.
+
+\begin{thmbox}[title={Empirical Risk Minimization (ERM)}]
+Given $Z=\{(x_i,y_i)\}_{i=1}^l$,
+\[
+R_{\mathrm{emp}}(w)=\frac{1}{l}\sum_{i=1}^{l} L\big(y_i, g(x_i;w)\big),
+\qquad
+\hat w \in \argmin_w R_{\mathrm{emp}}(w).
+\]
+\end{thmbox}
+
+Key assumption for using sample averages to estimate expectations: training and test data are (approximately) \textbf{i.i.d.} from the same distribution. In practice, violations (dataset shift, leakage, time dependence) are a major source of failure.
+
+\section{Generalization, underfitting, overfitting, and model complexity}
+ERM alone can produce models that fit noise.
+A standard diagnostic is the comparison of training and test performance:
+\begin{itemize}
+  \item \textbf{Underfitting:} training error high; model class too simple (high bias).
+  \item \textbf{Overfitting:} training error low but test error high; model too flexible (high variance).
+\end{itemize}
+
+A useful mental model is the \textbf{bias--variance trade-off}: increasing model complexity typically \emph{decreases bias} but \emph{increases variance}. The goal is to minimize the generalization error, not the training error.
+
+\section{Train/validation/test and cross-validation}
+A standard workflow:
+\begin{itemize}
+  \item \textbf{Training set:} fit parameters $w$.
+  \item \textbf{Validation set:} choose hyperparameters (model class complexity, regularization strength, $k$ in kNN, $C$ in SVM, depth in trees, \dots).
+  \item \textbf{Test set:} used once to estimate generalization error; must not be used for model selection, feature selection, or preprocessing decisions.
+\end{itemize}
+
+For small datasets, cross-validation (CV) reuses data efficiently.
+In $K$-fold CV, split $Z$ into $K$ disjoint folds; train on $K-1$ folds and evaluate on the left-out fold; average the $K$ test errors to obtain a more stable estimate.
+
+\subsection{Cross-validation: calculation recipe (incl.\ a simple threshold model)}
+Some past exams include a very explicit CV calculation: for each fold $k$ you train on the union of all other folds and
+evaluate on the held-out fold $F_k$. The CV risk is the average over folds:
+\[
+L_{\mathrm{cv}}=\frac{1}{K}\sum_{k=1}^K L_{\mathrm{cv},k},\qquad
+L_{\mathrm{cv},k}=\frac{1}{|F_k|}\sum_{(x_i,y_i)\in F_k} L\big(y_i,\hat y_i^{(-k)}\big),
+\]
+where $\hat y_i^{(-k)}$ is the prediction from the model trained without fold $k$.
+
+\begin{notebox}[title={Exam: Threshold Model}]
+Sometimes the model is fixed as
+\[
+g(x,w)=
+\begin{cases}
++1,& x\ge w,\\
+-1,& \text{otherwise},
+\end{cases}
+\]
+and the parameter is (unusual but exam-relevant) computed on the training set via
+\[
+w=\frac{1}{l}\sum_{i=1}^l |x_i-y_i|.
+\]
+Then one evaluates on the held-out fold with $0$-$1$ loss $L_{01}(y,\hat y)=\1[y\neq \hat y]$.
+\end{notebox}
+
+\section{Probabilistic framework and Bayes optimal classifier}
+In probabilistic classification we model (or reason about) $p(y\mid x)$.
+With \textbf{zero-one loss} $L_{01}(y,\hat y)=\1[y\neq \hat y]$, the Bayes optimal classifier is
+\[
+  g^*(x)\in \argmax_{y\in\mathcal{Y}} p(y\mid x),
+\]
+i.e. predict the most probable class given $x$.
+
+Bayes' theorem connects conditional and joint distributions:
+\[
+  p(y\mid x)=\frac{p(x\mid y)p(y)}{p(x)},\qquad
+  p(x)=\sum_{y\in\mathcal{Y}} p(x\mid y)p(y)
+\]
+(or integral over $y$ if continuous).
+
+\section{Intro models: kNN and regression}
+\subsection{k-Nearest Neighbors (kNN)}
+kNN is a non-parametric method: for a new point $x_0$, find its $k$ closest training samples (by a distance, e.g. Euclidean) and predict:
+\begin{itemize}
+  \item \textbf{Classification:} majority vote among the $k$ labels (possibly distance-weighted).
+  \item \textbf{Regression:} average of the $k$ target values.
+\end{itemize}
+$k$ controls complexity: small $k$ can overfit; large $k$ can underfit.
+
+\subsection{Linear and polynomial regression}
+For regression with quadratic loss, typical models are
+\[
+  g(x;w)=w_0+w_1x \quad \text{(linear in 1D)},
+\qquad
+  g(x;w)=\sum_{j=0}^{m} w_j x^j \quad \text{(polynomial in 1D)}.
+\]
+Quadratic loss (mean squared error):
+\[
+  L_q(y,g)=\big(y-g\big)^2,\qquad
+  R_{\mathrm{emp}}(w)=\frac{1}{l}\sum_{i=1}^l \big(y_i-g(x_i;w)\big)^2.
+\]
+Increasing polynomial degree $m$ increases model flexibility; the best generalization typically occurs at an intermediate degree.
+
+\section{Evaluation: confusion matrix, ROC/AUC, PR curves}
+\subsection{Confusion matrix and common metrics}
+For binary classification, define counts:
+\[
+\text{TP, FP, TN, FN.}
+\]
+Common derived metrics:
+\[
+\text{Accuracy}=\frac{\text{TP}+\text{TN}}{\text{TP}+\text{FP}+\text{TN}+\text{FN}},
+\quad
+\text{TPR/Recall}=\frac{\text{TP}}{\text{TP}+\text{FN}},
+\quad
+\text{TNR/Specificity}=\frac{\text{TN}}{\text{TN}+\text{FP}},
+\]
+\[
+\text{Precision}=\frac{\text{TP}}{\text{TP}+\text{FP}},
+\quad
+\text{Balanced Acc}=\frac{1}{2}(\text{TPR}+\text{TNR}),
+\quad
+F_1=\frac{2\,\text{Precision}\cdot\text{Recall}}{\text{Precision}+\text{Recall}}.
+\]
+Balanced accuracy is often preferred for \textbf{unbalanced} datasets.
+
+\subsection{ROC curve and AUC}
+A score-based classifier yields a real-valued discriminant $\bar g(x)$ and predicts class $+1$ if $\bar g(x)\ge \tau$.
+Varying $\tau$ produces different $(\text{FPR},\text{TPR})$ points:
+\[
+\text{FPR}=\frac{\text{FP}}{\text{FP}+\text{TN}},\qquad \text{TPR}=\frac{\text{TP}}{\text{TP}+\text{FN}}.
+\]
+The ROC curve plots TPR vs.\ FPR over thresholds.
+The AUC is the area under the ROC curve (can be computed by trapezoids after sorting thresholds).
+
+\begin{notebox}[title={ROC Point at Fixed Threshold $\phi$}]
+Given scores $\bar g(x)$ and a threshold rule
+\[
+\hat y=
+\begin{cases}
++1,& \bar g(x)\ge \phi,\\
+-1,& \text{otherwise},
+\end{cases}
+\]
+compute the confusion matrix once for this $\phi$ and then
+\[
+\mathrm{FPR}=\frac{\mathrm{FP}}{\mathrm{FP}+\mathrm{TN}},\qquad
+\mathrm{TPR}=\frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}.
+\]
+This single point $(\mathrm{FPR},\mathrm{TPR})$ is exactly the location on the ROC curve corresponding to $\phi$.
+\end{notebox}
+
+\subsection{Precision--Recall (PR) curves}
+PR curves plot Precision vs.\ Recall over thresholds and are particularly informative under strong class imbalance.
+
+\section{Bias--variance decomposition (high-level)}
+For regression with squared error, a standard decomposition at a fixed point $x_0$ is:
+\[
+\E\big[(y-g(x_0;w(Z)))^2\big]
+=
+\underbrace{\Var[y\mid x_0]}_{\text{noise}}
++
+\underbrace{\big(\E[g(x_0;w(Z))]-\E[y\mid x_0]\big)^2}_{\text{bias}^2}
++
+\underbrace{\Var\big[g(x_0;w(Z))\big]}_{\text{variance}}.
+\]
+In binary classification with labels in $\{-1,+1\}$ and predictions restricted to $\{-1,+1\}$,
+the zero-one loss can be expressed via a squared difference (up to a constant factor), which allows analogous bias/variance reasoning.
+
+% ==========================================================
+% 2) SUPPORT VECTOR MACHINES (Unit 3)
+% ==========================================================
+\chapter{Support Vector Machines}
+
+\section{Geometric view: hyperplanes and margin}
+Binary labels are typically $y_i\in\{-1,+1\}$ and $x_i\in\R^d$.
+A hyperplane is given by
+\[
+  \ip{w}{x}-b=0,
+\]
+with normal vector $w$ and offset $b$.
+The classifier predicts
+\[
+  g(x)=\mathrm{sign}(\ip{w}{x}-b).
+\]
+For linearly separable data, we can scale $(w,b)$ so that
+\[
+  y_i(\ip{w}{x_i}-b)\ge 1\quad \forall i.
+\]
+Then the margin (distance between the two supporting hyperplanes) equals $2/\norm{w}$, so maximizing margin is equivalent to minimizing $\norm{w}$.
+
+\subsection{Convex-hull perspective (2D exam geometry)}
+A dataset is linearly separable iff the convex hulls of the two classes do not intersect.
+In well-separated 2D problems, the maximum-margin separator is geometrically ``between'' the two hulls.
+
+\textbf{Line from closest hull pair (useful heuristic in exams):}
+If you identify two closest points $p_+$ (class $+1$) and $p_-$ (class $-1$) on the hulls, then a max-margin boundary is often the line
+through the midpoint $m=\frac12(p_+ + p_-)$ with normal vector proportional to $(p_- - p_+)$:
+\[
+w \propto (p_- - p_+),\qquad w^\top x - b = 0,\qquad b=w^\top m.
+\]
+To convert to $x_2=kx_1+d$ (in 2D, $w=(w_1,w_2)$):
+\[
+w_1 x_1 + w_2 x_2 - b = 0
+\quad\Longrightarrow\quad
+x_2 = \underbrace{\left(-\frac{w_1}{w_2}\right)}_{k}\,x_1 + \underbrace{\left(\frac{b}{w_2}\right)}_{d}.
+\]
+
+\textbf{Area of a convex hull polygon (shoelace formula):}
+For ordered vertices $(x_1,y_1),\dots,(x_n,y_n)$,
+\[
+\mathrm{Area}=\frac12\left|\sum_{i=1}^{n} x_i y_{i+1}-y_i x_{i+1}\right|,
+\quad (x_{n+1},y_{n+1})=(x_1,y_1).
+\]
+
+\section{Hard-margin SVM (linearly separable case)}
+\begin{thmbox}[title={Primal Hard-Margin SVM}]
+\[
+\min_{w,b}\ \frac12\norm{w}^2
+\quad\text{s.t.}\quad
+y_i(\ip{w}{x_i}-b)\ge 1,\ \ i=1,\dots,l.
+\]
+\end{thmbox}
+
+The associated dual problem yields Lagrange multipliers $\alpha_i\ge 0$.
+The solution has the form
+\[
+  w=\sum_{i=1}^{l}\alpha_i y_i x_i,
+\]
+and only points with $\alpha_i>0$ influence $w$.
+
+\section{KKT conditions and support vectors}
+KKT complementarity implies
+\[
+  \alpha_i\big(y_i(\ip{w}{x_i}-b)-1\big)=0.
+\]
+Hence, if $\alpha_i>0$, then $y_i(\ip{w}{x_i}-b)=1$ and $x_i$ lies on the margin boundary: it is a \textbf{support vector}.
+
+For any support vector $x_j$ one can compute $b$ via
+\[
+  b = -y_j+\ip{w}{x_j},
+\]
+and in practice one averages $b$ over all support vectors for numerical stability.
+
+\subsection{KKT \& Lagrange duality: template for exam mini-problems}
+Many constrained problems can be written as
+\[
+\min_w f(w)\quad\text{s.t.}\quad h(w)\le 0.
+\]
+The Lagrangian is
+\[
+\mathcal{L}(w,\lambda)=f(w)+\lambda\,h(w),\qquad \lambda\ge 0.
+\]
+\textbf{KKT conditions:}
+\begin{itemize}
+  \item Primal feasibility: $h(w^*)\le 0$
+  \item Dual feasibility: $\lambda^*\ge 0$
+  \item Stationarity: $\nabla_w \mathcal{L}(w^*,\lambda^*)=0$
+  \item Complementary slackness: $\lambda^* h(w^*)=0$
+\end{itemize}
+
+\begin{thmbox}[title={KKT: Constrained Minimization onto Hyperplane}]
+$\min_w \frac12\norm{w}^2$ s.t.\ $a^\top w\le b$.\\
+Unconstrained optimum is $w=0$. If $a^\top 0\le b$ then $w^*=0$.\\
+If $a^\top 0> b$, the constraint is active ($a^\top w=b$) and the minimizer is the projection onto the hyperplane:
+\[
+w^*=\frac{b}{\norm{a}^2}\,a.
+\]
+\end{thmbox}
+
+\section{Soft-margin SVM (C-SVM) and hinge loss}
+If data are not separable, introduce slack variables $\xi_i\ge 0$:
+\[
+  y_i(\ip{w}{x_i}-b)\ge 1-\xi_i.
+\]
+The soft-margin objective trades off margin size and violations:
+\[
+  \min_{w,b,\xi}\ \frac12\norm{w}^2 + C\sum_{i=1}^{l}\xi_i,
+\]
+with $C>0$ controlling the trade-off.
+This corresponds to a margin-based classification with the hinge loss.
+
+\begin{notebox}[title={Soft-Margin: Dual Bounds and KKT Cases}]
+In the soft-margin case one typically has
+\[
+0\le \alpha_i \le C
+\]
+(and additionally $\sum_i \alpha_i y_i=0$ in the standard dual).
+
+\textbf{KKT case distinction (memorize):}
+\begin{itemize}
+  \item $\alpha_i=0$: point is not a support vector (correct and outside the margin).
+  \item $0<\alpha_i<C$: point lies on the margin (a ``margin SV''), typically $\xi_i=0$.
+  \item $\alpha_i=C$: point violates the margin ($\xi_i>0$); if $\xi_i>1$ it is misclassified.
+\end{itemize}
+This is useful for plot/geometry questions where you must identify or count support vectors.
+\end{notebox}
+
+\section{Kernel trick (nonlinear SVMs)}
+Replace the dot product by a kernel
+\[
+K(x,z)=\ip{\phi(x)}{\phi(z)},
+\]
+without explicitly constructing $\phi$.
+The decision function becomes
+\[
+  g(x)=\mathrm{sign}\left(\sum_{i=1}^{l}\alpha_i y_i K(x_i,x)-b\right).
+\]
+Typical kernels: linear, polynomial, Gaussian/RBF.
+
+A very common special case is the Gaussian/RBF kernel:
+\[
+K(x,z)=\exp\!\left(-\frac{\norm{x-z}^2}{2\sigma^2}\right)
+=\exp\!\left(-\gamma\norm{x-z}^2\right),\qquad \gamma=\frac{1}{2\sigma^2}.
+\]
+
+\section{Multi-class SVMs and SVR (outline-level)}
+\subsection{Multi-class}
+Common approaches: one-vs-rest or one-vs-one; decision by maximum score / voting.
+
+For $M$ classes, two standard strategies are exam-relevant:
+
+\textbf{One-vs-Rest (OvR):} train $M$ binary SVMs. Classifier $m$ separates class $m$ vs.\ the rest.
+Decision is typically by maximum score:
+\[
+\hat y(x)=\argmax_{m\in\{1,\dots,M\}} f_m(x).
+\]
+
+\textbf{One-vs-One (OvO):} train $\frac{M(M-1)}{2}$ binary SVMs (one for each pair $m$ vs.\ $n$).
+Decision is usually by majority vote over all pairwise classifiers (or by aggregating pairwise scores).
+
+\subsection{Support Vector Regression (SVR)}
+SVR uses an $\varepsilon$-insensitive tube and slack variables (above/below the tube).
+The parameter $C$ again controls the trade-off between flatness and training error.
+
+\begin{notebox}[title={Exam Pitfall: SVR Uses Real-Valued Output}]
+SVR is \emph{regression}. You use the real-valued output $f(x)$ (magnitude/offset matters),
+not only $\mathrm{sign}(f(x))$. This matches the $\varepsilon$-insensitive tube around $f(x)$.
+\end{notebox}
+
+\section{Pros/cons (what to remember)}
+\begin{itemize}
+  \item Pros: strong theoretical foundation; convex optimization $\Rightarrow$ global optimum; often effective when $d\gg l$.
+  \item Cons: can be slow on very large datasets; sensitive to noise/overlap; no intrinsic probabilistic output.
+\end{itemize}
+
+% ==========================================================
+% 3) RANDOM FORESTS AND GRADIENT BOOSTING (Unit 4)
+% ==========================================================
+\chapter{Random Forests and Gradient Boosting}
+
+\section{Decision trees: basic concepts}
+\subsection{What a decision tree represents}
+A decision tree is a predictive model that maps an input $x$ to an output by repeatedly applying decision rules:
+internal nodes test a feature condition, branches correspond to test outcomes, leaves output the final prediction.
+
+\begin{itemize}
+  \item \textbf{Classification tree:} leaf outputs a class label (often via majority vote) and sometimes class probabilities.
+  \item \textbf{Regression tree:} leaf outputs a real value (often the mean of training targets in the leaf).
+\end{itemize}
+
+\subsection{Recursive learning and the three design issues}
+Decision tree learning is typically a recursive, depth-first procedure that splits the training set into subsets, aiming for leaf nodes that are homogeneous in the target variable.
+
+Three key design issues:
+\begin{enumerate}
+  \item \textbf{Splitting criterion:} which split to choose at a node?
+  \item \textbf{Stopping criterion:} when to stop growing the tree (controls complexity)?
+  \item \textbf{Pruning:} whether/how to collapse deep subtrees to avoid overfitting.
+\end{enumerate}
+
+\subsection{Splitting criteria for classification}
+Let $Z$ be the data arriving at a node with class probabilities $p_k$ for $k=1,\dots,M$.
+
+\textbf{Entropy:}
+\[
+  H(Z) = -\sum_{k=1}^{M} p_k \ln p_k,
+\qquad
+H(Z)\le \ln M \ \text{(maximum at uniform classes)}.
+\]
+For a split $s$ producing subsets $Z_{s,t}$, the \textbf{information gain} is
+\[
+  g_E(Z,s)=H(Z)-\sum_t \frac{|Z_{s,t}|}{|Z|}H(Z_{s,t}).
+\]
+A split maximizes information gain when it produces (approximately) homogeneous subsets.
+
+\textbf{Gini impurity:}
+\[
+  G(Z)=1-\sum_{k=1}^{M}p_k^2,
+\qquad
+G(Z)\le 1-\frac{1}{M}.
+\]
+Gini gain is defined analogously by impurity reduction after the split.
+
+\subsection{Splitting criteria for regression}
+A common criterion for regression trees is \textbf{variance reduction}.
+If $Z$ contains targets $y_i$, define
+\[
+  \Var(Z)=\frac{1}{|Z|}\sum_{i\in Z}(y_i-\bar y)^2,
+\quad \bar y=\frac{1}{|Z|}\sum_{i\in Z} y_i.
+\]
+Then choose splits that reduce the (weighted) variance in children.
+
+\subsection{Overfitting and regularization in trees}
+Deep trees can overfit (low bias, high variance). Typical controls:
+max depth, minimum leaf size, minimum impurity decrease, and pruning (e.g.\ cost-complexity pruning).
+
+\section{Ensembles: bagging vs.\ boosting (one sentence each)}
+\textbf{Bagging} (bootstrap aggregating) reduces variance by averaging many high-variance models trained on resampled data.
+\textbf{Boosting} reduces error by building an additive model sequentially, focusing later models on earlier mistakes.
+
+\section{Random forests}
+\subsection{Algorithm}
+A random forest is an ensemble of decision trees built with two sources of randomness:
+\begin{enumerate}
+  \item \textbf{Bootstrap samples:} each tree is trained on a bootstrap subsample of the training set.
+  \item \textbf{Random feature subsets:} at each split, only a random subset of features is considered.
+\end{enumerate}
+Prediction aggregates trees:
+majority vote (classification) or average (regression).
+
+\subsection{Why it works: variance reduction and decorrelation}
+Averaging reduces variance, but the reduction is limited if trees are highly correlated.
+Intuition: random feature selection reduces correlation, which strengthens variance reduction.
+
+\subsection{Out-of-bag (OOB) error and variable importance}
+OOB idea: for each training point, evaluate it only on those trees whose bootstrap sample did \emph{not} include it (roughly $\approx 36\%$ left out per tree).
+This provides a nearly-free generalization estimate.
+
+Variable importance is commonly measured by
+\begin{itemize}
+  \item \textbf{Mean decrease in impurity} (e.g.\ total Gini decrease attributed to a feature),
+  \item \textbf{Permutation importance} (mean decrease in accuracy when permuting a feature).
+\end{itemize}
+Be aware that importance can be biased (e.g.\ categorical variables with many levels).
+
+\subsection{Class imbalance}
+A practical strategy to improve balanced accuracy is to \textbf{stratify classes when sampling} (or use class weights), so minority samples are not drowned out.
+
+\subsection{Pros/cons (typical exam talking points)}
+RFs are usually easy to tune (often mainly number of trees + features per split) and relatively robust to noise.
+Downsides include slower prediction with many trees and potential biases in importance measures.
+
+\section{Boosting}
+\subsection{Forward stagewise additive modeling (general template)}
+Boosting can be viewed as building an additive model
+\[
+  g_N(x)=\sum_{n=1}^{N}\beta_n\,b(x;\gamma_n),
+\]
+by repeatedly adding one new basis function.
+
+\begin{thmbox}[title={Forward Stagewise Additive Modeling}]
+Initialize $g_0(x)=0$. For $n=1,\dots,N$:
+\[
+(\beta_n,\gamma_n)=\argmin_{\beta,\gamma}\ \sum_{i=1}^{l} L\big(y_i,\, g_{n-1}(x_i)+\beta\,b(x_i;\gamma)\big),
+\]
+and update
+\[
+g_n(x)=g_{n-1}(x)+\beta_n b(x;\gamma_n).
+\]
+\end{thmbox}
+
+AdaBoost.M1 can be derived as a special case with exponential loss; the key point is that \textbf{coefficients from earlier steps are not re-optimized}.
+
+\subsection{AdaBoost (binary classification intuition)}
+AdaBoost maintains weights on data points.
+After fitting a weak classifier, \textbf{misclassified points get increased weight} and thus receive more attention in the next iteration.
+More accurate weak classifiers receive larger influence in the final vote.
+
+A common final prediction form is:
+\[
+  g(x)=\mathrm{sign}\left(\sum_{n=1}^{N}\varrho_n\, g_n(x)\right),
+\]
+where $\varrho_n$ is the model weight (larger when the weak classifier error is smaller).
+
+\begin{thmbox}[title={AdaBoost: Binary Standard Formulas}]
+With data weights $D_t(i)$ and weak classifier $h_t(x)\in\{-1,+1\}$:
+\[
+\epsilon_t=\sum_{i=1}^l D_t(i)\,\1\!\big[h_t(x_i)\neq y_i\big],\qquad
+\alpha_t=\frac12\ln\frac{1-\epsilon_t}{\epsilon_t}.
+\]
+Update the data weights:
+\[
+D_{t+1}(i)=\frac{D_t(i)\exp\!\big(-\alpha_t y_i h_t(x_i)\big)}{Z_t},
+\]
+where $Z_t$ normalizes so $\sum_i D_{t+1}(i)=1$.\\
+Final classifier:
+\[
+H(x)=\mathrm{sign}\!\left(\sum_{t=1}^T \alpha_t h_t(x)\right).
+\]
+\end{thmbox}
+
+\begin{intbox}[title={AdaBoost Weight Update Intuition}]
+Misclassified points have $y_i h_t(x_i)=-1$ and get multiplied by $\exp(+\alpha_t)$ (upweighted),
+correctly classified points get multiplied by $\exp(-\alpha_t)$ (downweighted).\\
+\textbf{Who gets the larger model weight?} The weak learner with smaller error $\epsilon_t$ gets a larger $\alpha_t$.
+\end{intbox}
+
+\subsection{Gradient boosting and tree boosting}
+For trees, write a regression/classification tree as
+\[
+T(x;\Theta)=\sum_{j=1}^{J}\gamma_j\,\1[x\in R_j],
+\quad
+\Theta=\{(R_j,\gamma_j)\}_{j=1}^{J}.
+\]
+A boosted tree model is an additive sum of trees:
+\[
+g_N(x)=\sum_{n=1}^{N}T(x;\Theta_n).
+\]
+
+Gradient boosting views optimization in function space:
+let $g=(g(x_1),\dots,g(x_l))\in\R^l$ and
+\[
+\mathcal{L}(g)=\sum_{i=1}^{l} L(y_i,g(x_i)).
+\]
+At iteration $n$, compute the gradient of $\mathcal{L}$ w.r.t.\ the current predictions and move in the steepest descent direction.
+Because the negative gradient is unconstrained, we \textbf{fit a tree to approximate the negative gradient} (often called pseudo-residuals).
+
+Practical hyperparameters for gradient boosted trees (GBTs):
+\begin{itemize}
+  \item number of trees $N$,
+  \item tree depth (often shallow),
+  \item learning rate (shrinkage).
+\end{itemize}
+GBTs can overfit noisy data more easily than RFs because trees are built sequentially and later trees adapt to earlier errors.
+
+\subsection{XGBoost (high level)}
+XGBoost is a gradient-boosted tree method with explicit regularization (via complexity penalties) and many engineering improvements for speed/robustness.
+It is still widely considered highly competitive on tabular data.
+
+\section{RF vs.\ GBT: quick comparison}
+\begin{itemize}
+  \item RF: parallel training, robust, easy tuning, strong baseline.
+  \item GBT: sequential training, very flexible loss functions, often higher accuracy but more sensitive and harder to tune.
+\end{itemize}
+
+
+% ==========================================================
+% 4) LOGISTIC REGRESSION (Unit 5)
+% ==========================================================
+\chapter{Logistic Regression}
+
+\section{Maximum likelihood estimation (MLE)}
+\subsection{Likelihood and log-likelihood}
+Assume a probabilistic model $p(y\mid x;\omega)$ with parameters $\omega$.
+Given i.i.d.\ data, the likelihood is a product:
+\[
+  \mathcal{L}(\omega)=\prod_{i=1}^{l} p(y_i\mid x_i;\omega),
+\]
+and the log-likelihood is a sum:
+\[
+  \log \mathcal{L}(\omega)=\sum_{i=1}^{l} \log p(y_i\mid x_i;\omega).
+\]
+MLE chooses $\hat\omega\in\argmax_\omega \log\mathcal{L}(\omega)$.
+Equivalently, one minimizes the \textbf{negative log-likelihood} (NLL).
+
+\subsection{Gaussian noise implies squared error (important equivalence)}
+If a regression target is modeled as $y=g(x)+\varepsilon$ with Gaussian noise $\varepsilon\sim\mathcal{N}(0,\sigma^2)$, then minimizing the NLL is equivalent (up to constants) to minimizing squared error.
+
+\section{Binary logistic regression}
+\subsection{Model and sigmoid}
+Logistic regression models a probability for the positive class:
+\[
+  g(x)=p(y=1\mid x)=\sigmoid(s),\quad s=w^\top x+b,
+\qquad
+  \sigmoid(s)=\frac{1}{1+e^{-s}}.
+\]
+Classification is obtained by thresholding (e.g.\ $g(x)\ge 0.5 \Rightarrow \hat y=1$).
+
+\subsection{Bernoulli likelihood}
+For $y\in\{0,1\}$, the Bernoulli model gives
+\[
+p(y\mid x)=g(x)^y(1-g(x))^{1-y}.
+\]
+For i.i.d.\ samples:
+\[
+\mathcal{L}(w,b)=\prod_{i=1}^{l} g(x_i)^{y_i}\big(1-g(x_i)\big)^{1-y_i}.
+\]
+
+\subsection{Cross-entropy loss (negative log-likelihood)}
+Maximizing $\mathcal{L}$ is equivalent to minimizing the NLL:
+\begin{thmbox}[title={Binary Cross-Entropy / NLL}]
+\[
+  \mathcal{J}(w,b)= -\sum_{i=1}^{l}\Big[y_i\ln g(x_i) + (1-y_i)\ln\big(1-g(x_i)\big)\Big].
+\]
+No closed-form solution $\Rightarrow$ use numerical optimization.
+\end{thmbox}
+
+\subsection{Gradients and convexity (what exams usually target)}
+For the above loss, the gradient has a simple structure:
+\[
+\frac{\partial \mathcal{J}}{\partial w}=\sum_{i=1}^{l}\big(g(x_i)-y_i\big)x_i,
+\qquad
+\frac{\partial \mathcal{J}}{\partial b}=\sum_{i=1}^{l}\big(g(x_i)-y_i\big).
+\]
+The objective is \textbf{convex} in $(w,b)$, so any local optimum is global (the Hessian is positive semidefinite). Thus, getting stuck in a bad local minimum is not an issue for plain logistic regression (unlike neural networks).
+
+\section{Optimization in practice}
+\subsection{Gradient descent and learning rate}
+Gradient descent iterates
+\[
+  w_{n+1}=w_n-\eta\,\frac{\partial \mathcal{J}}{\partial w}(w_n),
+\]
+with learning rate $\eta>0$.
+If $\eta$ is too large, updates can diverge or oscillate; if too small, convergence is slow.
+
+\subsection{Momentum}
+Momentum accelerates gradient descent in flat regions and narrow valleys:
+\[
+\Delta w_n = -\eta\,\frac{\partial \mathcal{J}}{\partial w}+\mu\,\Delta w_{n-1},
+\qquad
+w_{n+1}=w_n+\Delta w_n,
+\]
+with momentum parameter $0\le \mu\le 1$.
+
+\subsection{Gradient checking (debugging tool)}
+To verify an analytic gradient implementation, compare to a numerical approximation via central differences:
+\[
+\frac{\partial \mathcal{J}}{\partial w_i}
+\approx
+\frac{\mathcal{J}(w+\epsilon e_i)-\mathcal{J}(w-\epsilon e_i)}{2\epsilon},
+\]
+with a typical choice $\epsilon=10^{-4}$.
+
+\section{Multi-class logistic regression (softmax regression)}
+For $K$ classes, define scores $s_k=w_k^\top x+b_k$ and probabilities
+\[
+p(y=k\mid x)=\frac{e^{s_k}}{\sum_{j=1}^{K}e^{s_j}}.
+\]
+With one-hot vectors $[y_i]_k\in\{0,1\}$, the cross-entropy loss is
+\[
+\mathcal{J}(\omega)
+=
+-\sum_{i=1}^{l}\sum_{k=1}^{K}[y_i]_k\ln p(y_i=k\mid x_i;\omega).
+\]
+
+% ==========================================================
+% 5) ARTIFICIAL NEURAL NETWORKS (Unit 6)
+% ==========================================================
+\chapter{Artificial Neural Networks}
+
+\section{Perceptron and linear separability}
+\subsection{Perceptron as a linear threshold unit}
+For binary targets $y\in\{0,1\}$, a perceptron implements a threshold decision:
+\[
+g(x;w,\theta)=
+\begin{cases}
+1, & w^\top x \ge \theta,\\
+0, & w^\top x < \theta.
+\end{cases}
+\]
+The \emph{decision boundary} is the hyperplane $w^\top x=\theta$ (linear in $x$). Even though the step function is non-smooth, the induced classifier is a \textbf{linear classifier} (linear separating hyperplane).
+
+\subsection{Perceptron learning algorithm (online updates)}
+The perceptron learning rule updates parameters only on mistakes. With learning rate $\eta>0$ and samples $(x_i,y_i)$:
+\begin{itemize}
+  \item If $g(x_i;w,\theta)=0$ but $y_i=1$ (false negative), then
+  \[
+    w := w + \eta x_i,\qquad \theta := \theta - \eta.
+  \]
+  \item If $g(x_i;w,\theta)=1$ but $y_i=0$ (false positive), then
+  \[
+    w := w - \eta x_i,\qquad \theta := \theta + \eta.
+  \]
+  \item Otherwise: no update.
+\end{itemize}
+
+\subsection{Linear separability, convergence, and XOR limitation}
+If the training set is \textbf{linearly separable}, the perceptron learning algorithm terminates and finds a separating hyperplane. The resulting solution is generally \textbf{not unique} (depends on initialization and data order).
+If the task is \textbf{not} linearly separable (classic example: XOR), the algorithm may fail to terminate.
+
+This motivates \textbf{intermediate (hidden) layers} and yields the \textbf{multi-layer perceptron (MLP)}.
+
+\section{Feed-forward neural networks (MLPs / FNNs)}
+\subsection{Architecture and forward pass notation}
+An MLP (often also called a fully connected feed-forward network, FNN) consists of layers $l=0,1,\dots,L$, where $a^{[0]}=x$ is the input, and $a^{[L]}=\hat y$ is the output.
+
+For each layer $l\ge 1$, define weights $W^{[l]}$, biases $b^{[l]}$, pre-activations $s^{[l]}$, and activations $a^{[l]}$:
+\[
+s^{[l]} = W^{[l]}a^{[l-1]} + b^{[l]},
+\qquad
+a^{[l]} = \phi^{[l]}(s^{[l]}),
+\]
+where $\phi^{[l]}$ is an activation function (typically non-linear in hidden layers).
+
+\begin{intbox}
+Without activation functions, the composition of linear maps remains linear. Hence, an activation-free network cannot model non-linear functions.
+\end{intbox}
+
+\subsection{Activation functions: sigmoid/tanh vs.\ ReLU/ELU}
+Classic activations include sigmoid $\sigmoid(z)=\frac{1}{1+e^{-z}}$ and $\tanh(z)$. Their derivatives can become small in saturation, contributing to \textbf{vanishing gradients} in deep nets.
+
+Modern practice often uses ReLU:
+\[
+\mathrm{ReLU}(x)=\max(0,x),
+\]
+whose gradient is either $0$ or $1$ (helps against vanishing gradients). A known issue is \textbf{dying ReLUs} (units stuck at negative inputs, gradient $0$).
+
+ELU (exponential linear unit) is another option that keeps non-zero slope in the negative region and can improve optimization stability.
+
+\subsection{Loss functions (link to probabilistic assumptions)}
+In the course view, loss functions are tied to noise/likelihood assumptions:
+\begin{itemize}
+  \item \textbf{Regression:} MSE corresponds to Gaussian noise; absolute error corresponds to Laplace noise; Huber can be used if noise is partly robust/heavy-tailed.
+  \item \textbf{Classification:} cross-entropy maximizes the likelihood of correct classification; hinge loss enforces maximum margin (SVM).
+\end{itemize}
+
+\subsection{Universal Approximation Theorem (exam-level statement)}
+A neural network with \textbf{at least one hidden layer} and a \textbf{non-linear activation function} can approximate any \textbf{continuous} function on a compact subset of $\R^d$, given sufficiently many hidden units. This is an \emph{existence} statement; it does not guarantee easy training or good generalization.
+
+\section{Training: empirical risk, gradient descent, backpropagation}
+\subsection{Empirical risk and gradient descent update}
+Let $\theta$ denote \emph{all} learnable parameters (all weights and biases). Empirical risk:
+\[
+R_{\mathrm{emp}}(\theta)=\frac{1}{l}\sum_{n=1}^{l} L\big(y_n, g(x_n;\theta)\big).
+\]
+Gradient descent updates parameters in the \textbf{negative} gradient direction:
+\begin{thmbox}[title={Gradient Descent Parameter Update}]
+\[
+\theta \leftarrow \theta - \eta \nabla_{\theta} R_{\mathrm{emp}}(\theta).
+\]
+\end{thmbox}
+Mini-batch SGD approximates the gradient on small batches, trading accuracy for speed and often improving generalization.
+
+\subsection{Backpropagation via delta errors and layer Jacobians}
+Backpropagation is the efficient evaluation of gradients via the chain rule; conceptually it is \textbf{reverse-mode automatic differentiation} for a scalar loss.
+
+We use the standard layer notation
+\[
+s^{[l]} = W^{[l]} a^{[l-1]} + b^{[l]},\qquad a^{[l]}=\phi^{[l]}(s^{[l]}).
+\]
+Define the \textbf{delta error} (vector of sensitivities) at layer $l$ by
+\[
+\delta^{[l]} := \frac{\partial L}{\partial s^{[l]}} \in \R^{n_l}.
+\]
+With this definition, the parameter gradients at layer $l$ take a very simple outer-product form:
+\[
+\frac{\partial L}{\partial W^{[l]}} = \delta^{[l]}(a^{[l-1]})^\top,
+\qquad
+\frac{\partial L}{\partial b^{[l]}} = \delta^{[l]}.
+\]
+
+To propagate error signals backwards, note that
+\[
+\delta^{[l-1]} = \frac{\partial L}{\partial s^{[l-1]}}
+= \left(\frac{\partial s^{[l]}}{\partial s^{[l-1]}}\right)^\top \delta^{[l]}.
+\]
+For a fully connected layer, the relevant \textbf{single-layer Jacobian} mapping $s^{[l-1]}\mapsto s^{[l]}$ is
+\[
+J^{[l]} := \frac{\partial s^{[l]}}{\partial s^{[l-1]}}
+= W^{[l]}\,\mathrm{diag}\!\Big((\phi^{[l-1]})'(s^{[l-1]})\Big),
+\]
+so the backward recursion is:
+
+\begin{thmbox}[title={Backpropagation Backward Recursion}]
+\[
+\delta^{[l-1]} = (J^{[l]})^\top \delta^{[l]}
+\qquad\text{equivalently}\qquad
+\delta^{[l-1]\top} = \delta^{[l]\top} J^{[l]}.
+\]
+\end{thmbox}
+
+\begin{notebox}[title={ReLU Derivative}]
+$\mathrm{ReLU}(z)=\max(0,z)$ and
+\[
+\mathrm{ReLU}'(z)=
+\begin{cases}
+1,& z>0,\\
+0,& z<0
+\end{cases}
+\]
+(at $z=0$ one often uses $0$ or a subgradient).
+\end{notebox}
+
+\subsection{Delta error at the output layer (three important special cases)}
+For certain standard combinations of loss and output activation, the output delta error is simply ``prediction minus label'':
+\[
+\delta^{[L]} = a^{[L]} - y,
+\]
+for:
+\begin{itemize}
+  \item squared loss with linear output,
+  \item binary cross-entropy with sigmoid output,
+  \item categorical cross-entropy with softmax output.
+\end{itemize}
+
+\subsection{Backprop procedure (what you actually do)}
+A typical single-sample (or mini-batch) training step:
+\begin{enumerate}
+  \item Forward pass; store all $s^{[l]}$ and $a^{[l]}$.
+  \item Compute $\delta^{[L]}$ at output units.
+  \item Propagate deltas backward using $\delta^{[l-1]\top}=\delta^{[l]\top}J^{[l]}$.
+  \item Compute gradients for all $W^{[l]},b^{[l]}$.
+  \item Update parameters by a GD/SGD step.
+\end{enumerate}
+
+\section{Vanishing/exploding gradients (deep nets)}
+In deep networks, backprop repeatedly multiplies by Jacobians. Roughly,
+\[
+\delta^{[0]} \approx \delta^{[L]} J^{[L]}J^{[L-1]}\cdots J^{[1]}.
+\]
+If Jacobian norms are $<1$, gradients shrink exponentially (vanishing gradients). If norms are $>1$, gradients blow up (exploding gradients).
+
+Common mitigations covered in the course:
+\begin{itemize}
+  \item suitable activations (ReLU/ELU) to avoid saturation,
+  \item normalization (batch norm, layer/weight norm variants),
+  \item clever initialization to keep Jacobians ``well-conditioned'',
+  \item gating (for RNNs; see Unit 7),
+  \item architectural tricks like skip connections (see ResNet in CNNs).
+\end{itemize}
+
+\section{Deep learning tricks: initialization and regularization}
+\subsection{Weight initialization (keep signal/gradients stable)}
+Bad initialization can already cause exploding/vanishing activations \emph{before} learning starts.
+
+Typical schemes:
+\begin{itemize}
+  \item \textbf{Small Gaussian:} $w_{ij}\sim\mathcal{N}(0,0.01)$ (can work for small nets, often fails for deep nets).
+  \item \textbf{LeCun initialization:} for a layer with $J$ input units,
+  \[
+    w_{ij}\sim \mathcal{U}\!\left(-\frac{1}{\sqrt{J}},\frac{1}{\sqrt{J}}\right),
+  \]
+  aiming for unit variance in activations.
+  \item \textbf{Xavier/Glorot initialization:} for $J$ inputs and $I$ outputs,
+  \[
+    w_{ij}\sim \mathcal{U}\!\left(-\sqrt{\frac{6}{I+J}},\sqrt{\frac{6}{I+J}}\right),
+  \]
+  balancing variance across layers.
+  \item \textbf{Orthogonal initialization:} initialize weights as random orthogonal matrices; helps keep Jacobians close to well-conditioned transformations.
+\end{itemize}
+
+\subsection{Dropout (prevent co-adaptation)}
+Dropout is motivated by the fact that deep nets can overfit strongly. The idea is to randomly ``drop out'' units during training (different mask per iteration and per sample), so no unit can rely on specific other units being present.
+
+Typical dropout rates mentioned in the lecture: $0.5$ for hidden units and $0.2$ for input units.
+Implementation note: outputs must be rescaled (either during training via ``inverted dropout'' or after training).
+
+\subsection{Batch normalization (BN) (stabilize learning)}
+BN normalizes activations to mean $0$ and variance $1$ (estimated over each mini-batch) and then learns an affine re-scaling:
+\begin{thmbox}[title={Batch Normalization}]
+For a mini-batch $B$ with activations $a^{(1)},\dots,a^{(B)}$ of a neuron:
+\[
+\mu_B=\frac{1}{B}\sum_{k=1}^{B}a^{(k)},\qquad
+\sigma_B^2=\frac{1}{B}\sum_{k=1}^{B}(a^{(k)}-\mu_B)^2,
+\]
+\[
+\hat a^{(\xi)}=\frac{a^{(\xi)}-\mu_B}{\sqrt{\sigma_B^2+\epsilon}},\qquad
+b^{(\xi)}=\gamma \hat a^{(\xi)}+\beta.
+\]
+\end{thmbox}
+BN helps both optimization and regularization; variants include layer normalization and weight normalization.
+
+\subsection{Weight decay (L2 regularization)}
+Weight decay penalizes large weights, encouraging lower-complexity models. Conceptually:
+\[
+  R_{\mathrm{emp}}(\theta)\ \leadsto\ R_{\mathrm{emp}}(\theta) + \frac{\lambda}{2}\sum_l \norm{W^{[l]}}_F^2.
+\]
+It is a standard regularizer to reduce overfitting (not underfitting).
+
+\subsection{Early stopping (validation-based regularization)}
+Early stopping monitors validation performance and stops training once validation error starts increasing, effectively acting as a regularizer (common in deep learning practice even if not formalized).
+
+\section{Double descent (optional intuition)}
+As model capacity increases, test error can exhibit ``double descent'': decreasing (bias reduction), then increasing near the interpolation threshold (variance peak), then decreasing again in an overparameterized regime. This is mainly a reminder that ``more parameters'' is not always monotone-bad for generalization.
+
+% ==========================================================
+% 6) SPECIAL NETWORK ARCHITECTURES (Unit 7)
+% ==========================================================
+\chapter{Special Network Architectures}
+
+\section{Convolutional Neural Networks (CNNs)}
+\subsection{Why CNNs: image structure and local receptive fields}
+Images are very high-dimensional, but nearby pixels are highly correlated and basic patterns (edges, corners, textures) recur at many positions.
+CNNs exploit this by using \textbf{local receptive fields}: each neuron ``looks'' only at a small patch (kernel/filter), dramatically reducing parameters compared to full connectivity.
+
+\subsection{Convolution vs.\ cross-correlation and weight sharing}
+In deep learning, the operation called ``convolution'' is commonly implemented as \textbf{cross-correlation} (no kernel flip). With kernel weights $w_{i,j}$ (size $R\times R$) and input image $x_{a,b}$, the feature map pre-activation is:
+\[
+s_{a,b}=\sum_{i=0}^{R-1}\sum_{j=0}^{R-1} w_{i,j}\,x_{a+i,b+j}.
+\]
+Applying the \textbf{same} kernel weights at all spatial positions is called \textbf{weight sharing}. It is a key reason why CNNs generalize well to translated patterns.
+
+\subsection{Stride and padding}
+\textbf{Striding} uses step size $S>1$ to downsample: we ``skip'' input positions while moving the kernel. This reduces computation but loses information; it also increases the receptive field through network depth.
+
+\textbf{Padding} (often zero-padding) extends the input with $P$ pixels around the borders. Padding can keep input and output sizes similar and prevents rapid shrinkage of feature maps.
+
+\begin{thmbox}[title={CNN Output Size Formula}]
+With input size $A$, kernel size $R$, padding $P$, stride $S$, the output size is
+\[
+d=\frac{A-R+2P}{S}+1
+\]
+(assuming the expression is an integer).
+\end{thmbox}
+
+\subsection{Pooling (subsampling)}
+Pooling reduces spatial resolution by aggregating over local windows (lossy downsampling). Common variants:
+\begin{itemize}
+  \item \textbf{Average pooling:} average over a $k\times k$ field,
+  \item \textbf{Max pooling:} maximum over a $k\times k$ field,
+  \item \textbf{$n$-max pooling:} mean over the $n$ largest values in a $k\times k$ field.
+\end{itemize}
+
+\begin{notebox}[title={Exam Trap: Pooling and Receptive Field}]
+Pooling does \emph{not} decrease the receptive field through depth; downsampling layers (pooling/stride) typically \emph{increase} the effective receptive field while reducing feature map resolution.
+\end{notebox}
+
+\subsection{Inputs and outputs: channels and multiple kernels}
+CNN inputs often have multiple channels (e.g.\ RGB). A convolutional layer typically uses \textbf{multiple kernels}, each producing one output feature map (one output channel). Hence it is false that each convolutional layer always uses exactly one kernel.
+
+\begin{thmbox}[title={Multi-Channel Convolution}]
+For an input with channels $c=1,\dots,C_{\mathrm{in}}$ (e.g.\ RGB) and one kernel with weights $w_{i,j,c}$:
+\[
+s_{a,b}=\sum_{c=1}^{C_{\mathrm{in}}}\sum_{i=0}^{R-1}\sum_{j=0}^{R-1} w_{i,j,c}\,x_{a+i,b+j,c}.
+\]
+A convolutional layer typically uses $C_{\mathrm{out}}$ different kernels, producing $C_{\mathrm{out}}$ output feature maps.\\
+Shape mnemonic: $(A\times A\times C_{\mathrm{in}})\ \mapsto\ (d\times d\times C_{\mathrm{out}})$ with $d=\frac{A-R+2P}{S}+1$.
+\end{thmbox}
+
+\subsection{Example architectures and transfer learning (high level)}
+Historically, CNNs achieved breakthroughs in ImageNet (ILSVRC). AlexNet (2012) popularized deep CNNs; later architectures (e.g.\ ResNet) introduced \textbf{skip connections}, improving optimization of very deep networks.
+
+\textbf{Transfer learning} reuses pretrained kernels/weights (often from large datasets like ImageNet) and fine-tunes on a related target task. This can reduce data needs and training time.
+
+\subsection{Dataset augmentation (exam-relevant)}
+Dataset augmentation creates additional training examples via label-preserving transformations
+(e.g.\ crops, flips, small rotations, brightness/contrast jitter, noise).
+It is most useful when you have \textbf{few data} or \textbf{low diversity} and acts like regularization
+(improves robustness and reduces overfitting).
+
+\section{Recurrent Neural Networks (RNNs)}
+\subsection{Sequence learning settings}
+Many problems involve sequences of variable length $T$, where each element has $D$ features.
+A common categorization:
+\begin{itemize}
+  \item \textbf{Sequence classification:} one label per sequence (e.g.\ sentiment of a sentence).
+  \item \textbf{Segment classification:} one label per part of a sequence.
+  \item \textbf{Temporal classification:} a label at each time step (sequence of labels; e.g.\ frame labeling).
+\end{itemize}
+
+\subsection{RNN forward pass and weight sharing across time}
+An RNN maintains a hidden state over time. Using the lecture notation:
+\[
+s(t)=W^\top x(t)+R^\top a(t-1),\qquad
+a(t)=f(s(t)),\qquad
+\hat y(t)=\phi\big(V^\top a(t)\big),
+\]
+with input-to-hidden $W$, recurrent weights $R$, hidden-to-output $V$, and typically $a(0)=0$.
+The defining property is \textbf{weight sharing} across time steps: the same $(W,R,V)$ are reused for all $t$.
+
+\begin{notebox}[title={Turing Completeness: FNN vs.\ RNN}]
+Feed-forward neural networks (FNNs) are typically not Turing-complete.
+Recurrent neural networks (RNNs) can be Turing-complete under suitable assumptions.
+\end{notebox}
+
+\subsection{Training: unrolling and Backpropagation Through Time (BPTT)}
+Training uses backpropagation on the \textbf{unrolled} computational graph over time (BPTT). Complexity highlights:
+\begin{itemize}
+  \item \textbf{BPTT:} time $\mathcal{O}(N^2T)$, memory $\mathcal{O}(NT)$ (store activations over time).
+  \item \textbf{Truncated BPTT:} backprop only over a window of length $\tau$; memory $\mathcal{O}(N\tau)$, but cannot capture dependencies beyond $\tau$ well.
+  \item \textbf{RTRL:} alternative online method; time $\mathcal{O}(N^4T)$, memory $\mathcal{O}(N^3)$ (usually impractical).
+\end{itemize}
+
+\subsection{Vanishing/exploding gradients in RNNs}
+RNNs are ``deep in time'', so gradients can vanish/explode similarly to deep feed-forward networks.
+A key stability condition (lecture form) is that we want:
+\[
+\big\| R(t)\,\mathrm{diag}\big(f'(s(t-1))\big)\big\| \approx 1,
+\]
+otherwise the influence of past states either decays too fast (vanishing) or blows up (exploding).
+
+Common course-level mitigation ideas: careful initialization (often close to orthogonal for recurrent matrices), suitable activations, truncated BPTT, and \textbf{gating} (LSTM).
+
+\subsection{Long Short-Term Memory (LSTM): idea}
+LSTMs introduce a memory ``cell'' that acts like an \textbf{integrator} to preserve information over long time spans.
+The key mechanisms are \textbf{gates} that (i) decide what to remember, (ii) what to communicate to the output, and (iii) what to forget.
+
+A key exam detail: the ``constant error carousel'' (CEC) is designed so that gradients can pass through time without vanishing, which is achieved via a \textbf{linear/identity} path (not by adding more non-linearities).
+
+\begin{thmbox}[title={Standard LSTM Equations}]
+With input $x_t$, hidden state $h_{t-1}$, cell state $c_{t-1}$, gates $f_t,i_t,o_t$:
+\[
+f_t=\sigmoid(W_f x_t + R_f h_{t-1}+b_f),\quad
+i_t=\sigmoid(W_i x_t + R_i h_{t-1}+b_i),
+\]
+\[
+\tilde c_t=\tanh(W_c x_t + R_c h_{t-1}+b_c),\quad
+c_t=f_t\odot c_{t-1}+i_t\odot \tilde c_t,
+\]
+\[
+o_t=\sigmoid(W_o x_t + R_o h_{t-1}+b_o),\quad
+h_t=o_t\odot \tanh(c_t).
+\]
+\end{thmbox}
+
+\subsection{Limitations and modern alternatives (very high level)}
+RNNs/LSTMs process sequences sequentially and can be harder to parallelize. This motivated a shift toward transformer-style attention models and, more recently, state space models (SSMs). The lecture notes mention this trend (e.g.\ ``rise of transformers and SSMs'', with examples like Mamba and xLSTM).
+
+\section{Attention and transformers (exam-level facts)}
+Attention computes weighted combinations of values based on similarity between queries and keys. In (scaled) dot-product form:
+\[
+\mathrm{Attn}(Q,K,V)=\mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V.
+\]
+Useful exam statements:
+\begin{itemize}
+  \item Queries and keys share the \emph{feature dimension} $d_k$ but may have different sequence lengths (e.g.\ cross-attention).
+  \item The attention output is invariant to simultaneously permuting keys and values in the same way (it only depends on their pairing).
+  \item Standard dense self-attention is not exponential in sequence length; it is dominated by the $QK^\top$ computation (quadratic in $T$).
+\end{itemize}
+
+
+\end{document}

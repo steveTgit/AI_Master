@@ -12,7 +12,7 @@ contains two documents:
 | File | Class | Template |
 |------|-------|----------|
 | `summary.tex` | `book` | `summary_template.tex` |
-| `old_exams.tex` | `article` | `old_exams_template.tex` |
+| `exams.tex` | `article` | `exams_template.tex` |
 
 ---
 
@@ -38,7 +38,7 @@ the signalling value of all boxes.
 
 ---
 
-## old_exams.tex conventions
+## exams.tex conventions
 
 - **Structure:** `\section` per thematic topic (no chapters — article class).
   Sections should map to the chapter breakdown of the corresponding `summary.tex`.
@@ -49,7 +49,7 @@ the signalling value of all boxes.
 - **Mathematical content is kept verbatim.** Only normalize wording where
   scans were messy; never change answer choices or numbers.
 
-### Box types (old_exams.tex)
+### Box types (exams.tex)
 
 | Macro / Box | Color | Use for |
 |-------------|-------|---------|
@@ -66,8 +66,40 @@ the signalling value of all boxes.
 | `\repeatnote` | Prints italic "Asked multiple times." |
 | `\choice` | `☐` bullet item for multiple-choice |
 | `\answerline{3cm}` | Fill-in underline of specified width |
+| `\workingspace{4cm}` | Dashed-border blank box for student work |
 
-### Math macros included in old_exams.tex
+### Question types
+
+Use the following conventions depending on what kind of answer is expected:
+
+| Question type | Format inside `\questiontitle` … `\closequestion` |
+|---------------|--------------------------------------------------|
+| **Multiple choice** | `\begin{itemize}[leftmargin=1.8em]` with `\choice` items |
+| **Single number / short expression** | `\answerline{3cm}` inline at the end of the question text |
+| **Calculation / short derivation** | `\workingspace{4cm}` on its own line after the question |
+| **Open / long answer** | `\workingspace{7cm}` on its own line after the question |
+
+The heights for `\workingspace` are guidelines — adjust to fit the expected length of the answer.
+
+### Answer key
+
+Every `exams.tex` file ends with an answer key:
+
+```latex
+\newpage
+\section*{Answer Key}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=4pt]
+  \item \textbf{B}
+  \item $x = 0.5$
+  \item [key steps: …]
+\end{enumerate}
+```
+
+- The list is numbered manually and must match the auto-incremented question counter order.
+- Keep answers concise: letter for MCQ, expression for fill-in, key steps/formula for derivations, bullet points for open questions.
+- **Never** put answer content inside `\questiontitle` / `\closequestion` blocks — the question boxes must stay blank.
+
+### Math macros included in exams.tex
 
 `\R`, `\E`, `\Prob`, `\KL{q}{p}`, `\dd` — add from `summary_template.tex` as needed.
 
@@ -90,7 +122,7 @@ the signalling value of all boxes.
 
 ```bash
 latexmk -pdf summary.tex
-latexmk -pdf old_exams.tex
+latexmk -pdf exams.tex
 latexmk -C          # clean build artifacts
 ```
 
@@ -100,8 +132,8 @@ Always commit both `.tex` and `.pdf`.
 
 ## What NOT to do
 
-- Do not edit `summary_template.tex` or `old_exams_template.tex` in-place — copy first.
-- Do not add `\answers` or solution content to `old_exams.tex` — it is
-  intentionally a practice set without solutions.
+- Do not edit `summary_template.tex` or `exams_template.tex` in-place — copy first.
+- Do not add answers inside `\questiontitle` / `\closequestion` blocks —
+  solutions belong only in the `\section*{Answer Key}` section at the end.
 - Do not change accent colors or box color definitions per-document.
-- Do not add a chapter level to `old_exams.tex` — it is article class.
+- Do not add a chapter level to `exams.tex` — it is article class.

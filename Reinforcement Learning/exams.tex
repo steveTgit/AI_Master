@@ -1,0 +1,1485 @@
+% ==========================================================
+%  OLD EXAM QUESTIONS — Reinforcement Learning
+% ==========================================================
+
+\documentclass[11pt,oneside]{article}
+
+\usepackage[
+  a4paper,
+  top=2.4cm,
+  bottom=2.1cm,
+  left=2.3cm,
+  right=2.3cm,
+  headheight=15pt
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{enumitem}
+\usepackage{booktabs,array,multicol,longtable}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+
+% ── Colors ───────────────────────────────────────────────
+\definecolor{accent}{HTML}{1B3A5C}
+\definecolor{q@frame}{HTML}{1A5276}
+\definecolor{q@bg}{HTML}{F6FAFD}
+\definecolor{key@frame}{HTML}{1E8449}
+\definecolor{key@bg}{HTML}{F4FBF6}
+\definecolor{note@frame}{HTML}{9A6A00}
+\definecolor{note@bg}{HTML}{FEF9E7}
+
+% ── Box global style ─────────────────────────────────────
+\tcbset{
+  enhanced,
+  breakable,
+  arc=2.5mm,
+  boxrule=0.5pt,
+  left=4.5mm,
+  right=4mm,
+  top=2.5mm,
+  bottom=2.5mm,
+  fonttitle=\bfseries\small,
+  sharp corners=west,
+  parbox=false
+}
+
+% Question box (blue) — one per exam question.
+\newtcolorbox{qbox}[1][]{
+  colback=q@bg,
+  colframe=q@frame,
+  borderline west={3.5pt}{0pt}{q@frame},
+  title={#1}
+}
+
+% Key insight box (green) — answer hints, key results.
+\newtcolorbox{keybox}[1][]{
+  colback=key@bg,
+  colframe=key@frame,
+  borderline west={3.5pt}{0pt}{key@frame},
+  title={#1}
+}
+
+% Organizational note box (amber) — structural remarks only.
+\newtcolorbox{notebox}[1][]{
+  colback=note@bg,
+  colframe=note@frame,
+  borderline west={3.5pt}{0pt}{note@frame},
+  title={#1}
+}
+
+% ── Section headings ─────────────────────────────────────
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{accent}}
+  {}{0em}{}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.2ex plus 1ex minus .2ex}{1.8ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {}{0em}{}
+\titlespacing*{\subsection}{0pt}{2.2ex plus 1ex minus .2ex}{1.0ex plus .2ex}
+
+% ── Header & footer ──────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}Old Exam Questions — \coursetitle}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Document metadata ─────────────────────────────────────
+\newcommand{\coursetitle}{Reinforcement Learning}
+
+% ── Question counter & macros ────────────────────────────
+\newcounter{question}
+\newcommand{\questiontitle}[1]{%
+  \stepcounter{question}\begin{qbox}[Question \thequestion: #1]}
+\newcommand{\closequestion}{\end{qbox}}
+
+% Mark questions that appeared on multiple exams.
+\newcommand{\repeatnote}{\textit{\color{gray!70}Asked multiple times.}}
+
+% Multiple-choice checkbox bullet.
+\newcommand{\choice}{\item[$\square$] }
+
+% Fill-in answer line. Usage: \answerline{3cm}
+\newcommand{\answerline}[1]{\makebox[#1]{\hrulefill}}
+
+% Blank working area — dashed-border box for student calculations.
+\newcommand{\workingspace}[1]{%
+  \par\vspace{2pt}%
+  \begin{tcolorbox}[
+    enhanced,
+    breakable=false,
+    colback=white,
+    colframe=gray!40,
+    boxrule=0.45pt,
+    arc=0pt,
+    sharp corners,
+    height=#1,
+    left=3mm, right=3mm, top=3mm, bottom=3mm,
+    frame style={dashed}
+  ]%
+  \end{tcolorbox}%
+  \vspace{2pt}%
+}
+
+% ── Math macros ──────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1\,\|\,#2\right)}
+\newcommand{\dd}{\,\mathrm{d}}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+% ── Title page ───────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.4cm}
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}\par
+  \vspace{0.65cm}
+  {\fontsize{26}{32}\selectfont\bfseries\color{accent}Old Exam Questions\\[2pt] \coursetitle\par}
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}\par
+  \vspace{0.55cm}
+  {\large Stefan Eder\par}
+  \vspace{0.15cm}
+  {\small\color{gray!70}\today\par}
+\end{center}
+
+\vspace{0.9cm}
+\begin{notebox}[How this file is organized]
+This file is separate from the course summary and is meant as a clean practice set.
+Exact duplicates were removed. When essentially the same question appeared in multiple old exams,
+that is marked with \repeatnote\ inside the question box.
+The wording was lightly normalized where the scans were messy, but the mathematical content
+and answer choices were kept intact.
+\end{notebox}
+
+\tableofcontents
+\newpage
+
+
+% ==========================================================
+%  SECTION 1: Introduction & Basics
+% ==========================================================
+
+\section{Introduction \& Basics}
+
+\questiontitle{Match Learning Paradigms}
+Match the following definitions to the concept.
+\begin{itemize}
+    \item \textbf{Definition 1:} Learn a function that maps inputs (features) to outputs (targets), based on a training set consisting of example input-output pairs.
+    \item \textbf{Definition 2:} Learn how agents should take actions in an environment in order to maximize a reward.
+    \item \textbf{Definition 3:} Learn patterns and find structure from unlabeled data.
+\end{itemize}
+\textbf{Concepts:} Reinforcement Learning, Supervised Learning, Unsupervised Learning.
+
+\medskip
+Definition 1 $\rightarrow$ \answerline{4cm}\quad
+Definition 2 $\rightarrow$ \answerline{4cm}\quad
+Definition 3 $\rightarrow$ \answerline{4cm}
+\closequestion
+
+\questiontitle{Unsupervised Learning Definition}
+Unsupervised learning considers the problem of goal-directed agents interacting with an uncertain environment.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{RL Use Case}
+Which of these applications is a good use case for reinforcement learning?
+\begin{itemize}[leftmargin=1.8em]
+\choice A software to identify which pictures show a cat, a dog, or a hamster in a photo library
+\choice A computer program that plays chess
+\choice Clustering a dataset of audio recordings to find similar songs
+\choice An algorithm that identifies the different plants in your garden by taking a picture with your phone
+\end{itemize}
+\closequestion
+
+\questiontitle{RL Components Match}
+Match each definition with the concept. Each concept should be used only once.
+
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}l X >{\raggedleft\arraybackslash}p{4.2cm}@{}}
+A. & Defines the agent's way of behaving at a given time & \answerline{4cm}\\[0.8ex]
+B. & A model that mimics the behavior of the environment & \answerline{4cm}\\[0.8ex]
+C. & A numerical value that defines what are good and bad events for the agent. The environment provides this value at each time step. & \answerline{4cm}\\[0.8ex]
+D. & Indicates long-term desirability of states and is defined as the sum of all rewards that an agent can expect to accumulate over the future & \answerline{4cm}\\
+\end{tabularx}
+\textbf{Concepts:} reward signal, policy, model of the environment, value function.
+\closequestion
+
+\questiontitle{Environment, Agent, Policy Match}
+Match each definition with the concept.
+
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}l X >{\raggedleft\arraybackslash}p{4.2cm}@{}}
+A. & Setting or ``world'' within which the agent operates and interacts. & \answerline{4cm}\\[0.8ex]
+B. & System or entity that makes decisions and takes actions based on the given policy, interacting with the environment. & \answerline{4cm}\\[0.8ex]
+C. & Mapping from the state of the environment to the actions to be taken by the agent in those states. & \answerline{4cm}\\
+\end{tabularx}
+\textbf{Concepts:} environment; policy; agent.
+\closequestion
+
+\questiontitle{RL vs Supervised Learning}
+Reinforcement learning is similar to supervised learning in which they both require explicit supervision in the form of a training set of inputs (features) and output (targets).
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Exploration Definition}
+In the context of the exploration-exploitation trade-off, what is one possible interpretation of the term exploration?
+\begin{itemize}[leftmargin=1.8em]
+\choice Always selecting actions randomly from a given probability distribution
+\choice Taking actions that led to high rewards in the past
+\choice Not always taking the action with the highest reward
+\choice An agent must balance taking actions that have proven to be beneficial in the past and trying actions that have not been selected before
+\end{itemize}
+\closequestion
+
+\questiontitle{SL/UL Exploration Trade-off}
+Both unsupervised and supervised learning need to deal with the trade-off between exploration and exploitation.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 2: Multi-Armed Bandits
+% ==========================================================
+
+\section{Multi-Armed Bandits}
+
+\questiontitle{Exploration-Exploitation Methods in MAB}
+Which of these methods explicitly (i.e., with a hyperparameter) balance exploration and exploitation in multi-armed bandits?
+\begin{itemize}[leftmargin=1.8em]
+\choice Upper Confidence Bound (UCB) action selection.
+\choice Epsilon-greedy action selection
+\choice Greedy action selection.
+\choice The Gradient Bandit Algorithm
+\end{itemize}
+\closequestion
+
+\questiontitle{Epsilon-Greedy Probability}
+In epsilon greedy action selection, for the case of 10 actions and $\epsilon=0.7$, what is the probability that the greedy action is selected?
+\begin{itemize}[leftmargin=1.8em]
+\choice 0.37
+\choice 0.7
+\choice 0.03
+\choice 0.1
+\end{itemize}
+\closequestion
+
+\questiontitle{ISAM Value Update}
+The arm $a$ of a slot machine has a true mean reward of $q(a)=-1$. After $t=10$ plays, your estimate of the mean reward is $Q_{t}(a)=-3$. The next play yields a reward of 2. What is the updated mean reward $Q_{t+1}$ using the Incremental Sample-Averaging Method (ISAM) and a learning rate $\alpha=0.1$?
+\begin{itemize}[leftmargin=1.8em]
+\choice $-2.5$
+\choice $-2.9$
+\choice $-3.1$
+\choice $-0.5$
+\end{itemize}
+\closequestion
+
+\questiontitle{k-Armed Bandit Sample Averages}
+Consider a k-armed bandit problem with $k=2$ actions (1 and 2). We use $\epsilon$-greedy action selection and initial estimates $Q_1(1)=0$ and $Q_1(2)=0$. Suppose the initial sequence is:
+\begin{itemize}
+    \item $t=1$: $A_1=1, R_1=2$
+    \item $t=2$: $A_2=1, R_2=-4$
+    \item $t=3$: $A_3=2, R_3=-2$
+    \item $t=4$: $A_4=1, R_4=-4$
+    \item $t=5$: $A_5=2, R_5=-6$
+    \item $t=6$: $A_6=2, R_6=-4$
+\end{itemize}
+Calculate the final value estimates $Q_7(1)$ and $Q_7(2)$ assuming sample-average updates.
+\workingspace{4cm}
+$Q_7(1) = $ \answerline{3cm}\qquad $Q_7(2) = $ \answerline{3cm}
+\closequestion
+
+\questiontitle{ISAM Step Size Role}
+The step size $\alpha$ in the action-value update equation of ISAM \ldots
+\begin{itemize}[leftmargin=1.8em]
+\choice \ldots sets the probability of selecting a specific arm.
+\choice \ldots adjusts the regret over time.
+\choice \ldots controls how fast the algorithm explores new arms.
+\choice \ldots determines the weight of new rewards in updating value estimates.
+\end{itemize}
+\closequestion
+
+\questiontitle{Optimistic Initial Values Prior Knowledge}
+Optimistic initial values requires some prior knowledge about the reward distribution.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Optimistic Initial Values Non-Stationary}
+The optimistic initial values method is more effective in non-stationary environments than stationary ones.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{UCB Uncertainty Decrease}
+In UCB, the uncertainty term for an action that is not selected can decrease.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{UCB Always Chooses Highest Value}
+In the UCB algorithm, actions with higher estimated value $Q(a)$ are always chosen.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{UCB Non-Stationary Suitability}
+Upper Confidence Bound (UCB) algorithms are well-suited for non-stationary problems.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Exponential Recency-Weighted Averages}
+Exponential recency-weighted averages can be used to handle non-stationary problems.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Gradient Bandit Model-Based}
+The Gradient Bandit algorithm is a form of model-based reinforcement learning and requires an approximation of the reward distribution.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Gradient Bandit Action Selection}
+In the Gradient Bandit algorithm, actions are selected proportional to their action selection preference.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Optimistic Initial Values Exploration Bias}
+Using optimistic initial values biases the agent toward initially exploring actions with higher estimated rewards.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{UCB Uncertainty Term}
+The UCB algorithm balances exploration and exploitation by adding an uncertainty term to the estimated value of each action.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Non-Stationary Exploration Required}
+Non-stationary problems do not require balancing exploration and exploitation.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Gradient Bandit Preference Updates}
+In the Gradient Bandit algorithm, action selection preferences are updated after each action.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Epsilon Case First Occurrence}
+On which time steps did the $\epsilon$-case definitely occur for the first time?
+\begin{itemize}[leftmargin=1.8em]
+\choice 2
+\choice 5
+\choice 6
+\end{itemize}
+\closequestion
+
+\questiontitle{Best Asymptotic Method}
+Which method will, on average, perform best in the long run (asymptotically) in terms of cumulative reward?
+\begin{itemize}[leftmargin=1.8em]
+\choice ISAM, $\epsilon = 0.1$
+\choice ISAM, $\epsilon = 0.01$
+\choice ISAM, greedy
+\end{itemize}
+\closequestion
+
+\questiontitle{Optimistic Initial Values Negative Rewards}
+If the rewards are strictly negative ($R < 0$), the Optimistic Initial Values method benefits from low initial value estimates ($Q_1 \ll 0$).
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Optimistic Initial Values Non-Stationary Tracking}
+Optimistic Initial Value methods are effective in tracking non-stationary k-armed bandit problems.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{UCB with c=0}
+UCB with $c = 0$ corresponds exactly to the greedy action selection method.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{UCB Uses Epsilon-Greedy}
+UCB relies on $\epsilon$-greedy action selection for exploration.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{UCB Tries Each Action Once}
+UCB initially selects each as-yet-untried action exactly once.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Gradient Bandit Random Exploration}
+Gradient Bandit algorithms do not rely on random action selection for exploration.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Action Preferences vs Expected Reward}
+Numerical action selection preferences cannot be translated to estimates of the expected reward.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Gradient Bandit Q-Value Baseline}
+The gradient bandit algorithm can be improved by using action value estimates $Q(a)$ as the baseline in the update rule instead of $\bar{R}_t$.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 3: Finite Markov Decision Processes
+% ==========================================================
+
+\section{Finite Markov Decision Processes}
+
+\questiontitle{Stochastic Process Concepts Match}
+Match each definition to the concept. Each concept should only be used once.
+
+\begin{tabularx}{\linewidth}{@{}>{\bfseries}l X >{\raggedleft\arraybackslash}p{4.2cm}@{}}
+A. & A collection of random variables $\{S_t \mid t \in T\}$. The variables take values from a state space $S$, and are indexed by some ordered index set $T$. & \answerline{4cm}\\[0.8ex]
+B. & Property according to which a stochastic process can be classified as discrete-space or continuous-space. & \answerline{4cm}\\[0.8ex]
+C. & The future is independent of the past given the present, i.e., $p(S_{t+1}\mid S_t, S_{t-1}, \ldots) = p(S_{t+1}\mid S_t)$. & \answerline{4cm}\\
+\end{tabularx}
+\textbf{Concepts:} Markov property; Stochastic Process; Cardinality of state space.
+\closequestion
+
+\questiontitle{MDP Equations Match}
+Match the following definitions/equations about Markov decision processes (MDPs) with the concept.
+\begin{itemize}
+    \item $G_t = \sum_{k=0}^{\infty}\gamma^k R_{t+k+1}$ \hfill \answerline{4cm}
+    \item $G_t = R_{t+1} + R_{t+2} + \cdots + R_T$ \hfill \answerline{4cm}
+    \item $p(s', r|s, a) = \text{Pr}\{S_t = s', R_t = r | S_{t-1} = s, A_{t-1} = a\}$ \hfill \answerline{4cm}
+\end{itemize}
+\textbf{Concepts:} Discounted return; Return (undiscounted); Dynamics of the MDP.
+\closequestion
+
+\questiontitle{Discounted Return Calculation}
+Suppose $\gamma = 1/2$ and the following sequence of rewards is received: $R_1 = -7, R_2 = 6, R_3 = 1, R_4 = 5, R_5 = 2$ with $T=5$ (assume $R_t=0$ for $t > T$). What are the returns $G_0, G_1, G_2, G_3, G_4, G_5$? (Hint: Work backwards.)
+\workingspace{4cm}
+$G_5 = $ \answerline{2cm},\quad
+$G_4 = $ \answerline{2cm},\quad
+$G_3 = $ \answerline{2cm},\quad
+$G_2 = $ \answerline{2cm},\quad
+$G_1 = $ \answerline{2cm},\quad
+$G_0 = $ \answerline{2cm}
+\closequestion
+
+\questiontitle{Undiscounted Return Non-Episodic}
+It is better to use the undiscounted return (i.e., $\gamma=1$) for non-episodic tasks.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{MDP Action Influences Next State}
+In general, in a Markov decision process, the decision of an action $a$ in state $S_t$ does not influence what the next state $S_{t+1}$ will be.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Infinite Discounted Return}
+Consider a non-episodic task where there is a constant reward of $R=2$. What would be the discounted return after an infinite number of time steps, if the discount factor is $\gamma=0.75$?
+
+$G_t = $ \answerline{3cm}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 4: Dynamic Programming
+% ==========================================================
+
+\section{Dynamic Programming}
+
+\questiontitle{Policy Evaluation Computes Optimal Policy}
+Policy evaluation computes the optimal policy directly.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Two-Array Policy Evaluation Update Order}
+When using the two-array version of the policy evaluation algorithm, the order in which states are updated can affect the speed of convergence.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Greedy Policy in Policy Improvement}
+In the context of policy improvement, `greedy policy' refers to a policy that explores actions randomly to gather more information.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{One Policy Always Better}
+Given two policies, one of them is guaranteed to be better than the other.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Optimal Policy Greedy w.r.t.\ Value}
+The optimal policy is found if the policy is greedy with respect to its own value function.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Iteration Finite State Space Only}
+The policy iteration algorithm introduced in the lecture can be used for both finite and infinite state spaces.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Value Iteration Greedy Policy}
+Value iteration indirectly evaluates a greedy policy with respect to the current value function estimate.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Value Iteration Alternates Eval and Improvement}
+Value iteration alternates between policy evaluation and policy improvement.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Evaluation Convergence Guarantee}
+Policy evaluation is guaranteed to converge to the value function of the given policy.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Improvement Strictly Better}
+Policy improvement in dynamic programming always leads to a strictly better policy.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Iteration Not Guaranteed Finite}
+In policy iteration, an optimal policy is not guaranteed to be found after a finite number of steps.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Iteration Guaranteed Finite}
+\repeatnote
+Policy Iteration is guaranteed to find an optimal policy after a finite number of steps.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Iterative Policy Evaluation Optimal Policy}
+Iterative Policy Evaluation is guaranteed to find the optimal policy after a finite number of steps.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Value Iteration Finite Convergence}
+Value iteration converges to the optimal value function after a finite number of iterations.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Value Iteration Stochastic Unique Optimum}
+If the environment is stochastic, value iteration always converges to a unique optimal value function.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Value Iteration Bellman Optimality Update}
+Value iteration uses a Bellman-optimality-equation-like update rule.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Iterative Policy Evaluation Bootstrapping}
+Iterative Policy Evaluation uses bootstrapping to estimate a state's value.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Iterative Policy Evaluation Successor States}
+Iterative Policy Evaluation uses the value estimates of all immediate successor states to update the current state's value.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Optimal Policy via Linear Equations}
+Given an arbitrary policy, the optimal policy can be computed directly by solving a system of linear equations using the Bellman equation.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Improvement Small vs Large Step}
+Consider a state 0 where the agent can choose between taking a \textbf{small} or a \textbf{large} step to the right.
+\begin{itemize}
+    \item The \textbf{small step} takes the agent into state 1 or state 3 with probability 0.5 each.
+    \item The \textbf{large step} takes the agent into state 2 (prob 0.5), state 4 (prob 0.25), or state 5 (prob 0.25).
+\end{itemize}
+Given the following values: $V(1)=3, V(2)=5, V(3)=-1, V(4)=-3, V(5)=-7$, reward $R=-1$ for all transitions, and $\gamma=1$.
+\workingspace{4cm}
+\begin{enumerate}
+    \item Calculate $Q(\text{small})$: \answerline{3cm}
+    \item Calculate $Q(\text{large})$: \answerline{3cm}
+    \item Which action does policy improvement select? \answerline{3cm}
+\end{enumerate}
+\closequestion
+
+\questiontitle{DP Iterative Policy Evaluation Grid}
+Consider a grid world with states 1, 2, and 3, plus a terminal state (grey). Reward $= -1$ per transition. Deterministic environment. Discount $\gamma = 0.5$.
+
+Current values: $V(1)=0, V(2)=0, V(3)=0$.
+
+Perform one sweep of iterative policy evaluation (Two-array version).
+\workingspace{4cm}
+\begin{itemize}
+    \item $V_{t+1}(1)$: \answerline{3cm}
+    \item $V_{t+1}(2)$: \answerline{3cm}
+    \item $V_{t+1}(3)$: \answerline{3cm}
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Improvement Grid Q-Values}
+Consider a grid world with the following current value estimates $V_t(s)$:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+State 1 ($V=4$) & State 2 ($V=2$) & State 3 ($V=0$) \\
+\hline
+ & State 4 ($V=8$) & \\
+\hline
+\end{tabular}
+\end{center}
+The agent receives a reward of $R=-1$ for each transition. The environment is stochastic: moves succeed with probability 0.5, or slide to a perpendicular cell with probability 0.25 each. $\gamma=1.0$.
+
+Calculate the q-values for State 2:
+\workingspace{5cm}
+\begin{itemize}
+    \item $Q(2, \leftarrow)$: \answerline{3cm}
+    \item $Q(2, \rightarrow)$: \answerline{3cm}
+    \item $Q(2, \uparrow)$ (wall, assume stays put or slides): \answerline{3cm}
+    \item $Q(2, \downarrow)$: \answerline{3cm}
+\end{itemize}
+\closequestion
+
+\questiontitle{DP Grid Policy Improvement Action}
+Which action will policy improvement select for state 2 in the Dynamic Programming Iterative Policy Evaluation (Grid) problem?
+\begin{itemize}[leftmargin=1.8em]
+\choice $\rightarrow$
+\choice $\downarrow$
+\choice $\uparrow$
+\choice $\leftarrow$
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Evaluation Two-Sweep Value}
+Consider a grid world where the environment gives a reward of $-4$ for every transition and the discount factor is 0.5. Assume the terminal state value is always 0. What is the estimated value of state 0 after \textbf{two sweeps} of policy evaluation? (Assume initial values are 0.)
+
+\answerline{3cm}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 5: Monte Carlo Methods
+% ==========================================================
+
+\section{Monte Carlo Methods}
+
+\questiontitle{MC Control Methods Match}
+For each of the following statements, select the corresponding method from the list below:
+\begin{enumerate}
+    \item \textbf{Statement A:} The probability of selecting the greedy action for the $k$-th episode is given by $\epsilon = 1/k$.
+    \item \textbf{Statement B:} The probability of selecting the greedy action is given by $1-\epsilon$, with $\epsilon$ being a constant.
+    \item \textbf{Statement C:} Learn about target policy $\pi$ from experience sampled from a behavior policy $\mu$.
+\end{enumerate}
+\textbf{Methods:}
+\begin{itemize}[leftmargin=1.8em]
+\choice Off-policy learning
+\choice On-policy MC control for epsilon soft policies
+\choice Greedy in the limit with infinite exploration (GLIE) MC control
+\end{itemize}
+
+Statement A $\rightarrow$ \answerline{5cm}
+
+Statement B $\rightarrow$ \answerline{5cm}
+
+Statement C $\rightarrow$ \answerline{5cm}
+\closequestion
+
+\questiontitle{MC Exploring Starts vs GLIE vs Off-Policy}
+For each of the following statements, select the corresponding method:
+\begin{enumerate}
+    \item An $\epsilon$-greedy method where the value of $\epsilon$ decreases every episode. \hfill \answerline{4cm}
+    \item Use importance sampling to weight the return according to the similarity between the target ($\pi$) and behavior ($\mu$) policies. \hfill \answerline{4cm}
+    \item In this method, start each episode at random state-action pairs (all state-action pairs have non-zero probabilities of being at the start). \hfill \answerline{4cm}
+\end{enumerate}
+\textbf{Concepts:} GLIE; MC control with exploring starts; Off-policy learning.
+\closequestion
+
+\questiontitle{First-Visit MC Correlation}
+Value estimates in the first-visit Monte Carlo Policy estimation algorithm are correlated with each other.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{MC Control Estimates State Values}
+Monte Carlo control methods compute an estimate of the state value function $v_\pi$.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{MC Convergence Speed}
+In practice, Monte Carlo methods for value estimation require just a few episodes to converge to the value function.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{MC Requires Dynamics Knowledge}
+Monte Carlo methods require explicit knowledge of the dynamics of the problem ($p(s',r|s,a)$).
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Fish Lake First-Visit MC}
+Following policy $\pi$, we sample the following 4 episodes in a ``Fish Lake'' grid world (actions: left, right; rewards: 0, 1, $-1$):
+\begin{itemize}
+    \item \textbf{Ep 1:} $S_0=b, A_0=\text{left}, R_1=0, S_1=b, A_1=\text{left}, R_2=0, S_2=b, A_2=\text{right}, R_3=1, S_3=c$
+    \item \textbf{Ep 2:} $S_0=b, A_0=\text{left}, R_1=0, S_1=b, A_1=\text{left}, R_2=0, S_2=b, A_2=\text{left}, R_3=-1, S_3=a$
+    \item \textbf{Ep 3:} $S_0=b, A_0=\text{right}, R_1=0, S_1=b, A_1=\text{right}, R_2=0, S_2=b, A_2=\text{right}, R_3=1, S_3=c$
+    \item \textbf{Ep 4:} $S_0=b, A_0=\text{left}, R_1=0, S_1=b, A_1=\text{right}, R_2=0, S_2=b, A_2=\text{right}, R_3=1, S_3=c$
+\end{itemize}
+Using \textbf{First Visit Monte Carlo Policy Evaluation} ($\gamma=1$):
+\workingspace{5cm}
+\begin{enumerate}
+    \item Estimate $q_\pi(b, \text{left})$: \answerline{3cm}
+    \item Estimate $q_\pi(b, \text{right})$: \answerline{3cm}
+\end{enumerate}
+\closequestion
+
+\questiontitle{MC Model-Free}
+Monte Carlo methods are model-free.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Every-Visit MC IID Samples}
+Samples from the every-visit Monte Carlo Policy estimation algorithm are independent and identically distributed.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 6: Temporal Difference Learning
+% ==========================================================
+
+\section{Temporal Difference Learning}
+
+\questiontitle{TD Policy Evaluation Grid S0-Start}
+Consider a grid world where the agent follows a deterministic policy $\pi$:
+\begin{itemize}
+    \item From $S_0$, go Right to $S_1$.
+    \item From $S_1$, go Up to $S_2$.
+    \item From $S_2$, go Left to $S_T$ (Terminal).
+\end{itemize}
+Parameters: $\gamma = 1$, Reward $R = -1$ per step, $\alpha = 1$. Initial values $V(S) = 0$.
+
+Perform TD(0) updates for one episode: $S_0 \to S_1 \to S_2 \to S_T$.
+
+Calculate the updated values (round to 3 decimal places):
+\workingspace{4cm}
+\begin{itemize}
+    \item $V(S_1)$ after the step $S_0 \to S_1$: \answerline{3cm}
+    \item $V(S_2)$ after the step $S_1 \to S_2$: \answerline{3cm}
+\end{itemize}
+\closequestion
+
+\questiontitle{Off-Policy SARSA Statements}
+Assuming the MDP above (TD Policy Evaluation S0-Start), we use an off-policy version of SARSA, using the deterministic target policy $\pi$ as indicated by the arrows, and a non-deterministic behavior policy $\mu$ to explore. $Q(S_t, A_t)$ is initialized as 0 for all states and actions. The agent always starts the episode in state $S_0$. Which of the following statements are true?
+\begin{itemize}[leftmargin=1.8em]
+\choice Following the deterministic policy $\pi(a|S)$, some state action pairs are never explored.
+\choice $Q(S_t, A_t)$ for actions $A_t$ chosen by the deterministic policy converges to the TD(0) policy evaluation solution $V(S_t)$ computed before.
+\choice This version of SARSA has no optimality guarantees because the discount factor $\gamma$ is larger than 0.
+\choice This off-policy version of SARSA would be identical to Q-learning.
+\end{itemize}
+\closequestion
+
+\questiontitle{Q-Learning Off-Policy No IS}
+Q-Learning is an off-policy method that does not require importance sampling.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD Advantage over MC}
+What is an advantage of TD learning over Monte Carlo methods?
+\begin{itemize}[leftmargin=1.8em]
+\choice In practice, TD learning converges faster because it doesn't need to wait for an episode to end.
+\choice It always gives a more accurate estimate.
+\choice TD learning requires the dynamics of the environment, while MC methods are model-free.
+\choice It works better in deterministic environments.
+\end{itemize}
+\closequestion
+
+\questiontitle{Expected SARSA Equals Q-Learning}
+Expected SARSA and Q-Learning can be the same for some choice of policy.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD Non-Episodic Tasks}
+What is the primary reason TD learning can handle non-episodic tasks better than Monte Carlo methods?
+\begin{itemize}[leftmargin=1.8em]
+\choice TD learning does not require a discount factor.
+\choice TD learning is model-free, while Monte Carlo is model-based.
+\choice TD learning updates based on partial episodes, allowing for continuous learning.
+\choice TD learning can compute exact state values in one step.
+\end{itemize}
+\closequestion
+
+\questiontitle{SARSA Second Action Same Policy}
+SARSA requires choosing a second action in the second state with the same policy as the first.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{SARSA vs Expected SARSA Direction}
+SARSA moves deterministically in the direction Expected-SARSA is moving in expectation.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{N-Step TD Equivalent to Exhaustive Search}
+TD methods can take many steps at the same time, effectively interpolating between TD(0) and Exhaustive Search methods.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{N-Step Intermediate Performance}
+N-step methods somewhere in between TD(0) and TD(1) will often perform better than either extreme.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(lambda) Weighted Average}
+The TD($\lambda$) algorithm computes a weighted average n-step TD backup target.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Eligibility Traces Forward View}
+Eligibility Traces implement a forward view of TD($\lambda$) methods.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(0) Update Rule}
+Which of the following equations represents the TD(0) update rule for policy evaluation?
+\begin{itemize}[leftmargin=1.8em]
+\choice $V(s) \leftarrow V(s) + \alpha [G_t - V(s)]$
+\choice $V(s) \leftarrow V(s) + \alpha [R + \gamma V(s') - V(s)]$
+\choice $Q(s, a) \leftarrow Q(s, a) + \alpha [R + \gamma \max_{a'} Q(s', a') - Q(s, a)]$
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(0) Discount Factor Zero}
+In policy evaluation using TD(0), what happens if the discount factor ($\gamma$) is set to 0?
+\begin{itemize}[leftmargin=1.8em]
+\choice The agent considers only immediate rewards.
+\choice The agent evaluates the policy using the average reward per time step.
+\choice The learning process diverges.
+\choice The value function estimates future rewards up to an infinite horizon.
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(0) Bias vs MC}
+TD(0) generally is less biased than Monte Carlo methods.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(0) vs MC Key Difference}
+What is the key difference between TD(0) and Monte Carlo methods in policy evaluation?
+\begin{itemize}[leftmargin=1.8em]
+\choice TD(0) only uses undiscounted returns, while Monte Carlo uses both undiscounted and discounted returns.
+\choice TD(0) requires a model of the environment; Monte Carlo does not.
+\choice TD(0) updates after observing a full episode, while Monte Carlo updates after every step.
+\choice TD(0) updates after every step, while Monte Carlo updates after observing a full episode.
+\end{itemize}
+\closequestion
+
+\questiontitle{N-Step TD Equivalent to Dynamic Programming}
+TD methods can take many steps at the same time. If the number of steps is greater than the episode length, TD methods are equivalent to Dynamic Programming.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{N-Step TD Incomplete Episodes}
+N-step TD methods have to wait $n$ time steps before making an update but can update from incomplete episodes.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD Policy Evaluation S3-Start}
+Consider a grid world with states 1, 2, 3 and Terminal. Reward $= -1$. Deterministic. $\gamma=0.5, \alpha=0.5$.
+
+Current values: $V(1)=0, V(2)=0, V(3)=0$.
+
+Episode: Start at $S_3 \to \text{Right} \to S_2 \to \text{Up} \to S_1 \to \text{Left} \to S_T$.
+
+Calculate the updates:
+\workingspace{4cm}
+\begin{itemize}
+    \item $V(S_3)$ after first step: \answerline{3cm}
+    \item $V(S_2)$ after second step: \answerline{3cm}
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(0) Convergence Settings}
+Assuming the MDP from the ``TD Policy Evaluation (S3 start)'' question, under which settings for the step size $\alpha$ and the discount rate $\gamma$ does the TD(0) estimate converge to the same estimate as the Dynamic Programming solution?
+\begin{itemize}[leftmargin=1.8em]
+\choice $\alpha = 0.1, \gamma = 0.9$
+\choice $\alpha = 1.0, \gamma = 0.5$
+\choice $\alpha = 0.5, \gamma = 0.5$
+\choice $\alpha = 0.5, \gamma = 0.9$
+\end{itemize}
+\closequestion
+
+\questiontitle{SARSA on S3-Start Grid}
+Assuming the MDP from the ``TD Policy Evaluation (S3 start)'' question, we use the SARSA algorithm for TD(0) control while keeping the deterministic behavior policy. $Q(S_t, A_t)$ is initialized as in the figure for all actions. Which statements are true?
+\begin{itemize}[leftmargin=1.8em]
+\choice This version of SARSA has no optimality guarantees because the discount factor $\gamma$ is less than 1.0.
+\choice This version of SARSA converges to the globally optimal policy.
+\choice This version of SARSA has no optimality guarantees because some state action pairs are never explored.
+\choice $Q(S_t, A_t)$ for actions chosen by the deterministic policy converges to the TD(0) policy evaluation solution computed before.
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(0) Exact Same Sequence as DP}
+Under which settings for the step size $\alpha$ and the discount rate $\gamma$ does the TD(0) policy evaluation produce the \textbf{exact same sequence} of estimates as the Dynamic Programming in the earlier section of the exam?
+\begin{itemize}[leftmargin=1.8em]
+\choice $\alpha = 0.5, \gamma = 0.9$
+\choice $\alpha = 0.5, \gamma = 1.0$
+\choice $\alpha = 0.5, \gamma = 0.5$
+\choice $\alpha = 1.0, \gamma = 0.5$
+\end{itemize}
+\closequestion
+
+\questiontitle{Expected SARSA vs SARSA Non-Greedy}
+Expected SARSA and SARSA can be the same for some choice of non-greedy behavior policy.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD Requires Environment Model}
+TD methods require a model of the environment (i.e., the dynamics and reward function).
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(0) Bootstrapping}
+TD(0) uses bootstrapping (i.e., they update the value function using previous estimates of the value function).
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Batch MC vs Batch TD Maximum Likelihood}
+Both batch Monte Carlo learning and batch Temporal Difference learning converge to the maximum likelihood Markov model.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{N-Step TD Equivalent to MC}
+TD methods can take many steps at the same time. If the number of steps is greater than the episode length, TD methods are equivalent to Monte Carlo methods.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{TD(lambda) Semi-Gradient Convergence}
+TD($\lambda$) targets can be used in semi-gradient methods without convergence guarantees.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 7: Policy Gradient Methods
+% ==========================================================
+
+\section{Policy Gradient Methods}
+
+\questiontitle{Policy Gradient Log Probability}
+In the policy gradient theorem, the term $\nabla_\theta \log \pi_\theta(a|s)$ represents the direction in parameter space that increases the probability of selecting action $a$.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Gradient Deterministic Only}
+The policy gradient theorem applies only to deterministic policies.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE Deterministic Only}
+REINFORCE can only be used to learn deterministic policies.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE Episodic Only}
+REINFORCE is effective for episodic and non-episodic Markov decision processes.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE Baseline Reduces Variance}
+Using an appropriate baseline in REINFORCE with baseline reduces the variance of the gradient estimator.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE with Baseline Actor-Critic}
+The REINFORCE algorithm with baseline is considered an actor-critic method.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Actor-Critic Variance Issues}
+Actor-critic methods suffer from the same variance issues as REINFORCE because they do not use baselines.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Actor-Critic Critic Gradient}
+Actor-critic methods require the gradient of the critic to compute the policy update.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy Gradient State Distribution}
+The policy gradient theorem states that the gradient of the expected reward can be expressed without the need to compute the gradient of the state distribution.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE Requires Value Function}
+REINFORCE requires a value function approximation to compute the policy update.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE On-Policy}
+The REINFORCE algorithm is an on-policy method, i.e., it requires trajectories generated by the current policy.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE Baseline Must Be Constant}
+The baseline in REINFORCE with baseline must be a constant value for the gradient estimate to remain unbiased.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE Baseline as Value Function}
+A common choice for the baseline in REINFORCE with baseline is an estimate of the value function $V(s)$.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Actor-Critic Critic Learns State Value}
+The critic in actor-critic methods typically learns an approximation of the state value function $V(s)$.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{PPO Clipped Surrogate Objective}
+Proximal Policy Optimization (PPO) is an actor-critic method that uses a clipped surrogate objective to stabilize training.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy-Based RL Uses Action Values}
+Policy-based RL methods rely on action values to select actions.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Supervised Pretraining for Policy RL}
+Supervised pretraining with human-generated state-action pairs is an appropriate strategy to inject expert knowledge into a policy-based RL model.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Policy-Based RL Exploration via Sampling}
+Policy-based RL methods trade-off exploration and exploitation by sampling from the parameterized policy.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{Performance Gradient State Distribution}
+The exact performance gradient $\nabla J(\Theta)$ depends on changes in the state distribution; a proportional quantity is often used as a substitute.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE with Baseline TD Method}
+The REINFORCE algorithm with baseline is considered a Temporal Difference learning method because it uses bootstrapping with state value estimates to estimate returns.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+\questiontitle{REINFORCE with Baseline Non-Episodic}
+The REINFORCE algorithm with baseline can be used for non-episodic tasks.
+\begin{itemize}[leftmargin=1.8em]
+\choice True
+\choice False
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  ANSWER KEY
+% ==========================================================
+\newpage
+\section*{Answer Key}
+
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=4pt]
+
+  % Section 1: Introduction & Basics
+  \item Definition 1 $\rightarrow$ Supervised Learning;\quad Definition 2 $\rightarrow$ Reinforcement Learning;\quad Definition 3 $\rightarrow$ Unsupervised Learning
+  \item \textbf{False}
+  \item A computer program that plays chess
+  \item A $\rightarrow$ policy;\quad B $\rightarrow$ model of the environment;\quad C $\rightarrow$ reward signal;\quad D $\rightarrow$ value function
+  \item A $\rightarrow$ environment;\quad B $\rightarrow$ agent;\quad C $\rightarrow$ policy
+  \item \textbf{False}
+  \item Not always taking the action with the highest reward
+  \item \textbf{False}
+
+  % Section 2: Multi-Armed Bandits
+  \item UCB and Epsilon-greedy (both correct)
+  \item 0.37
+  \item $-2.5$
+  \item $Q_7(1) = -2$;\quad $Q_7(2) = -4$
+  \item \ldots determines the weight of new rewards in updating value estimates.
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item 5
+  \item ISAM, $\epsilon = 0.01$
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+
+  % Section 3: Finite MDPs
+  \item A $\rightarrow$ Stochastic Process;\quad B $\rightarrow$ Cardinality of state space;\quad C $\rightarrow$ Markov property
+  \item First bullet $\rightarrow$ Discounted return;\quad Second bullet $\rightarrow$ Return (undiscounted);\quad Third bullet $\rightarrow$ Dynamics of the MDP
+  \item $G_5=0$,\quad $G_4=2$,\quad $G_3=6$,\quad $G_2=4$,\quad $G_1=8$,\quad $G_0=-3$
+  \item \textbf{False}
+  \item \textbf{False}
+  \item $G_t = 8$
+
+  % Section 4: Dynamic Programming
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item $Q(\text{small}) = 0$;\quad $Q(\text{large}) = -1$;\quad selects \textbf{small step}
+  \item Requires grid figure from slides — see problem setup (values depend on neighbor positions)
+  \item $\downarrow$
+  \item $-6$ (after two sweeps: first sweep gives $-4$, second sweep gives $-4 + 0.5 \times (-4) = -6$)
+
+  % Section 5: Monte Carlo Methods
+  \item Statement A $\rightarrow$ GLIE MC control;\quad Statement B $\rightarrow$ On-policy MC control for epsilon soft policies;\quad Statement C $\rightarrow$ Off-policy learning
+  \item 1 $\rightarrow$ GLIE;\quad 2 $\rightarrow$ Off-policy learning;\quad 3 $\rightarrow$ MC control with exploring starts
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item $q_\pi(b, \text{left}) \approx 1/3 \approx 0.333$;\quad $q_\pi(b, \text{right}) = 1$
+  \item \textbf{True}
+  \item \textbf{False}
+
+  % Section 6: Temporal Difference Learning
+  \item $V(S_1) = -1$;\quad $V(S_2) = -1$
+  \item Statements 1 and 2 are \textbf{True}; statements 3 and 4 are \textbf{False}
+  \item \textbf{True}
+  \item In practice, TD learning converges faster because it doesn't need to wait for an episode to end.
+  \item \textbf{True}
+  \item TD learning updates based on partial episodes, allowing for continuous learning.
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item $V(s) \leftarrow V(s) + \alpha [R + \gamma V(s') - V(s)]$
+  \item The agent considers only immediate rewards.
+  \item \textbf{False}
+  \item TD(0) updates after every step, while Monte Carlo updates after observing a full episode.
+  \item \textbf{False}
+  \item \textbf{True}
+  \item $V(S_3) = -0.5$;\quad $V(S_2) = -0.5$
+  \item $\alpha = 1.0, \gamma = 0.5$ and $\alpha = 0.5, \gamma = 0.5$ (both correct)
+  \item Statements 3 and 4 are \textbf{True}; statements 1 and 2 are \textbf{False}
+  \item $\alpha = 1.0, \gamma = 0.5$
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{True}
+
+  % Section 7: Policy Gradient Methods
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{True}
+  \item \textbf{False}
+  \item \textbf{False}
+
+\end{enumerate}
+
+
+\end{document}

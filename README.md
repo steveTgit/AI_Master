@@ -3,7 +3,7 @@
 Structured LaTeX summaries for every lecture in the AI Master programme,
 built from slides, notes, and the lectures themselves.
 Each course produces two documents: a comprehensive summary and a curated
-collection of old exam questions.
+exam question set.
 
 ---
 
@@ -11,27 +11,27 @@ collection of old exam questions.
 
 ```
 AI_Master/
-├── summary_template.tex                          # Shared LaTeX template (copy, never edit in-place)
-├── old_exams_template.tex                # Shared old-exams template (copy, never edit in-place)
-├── CLAUDE.md                             # Instructions for Claude Code
+├── summary_template.tex          # Shared summary template (copy, never edit in-place)
+├── exams_template.tex            # Shared exams template (copy, never edit in-place)
+├── CLAUDE.md                     # Instructions for Claude Code
 │
-└── <Course Name>/                        # One folder per course (add as needed)
+└── <Course Name>/                # One folder per course
     ├── summary.tex / summary.pdf
-    ├── old_exams.tex / old_exams.pdf
-    ├── img/
-    └── slides/                           # gitignored — put large slide PDFs here
+    ├── exams.tex / exams.pdf
+    ├── figures/                  # images used in summary.tex and/or exams.tex
+    └── <Lecture Slides>.pdf      # lecture slide PDFs (if not too large)
 ```
 
-Each course folder will contain:
+Each course folder contains:
 
-| File | Purpose |
-|------|---------|
+| File / Folder | Purpose |
+|---------------|---------|
 | `summary.tex` | Main summary document (copied from `summary_template.tex`) |
 | `summary.pdf` | Compiled output — tracked for easy sharing |
-| `old_exams.tex` | Curated old exam questions (copied from `old_exams_template.tex`) |
-| `old_exams.pdf` | Compiled output — tracked for easy sharing |
-| `img/` | Figures extracted from slides or drawn in TikZ |
-| `slides/` | Original slide PDFs (gitignored if large) |
+| `exams.tex` | Curated exam questions (copied from `exams_template.tex`) |
+| `exams.pdf` | Compiled output — tracked for easy sharing |
+| `figures/` | Figures used in either `.tex` file (extracted from slides or drawn in TikZ) |
+| `*.pdf` | Lecture slide PDFs — add directly to the course folder if not too large |
 
 ---
 
@@ -53,32 +53,34 @@ Each course folder will contain:
 3. **Write the content** — one `\chapter{}` per major topic, sections and
    subsections following the lecture structure.
 
-4. **Compile** with `pdflatex` (run twice for cross-references) or use
-   `latexmk`:
+4. **Compile** with `latexmk`:
    ```bash
    latexmk -pdf summary.tex
    ```
 
 5. **Commit** the `.tex` source and the compiled `.pdf`.
 
-### 2. Old exam questions
+### 2. Exam questions
 
-1. **Copy the old-exams template** into the course folder:
+1. **Copy the exams template** into the course folder:
    ```bash
-   cp old_exams_template.tex "ML Supervised Techniques/old_exams.tex"
+   cp exams_template.tex "ML Supervised Techniques/exams.tex"
    ```
 
-2. **Update the title** near the top of the document body:
+2. **Set the course title** near the top of the file:
    ```latex
-   {\fontsize{26}{32}\selectfont\bfseries\color{accent}Old Exam Questions\\[2pt] ML Supervised Techniques\par}
+   \newcommand{\coursetitle}{ML Supervised Techniques}
    ```
 
-3. **Organize questions by topic** — one `\section{}` per thematic area,
-   questions inside `\questiontitle{…}` / `\closequestion` blocks.
+3. **Organize questions by topic** — one `\section{}` per thematic area
+   (matching the summary's chapter breakdown), questions inside
+   `\questiontitle{…}` / `\closequestion` blocks.
 
 4. **Mark repeated questions** with `\repeatnote` at the start of the box.
 
-5. **Compile and commit** the same way as the main summary.
+5. **Add an answer key** as `\section*{Answer Key}` at the very end of the file.
+
+6. **Compile and commit** the same way as the main summary.
 
 ---
 
@@ -125,12 +127,13 @@ these principles:
 
 Full macro list is in `summary_template.tex` under the *Mathematical Macros* section.
 
-### `old_exams.tex` (`old_exams_template.tex`)
+### `exams.tex` (`exams_template.tex`)
 
-`old_exams_template.tex` is a self-contained `article`-class document (no
+`exams_template.tex` is a self-contained `article`-class document (no
 chapters — just sections and questions). It shares the same accent color and
 visual language as `summary.tex` but is purpose-built for a question–answer
-collection.
+collection. The file is designed as a clean practice set: question boxes
+contain no answers, all solutions live in a final Answer Key section.
 
 **Box types:**
 
@@ -138,7 +141,7 @@ collection.
 |-----|-------|-------------|
 | `\questiontitle{Title}` … `\closequestion` | Blue | Every exam question |
 | `\begin{keybox}[title={…}]` | Green | Key insight or model answer hint |
-| `\begin{notebox}[title={…}]` | Amber | Organizational notes (e.g. "how this file is organized") |
+| `\begin{notebox}[title={…}]` | Amber | Organizational notes |
 
 **Structural macros:**
 
@@ -149,12 +152,27 @@ collection.
 | `\repeatnote` | Italic note: "Asked multiple times." — place at top of box |
 | `\choice` | `☐` bullet for multiple-choice options |
 | `\answerline{3cm}` | Blank fill-in line of the given width |
+| `\workingspace{4cm}` | Dashed-border blank box for student calculations |
+
+**Question type conventions:**
+
+| Type | What to use |
+|------|-------------|
+| Multiple choice | `\begin{itemize}[leftmargin=1.8em]` with `\choice` items |
+| Single number / expression | `\answerline{3cm}` inline at end of question text |
+| Calculation / short derivation | `\workingspace{4cm}` after the question |
+| Open / long answer | `\workingspace{7cm}` after the question |
+
+**Answer key:** every `exams.tex` ends with `\section*{Answer Key}` — a
+manually numbered list (`\textbf{Q1.}`, `\textbf{Q2.}`, …) matching the
+auto-incremented question order. Question boxes are kept blank; all answers
+live only in this final section.
 
 **Organization:** one `\section{}` per thematic topic area (matching the
-main summary's chapter breakdown where possible), questions within each
-section in chronological order (newest exam first if known).
+main summary's chapter breakdown), questions within each section in
+chronological order (newest exam first if known).
 
-**Math macros:** `old_exams.tex` includes the minimal subset needed for
+**Math macros:** `exams.tex` includes the minimal subset needed for
 exam-style questions — `\R`, `\E`, `\Prob`, `\KL`, `\dd`. Add from the
 full template macro list as needed.
 
@@ -167,7 +185,7 @@ full template macro list as needed.
 ```bash
 # Inside the course folder:
 latexmk -pdf summary.tex       # compile main summary
-latexmk -pdf old_exams.tex     # compile old exam questions
+latexmk -pdf exams.tex         # compile exam questions
 latexmk -pdf -pvc summary.tex  # compile + watch for changes
 latexmk -C                     # clean all build artifacts
 ```
