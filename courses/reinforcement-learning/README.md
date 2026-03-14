@@ -17,7 +17,4 @@ Covers the foundations of reinforcement learning: Markov Decision Processes, dyn
 
 ## How to help
 
-- [ ] Add intuition boxes for TD(λ) and eligibility traces
-- [ ] Expand the Policy Gradient Methods chapter
-- [ ] Add more exam questions from recent semesters
-- [ ] Review answer key for correctness
+To be added.

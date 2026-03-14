@@ -18,6 +18,4 @@ Covers unsupervised and self-supervised learning: clustering (k-means, EM, GMMs)
 
 ## How to help
 
-- [ ] Add more exam questions from recent semesters
-- [ ] Review answer key for correctness
-- [ ] Add intuition boxes for the EM algorithm
+To be added.

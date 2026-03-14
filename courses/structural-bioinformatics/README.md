@@ -14,6 +14,4 @@ Covers computational methods for protein structure prediction, molecular modelin
 
 ## How to help
 
-- [ ] Write and structure the summary content
-- [ ] Compile and commit `summary.pdf`
-- [ ] Create `exams.tex` with old exam questions
+To be added.

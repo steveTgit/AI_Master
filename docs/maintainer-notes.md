@@ -57,3 +57,17 @@ git commit -m "Rename course folder to new-name"
 ```
 
 After renaming, update the course's `README.md` and the root `README.md` course table.
+
+---
+
+## GitHub repository metadata
+
+Set these in the repository **Settings → General** on GitHub to improve discoverability:
+
+**Description:**
+> LaTeX lecture summaries and exam question collections for the AI Master programme.
+
+**Topics (comma-separated):**
+`latex`, `study-notes`, `machine-learning`, `artificial-intelligence`, `university`, `exam-preparation`, `lecture-notes`
+
+These cannot be set from inside the repo — they must be configured in the GitHub web UI.
