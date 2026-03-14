@@ -2,7 +2,7 @@
 
 Covers camera models, multi-view geometry, image processing, optical flow, deep learning for vision, object detection, and neural radiance fields.
 
-**Status:** usable
+**Status:** reviewed
 
 ## Files
 

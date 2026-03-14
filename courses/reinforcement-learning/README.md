@@ -2,7 +2,7 @@
 
 Covers the foundations of reinforcement learning: Markov Decision Processes, dynamic programming, Monte Carlo methods, temporal-difference learning, and policy gradient methods. Based on Sutton & Barto and the corresponding AI Master lecture.
 
-**Status:** usable
+**Status:** reviewed
 **Missing:** nothing critical; further worked examples and figures welcome
 
 ## Files

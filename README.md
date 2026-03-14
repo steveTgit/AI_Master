@@ -25,13 +25,13 @@ The summaries are written in a consistent visual style: one accent color, typed 
 | Course | Summary | Exams | Status |
 |--------|---------|-------|--------|
 | [AI in Life Sciences](courses/ai-in-life-sciences/) | [PDF](courses/ai-in-life-sciences/summary.pdf) | — | draft |
-| [Computer Vision](courses/computer-vision/) | [PDF](courses/computer-vision/summary.pdf) | [PDF](courses/computer-vision/exams.pdf) | usable |
+| [Computer Vision](courses/computer-vision/) | [PDF](courses/computer-vision/summary.pdf) | [PDF](courses/computer-vision/exams.pdf) | reviewed |
 | [Deep Reinforcement Learning](courses/deep-reinforcement-learning/) | [PDF](courses/deep-reinforcement-learning/summary.pdf) | — | draft |
 | [DL Architectures & Generative Techniques](courses/dl-architectures-generative-techniques/) | [PDF](courses/dl-architectures-generative-techniques/summary.pdf) | — | draft |
 | [Genome Analysis & Transcriptomics](courses/genome-analysis-transcriptomics/) | [PDF](courses/genome-analysis-transcriptomics/summary.pdf) | — | draft |
 | [ML Supervised Techniques](courses/ml-supervised-techniques/) | [PDF](courses/ml-supervised-techniques/summary.pdf) | [PDF](courses/ml-supervised-techniques/exams.pdf) | draft |
 | [ML Unsupervised Techniques](courses/ml-unsupervised-techniques/) | [PDF](courses/ml-unsupervised-techniques/summary.pdf) | [PDF](courses/ml-unsupervised-techniques/exams.pdf) | usable |
-| [Reinforcement Learning](courses/reinforcement-learning/) | [PDF](courses/reinforcement-learning/summary.pdf) | [PDF](courses/reinforcement-learning/exams.pdf) | usable |
+| [Reinforcement Learning](courses/reinforcement-learning/) | [PDF](courses/reinforcement-learning/summary.pdf) | [PDF](courses/reinforcement-learning/exams.pdf) | reviewed |
 | [Robopsychology](courses/robopsychology/) | [PDF](courses/robopsychology/summary.pdf) | — | draft |
 | [Structural Bioinformatics](courses/structural-bioinformatics/) | [PDF](courses/structural-bioinformatics/summary.pdf) | — | draft |
 
