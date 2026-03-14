@@ -87,5 +87,11 @@ _tikz*/
 # Overleaf / LaTeX Workshop (VS Code) – keep .latexmkrc if present
 .texpadtmp/
 
-# ── Slide PDFs (large, not tracked) ───────────────────────
-**/slides/
+# ── Lecture slides (large, change every semester, not tracked) ──
+courses/**/slides/*.pdf
+courses/**/slides/*.pptx
+
+# ── Allow compiled output PDFs ────────────────────────────
+!courses/**/summary.pdf
+!courses/**/exams.pdf
+!templates/*.pdf

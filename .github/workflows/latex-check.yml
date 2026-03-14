@@ -1,0 +1,44 @@
+name: LaTeX check
+
+# Attempts to compile changed .tex files on pull requests.
+# This is INFORMATIONAL — failures do not block merges.
+# LaTeX CI is fragile; a red check may mean a missing package in the
+# CI environment, not a broken .tex file. See docs/maintainer-notes.md.
+
+on:
+  pull_request:
+    paths:
+      - 'courses/**/*.tex'
+      - 'templates/*.tex'
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Find changed .tex files
+        id: changed
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.tex' | tr '\n' ' ')
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          echo "Changed .tex files: $FILES"
+
+      - name: Compile with TeX Live
+        if: steps.changed.outputs.files != ''
+        uses: xu-cheng/latex-action@v3
+        with:
+          # Compile the first changed .tex file as a smoke test.
+          # Full multi-file compilation is left to contributors locally.
+          root_file: ${{ steps.changed.outputs.files }}
+          work_in_root_file_dir: true
+          latexmk_use_lualatex: false
+          latexmk_use_xelatex: false
+        continue-on-error: true
+
+      - name: Report result
+        run: echo "LaTeX check complete (informational only — see docs/maintainer-notes.md)"

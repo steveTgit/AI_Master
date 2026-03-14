@@ -1,18 +1,25 @@
 # CLAUDE.md — AI Master Notes Repository
 
-Instructions for Claude when working in this repo.
+Instructions for Claude Code when working in this repo. This is AI-editing guidance, not human onboarding — see `docs/style-guide.md` for the human-readable equivalent.
 
 ---
 
-## Project overview
+## Repository layout
 
-LaTeX exam-prep repository for the AI Master programme. Each course folder
-contains two documents:
+```
+AI_Master/
+├── templates/
+│   ├── summary_template.tex   ← source of truth for summary.tex files
+│   └── exams_template.tex     ← source of truth for exams.tex files
+└── courses/
+    └── <course-slug>/
+        ├── summary.tex
+        ├── exams.tex
+        └── figures/
+```
 
-| File | Class | Template |
-|------|-------|----------|
-| `summary.tex` | `book` | `summary_template.tex` |
-| `exams.tex` | `article` | `exams_template.tex` |
+Course folders use lowercase kebab-case slugs (`reinforcement-learning`, `computer-vision`).
+Lecture slide PDFs live in `courses/<slug>/slides/` and are NOT tracked by git.
 
 ---
 
@@ -70,8 +77,6 @@ the signalling value of all boxes.
 
 ### Question types
 
-Use the following conventions depending on what kind of answer is expected:
-
 | Question type | Format inside `\questiontitle` … `\closequestion` |
 |---------------|--------------------------------------------------|
 | **Multiple choice** | `\begin{itemize}[leftmargin=1.8em]` with `\choice` items |
@@ -101,7 +106,7 @@ Every `exams.tex` file ends with an answer key:
 
 ### Math macros included in exams.tex
 
-`\R`, `\E`, `\Prob`, `\KL{q}{p}`, `\dd` — add from `summary_template.tex` as needed.
+`\R`, `\E`, `\Prob`, `\KL{q}{p}`, `\dd` — add from `templates/summary_template.tex` as needed.
 
 ---
 
@@ -118,9 +123,24 @@ Every `exams.tex` file ends with an answer key:
 
 ---
 
+## Starting a new course document
+
+```bash
+# summary
+cp templates/summary_template.tex courses/<slug>/summary.tex
+
+# exams
+cp templates/exams_template.tex courses/<slug>/exams.tex
+```
+
+Set `\coursetitle` and `\basedon` near the top of each file. Figure paths are relative: `figures/my-fig.png`.
+
+---
+
 ## Compiling
 
 ```bash
+# Inside the course folder:
 latexmk -pdf summary.tex
 latexmk -pdf exams.tex
 latexmk -C          # clean build artifacts
@@ -132,8 +152,9 @@ Always commit both `.tex` and `.pdf`.
 
 ## What NOT to do
 
-- Do not edit `summary_template.tex` or `exams_template.tex` in-place — copy first.
+- Do not edit `templates/summary_template.tex` or `templates/exams_template.tex` in-place — copy first.
 - Do not add answers inside `\questiontitle` / `\closequestion` blocks —
   solutions belong only in the `\section*{Answer Key}` section at the end.
 - Do not change accent colors or box color definitions per-document.
 - Do not add a chapter level to `exams.tex` — it is article class.
+- Do not commit lecture slide PDFs — they live in `courses/<slug>/slides/` which is gitignored.
