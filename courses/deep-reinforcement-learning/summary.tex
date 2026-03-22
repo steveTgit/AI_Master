@@ -303,10 +303,10 @@
 % ══════════════════════════════════════════════════════════
 %  DOCUMENT METADATA  (fill in for each new subject)
 % ══════════════════════════════════════════════════════════
-\newcommand{\coursetitle}{[Course Title Here]}
+\newcommand{\coursetitle}{Deep Reinforcement Learning}
 \newcommand{\documenttype}{Master Summary}
 \newcommand{\authorname}{Stefan Eder}
-\newcommand{\basedon}{[Based on Lecture \emph{name} SS26]}
+\newcommand{\basedon}{Based on Lecture \emph{Deep Reinforcement Learning} SS26, JKU Linz}
 
 
 % ══════════════════════════════════════════════════════════
@@ -404,6 +404,14 @@
 \newcommand{\eqdef}{\coloneqq}           % Definitional equality  :=
 \newcommand{\eqq}{\overset{?}{=}}        % "Does this equal?"
 
+% ── Reinforcement Learning ────────────────────────────────
+\newcommand{\Sset}{\mathcal{S}}          % State space
+\newcommand{\Aset}{\mathcal{A}}          % Action space
+\newcommand{\vpi}{v_{\pi}}               % State-value under policy \pi
+\newcommand{\qpi}{q_{\pi}}               % Action-value under policy \pi
+\newcommand{\vstar}{v_{*}}               % Optimal state-value
+\newcommand{\qstar}{q_{*}}               % Optimal action-value
+
 
 % ==========================================================
 %  BEGIN DOCUMENT
@@ -478,92 +486,951 @@
 
 
 % ==========================================================
-%  CHAPTER 1 — EXAMPLE STRUCTURE
-%  This chapter demonstrates the template. Delete or replace.
+%  CHAPTER 1 — RL FOUNDATIONS
 % ==========================================================
-\chapter{Example Chapter Title}
+\chapter{RL Foundations}
 
-This is the introductory running text for the chapter.
-Chapters always begin on a new page.
-Use this space to frame the chapter's goal at a high level
-before descending into sections.
+Reinforcement learning (RL) is the third major paradigm of machine learning alongside
+supervised and unsupervised learning.
+In \textbf{supervised learning} we learn a mapping from labeled input--output pairs;
+in \textbf{unsupervised learning} we discover structure in unlabeled data.
+RL is different: an \textbf{agent} interacts with an \textbf{environment}, receives
+feedback in the form of a scalar reward signal, and learns to act so as to maximize
+cumulative reward.
+The first lecture of this course is a structured recap of the core formalism ---
+the machinery developed here underpins every deep-RL method covered later.
 
-\section{First Main Concept}
+\section{What is Reinforcement Learning?}
 
-Lead every section with prose.
-Introduce the idea, its motivation, and any notation before
-defining it formally in a box.
-Inline math flows naturally: a model parameterized by
-$\params \in \R^d$ maps an input $\xvec$ to a prediction via
-$f_{\params}(\xvec)$.
-Display math is used when an expression needs space:
+Reinforcement learning is a \emph{computational approach of learning to make decisions
+from interactions}.
+The agent is not told what the correct action is; it must discover which actions lead
+to high reward by trying them.
+This is what separates RL from supervised learning, where target labels are provided.
+
+\begin{intbox}
+\textbf{Five defining characteristics of RL:}
+\begin{itemize}
+  \item \textbf{No labeled targets} --- only a scalar reward signal, not explicit
+    supervision.
+  \item \textbf{Delayed feedback} --- reward may arrive long after the action that
+    caused it (the \emph{credit-assignment} problem).
+  \item \textbf{Active data collection} --- the agent's actions influence which states
+    are visited next, so the data distribution is non-stationary and policy-dependent.
+  \item \textbf{Sequential interactions} --- decisions at time $t$ affect states at
+    $t+1, t+2, \dots$, creating long-term dependencies.
+  \item \textbf{Goal-directed} --- the objective is to maximize cumulative reward, not
+    any single step's outcome.
+\end{itemize}
+\end{intbox}
+
+The overarching assumption that makes the RL framework broadly applicable is the
+\emph{reward hypothesis}.
+
+\begin{defbox}[title={Reward Hypothesis}]
+All goals and purposes of an agent can be described as the maximization of the
+\emph{expected cumulative reward}.
+\end{defbox}
+
+This is a conjecture, not a theorem --- but it is a remarkably useful design principle
+for defining objectives across robotics, games, language models, and beyond.
+
+\section{The Agent--Environment Interface}
+
+At each discrete time step $t = 0, 1, 2, \dots$ the agent observes the current state
+$S_t$, selects an action $A_t$, and the environment responds with a scalar reward
+$R_{t+1}$ and the next state $S_{t+1}$.
+The agent executes $A_t$ and receives observation $O_t$ and reward $R_t$; the
+environment receives $A_t$ and emits $O_{t+1}$ and $R_{t+1}$.
+
+\begin{defbox}[title={Trajectory}]
+The agent observes state $S_t \in \Sset$ and selects action $A_t \in \Aset(S_t)$.
+The environment responds with reward $R_{t+1} \in \R$ and next state $S_{t+1}$.
+The resulting sequence
 \[
-  \loss(\params) \eqdef -\frac{1}{N}\sum_{i=1}^{N}
-    \log p_{\params}(y_i \given \xvec_i).
+  S_0,\; A_0,\; R_1,\; S_1,\; A_1,\; R_2,\; \dots
 \]
+is called a \emph{trajectory} (or history).
+\end{defbox}
 
-\begin{defbox}[title={Cross-Entropy Loss}]
-For a model with parameters $\params$ trained on
-$\dataset = \{(\xvec_i, y_i)\}_{i=1}^{N}$,
-the \emph{cross-entropy loss} is:
+A useful tool throughout RL is the conditional expectation.
+Recall $\E[X] = \sum_i x_i \Pr\{X = x_i\}$ and
+$\E[X \mid Y=y] = \sum_i x_i \Pr\{X = x_i \mid Y = y\}$.
+The \emph{law of total expectation},
+$\E[X \mid Y] = \sum_z \Pr\{Z=z \mid Y\}\,\E[X \mid Y, Z=z]$,
+is used repeatedly when expanding value functions over actions and next states.
+
+To formalize the environment we use the Markov Decision Process framework.
+The slides present two equivalent definitions; the first is standard in theoretical
+work, the second separates transition dynamics from expected reward.
+
+\begin{defbox}[title={Markov Decision Process}]
+A \textbf{Markov Decision Process (MDP)} is a tuple
+$\langle \Sset, \Aset, \mathcal{P}, \gamma \rangle$, where
+\begin{itemize}
+  \item $\Sset$ is the finite set of \textbf{states},
+  \item $\Aset$ is the finite set of \textbf{actions},
+  \item $\mathcal{P}$ specifies the \textbf{joint transition probabilities} (Markov):
+  \[
+    p(s', r \mid s, a) \;=\; \Pr(S_{t+1}=s',\, R_{t+1}=r \mid S_t=s,\, A_t=a),
+  \]
+  \item $\gamma \in [0,1]$ is the \textbf{discount factor}.
+\end{itemize}
+
+\medskip
+\textbf{Alternative formulation.}
+Separate state transitions from expected reward:
 \[
-  \loss(\params) \eqdef -\frac{1}{N}\sum_{i=1}^{N}
-    \log p_{\params}(y_i \given \xvec_i).
+  p(s' \mid s, a) = \sum_r p(s', r \mid s, a),
+\]
+\[
+  r(s, a) = \E[R_{t+1} \mid S_t=s, A_t=a] = \sum_r r \sum_{s'} p(s',r \mid s,a).
+\]
+Both formulations define the same dynamics; use whichever is more convenient.
+\end{defbox}
+
+The crucial assumption embedded in the MDP definition is the \emph{Markov property}:
+the next state and reward depend on history only through the current state--action pair.
+
+\begin{defbox}[title={Markov Property}]
+A state signal is \emph{Markov} if
+\begin{align*}
+  &\Pr(S_{t+1}=s', R_{t+1}=r \mid S_t=s, A_t=a,\;\text{past}) \\
+  &\quad=\; \Pr(S_{t+1}=s', R_{t+1}=r \mid S_t=s, A_t=a).
+\end{align*}
+``The future is independent of the past given the present.''
+\end{defbox}
+
+The state must capture all information relevant to future dynamics.
+In a chess game the full board position is Markov --- knowing the board and the next
+move uniquely determines the distribution over future boards.
+Only tracking one piece's position would \emph{not} be Markov, since the hidden
+pieces still influence legal moves.
+
+\medskip
+\textbf{Example: Cleaning Robot.}
+Consider a robot vacuum with two battery states $\Sset = \{\texttt{high},
+\texttt{low}\}$.
+From \texttt{high} it can \texttt{wait} or \texttt{search}; from \texttt{low} it can
+additionally \texttt{recharge} (deterministically returns to \texttt{high}, reward 0).
+Searching yields higher expected reward than waiting
+($r_{\texttt{search}} > r_{\texttt{wait}}$) but may drain the battery, and running
+out of charge gives reward $-3$.
+The stochastic transition probabilities (parameterized by $\alpha, \beta \in (0,1)$)
+define a small finite MDP --- a concrete instance of the abstract framework above.
+
+\section{Goals and Returns}
+
+The agent's objective is to maximize not just the immediate reward but the long-run
+\emph{return} --- the cumulative discounted sum of future rewards.
+
+\begin{defbox}[title={Discounted Return}]
+The \textbf{discounted return} from time $t$ is
+\[
+  G_t \;=\; R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \cdots
+        \;=\; \sum_{k=0}^{\infty} \gamma^k R_{t+k+1},
+\]
+where $\gamma \in [0,1)$ is the \textbf{discount factor}.
+Discounting makes the sum finite for continuing tasks and encodes preference for
+sooner rewards.
+
+\medskip
+Recursive identity:
+\[
+  G_t \;=\; R_{t+1} + \gamma\, G_{t+1}.
+\]
+Starting from $G_T = 0$ and iterating backwards is far more efficient than summing
+forward from each $t$.
+\end{defbox}
+
+The discount factor $\gamma$ controls the effective time horizon.
+As $\gamma \to 0$ only the immediate reward matters (myopic agent); as $\gamma \to 1$
+distant rewards count nearly as much as immediate ones (far-sighted agent).
+For \textbf{episodic tasks} that terminate at time $T$ the sum is naturally finite
+and $\gamma = 1$ is permissible.
+For \textbf{continuing tasks} with no terminal time, $\gamma < 1$ is required.
+A sanity check: for a continuing task with constant reward $r$ and $\gamma < 1$,
+the geometric series gives $G_t = r/(1-\gamma)$.
+
+\section{Policies and Value Functions}
+
+The agent's behavior is fully described by its \emph{policy}.
+
+\begin{defbox}[title={Policy}]
+A \textbf{policy} $\pi$ is a mapping $\pi : \Sset \times \Aset \to [0,1]$ that assigns
+each state--action pair the probability of selecting $a$ in state $s$:
+\[
+  \pi(a \mid s) = \Pr(A_t = a \mid S_t = s),
+  \qquad \sum_{a' \in \Aset} \pi(a' \mid s) = 1 \;\;\forall s \in \Sset.
+\]
+A policy is \emph{deterministic} if it assigns probability 1 to a single action per
+state. MDP policies depend only on the current state (Markov sufficiency).
+\end{defbox}
+
+The agent seeks a policy $\pi$ that maximizes expected return.
+Two value functions are the central objects for evaluating and improving policies.
+
+\begin{defbox}[title={State-Value and Action-Value Functions}]
+Given policy $\pi$, the \textbf{state-value function} and
+\textbf{action-value function} are
+\[
+  \vpi(s) = \E_{\pi}[G_t \mid S_t=s],
+  \qquad
+  \qpi(s,a) = \E_{\pi}[G_t \mid S_t=s,\, A_t=a].
+\]
+$\vpi(s)$ measures how good it is to \emph{be} in state $s$ under $\pi$;
+$\qpi(s,a)$ measures how good it is to \emph{take action $a$} in $s$ and then
+follow $\pi$. They are related by:
+\[
+  \vpi(s) = \sum_{a} \pi(a \mid s)\, \qpi(s,a)
+           = \E_{\pi}[q_\pi(S_t,A_t) \mid S_t=s].
 \]
 \end{defbox}
 
-After a definition box, always continue with prose.
-Here you would explain what this loss measures, why
-minimizing it corresponds to maximum likelihood estimation,
-and how it connects to what comes next.
+Optimal policies are defined via a partial order on value functions: $\pi \ge \pi'$
+iff $\vpi(s) \ge v_{\pi'}(s)$ for all $s \in \Sset$.
 
-\subsection{A Deeper Dive}
-
-\begin{thmbox}[title={Bayes' Theorem}]
+\begin{defbox}[title={Optimal Value Functions}]
 \[
-  p(\params \given \dataset)
-  = \frac{p(\dataset \given \params)\;p(\params)}{p(\dataset)}
-  \;\propto\; p(\dataset \given \params)\;p(\params).
+  \vstar(s) = \max_{\pi}\, \vpi(s),
+  \qquad
+  \qstar(s,a) = \max_{\pi}\, \qpi(s,a).
 \]
-The posterior is proportional to the likelihood times the prior.
+The MDP is ``solved'' when the optimal value function is known.
+\end{defbox}
+
+\begin{thmbox}[title={Optimal Policies}]
+For any finite MDP:
+\begin{itemize}
+  \item There exists an optimal policy $\pi^*$ such that $\pi^* \ge \pi$ for
+    all~$\pi$.
+  \item All optimal policies achieve $\vstar$ and $\qstar$ simultaneously.
+  \item There is always a \emph{deterministic} optimal policy.
+\end{itemize}
 \end{thmbox}
 
-Note how the theorem box below does not immediately follow a
-section heading — there is always at least a sentence of prose
-first to give it context.
+Given $\qstar$, the optimal policy is recovered by a greedy step:
+\[
+  \pi^*(s, a) =
+  \begin{cases}
+    1 & a = \argmax_{a'}\, \qstar(s, a'), \\
+    0 & \text{otherwise.}
+  \end{cases}
+\]
+If multiple actions share the maximum, any (stochastic) selection among them is optimal.
+Crucially, knowing $\qstar$ yields $\pi^*$ without needing a model of
+$p(s',r \mid s,a)$ --- a key motivator for action-value methods.
 
-\section{Practical Applications}
+\section{Exploration vs.\ Exploitation}
 
-Running text sets up the example and the intuition before
-those boxes appear.
-Consider what the KL divergence $\KL{q}{p}$ actually measures.
+A learning agent must balance two competing objectives.
+\textbf{Exploitation}: act on current knowledge to maximize performance.
+\textbf{Exploration}: try actions that increase knowledge, possibly at short-term cost.
+Neither extreme is optimal: pure exploitation risks committing to a suboptimal action
+before adequate data are gathered; pure exploration never leverages what is already known.
 
-\begin{intbox}
-Think of $\KL{q}{p}$ not as a symmetric distance
-(it isn't — $\KL{q}{p} \neq \KL{p}{q}$ in general),
-but as the \emph{extra bits} needed to encode samples from $q$
-using a code optimized for $p$.
-The asymmetry is exactly why direction matters in
-variational inference and the EM algorithm.
+The tension is cleanest in the \emph{stateless} setting of multi-armed bandits, where
+no state transitions complicate the picture.
+Bandits therefore serve as the canonical sandbox for studying exploration strategies
+before extending them to the full MDP setting.
+
+\section{Multi-Armed Bandits}
+
+\subsection{Problem setup}
+
+\begin{defbox}[title={$k$-Armed Bandit}]
+A \textbf{$k$-armed bandit} has $k$ actions (``arms'') $a \in \{1,\dots,k\}$.
+There is a single state (non-associative setting): actions have no long-term
+consequences on the environment beyond the immediate reward.
+At each step $t$ the agent selects arm $A_t$ and observes reward $R_t$.
+The \textbf{true action value} is
+\[
+  q(a) \;=\; \E[R_t \mid A_t = a].
+\]
+The agent maintains an estimate $Q_t(a)$ and a count $N_t(a)$.
+True values are unknown and must be learned from experience.
+\end{defbox}
+
+A problem is \textbf{stationary} if $q(a)$ is constant over time, and
+\textbf{non-stationary} if the reward distributions drift.
+This distinction drives the choice of estimation method.
+
+\subsection{Action value estimation}
+
+The natural unbiased estimator of $q(a)$ is the sample average of observed rewards:
+\[
+  Q_t(a) = \frac{\displaystyle\sum_{n=1}^{t} R_n \cdot \ind_{A_n = a}}{N_t(a)}.
+\]
+By the law of large numbers, $Q_t(a) \to q(a)$ as $N_t(a) \to \infty$.
+Rather than recomputing from scratch each step, the incremental form processes one
+observation at a time:
+
+\begin{thmbox}[title={Incremental Update}]
+After selecting $A_t$ and observing $R_t$, update only the chosen arm's estimate:
+\[
+  Q_{t+1}(A_t) = Q_t(A_t) + \alpha_t\bigl(R_t - Q_t(A_t)\bigr),
+\]
+where $(R_t - Q_t(A_t))$ is the \emph{prediction error}.
+\begin{itemize}
+  \item $\alpha_t = 1/N_t(A_t)$: reproduces the unbiased sample average.
+  \item \textbf{Constant} $\alpha \in (0,1]$: exponentially recency-weighted average
+    --- older rewards count less, ideal for non-stationary problems.
+\end{itemize}
+All other estimates $Q_t(a)$ with $a \ne A_t$ remain unchanged.
+\end{thmbox}
+
+\subsection{Regret}
+
+Rather than tracking absolute reward, it is informative to measure how much is
+\emph{lost} by not always selecting the optimal arm.
+
+\begin{defbox}[title={Regret}]
+The \textbf{optimal value} is $q^* = \max_a q(a)$.
+The \textbf{regret} of selecting action $a$ is
+\[
+  \Delta_a \;=\; q^* - q(a) \;\ge\; 0.
+\]
+The \textbf{total regret} after $t$ steps is
+\[
+  L_t \;=\; \sum_{n=1}^{t} \bigl(q^* - q(A_n)\bigr) \;=\; \sum_{n=1}^{t} \Delta_{A_n}.
+\]
+Maximizing cumulative reward is equivalent to minimizing total regret $L_t$.
+\end{defbox}
+
+A good exploration strategy keeps $L_t$ sub-linear in $t$ --- the per-step regret
+eventually goes to zero.
+Pure greedy can suffer linear regret if it commits early to a suboptimal arm.
+
+\subsection{Algorithms}
+
+Bandit algorithms split into two families.
+\textbf{Value-based} methods maintain action-value estimates $Q_t(a)$ and derive a
+policy from them.
+\textbf{Policy-based} methods maintain action preferences directly.
+
+\medskip
+\textbf{Greedy.}
+$A_t \in \argmax_a Q_t(a)$.
+Pure exploitation: always selects the arm with the highest current estimate.
+Achieves no exploration and can converge to a suboptimal arm if early samples are
+misleading.
+
+\medskip
+\textbf{$\varepsilon$-Greedy.}
+
+\begin{defbox}[title={$\varepsilon$-Greedy Action Selection}]
+With probability $1-\varepsilon$ select the greedy action
+$A_t \in \argmax_a Q_t(a)$.
+With probability $\varepsilon$ select uniformly at random from $\{1,\dots,k\}$.
+\end{defbox}
+
+A fixed $\varepsilon > 0$ ensures ongoing exploration but wastes a constant fraction of
+steps on random actions indefinitely.
+\textbf{GLIE} schedules (Greedy in the Limit with Infinite Exploration,
+e.g.\ $\varepsilon_k = 1/k$) decay $\varepsilon \to 0$ while still exploring infinitely
+often --- meeting the conditions required for convergence guarantees.
+
+\medskip
+\textbf{Upper Confidence Bound (UCB).}
+
+\begin{thmbox}[title={UCB Action Selection}]
+\[
+  A_t \in \argmax_{a} \left[Q_t(a) + c\sqrt{\frac{\ln t}{N_t(a)}}\right],
+\]
+where $c > 0$ controls the exploration bonus.
+Each arm must be tried at least once before applying the formula.
+\end{thmbox}
+
+The bonus $c\sqrt{\ln t / N_t(a)}$ is large for arms with few observations (high
+uncertainty) and shrinks as data accumulate.
+UCB explores \emph{selectively} --- prioritizing arms where evidence is weak --- unlike
+$\varepsilon$-greedy which explores uniformly regardless of confidence.
+If arm $a$ is neglected, $N_t(a)$ stays constant while $\ln t$ grows, so the bonus
+eventually makes $a$ worth revisiting.
+In short: \emph{exploit what you are confident is good; explore what you are unsure about}.
+
+\medskip
+\textbf{Thompson Sampling.}
+A Bayesian approach: maintain a \emph{posterior distribution} over each $q(a)$
+(e.g.\ a Beta distribution for Bernoulli rewards).
+At each step, draw one sample from each arm's posterior and select the arm with the
+highest sample.
+Arms with high posterior variance are sampled frequently; as evidence accumulates the
+posterior concentrates around the true value and exploitation dominates.
+Thompson Sampling achieves asymptotically optimal regret and often outperforms UCB
+in practice.
+
+\medskip
+\textbf{Gradient Bandits (policy-based).}
+
+\begin{defbox}[title={Preference Parameters}]
+Instead of estimating action values, gradient bandits maintain a real-valued
+\textbf{preference} $H_t(a) \in \R$ for each arm.
+Only \emph{differences} matter: adding a constant to all preferences leaves the
+policy unchanged.
+\end{defbox}
+
+Preferences are converted to a sampling distribution via the softmax:
+\[
+  \pi_t(a) = \frac{\exp(H_t(a))}{\displaystyle\sum_b \exp(H_t(b))}.
+\]
+After observing reward $R_t$ with running baseline $\bar{R}_t$ (often the running
+average reward), preferences are updated by stochastic gradient ascent on expected
+reward:
+\[
+  H_{t+1}(a) =
+  \begin{cases}
+    H_t(a) + \alpha(R_t - \bar{R}_t)(1 - \pi_t(a)) & a = A_t, \\[4pt]
+    H_t(a) - \alpha(R_t - \bar{R}_t)\,\pi_t(a) & a \ne A_t.
+  \end{cases}
+\]
+
+\begin{intbox}[title={What the Gradient Update Does}]
+Think of $\pi_t$ as a weighted lottery.
+If $R_t > \bar{R}_t$ (better than average): increase $H(A_t)$, making the selected
+arm more likely; slightly decrease the rest.
+If $R_t < \bar{R}_t$: decrease $H(A_t)$ and increase the rest.
+The factors $(1-\pi_t(A_t))$ and $\pi_t(a)$ scale the update: a surprising action
+(low $\pi_t$) triggers a large adjustment; a near-certain action changes little.
+Unlike value-based methods, gradient bandits have no explicit exploration rate ---
+exploration emerges from the softmax sampling itself.
 \end{intbox}
 
-\begin{exbox}[title={Simple Integration}]
-Let $f(x) = 2x$.
-Compute $\int_0^2 f(x)\dd x$:
-\[
-  \int_{0}^{2} 2x \dd x
-  = \bigl[x^2\bigr]_{0}^{2}
-  = 4 - 0 = 4.
-\]
-\end{exbox}
 
-\begin{notebox}[title={Exam Trap}]
-Do \emph{not} confuse $\KL{p}{q}$ with $\KL{q}{p}$.
-In variational inference we minimize $\KL{q}{p_{\params}}$
-(forward KL $\to$ mass-covering)
-vs.\ $\KL{p_{\params}}{q}$ (reverse KL $\to$ mode-seeking).
-The behavior of the approximation differs dramatically.
+
+% ==========================================================
+%  CHAPTER 2 — TABULAR VALUE-BASED METHODS
+% ==========================================================
+\chapter{Tabular Value-Based Methods}
+
+Lecture 02 is organized around a single central question: \emph{how do we
+actually solve for an optimal policy?}
+The answer depends on two things --- whether we have access to a model of the
+environment, and whether we compute expectations exactly or estimate them from
+samples.
+Those two choices carve out the three algorithm families covered here:
+Dynamic Programming, Monte Carlo, and Temporal-Difference learning.
+
+\section{RL Taxonomy}
+
+Before diving in, it helps to know where different algorithms sit in the broader
+landscape. RL algorithms can be characterized along three orthogonal axes.
+
+The first axis is \textbf{what gets learned}.
+\emph{Value-based} methods maintain an explicit value function and derive the
+policy implicitly (e.g.\ take the action with the highest Q-value).
+\emph{Policy-based} methods directly parameterize and optimize the policy without
+an intermediate value function.
+\emph{Actor-critic} methods maintain both: a policy (actor) that decides what
+to do, and a value function (critic) that evaluates how good the current situation is.
+
+The second axis is \textbf{which data are used}.
+\emph{On-policy} methods learn about the same policy that generates the data ---
+evaluation and behavior are the same policy.
+\emph{Off-policy} methods separate these two roles: the \emph{target policy} $\pi$
+is what we want to learn about, while the \emph{behavior policy} $\mu$ generates
+the actual data.
+This separation is powerful: it allows reusing data from old policies, learning
+from human demonstrations, or learning a greedy policy while behaving exploratorily.
+\emph{Offline} methods go even further and learn from a fixed pre-collected
+dataset with no environment interaction at all.
+
+The third axis is \textbf{whether a model is available}.
+\emph{Model-based} methods use or learn a model of the environment dynamics
+$p(s',r\mid s,a)$ and can plan ahead by simulating transitions.
+\emph{Model-free} methods estimate value functions or policies directly from
+experience, never consulting a model.
+
+These three axes are independent --- DQN is value-based, off-policy, and
+model-free; AlphaZero is actor-critic, on-policy, and model-based.
+
+\section{Bellman Equations}
+
+The Bellman equations are the mathematical backbone of tabular RL.
+They express a simple recursive insight: the value of being in a state equals
+the immediate reward you expect plus the discounted value of where you end up.
+
+\begin{thmbox}[title={Bellman Expectation and Optimality Equations}]
+For any policy $\pi$, the value functions satisfy the \emph{expectation equations}:
+\begin{align*}
+  \vpi(s) &= \sum_a \pi(a\mid s)\!\left[r(s,a) + \gamma\sum_{s'} p(s'\mid s,a)\,\vpi(s')\right], \\[4pt]
+  \qpi(s,a) &= r(s,a) + \gamma\sum_{s'} p(s'\mid s,a)\sum_{a'} \pi(a'\mid s')\,\qpi(s',a').
+\end{align*}
+The \emph{optimal} value functions satisfy the \emph{optimality equations}:
+\begin{align*}
+  \vstar(s) &= \max_a \!\left[r(s,a) + \gamma\sum_{s'} p(s'\mid s,a)\,\vstar(s')\right], \\[4pt]
+  \qstar(s,a) &= r(s,a) + \gamma\sum_{s'} p(s'\mid s,a)\,\max_{a'}\qstar(s',a').
+\end{align*}
+\end{thmbox}
+
+The expectation equations are \emph{linear} in the value function --- in
+principle, you could solve them as a linear system in $O(|\Sset|^3)$ operations.
+For anything but tiny MDPs, that is computationally prohibitive, so iterative
+methods are needed.
+
+The optimality equations look similar but replace the policy-weighted average
+with a $\max$.
+That $\max$ makes them nonlinear, so there is no closed-form solution.
+The key practical insight is this: once you have $\qstar$, the optimal policy
+is free --- just be greedy, $\pi^*(s) = \argmax_a\,\qstar(s,a)$.
+Using $\vstar$ instead requires the model to compute the $\argmax$, whereas
+$\qstar$ gives you the optimal action directly without any model.
+
+\section{Planning with Dynamic Programming}
+
+Dynamic programming computes optimal policies \emph{given a perfect model} of
+the environment.
+DP uses the model to form exact expected-value backups rather than sampling.
+Every DP algorithm alternates between two steps:
+\textbf{policy evaluation} (compute how good the current policy is) and
+\textbf{policy improvement} (make the policy better).
+
+\subsection{Policy evaluation and improvement}
+
+Given a fixed policy $\pi$, we want to compute its value function $\vpi$
+exactly.
+The trick is to treat the Bellman expectation equation not as a system of
+equations to solve, but as an \emph{update rule}.
+Starting from any initialization $V_0$, iterating the update
+\[
+  V_{k+1}(s) \;\leftarrow\; \sum_a \pi(a\mid s)\!\left[r(s,a)
+    + \gamma\sum_{s'}p(s'\mid s,a)\,V_k(s')\right]
+\]
+for all states $s$ simultaneously converges to $\vpi$.
+In practice we stop when the maximum change across states falls below a small
+threshold $\varepsilon$.
+
+Once we have $V \approx \vpi$, policy improvement is straightforward.
+The \textbf{policy improvement theorem} guarantees that choosing the greedy
+action at every state --- $\pi'(s) = \argmax_a\,q_\pi(s,a)$ --- always yields
+a policy at least as good as $\pi$.
+If $v_{\pi'}(s) = \vpi(s)$ for all $s$, the policy was already optimal.
+
+\subsection{Policy iteration and value iteration}
+
+\textbf{Policy iteration} repeats evaluation and improvement in alternation:
+run iterative policy evaluation to convergence, extract the greedy policy,
+repeat.
+It is guaranteed to reach the optimal policy after a finite number of
+improvements, but running evaluation fully to convergence on each iteration
+is expensive.
+
+\textbf{Value iteration} is a smarter shortcut: do not wait for evaluation to
+converge.
+Instead, apply a \emph{single} backup using the optimality operator --- taking
+the $\max$ rather than the policy-weighted sum:
+\[
+  V_{k+1}(s) \;\leftarrow\; \max_a\!\left[r(s,a)
+    + \gamma\sum_{s'} p(s'\mid s,a)\,V_k(s')\right].
+\]
+This is equivalent to interleaving one step of evaluation with one step of
+improvement.
+Value iteration converges asymptotically (no finite termination guarantee), but
+is typically more efficient per iteration than running full policy evaluation.
+
+\begin{intbox}[title={Limitation of DP}]
+Both algorithms require knowing $p(s',r\mid s,a)$ for every transition.
+In most real-world settings this model is unavailable.
+Model-free methods, covered next, replace the model-based expectation
+with samples drawn from the environment.
+\end{intbox}
+
+\section{Model-Free Prediction}
+
+The prediction task is: given a policy $\pi$, estimate $\vpi$ from experience
+alone, without any model.
+Two fundamentally different approaches exist.
+
+\subsection{Monte Carlo: learn from complete episodes}
+
+Monte Carlo (MC) methods estimate $\vpi(s)$ by averaging the actual returns
+observed when starting from $s$.
+Since $\vpi(s) = \E_\pi[G_t \mid S_t = s]$ and $G_t$ is observable at episode
+end, we can use the sample average as the estimator, updated incrementally:
+\[
+  V(S_t) \;\leftarrow\; V(S_t) + \alpha\bigl[G_t - V(S_t)\bigr].
+\]
+$G_t$ is an \emph{unbiased} estimate of $\vpi(S_t)$ --- on average it equals
+the true value.
+The downside is variance: $G_t$ is a sum of many random rewards, so individual
+estimates can vary wildly, and the method requires waiting until the episode ends.
+
+\subsection{Temporal-difference: learn online, one step at a time}
+
+TD methods trade unbiasedness for immediacy.
+Instead of waiting for the actual return $G_t$, TD uses the Bellman equation
+to construct an estimate after just one step --- the \textbf{TD(0) target}
+$R_{t+1} + \gamma V(S_{t+1})$.
+The update is:
+
+\begin{thmbox}[title={TD(0) Update Rule}]
+\[
+  V(S_t) \;\leftarrow\; V(S_t)
+  + \alpha\underbrace{\bigl[R_{t+1} + \gamma V(S_{t+1}) - V(S_t)\bigr]}_{\text{TD error } \delta_t}.
+\]
+TD(0) is model-free like MC, bootstraps like DP, and can update after
+\emph{every step} without waiting for episode end.
+\end{thmbox}
+
+The TD target is \emph{biased} because $V(S_{t+1})$ is only an approximation ---
+we are plugging an estimate back into its own update.
+But it has far lower variance than $G_t$, because only a single reward is
+random rather than a whole trajectory's worth.
+In practice, TD often learns faster even though it introduces this bias.
+
+Information propagation differs too.
+In MC, a surprising outcome at the end of an episode immediately updates all
+states visited along the way.
+In TD, that information trickles backward only one step at a time.
+
+\subsection{Multi-step returns and TD($\lambda$)}
+
+$n$-step TD provides a smooth interpolation between TD(0) ($n=1$) and MC
+($n=\infty$) by collecting $n$ actual rewards before bootstrapping:
+\[
+  G_t^{(n)} = R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^{n-1}R_{t+n} + \gamma^n V(S_{t+n}).
+\]
+Rather than committing to one $n$, TD($\lambda$) mixes \emph{all} $n$-step
+returns simultaneously using geometrically decaying weights:
+\[
+  G_t^\lambda = (1-\lambda)\sum_{n=1}^{T-t-1}\lambda^{n-1}G_t^{(n)}
+  + \lambda^{T-t-1}G_t.
+\]
+Setting $\lambda=0$ recovers TD(0); $\lambda=1$ recovers MC.
+Intermediate values get the best of both worlds: lower variance than MC while
+propagating information faster than one-step TD.
+In practice the $\lambda$-return is implemented online via
+\textbf{eligibility traces}, which maintain a decaying memory of recently
+visited states and spread the TD error backward proportionally.
+
+\section{Model-Free Control}
+
+For control, we need action-value estimates $Q(s,a)$ rather than state values.
+The reason is simple: to be greedy over $\vpi$, you need to compute
+$\argmax_a\bigl[r(s,a) + \gamma\sum_{s'} p(s'\mid s,a)V(s')\bigr]$,
+which requires a model.
+Being greedy over $Q(s,a)$ is model-free: just pick $\argmax_a\,Q(s,a)$.
+
+The general framework is \textbf{generalized policy iteration}: alternate
+between approximate policy evaluation (using MC or TD to estimate $Q \approx \qpi$)
+and policy improvement (act greedily with respect to $Q$).
+The catch is exploration: a purely greedy policy never tries suboptimal actions,
+so $Q(s,a)$ for those actions never gets updated and the policy can get stuck.
+The standard fix is $\varepsilon$-greedy: with probability $\varepsilon$ take a
+random action, otherwise act greedily.
+To guarantee convergence to the optimal policy, we need the exploration schedule
+to satisfy GLIE --- \emph{Greedy in the Limit with Infinite Exploration}:
+every state-action pair must be visited infinitely often, yet the policy must
+eventually converge to greedy.
+An $\varepsilon$-greedy schedule with $\varepsilon_t \to 0$ and
+$\sum_t \varepsilon_t = \infty$ satisfies GLIE.
+
+\subsection{SARSA: on-policy TD control}
+
+SARSA applies the TD idea directly to action values.
+At each step we observe the transition $(S_t, A_t, R_{t+1}, S_{t+1})$,
+then sample the next action $A_{t+1}$ from the current policy and update:
+\[
+  Q(S_t,A_t) \leftarrow Q(S_t,A_t) + \alpha\bigl[R_{t+1} + \gamma Q(S_{t+1},A_{t+1}) - Q(S_t,A_t)\bigr].
+\]
+The five quantities $(S_t, A_t, R_{t+1}, S_{t+1}, A_{t+1})$ give the algorithm
+its name.
+SARSA is \emph{on-policy}: the action $A_{t+1}$ used in the target is actually
+sampled from the current $\varepsilon$-greedy policy, so the estimate converges
+to $q_\pi$ for the policy being followed.
+
+A variant, \textbf{Expected SARSA}, replaces the sampled $A_{t+1}$ with an
+expectation over the policy:
+\[
+  Q(S_t,A_t) \leftarrow Q(S_t,A_t)
+  + \alpha\!\left[R_{t+1} + \gamma\sum_{a'}\pi(a'\mid S_{t+1})Q(S_{t+1},a') - Q(S_t,A_t)\right].
+\]
+This reduces variance because it averages over the randomness in $A_{t+1}$
+rather than sampling it.
+
+\subsection{Q-learning: off-policy TD control}
+
+Q-learning breaks the link between behavior and learning target.
+Regardless of which action the agent \emph{actually} takes next, the update
+uses the \emph{greedy} action at the next state:
+\[
+  Q(S_t,A_t) \leftarrow Q(S_t,A_t)
+  + \alpha\!\left[R_{t+1} + \gamma\max_{a'} Q(S_{t+1},a') - Q(S_t,A_t)\right].
+\]
+This is a sample-based approximation of the Bellman optimality equation for
+$\qstar$, and under standard conditions $Q$ converges to $\qstar$ regardless
+of the behavior policy (which just needs to ensure all state-action pairs get
+visited).
+No importance-sampling correction is needed because the $\max$ target does not
+depend on the behavior policy at all.
+
+In one sentence: SARSA evaluates what the agent \emph{actually does}; Q-learning
+evaluates what the agent \emph{would do if it were greedy}.
+
+\subsection{Maximization bias and Double Q-learning}
+
+There is a subtle problem with the $\max$ in Q-learning.
+When $Q$ values are estimated with noise (as they always are from finite data),
+taking the maximum over noisy estimates produces a value that is systematically
+\emph{too high} --- the noise pushes the max upward.
+This is called \textbf{maximization bias}.
+
+\begin{defbox}[title={Double Q-Learning}]
+Maintain two independent estimates $Q^A$ and $Q^B$.
+Use one to \emph{select} the action and the other to \emph{evaluate} it:
+\begin{align*}
+  Q^A(S_t,A_t) &\leftarrow Q^A(S_t,A_t)
+    + \alpha\!\left[R_{t+1} + \gamma Q^B\!\left(S_{t+1},\argmax_a Q^A(S_{t+1},a)\right) - Q^A(S_t,A_t)\right].
+\end{align*}
+At each step, randomly choose which estimate to update; the other plays the
+evaluation role.
+Decoupling selection from evaluation breaks the positive correlation that drives
+the bias upward.
+\end{defbox}
+
+\subsection{Off-policy learning and importance sampling}
+
+When using MC or SARSA-style updates off-policy --- learning about $\pi$ from
+data generated by $\mu$ --- the mismatch in action probabilities must be
+corrected.
+The \textbf{importance sampling ratio} $\rho_t = \pi(A_t\mid S_t)/\mu(A_t\mid S_t)$
+reweights each transition to look as if it came from $\pi$.
+For full trajectories the ratio is a product over the whole path.
+Off-policy MC multiplies the return by the full trajectory ratio $\rho_t^T$;
+off-policy SARSA uses only a single-step ratio $\rho_{t+1}$.
+Q-learning sidesteps the whole issue because its $\max$ target is already
+policy-agnostic.
+
+
+% ==========================================================
+%  CHAPTER 3 — VALUE FUNCTION APPROXIMATION
+% ==========================================================
+\chapter{Value Function Approximation}
+
+Every tabular method we have seen so far stores a separate number for each
+state or state-action pair.
+That is fine for toy problems, but it breaks at scale.
+Backgammon has around $10^{20}$ states; Go has around $10^{170}$; robotic
+manipulation lives in a continuous space with infinitely many states.
+No table can hold all of those, and no algorithm could visit each state enough
+times to learn a reliable estimate.
+
+The solution is to give up on exact representation and \emph{approximate}
+the value function with a parameterized function $v_\mathbf{w}(s) \approx \vpi(s)$,
+where $\mathbf{w}$ is a weight vector with far fewer entries than there are states.
+The approximation generalizes: updating $\mathbf{w}$ from one state implicitly
+updates the estimated values of nearby states that share features.
+When neural networks play the role of this approximator, the whole framework
+becomes \textbf{deep reinforcement learning}.
+
+\section{Learning Value Functions by Gradient Descent}
+
+The natural objective is to minimize the mean-squared difference between the
+approximate and the true value function over states visited under $\pi$:
+\[
+  J(\mathbf{w}) = \E_\pi\!\left[\bigl(\vpi(S) - v_\mathbf{w}(S)\bigr)^2\right].
+\]
+Stochastic gradient descent gives the parameter update at each visited state $S$:
+\[
+  \Delta\mathbf{w} = \alpha\bigl(\vpi(S) - v_\mathbf{w}(S)\bigr)\nabla_\mathbf{w} v_\mathbf{w}(S).
+\]
+The problem is that $\vpi(S)$ is unknown --- we can never query the oracle.
+So we substitute it with a \textbf{target} derived from observed data.
+The MC target is the actual return $G_t$ (unbiased but noisy).
+The TD(0) target is the one-step bootstrapped estimate $R_{t+1} + \gamma v_\mathbf{w}(S_{t+1})$
+(lower variance, but biased because it depends on $\mathbf{w}$ itself).
+The TD($\lambda$) target $G_t^\lambda$ sits between the two extremes.
+
+This dependency is important: the TD target changes as $\mathbf{w}$ updates, so
+we are not performing true gradient descent --- we are ignoring the gradient
+through the target.
+This is called a \textbf{semi-gradient} method.
+It works well empirically, but convergence guarantees are weaker than for full
+gradient descent, and there are regimes where it can diverge
+(see the Deadly Triad, below).
+
+\section{Function Approximators}
+
+\textbf{Linear approximation} represents each state by a feature vector
+$\mathbf{x}(s) \in \mathbb{R}^d$ and computes the value as a dot product:
+$v_\mathbf{w}(s) = \mathbf{x}(s)^\top \mathbf{w}$.
+The squared-error objective is then quadratic in $\mathbf{w}$, guaranteeing a
+unique global minimum, and the SGD update simplifies to
+$\Delta\mathbf{w} = \alpha\bigl(\text{target} - v_\mathbf{w}(S)\bigr)\mathbf{x}(S)$.
+Tabular lookup is actually a special case of linear approximation: represent each
+state with a one-hot vector, and the weights $\mathbf{w}$ directly encode the value
+table.
+The difference is that one-hot features provide no generalization between states,
+whereas a shared feature representation does.
+
+\begin{intbox}[title={Challenges Specific to RL}]
+Unlike supervised learning, function approximation in RL faces three
+compounding difficulties:
+\textbf{non-i.i.d.\ data} (consecutive transitions are strongly correlated,
+not independent samples);
+\textbf{policy-dependent data distribution} (the states the agent visits
+change as the policy improves); and
+\textbf{non-stationary targets} (in TD methods, the regression target changes
+every time $\mathbf{w}$ is updated, because the target network depends on the
+same weights being trained).
+Together these can destabilize learning, especially with nonlinear approximators.
+\end{intbox}
+
+In practice, the choice of approximator involves a three-way trade-off.
+\emph{Tabular} methods have the best theory but cannot scale.
+\emph{Linear} methods have reasonably strong theory but require hand-crafted
+features.
+\emph{Nonlinear} methods --- especially deep neural networks --- lack tight
+theoretical guarantees but scale well and eliminate the need to design features
+by hand.
+Neural networks are the dominant choice in modern deep RL.
+
+\section{Action-Value Approximation and Control}
+
+For control we approximate $\qpi(s,a)$ rather than $\vpi(s)$, because
+the greedy improvement step $\pi'(s) = \argmax_a q_\mathbf{w}(s,a)$ then
+requires no model.
+There are two natural network architectures.
+\emph{Action-in} takes $(s, a)$ as input and produces a single Q-value ---
+you need one forward pass per action to find the best one.
+\emph{Action-out} takes $s$ as input and outputs a Q-value for every action
+simultaneously --- much more efficient when the action space is discrete.
+
+The same MC / TD(0) / TD($\lambda$) targets used for state values apply
+directly to action values:
+the oracle $\qpi(S,A)$ is replaced by $G_t$, by
+$R_{t+1} + \gamma q_\mathbf{w}(S_{t+1},A_{t+1})$, or by $G_t^\lambda$.
+The control loop then mirrors GPI: approximate policy evaluation
+followed by $\varepsilon$-greedy improvement.
+
+\begin{notebox}[title={The Deadly Triad}]
+Combining \textbf{function approximation}, \textbf{bootstrapping} (TD-style
+targets), and \textbf{off-policy learning} in the same algorithm can cause
+divergence.
+Each ingredient alone is fine; together they can form a feedback loop where
+weights drift to infinity.
+MC avoids it by not bootstrapping; on-policy TD with linear approximation
+avoids it by restricting the data distribution.
+Non-linear, off-policy TD --- the core of DQN-style algorithms --- sits right
+inside the danger zone, which is why DQN needs special stabilization tricks.
 \end{notebox}
 
+\section{Batch Learning and Experience Replay}
+
+Plain online SGD is sample-inefficient: each transition is seen once and then
+discarded.
+Worse, consecutive transitions are highly correlated, which makes the gradient
+estimates noisy and can cause oscillations.
+
+\textbf{Experience replay} addresses both problems.
+The agent stores all transitions $(s_t,a_t,r_{t+1},s_{t+1})$ in a
+\textbf{replay buffer} $\mathcal{D}$.
+At each training step, a random mini-batch is sampled from $\mathcal{D}$ and
+used to compute a gradient update:
+\[
+  \Delta\mathbf{w} = \alpha\bigl(r + \gamma v_\mathbf{w}(s') - v_\mathbf{w}(s)\bigr)\nabla_\mathbf{w} v_\mathbf{w}(s).
+\]
+Random sampling breaks the temporal correlations.
+Each transition can be replayed many times, improving sample efficiency.
+The buffer also acts as a stabilizing data distribution: because it contains
+transitions from many past policies, the training distribution changes slowly
+even as the current policy evolves quickly.
+
+\section{Deep Q-Networks}
+
+Applying Q-learning directly with a neural network runs into trouble.
+Consecutive transitions are correlated (SGD assumes i.i.d.\ data).
+The TD target $r + \gamma\max_{a'}Q_\mathbf{w}(s',a')$ depends on $\mathbf{w}$,
+so every weight update shifts the target --- like trying to hit a moving goalpost.
+And the combination of off-policy data, function approximation, and bootstrapping
+puts us squarely in the deadly triad.
+
+DQN (Mnih et al., 2015) tames all three with two techniques.
+\textbf{Experience replay} (described above) breaks correlations and enables
+data reuse.
+\textbf{Fixed target networks} address the moving-goalpost problem: maintain a
+second, frozen network $Q_{\mathbf{w}^-}$ and compute targets from it,
+$y = r + \gamma\max_{a'}Q_{\mathbf{w}^-}(s',a')$,
+only periodically copying $\mathbf{w}$ into $\mathbf{w}^-$.
+Between copies the targets are stable, making training resemble supervised learning.
+
+\begin{thmbox}[title={DQN Training Loop}]
+For each step: collect $(s_t,a_t,r_{t+1},s_{t+1})$ with $\varepsilon$-greedy
+and store in $\mathcal{D}$.
+Sample a mini-batch $\{(s_j,a_j,r_j,s_j')\}_{j=1}^B$.
+Compute targets $y_j = r_j + \gamma\max_{a'}Q_{\mathbf{w}^-}(s_j',a')$
+(or $y_j = r_j$ if terminal).
+Minimize $L(\mathbf{w}) = \frac{1}{B}\sum_j (y_j - Q_\mathbf{w}(s_j,a_j))^2$
+w.r.t.\ $\mathbf{w}$ only (target $y_j$ treated as a constant).
+Every $C$ steps: $\mathbf{w}^- \leftarrow \tau\,\mathbf{w} + (1-\tau)\,\mathbf{w}^-$.
+\end{thmbox}
+
+DQN was evaluated on 49 Atari 2600 games with \emph{the same architecture and
+hyperparameters} across all games.
+Raw pixels were preprocessed to $84\times84$ grayscale; four frames were stacked
+to give the network a sense of motion; a CNN processed these into Q-values for
+each action.
+DQN outperformed all prior RL methods on 43 of 49 games and reached
+human-level performance on 29 of them --- the first demonstration of
+general-purpose deep RL at scale.
+
+\section{Beyond DQN: Key Extensions}
+
+In the years after DQN, six targeted improvements addressed its remaining
+weaknesses.
+\textbf{Rainbow} (Hessel et al., 2018) combines all six into one agent,
+reaching DQN's final performance in $7\times$ fewer environment steps.
+
+\paragraph{Double DQN.}
+DQN's target uses the same frozen network to both \emph{select} the best action
+and \emph{evaluate} it --- the same maximization bias problem as tabular Q-learning.
+Double DQN decouples these: the online network selects,
+$a^* = \argmax_{a'}Q_\mathbf{w}(s',a')$, and the target network evaluates,
+$y = r + \gamma Q_{\mathbf{w}^-}(s', a^*)$.
+
+\paragraph{Prioritized experience replay.}
+Uniform replay gives equal attention to all transitions, but not all are equally
+useful.
+Transitions with large TD error $|\delta_i|$ represent situations the network
+still gets wrong, so they should be replayed more often.
+Prioritized replay samples transition $i$ with probability proportional to
+$|\delta_i|^\alpha / \sum_k |\delta_k|^\alpha$, and corrects the resulting
+distributional bias with importance-sampling weights.
+
+\paragraph{Dueling networks.}
+Every Q-value can be decomposed into two parts: how good is this
+\emph{state}, and how much \emph{better} is this action relative to the average?
+Formally, $Q(s,a) = V(s) + A(s,a) - \frac{1}{|\mathcal{A}|}\sum_{a'}A(s,a')$.
+A dueling network has a shared convolutional backbone that feeds into two
+separate heads (value and advantage).
+This is particularly useful when many actions have similar value: the value
+stream can still be trained from every transition, even when a specific action
+was not taken.
+
+\paragraph{Multi-step returns.}
+Standard DQN uses a 1-step TD target.
+Replacing it with an $n$-step return
+$y_t^{(n)} = \sum_{k=0}^{n-1}\gamma^k R_{t+k+1} + \gamma^n\max_{a'}Q_{\mathbf{w}^-}(S_{t+n},a')$
+propagates reward signals faster through the network.
+Intermediate values like $n=3$ often work best.
+
+\paragraph{Distributional RL.}
+Standard Q-learning estimates $\E[G_t]$, but much information is lost by
+collapsing the return to a scalar.
+Distributional RL instead models the full \emph{distribution} of returns
+$Z(s,a)$, satisfying the distributional Bellman equation
+$Z(s,a) \overset{d}{=} R + \gamma Z(s',a')$.
+Training with cross-entropy loss on the return distribution provides a richer
+learning signal and leads to better representations.
+
+\paragraph{Noisy Networks.}
+$\varepsilon$-greedy exploration adds the same random behavior in every state,
+ignoring the agent's uncertainty.
+Noisy Networks replace deterministic linear layers with stochastic ones:
+$y = (\mu^w + \sigma^w\!\odot\varepsilon^w)x + (\mu^b + \sigma^b\!\odot\varepsilon^b)$,
+where the noise parameters $\sigma^w, \sigma^b$ are \emph{learned}.
+The network automatically reduces noise in states where it is confident and
+maintains higher noise where it is uncertain, providing state-dependent exploration
+without a hand-tuned $\varepsilon$.
 
 \end{document}
