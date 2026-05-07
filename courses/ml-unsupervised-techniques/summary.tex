@@ -698,6 +698,14 @@ Apply Jensen's inequality to the concave logarithm:
   \;\eqdef\; \Fbound(Q,\wvec).
 \end{align*}
 $\Fbound(Q,\wvec)$ is the \textbf{free energy} (ELBO: evidence lower bound).
+Equivalently, the bound can be rewritten as
+\[
+  \Fbound(Q,\wvec)
+  = \ln\lhood(\{\xvec\};\wvec)
+    - \KL{Q(\uvec\given\{\xvec\})}{p(\uvec\given\{\xvec\};\wvec)},
+\]
+which makes the E-step obvious: to maximize $\Fbound$ over $Q$ (with $\wvec$ fixed)
+one minimizes the KL divergence, which is zero iff $Q = p(\uvec\given\{\xvec\};\wvec)$.
 
 \begin{thmbox}[title={EM Algorithm}]
 EM alternates between two steps until convergence:
@@ -879,10 +887,11 @@ If two or more eigenvalues are equal (degenerate case), the corresponding eigenv
 span a subspace but their individual directions are arbitrary; any orthonormal basis
 of that subspace is equally valid.
 
-\begin{notebox}[title={Zero eigenvalue}]
-At most one eigenvalue can be zero (a zero eigenvalue means the data lies in a
-lower-dimensional affine subspace; in that case the corresponding feature can be dropped
-before running PCA).
+\begin{notebox}[title={Zero eigenvalues}]
+Zero eigenvalues mean the data lies in a lower-dimensional affine subspace (rank-deficient
+covariance matrix). There can be \emph{many} zero eigenvalues: if the data of dimension
+$m$ spans only a $k$-dimensional subspace, then $m - k$ eigenvalues are zero.
+The corresponding principal directions can be discarded without any loss.
 \end{notebox}
 
 
@@ -906,6 +915,27 @@ Let $\bm{y}^{(i)} = \bm{U}\T\bm{x}_i$ be the projection of sample $i$.
         $\frac{\sum_{k=1}^l \lambda_k}{\sum_{k=1}^m \lambda_k}$.
 \end{itemize}
 \end{thmbox}
+
+\paragraph{Derivation of the MSE formula}
+Retain the first $l$ components.
+The reconstruction of sample $\bm{x}_i$ is
+$\hat{\bm{x}}_i = \sum_{k=1}^l (\bm{u}_k\T\bm{x}_i)\bm{u}_k$,
+so the residual is
+$\bm{x}_i - \hat{\bm{x}}_i = \sum_{k=l+1}^m (\bm{u}_k\T\bm{x}_i)\bm{u}_k$.
+By orthonormality of the $\bm{u}_k$:
+\[
+  \|\bm{x}_i - \hat{\bm{x}}_i\|^2 = \sum_{k=l+1}^m \bigl(\bm{u}_k\T\bm{x}_i\bigr)^2.
+\]
+Averaging over all $n$ samples and using
+$\frac{1}{n}\sum_{i=1}^n (\bm{u}_k\T\bm{x}_i)^2 = \bm{u}_k\T\bm{C}\bm{u}_k = \lambda_k$:
+\[
+  \mathrm{MSE}_l
+  = \frac{1}{n}\sum_{i=1}^n \|\bm{x}_i - \hat{\bm{x}}_i\|^2
+  = \sum_{k=l+1}^m \bm{u}_k\T\bm{C}\bm{u}_k
+  = \sum_{k=l+1}^m \lambda_k.
+\]
+Any other rank-$l$ projection gives a larger MSE, so the top $l$ eigenvectors are
+the optimal choice.
 
 
 \section{Examples}
@@ -1349,6 +1379,17 @@ The \textbf{androgen receptor} (AR) is the 3rd most related gene to IC1 --- cons
 with IC1 separating reproductive/secretory tissues, since androgen signaling drives
 prostate gland differentiation and also plays a role in normal breast physiology.
 
+\paragraph{Effect of increasing the number of components}
+With 8 or 20 ICA components, the overall tissue-level separation does \emph{not}
+improve relative to 4 components.
+Instead, higher-order ICs focus on progressively finer-grained sub-populations
+(e.g.\ specific sub-groups within colon samples), and the main tissue axes
+(IC1: prostate vs.\ others; IC2: prostate+lung vs.\ breast+colon) shift in
+their index but remain.
+This illustrates a key difference from PCA: ICA components are not ordered
+by variance, and adding more components reveals biological sub-structure rather
+than explaining more total variance.
+
 
 \section{Kurtosis Maximization Results in Independent Components}
 
@@ -1377,31 +1418,242 @@ preferred in practice when outliers are expected.
 \chapter{Factor Analysis}
 % ==========================================================
 
+Factor analysis (FA) describes the \textbf{variability} of observations in terms of
+unobserved \textbf{latent variables} called \emph{factors} and \textbf{noise}.
+The factors explain the correlations between observed variables; the remaining
+per-variable variance is explained by independent Gaussian noise.
+FA is a \emph{generative} approach that models both the noise and the correlations
+explicitly.
+
+
 \section{The Factor Analysis Model}
 
-% TODO
+\begin{defbox}[title={Factor Analysis Model}]
+For centered data $\bm{x} \in \R^m$ with $l \leq m$ factors $\bm{z} \in \R^l$:
+\[
+  \bm{x} = \bm{\Lambda}\bm{z} + \bm{\varepsilon},
+  \qquad
+  \bm{z} \sim \mathcal{N}(\bm{0},\bm{I}),
+  \quad
+  \bm{\varepsilon} \sim \mathcal{N}(\bm{0},\bm{\Psi}),
+\]
+where $\bm{\Lambda} \in \R^{m \times l}$ is the \textbf{factor loading matrix} and
+$\bm{\Psi} \in \R^{m \times m}$ is a \textbf{diagonal} noise covariance (so noise
+components are mutually independent).
+The model gives $\bm{x} \mid \bm{z} \sim \mathcal{N}(\bm{\Lambda}\bm{z},\bm{\Psi})$.
+\end{defbox}
+
+\paragraph{Covariance decomposition}
+Marginalising over $\bm{z}$ gives $\bm{x} \sim \mathcal{N}(\bm{0},\, \bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})$.
+Empirically, with sample covariance $\bm{C} = \frac{1}{n}\bm{X}\T\bm{X}$:
+\[
+  \bm{C} \;=\; \bm{\Lambda}\bm{\Lambda}\T + \bm{\Psi}.
+\]
+FA is therefore a \textbf{decomposition of the covariance matrix}: $\bm{\Lambda}$
+captures the shared (dependent) variance; $\bm{\Psi}$ captures the unique
+(independent) variance per variable.
+Because $\bm{\Psi}$ is diagonal, all correlations between observations can
+\emph{only} be explained by the factors.
+
+In matrix form, $\bm{X} = \bm{Z}\bm{\Lambda}\T + \bm{E}$ with model assumptions
+$\frac{1}{n}\bm{Z}\T\bm{Z} = \bm{I}$, $\bm{Z}\T\bm{E} = \bm{0}$, and
+$\frac{1}{n}\bm{E}\T\bm{E} = \bm{\Psi}$.
+
+\paragraph{Factor scores (estimation)}
+Treating factor recovery as regression $\bm{Y} = \bm{X}\bm{A}$ and using the
+model approximations $\frac{1}{n}\bm{X}\T\bm{X} \approx \bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi}$
+and $\frac{1}{n}\bm{X}\T\bm{Y} \approx \bm{\Lambda}$:
+\[
+  \hat{\bm{A}} = (\bm{\Lambda}\bm{\Lambda}\T + \bm{\Psi})^{-1}\bm{\Lambda},
+  \qquad
+  \bm{Y} = \bm{X}(\bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})^{-1}\bm{\Lambda}.
+\]
+Applying the matrix inversion lemma to avoid inverting the $m\times m$ matrix:
+\[
+  \bm{Y} = \bm{X}\,\bm{\Psi}^{-1}\bm{\Lambda}\,(\bm{I} + \bm{\Lambda}\T\bm{\Psi}^{-1}\bm{\Lambda})^{-1}.
+\]
+
+\paragraph{Communality}
+The \textbf{communality} of observation variable $x_j$ is the proportion of its
+variance explained by the factors:
+\[
+  c_j = \frac{\mathrm{Var}(x_j) - \mathrm{Var}(\varepsilon_j)}{\mathrm{Var}(x_j)}
+      = \frac{\sum_{k=1}^l \lambda_{jk}^2}{\Psi_{jj} + \sum_{k=1}^l \lambda_{jk}^2}.
+\]
+Factor $z_t$ individually contributes $\lambda_{jt}^2 / (\Psi_{jj} + \sum_k \lambda_{jk}^2)$
+to $x_j$.
+Like PCA, projecting onto $l$ factors maximizes the variance that can be explained by $l$
+factors --- but FA counts only signal variance, not noise.
+
+\paragraph{Rotation non-uniqueness}
+The FA loading matrix is \textbf{not unique} up to orthogonal rotation:
+$\bm{\Lambda}\bm{z} = \bm{\Lambda}\bm{V}\bm{V}\T\bm{z} = \bm{\Lambda}'\bm{z}'$
+for any orthogonal $\bm{V}$.
+Rotations are therefore chosen to improve interpretability:
+\begin{itemize}
+  \item \textbf{Varimax}: maximizes the squared loadings of each factor across all
+        variables, so each factor has either large or small loadings --- each variable
+        is clearly associated with one factor.
+  \item \textbf{Quartimax}: minimizes the number of factors needed per variable;
+        each factor explains many variables but is usually hard to interpret.
+  \item \textbf{Equimax}: a compromise between Varimax and Quartimax.
+\end{itemize}
+
 
 \section{Maximum Likelihood Factor Analysis}
 
-% TODO
+Since $\bm{x} \sim \mathcal{N}(\bm{0},\bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})$,
+the log-likelihood over $n$ samples is
+\[
+  \ln\mathcal{L}(\bm{\Lambda},\bm{\Psi}) =
+  \sum_{i=1}^n \left[
+    -\tfrac{m}{2}\ln(2\pi)
+    -\tfrac{1}{2}\ln|\bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi}|
+    -\tfrac{1}{2}(\bm{x}^i)\T(\bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})^{-1}\bm{x}^i
+  \right].
+\]
+Maximising this has \textbf{no closed form}, so the \textbf{EM algorithm} is used with
+the latent factors $\bm{z}^i$ as the hidden variables.
+
+\begin{thmbox}[title={FA EM Algorithm}]
+\textbf{E-step:} compute the posterior of the factors for each sample (using the
+Gaussian conditional formula):
+\[
+  \bm{z}^i \mid \bm{x}^i \;\sim\; \mathcal{N}(\bm{\mu}_{\bm{z}|{\bm{x}^i}},\;\bm{\Sigma}_{\bm{z}|\bm{x}}),
+\]
+\[
+  \bm{\mu}_{\bm{z}^i|\bm{x}^i} = (\bm{x}^i)\T (\bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})^{-1}\bm{\Lambda},
+  \qquad
+  \bm{\Sigma}_{\bm{z}|\bm{x}} = \bm{I} - \bm{\Lambda}\T(\bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})^{-1}\bm{\Lambda}.
+\]
+Note: the posterior covariance $\bm{\Sigma}_{\bm{z}|\bm{x}}$ is the same for all
+data points (it does not depend on $\bm{x}^i$).
+
+\textbf{M-step:} update the parameters by setting gradients to zero:
+\[
+  \bm{\Lambda}^{\mathrm{new}} =
+    \Bigl(\tfrac{1}{n}\sum_{i=1}^n \bm{x}^i\,\E_{\bm{z}^i|\bm{x}^i}[\bm{z}^i]\T\Bigr)
+    \Bigl(\tfrac{1}{n}\sum_{i=1}^n \E_{\bm{z}^i|\bm{x}^i}[\bm{z}^i(\bm{z}^i)\T]\Bigr)^{-1},
+\]
+\[
+  \bm{\Psi}^{\mathrm{new}} = \tfrac{1}{n}\,\mathrm{diag}\!\Bigl(
+    \sum_{i=1}^n \bm{x}^i(\bm{x}^i)\T
+    - \sum_{i=1}^n \E_{\bm{z}^i|\bm{x}^i}[\bm{z}^i]\,\bm{x}^i (\bm{\Lambda}^{\mathrm{new}})\T
+  \Bigr),
+\]
+where $\E[\bm{z}^i(\bm{z}^i)\T] = \bm{\mu}_{\bm{z}^i|\bm{x}^i}\bm{\mu}_{\bm{z}^i|\bm{x}^i}\T + \bm{\Sigma}_{\bm{z}|\bm{x}}$.
+\end{thmbox}
+
+\paragraph{Matrix inversion speedup}
+When $m \gg l$, directly inverting the $m\times m$ matrix
+$(\bm{\Lambda}\bm{\Lambda}\T + \bm{\Psi})$ is expensive.
+The matrix inversion lemma gives an $l\times l$ inversion instead:
+\[
+  (\bm{\Lambda}\bm{\Lambda}\T + \bm{\Psi})^{-1}
+  = \bm{\Psi}^{-1} - \bm{\Psi}^{-1}\bm{\Lambda}
+    (\bm{I} + \bm{\Lambda}\T\bm{\Psi}^{-1}\bm{\Lambda})^{-1}
+    \bm{\Lambda}\T\bm{\Psi}^{-1}.
+\]
+Since $\bm{\Psi}$ is diagonal, $\bm{\Psi}^{-1}$ is trivially cheap.
+Furthermore the sample covariance $\bm{C}$ only needs to be computed once per
+EM run.
+
 
 \section{Factor Analysis vs.\ PCA and ICA}
 
-% TODO
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lll}
+  \toprule
+  & \textbf{FA} & \textbf{PCA / ICA} \\
+  \midrule
+  Noise model & Explicit Gaussian noise $\bm{\Psi}$ & None (PCA: no noise; ICA: no noise) \\
+  Factors/sources & Gaussian priors $\mathcal{N}(\bm{0},\bm{I})$ & PCA: none; ICA: non-Gaussian \\
+  Objective & Max.\ signal variance (covariance fit) & PCA: all variance; ICA: independence \\
+  Uniqueness & Unique up to rotation & PCA: unique (up to sign); ICA: unique \\
+  Estimation & EM (no closed form) & PCA: eigen; ICA: gradient/fixed-point \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{intbox}
+  FA is the right choice when you believe observations contain genuine measurement
+  noise that should be separated from the latent signal.
+  PCA absorbs noise into the components (it explains \emph{all} variance, noise
+  included), while FA explicitly models it via $\bm{\Psi}$.
+  ICA additionally demands statistical independence of the sources and therefore
+  requires non-Gaussian source distributions.
+\end{intbox}
+
 
 \section{Artificial Factor Analysis Examples}
 
-% TODO
+To see when FA fails, consider 50-dimensional data generated from two independent
+\textbf{super-Gaussian} (Laplacian) latent sources.
+In 2-D projection the two sources form a characteristic ``star'' or diamond
+shape (uniform mass on four arms), which reflects their non-Gaussian
+character.
+
+\textbf{ICA} correctly recovers this star shape: because the true sources are
+statistically independent and non-Gaussian, the ICA objective (contrast function
+or kurtosis) can identify them.
+
+\textbf{FA} with two factors does \emph{not} recover the star.
+FA's generative model assumes the latent factors $\bm{z}$ are Gaussian; it can
+only model the global covariance structure $\bm{C}=\bm{\Lambda\Lambda}\T+\bm{\Psi}$
+and cannot distinguish the individual non-Gaussian sources.
+The FA scatter plots show a much worse demixing — the tissue subgroups blur
+together.
+
+\begin{intbox}[title={Why FA fails for non-Gaussian sources}]
+FA is the maximum-likelihood model when factors are Gaussian.
+Forcing super-Gaussian data into a Gaussian-factor model distorts the latent
+structure: the EM algorithm converges, but to a solution that explains the
+observed covariance by smearing mass along incorrect axes.
+ICA is the right tool whenever the true sources are non-Gaussian.
+\end{intbox}
+
 
 \section{Real World Factor Analysis Examples}
 
 \subsection{Iris Data Set}
 
-% TODO
+Applying FA to the Iris data set with only \textbf{one factor} is sufficient to
+achieve a clean, linear separation of all three species (setosa, versicolor,
+virginica).
+The single maximum-likelihood factor captures the dominant axis of biological
+variation; a scatter plot of the factor scores colour-coded by species shows
+three nearly non-overlapping clusters arranged along a line.
 
 \subsection{Multiple Tissue Data Set}
 
-% TODO
+With \textbf{four factors} and no rotation the four components have distinct
+biological interpretations:
+\begin{itemize}
+  \item \textbf{FA1} — cleanly separates prostate samples.
+  \item \textbf{FA2} — partially separates breast from lung, but the overlap is
+        substantial.
+  \item \textbf{FA3} — separates colon samples.
+  \item \textbf{FA4} — separates a subset of lung samples.
+\end{itemize}
+
+Applying \textbf{Varimax} rotation to the four factors changes the factor axes
+but does not change the overall fit.
+The pairwise scatter plots (all six pairs among FA1–FA4) show that
+\emph{separation is slightly worse} than without rotation: the rotation mixes
+biological signal across components rather than concentrating it.
+
+\textbf{Quartimax} rotation gives a result similar to Varimax — the separation
+quality is again slightly worse than the unrotated solution.
+
+\begin{intbox}[title={Rotation does not help here}]
+Rotation methods such as Varimax and Quartimax search for a sparse, interpretable
+factor loading matrix.
+On this data the unrotated MLE already concentrates each factor on one tissue
+type, so rotation does not improve tissue separation and can even dilute it.
+Rotation is most valuable when the unrotated factors are hard to interpret
+biologically.
+\end{intbox}
 
 
 % ==========================================================
@@ -1410,77 +1662,569 @@ preferred in practice when outliers are expected.
 
 \section{Projection Pursuit}
 
-% TODO
+All dimensionality-reduction methods in this chapter project data to a
+low-dimensional space, sometimes called \emph{scaling} of the data.
+The goal is either to \textbf{visualise} the data or to produce a compact
+low-dimensional representation for downstream tasks, exploiting the fact that
+low-dimensional models are simpler and that noise and outliers are not
+represented in the projection.
+
+\textbf{Projection pursuit} asks: among all linear projections
+$t = \bm{w}\T\bm{x}$ (normalised to zero mean, unit variance), which
+direction $\bm{w}$ is most \emph{interesting}?
+The classical answer is: the \textbf{least Gaussian} direction.
+
+The rationale comes from information theory: among all distributions with
+a fixed mean and covariance, the Gaussian maximises entropy.
+Consequently, a projection that looks close to Gaussian is ``boring'' —
+it carries no structure beyond the second-order statistics already captured
+by PCA.
+A projection with low entropy (far from Gaussian) reveals genuine
+non-linear or non-Gaussian structure.
+
+\begin{defbox}[title={Projection Pursuit Objective}]
+Find $\bm{w}$ that minimises the differential entropy $H(t)$ of the projected
+variable $t = \bm{w}\T\bm{x}$, subject to $\mathrm{Var}(t)=1$.
+\end{defbox}
+
+This optimisation is difficult in practice because it requires estimating a
+density.
+Two qualitatively different types of structure can be found:
+\begin{itemize}
+  \item \textbf{Unimodal super-Gaussians} — heavy-tailed, peaked distributions
+        (single cluster with outliers).
+  \item \textbf{Multimodal distributions} — several separated clusters.
+\end{itemize}
+In practice, projection pursuit uses the same contrast functions as ICA —
+kurtosis, negentropy approximations — as tractable surrogates for $H(t)$.
+Projection pursuit can therefore be seen as a precursor to ICA; ICA adds the
+constraint that multiple projected directions must be mutually independent.
+
 
 \section{Multidimensional Scaling}
 
 \subsection{The Method}
 
-% TODO
+\textbf{Multidimensional scaling} (MDS) projects data to a low-dimensional
+target space $\bm{y}_i = f(\bm{x}_i;\bm{w})$ while keeping the
+\emph{pairwise distances} between points as intact as possible.
+
+Define:
+\[
+  \delta_{ij} = \|\bm{x}_i - \bm{x}_j\|
+  \quad\text{(original distances)},\qquad
+  d_{ij} = \|\bm{y}_i - \bm{y}_j\|
+  \quad\text{(projected distances)}.
+\]
+The goal is $d \approx \delta$.
+Different \textbf{stress measures} formalise the mismatch:
+
+\begin{align*}
+  R_1(d,\delta) &= \frac{\displaystyle\sum_{i<j}(d_{ij}-\delta_{ij})^2}
+                        {\displaystyle\sum_{i<j}\delta_{ij}^2}
+  && \text{(Kruskal's measure — penalises large absolute errors)} \\[6pt]
+  R_2(d,\delta) &= \sum_{i<j}\!\left(\frac{d_{ij}-\delta_{ij}}{\delta_{ij}}\right)^{\!2}
+  && \text{(fractional/relative errors)} \\[6pt]
+  R_3(d,\delta) &= \frac{1}{\displaystyle\sum_{i<j}\delta_{ij}}
+                   \sum_{i<j}\frac{(d_{ij}-\delta_{ij})^2}{\delta_{ij}}
+  && \text{(Sammon mapping — compromise)}
+\end{align*}
+
+All three are minimised by gradient descent.
+The gradient of $R_1$ with respect to the projected position $\bm{y}_k$ is:
+\[
+  \frac{\partial}{\partial\bm{y}_k}R_1
+  = \frac{2}{\sum_{i<j}\delta_{ij}^2}
+    \sum_{j\neq k}(d_{kj}-\delta_{kj})\,\frac{\bm{y}_k-\bm{y}_j}{d_{kj}},
+\]
+and analogous expressions hold for $R_2$ and $R_3$ (replacing the weight by
+$1/\delta_{kj}^2$ or $1/\delta_{kj}$, respectively).
+Viewing $R$ as a potential energy, the gradients are \textbf{forces} that push
+or pull each point toward its correct distance from every other point.
+
+A special case is \textbf{metric MDS} (also called \emph{principal coordinates
+analysis}): when distances are Euclidean and one seeks a linear embedding,
+the optimal solution can be computed analytically via eigendecomposition of the
+centred distance matrix — no gradient descent is needed.
 
 \subsection{Examples}
 
-% TODO
+MDS is applied to the \textbf{Multiple Tissue} gene-expression data set (four
+tissue types: colon, lung, breast, prostate).
+The 101 or 13 genes with the largest variance across samples are selected as
+features.
+
+\begin{itemize}
+  \item \textbf{Metric MDS} (101 features): colon samples (orange) cluster in
+        the upper-left; prostate (green) separates to the right; lung (blue) and
+        breast (red) form an overlapping cluster in the lower region.
+        Using only 13 features gives a similar layout.
+
+  \item \textbf{Kruskal's non-metric MDS} (101 and 13 features): the
+        separation pattern is qualitatively the same as metric MDS.
+
+  \item \textbf{Sammon's non-linear mapping} (101 features): the tissue groups
+        are less well separated than with metric or Kruskal's measure.
+        With only 13 features the clusters are \emph{more spread out}, but the
+        qualitative separation is still inferior to the other variants.
+\end{itemize}
+
+Overall, metric MDS and Kruskal's non-metric MDS perform similarly on this
+data set, and both outperform Sammon's mapping.
 
 \section{Non-negative Matrix Factorization}
 
 \subsection{The Method}
 
-% TODO
+\textbf{Non-negative matrix factorization} (NMF) approximates a non-negative
+data matrix $\bm{X}\in\mathbb{R}^{n\times m}$ ($X_{ij}\geq 0$) as
+\[
+  \bm{X} \;\approx\; \bm{Y}\bm{U}\T
+  \;=\; \sum_{k=1}^{l} \bm{y}_k\,\bm{u}_k\T,
+\]
+where $\bm{Y}\in\mathbb{R}^{n\times l}$ and $\bm{U}\in\mathbb{R}^{m\times l}$
+are also required to be non-negative ($Y_{ik}\geq 0$, $U_{jk}\geq 0$).
+
+The non-negativity constraint forces a \textbf{parts-based representation}:
+every observation is reconstructed by \emph{adding} non-negative parts, never
+by subtraction.
+This contrasts with PCA, whose eigenvectors can have both signs, producing
+holistic (whole-image) components.
+
+\paragraph{Multiplicative update rules}
+
+Two objectives are in common use.
+
+\textbf{Objective 1 — KL divergence.}
+For non-negative matrices normalised to sum to one:
+\[
+  D(\bm{A}\|\bm{B})
+  = \sum_{ij}\Bigl(A_{ij}\log\frac{A_{ij}}{B_{ij}} + A_{ij} - B_{ij}\Bigr).
+\]
+Minimising $D(\bm{X}\|\bm{Y}\bm{U}\T)$ leads to multiplicative updates:
+\[
+  Y_{ik} \;\leftarrow\; Y_{ik}\,
+    \frac{\displaystyle\sum_{j=1}^{m} U_{jk}\,X_{ij}/(\bm{Y}\bm{U}\T)_{ij}}
+         {\displaystyle\sum_{j=1}^{m} U_{jk}},
+  \qquad
+  U_{jk} \;\leftarrow\; U_{jk}\,
+    \frac{\displaystyle\sum_{i=1}^{n} Y_{ik}\,X_{ij}/(\bm{Y}\bm{U}\T)_{ij}}
+         {\displaystyle\sum_{i=1}^{n} Y_{ik}}.
+\]
+
+\textbf{Objective 2 — Frobenius norm.}
+$\|\bm{X}-\bm{Y}\bm{U}\T\|_F^2 = \sum_{ij}(X_{ij}-(\bm{Y}\bm{U}\T)_{ij})^2$.
+Multiplicative updates are obtained by multiplying the
+fixed-point condition $\bm{X}=\bm{Y}\bm{U}\T$ from the right by $\bm{U}$
+(for $\bm{Y}$) or from the left by $\bm{Y}\T$ (for $\bm{U}$):
+\[
+  Y_{ik} \;\leftarrow\; Y_{ik}\,
+    \frac{(\bm{X}\bm{U})_{ik}}{(\bm{Y}\bm{U}\T\bm{U})_{ik}},
+  \qquad
+  U_{jk} \;\leftarrow\; U_{jk}\,
+    \frac{(\bm{Y}\T\bm{X})_{kj}}{(\bm{Y}\T\bm{Y}\bm{U}\T)_{kj}}.
+\]
+At a fixed point the left and right sides are equal.
+
+\begin{intbox}[title={Why multiplicative updates preserve non-negativity}]
+Both update rules multiply each entry by a ratio of non-negative quantities.
+Starting from a non-negative initialisation, all entries remain non-negative
+throughout training.
+\end{intbox}
+
+NMF can be extended to \textbf{sparse NMF}, adding sparsity penalties on
+$\bm{Y}$ (few parts active per sample) and/or $\bm{U}$ (each part described
+by few features).
+In gene-expression analysis this corresponds to: part = pathway, few genes
+participate in each pathway, and only few pathways are active per sample.
 
 \subsection{Examples}
 
-% TODO
+\paragraph{Parts-based face representation.}
+Applied to a face database, NMF learns \emph{local face parts} (eye regions,
+nose patches, mouth shapes).
+Vector quantisation (VQ) and PCA both learn holistic representations — entire
+faces or signed global components.
+The parts-based decomposition from NMF is more interpretable for many
+real-world objects.
+
+\paragraph{Bicluster recovery (FABIA toy data).}
+A synthetic data matrix (1{,}000 genes, 100 samples, 13 biclusters) generated
+by the FABIA biclustering package provides a ground-truth test bed.
+The blocks of elevated expression are localised in specific gene/sample
+subsets; the background is near zero.
+
+\begin{itemize}
+  \item \textbf{NMF (KL divergence, NMFDIV)}: reconstructs the block structure
+        well with small residual noise.
+        The absolute factors and loadings matrices each show sparse, localised
+        activity corresponding to individual biclusters.
+  \item \textbf{NMF (Euclidean distance, NMFEU)}: similarly good reconstruction;
+        the residual error is small and structureless.
+  \item \textbf{Sparse NMF (NMFSC)}: enforcing sparseness misses some blocks
+        entirely when the sparseness parameter is too large.
+        The loadings matrix becomes nearly uniform across all genes (columns look
+        identical) — the method cannot distinguish which genes belong to which
+        bicluster.
+        The takeaway is that \emph{the sparseness parameter is difficult to tune};
+        too little gives the same result as plain NMF, too much destroys the
+        bicluster structure.
+  \item \textbf{FABIA biclustering}: the FABIA model (Chapter~8) recovers the
+        bicluster structure more faithfully than any NMF variant, with sharper
+        factor and loading matrices.
+\end{itemize}
 
 \section{Locally Linear Embedding}
 
 \subsection{The Method}
 
-% TODO
+\textbf{Locally linear embedding} (LLE) computes a low-dimensional,
+neighbourhood-preserving embedding via a nonlinear mapping.
+The key insight is that on a smooth manifold, each point can be approximated
+by a linear combination of its nearest neighbours; LLE finds the embedding
+that \emph{preserves} those local linear relationships.
+
+\paragraph{Step 1 — compute reconstruction weights.}
+For each point $\bm{x}_i$, find $k$ nearest neighbours and solve for weights
+$W_{ij}$ that best reconstruct $\bm{x}_i$ from its neighbours:
+\[
+  \varepsilon(\bm{W}) = \sum_i \left\|\bm{x}_i
+    - \sum_{j=1}^{k} W_{ij}\,\bm{x}_j\right\|^2,
+  \quad\text{subject to}\quad \sum_{j=1}^{k} W_{ij} = 1.
+\]
+The constraint makes the weights invariant to rotations, rescalings, and
+translations of $\bm{x}_i$.
+Define the local covariance $C_{jk} = \bm{x}_j\T\bm{x}_k$; the Lagrange
+multiplier enforcing the sum-to-one constraint is:
+\[
+  \lambda = \frac{1 - \sum_{jk} C_{jk}^{-1}\,\bm{x}_i\T\bm{x}_k}
+                 {\sum_{jk} C_{jk}^{-1}},
+\]
+and the optimal weights are:
+\[
+  W_{ij} = \sum_k C_{jk}^{-1}\bigl(\bm{x}_i\T\bm{x}_k + \lambda\bigr).
+\]
+
+\paragraph{Step 2 — compute the embedding.}
+Hold the weights $W_{ij}$ fixed and find low-dimensional coordinates
+$\bm{y}_i$ that minimise the same reconstruction error:
+\[
+  \Phi(\bm{Y}) = \sum_{ij} M_{ij}\,\bm{y}_i\T\bm{y}_j,
+  \quad\text{where}\quad
+  M_{ij} = \delta_{ij} - W_{ij} - W_{ji} + \sum_k W_{ki}W_{kj},
+\]
+which can be written compactly as $\bm{M}=(\bm{I}-\bm{W})(\bm{I}-\bm{W})\T$.
+Because the row sums of $\bm{W}$ are one, $(\bm{I}-\bm{W})\T\mathbf{1}=\mathbf{0}$,
+so $\bm{M}$ always has a zero eigenvalue with eigenvector $\mathbf{1}$.
+The optimal $d$-dimensional embedding consists of the \emph{bottom} $d$
+eigenvectors of $\bm{M}$ (those with the $d$ smallest non-zero eigenvalues);
+the trivial zero eigenvector is discarded.
+
+\begin{intbox}[title={LLE implementation notes}]
+\begin{itemize}
+  \item Neighbours can be found by $k$-NN (Euclidean), $\varepsilon$-ball, or
+        KD trees for efficiency.
+  \item If $k>m$ the local covariance $\bm{C}$ is rank-deficient; regularise
+        with $\bm{C}\leftarrow\bm{C}+\varepsilon\bm{I}$ where
+        $\varepsilon\approx 10^{-3}\operatorname{tr}(\bm{C})$.
+  \item The matrix $\bm{M}$ is sparse (only $k$ off-diagonal entries per row),
+        so its eigenvectors can be computed efficiently.
+\end{itemize}
+\end{intbox}
 
 \subsection{Examples}
 
-% TODO
+LLE succeeds on data that genuinely lives on a smooth low-dimensional manifold.
+
+\textbf{Swiss Roll.} LLE ``unrolls'' the 3-D spiral manifold into a flat 2-D
+rectangle, recovering the original 2-D parameterisation of the roll.
+
+\textbf{Face images.} Applied to a large collection of face photographs, LLE
+produces a 2-D embedding in which one axis encodes head pose and the other
+encodes expression or illumination — a smooth manifold structure in pixel space.
+
+\textbf{``S'' curve.} On a 3-D S-shaped surface LLE fails to produce a clean
+unrolling; the embedded scatter plot is disordered.
+
+\textbf{Multiple Tissue (gene expression).} With $k\in\{5,7,9,12\}$, LLE gives
+poor tissue separation in all cases.
+The four tissue types are not concentrated on a low-dimensional manifold in
+gene-expression space — they are spread throughout the high-dimensional space —
+so LLE's assumption is violated.
 
 \section{Isomap}
 
 \subsection{The Method}
 
-% TODO
+\textbf{Isomap} computes a quasi-isometric low-dimensional embedding.
+Like LLE it is a non-linear projection, but instead of preserving local
+linear relationships it preserves \textbf{geodesic distances} — shortest
+paths along the data manifold.
+
+\paragraph{Why geodesic rather than Euclidean?}
+For data lying on a curved manifold, the straight-line Euclidean distance
+between two far-apart points cuts through empty space and underestimates the
+true manifold distance.
+The geodesic distance follows the surface and is a better measure of
+``closeness'' on the manifold.
+
+\paragraph{Algorithm.}
+\begin{enumerate}
+  \item \textbf{Build the neighbourhood graph $G$.} Connect $\bm{x}_i$ and
+        $\bm{x}_j$ if $d(\bm{x}_i,\bm{x}_j)<\varepsilon$ ($\varepsilon$-Isomap)
+        or if $i$ is among the $k$ nearest neighbours of $j$ ($k$-Isomap).
+        Set each edge length to $d(\bm{x}_i,\bm{x}_j)$.
+  \item \textbf{Compute all-pairs shortest paths} using Floyd's algorithm:
+        initialise $d_G(\bm{x}_i,\bm{x}_j)=d(\bm{x}_i,\bm{x}_j)$ for linked
+        pairs and $\infty$ otherwise, then iterate
+        \[d_G(\bm{x}_i,\bm{x}_j)\leftarrow
+          \min\bigl(d_G(\bm{x}_i,\bm{x}_j),\;
+                    d_G(\bm{x}_i,\bm{x}_k)+d_G(\bm{x}_k,\bm{x}_j)\bigr).\]
+        Store the result as the geodesic distance matrix $\bm{D}_X$.
+  \item \textbf{Compute the embedding.} Convert distances to inner products via
+        the doubly-centred transform
+        \[\tau(\bm{D}) = -\tfrac{1}{2}\,\bm{H}\,\bm{D}^2\,\bm{H},\qquad
+          \bm{H}=\bm{I}_n-\tfrac{1}{n}\mathbf{1}\mathbf{1}\T,\]
+        where $\bm{D}^2$ is the element-wise square of $\bm{D}$.
+        The embedding coordinates are given by
+        $y_{ij}=\sqrt{\lambda_p}\,v_{ji}$,
+        where $\lambda_p$ and $v_p$ are the $p$-th largest eigenvalue and
+        eigenvector of $\tau(\bm{D}_X)$.
+\end{enumerate}
+
+The objective that is minimised is
+$E=\|\tau(\bm{D}_X)-\tau(\bm{D}_Y)\|_{L^2}$, where
+$\bm{D}_Y$ collects Euclidean distances in the projected space.
+Setting the embedding to the top-$l$ eigenvectors of $\tau(\bm{D}_X)$ is the
+exact analytic solution.
 
 \subsection{Examples}
 
-% TODO
+\textbf{Hand images.} $n=2{,}000$ images of a hand opening and closing at
+varying wrist orientations ($k=6$).
+Isomap recovers the underlying two-dimensional manifold: one axis encodes
+\emph{wrist rotation}, the other \emph{finger extension} — a semantically
+meaningful 2-D embedding of a high-dimensional image space.
 
-\section{The Generative Topographic Mapping}
+\textbf{Tree-count data (Barro Colorado Island).} 50 one-hectare plots, 225
+tree species.
+Classical metric MDS (cmdscale), $k$-Isomap ($k=3$, $k=5$), and
+$\varepsilon$-Isomap ($\varepsilon=0.45$) give qualitatively different layouts
+of the 50 plots in 2-D.
+The neighbourhood parameter strongly influences the result.
+
+\textbf{Multiple Tissue.}
+Results are not as good as with linear methods (metric MDS, FA) for any
+setting of $\varepsilon$.
+As with LLE, the gene-expression data do not lie on a smooth manifold, so
+geodesic-distance-based methods gain nothing over Euclidean methods and may
+even perform worse.
+
+\section{The Generative Topographic Mapping}%
+\label{sec:gtm}
 
 \subsection{The Method}
 
-% TODO
+The \textbf{Generative Topographic Mapping} (GTM) is a probabilistic,
+non-linear latent variable model designed as a principled alternative to
+Self-Organising Maps (SOMs).
+Like FA, GTM maps from a low-dimensional latent space to the observation space;
+unlike FA the mapping $\bm{x}(\bm{y};\bm{w})$ is nonlinear.
+
+Latent variables $\bm{y}\in\mathbb{R}^l$ are mapped to a manifold
+$\mathcal{S}$ embedded in $\mathbb{R}^m$ ($m>l$).
+Because a deterministic map from an $l$-dimensional space to an
+$m$-dimensional space concentrates all probability mass on a zero-volume
+surface (probability densities vanish), GTM places a \textbf{Gaussian ball}
+around each mapped point:
+\[
+  p(\bm{t}\mid\bm{y},\bm{w},\beta)
+  = \left(\frac{\beta}{2\pi}\right)^{m/2}
+    \exp\!\left(-\frac{\beta}{2}\|\bm{x}(\bm{y},\bm{w})-\bm{t}\|^2\right).
+\]
+
+The marginal density over observations is obtained by integrating over the
+latent space:
+\[
+  p(\bm{t}\mid\bm{w},\beta) = \int p(\bm{t}\mid\bm{x},\bm{w},\beta)\,p(\bm{x})\,\mathrm{d}\bm{x}.
+\]
+
+In practice the latent prior $p(\bm{y})$ is approximated by a uniform discrete
+distribution over $L$ grid points $\{\bm{y}_j\}$:
+\[
+  p(\bm{y}) = \frac{1}{L}\sum_{j=1}^L \delta(\bm{y}-\bm{y}_j),
+  \qquad
+  p(\bm{t}\mid\bm{w},\beta) = \frac{1}{L}\sum_{j=1}^L
+    p(\bm{t}\mid\bm{y}_j,\bm{w},\beta).
+\]
+This is a \textbf{constrained Gaussian mixture model} in $\mathbb{R}^m$: the
+$L$ mixture centres are not free but must all lie on the manifold
+$\mathcal{S}=\{\bm{x}(\bm{y}_j;\bm{w})\}$.
+
+The model is fitted by maximising the log-likelihood
+$\log\mathcal{L}=\sum_{i=1}^n \ln p(\bm{t}_i\mid\bm{w},\beta)$ using EM.
 
 \subsection{Examples}
 
-% TODO
+A toy problem illustrates GTM: data are generated from a 1-D curve
+embedded in 2-D.
+The $L$ latent grid points (shown as $+$ in the initial configuration) are
+initialised along a straight line and each surrounded by its Gaussian noise
+distribution.
+After fitting, the latent points align with the data curve (right panel):
+the model has learned the non-linear manifold, and each observation is
+explained by the nearest Gaussian centre on the fitted curve.
 
 \section{\textit{t}-Distributed Stochastic Neighbor Embedding}
 
 \subsection{The Method}
 
-% TODO
+\textbf{\textit{t}-SNE} maps each high-dimensional point to a 2- or
+3-dimensional position such that similar points land nearby and dissimilar
+points land far apart.
+
+\paragraph{Stochastic Neighbor Embedding (SNE).}
+For each pair in the original space, define the \emph{conditional probability}
+that $\bm{x}_i$ would pick $\bm{x}_j$ as its neighbour:
+\[
+  p_{j|i} = \frac{\exp(-\|\bm{x}_i-\bm{x}_j\|^2/2\sigma_i^2)}
+                 {\sum_{k\neq i}\exp(-\|\bm{x}_i-\bm{x}_k\|^2/2\sigma_i^2)}.
+\]
+The bandwidths $\sigma_i$ are set so that the \emph{perplexity}
+\[
+  \mathrm{Perp}(P_i) = 2^{H(P_i)}, \qquad
+  H(P_i) = -\sum_{j\neq i} p_{j|i}\log_2 p_{j|i},
+\]
+equals a user-chosen constant (the perplexity hyperparameter, typically 5–50).
+Here $H(P_i)$ is the Shannon entropy of the conditional distribution $P_i = \{p_{j|i}\}$
+over the observation-space neighbours of $i$.
+A larger perplexity considers more neighbours as relevant.
+In the low-dimensional space define analogously:
+\[
+  q_{j|i} = \frac{\exp(-\|\bm{y}_i-\bm{y}_j\|^2)}
+                 {\sum_{k\neq i}\exp(-\|\bm{y}_i-\bm{y}_k\|^2)}.
+\]
+The embedding is found by minimising the KL divergence
+$KL(P\|Q)=\sum_{i\neq j}p_{j|i}\log\frac{p_{j|i}}{q_{j|i}}$
+via gradient descent.
+
+\paragraph{Problems with SNE — and how t-SNE fixes them.}
+\begin{enumerate}
+  \item \textbf{Difficult optimisation.}
+        t-SNE \emph{symmetrises} the joint distribution:
+        $p_{ij}=(p_{j|i}+p_{i|j})/(2n)$, giving simpler gradients.
+  \item \textbf{Crowding problem.}
+        In 10 dimensions, 11 points can be mutually equidistant; there is
+        no faithful 2-D map for them.
+        t-SNE uses a \textbf{heavy-tailed Student's $t$-distribution} for the
+        low-dimensional similarities:
+        \[
+          q_{ij} = \frac{(1+\|\bm{y}_i-\bm{y}_j\|^2)^{-1}}
+                        {\sum_{k\neq l}(1+\|\bm{y}_k-\bm{y}_l\|)^{-1}}.
+        \]
+        The heavier tail allows moderately distant points in the original space
+        to be pushed further apart in 2-D without penalty, alleviating crowding.
+\end{enumerate}
+
+\begin{intbox}[title={Why the $t$-distribution helps}]
+A Gaussian distribution has thin tails: forcing points that are somewhat
+separated in high dimensions to be far apart in 2-D is expensive.
+The $t$-distribution (with one degree of freedom, i.e.\ a Cauchy distribution)
+has much fatter tails, so the same KL gradient can accommodate larger
+spread without distorting the truly nearby points.
+\end{intbox}
 
 \subsection{Examples}
 
-% TODO
+\textbf{MNIST digits} (6{,}000 points, 30-D PCA codes): t-SNE produces 10
+well-separated clusters, one per digit class, with little overlap.
+Sammon's mapping, Isomap, and LLE all fail to achieve clean digit separation
+on the same data.
+
+\textbf{Olivetti faces}: t-SNE groups images by identity into tight clusters;
+the other three methods produce much more mixed embeddings.
+
+\textbf{COIL-20 objects}: each physical object, photographed under rotation,
+forms a closed loop (ring) in the 2-D t-SNE map — the topology of the
+rotation manifold is preserved.
+The other methods do not recover these loops clearly.
+
+\textbf{Iris data}: PCA partially overlaps versicolor and virginica; t-SNE
+achieves perfect three-cluster separation with no overlap.
+
+\textbf{Multiple Tissue}: both perplexity settings (30 and 50) give poor
+tissue separation — same conclusion as LLE and Isomap.
+The gene-expression data do not lie on a 2-D manifold.
 
 \section{Self-Organizing Maps}
 
 \subsection{The Method}
 
-% TODO
+The \textbf{Self-Organizing Map} (SOM, also Kohonen map) pursues two goals
+simultaneously: \textbf{clustering} and \textbf{dimensionality reduction
+(down-projection)}.
+
+A SOM maintains a lattice of $K$ \emph{neurons}.
+Each neuron $k$ has a fixed grid position $\bm{y}_k\in\mathbb{R}^l$
+(equidistantly filling a hypercube) and a learnable weight vector
+$\bm{w}_k\in\mathbb{R}^m$ in the input space.
+The goal is to preserve neighbourhood relations: points that are close in
+input space should activate neighbouring neurons (\textbf{topologically
+ordered maps}, TOMs).
+
+\paragraph{Online update rule.}
+For each incoming sample $\bm{x}$:
+\begin{enumerate}
+  \item Find the \emph{winner} neuron:
+        $k^* = \arg\max_s\;\bm{x}\T\bm{w}_s$.
+  \item Move $k^*$ and its neighbours towards $\bm{x}$:
+        \[
+          \bm{w}_k^{\text{new}}
+          = \bm{w}_k + \eta\,\delta(\|\bm{y}_k - \bm{y}_{k^*}\|)\,
+            (\bm{x} - \bm{w}_k),
+        \]
+        where $\eta$ is the learning rate and $\delta(\cdot)$ is the
+        \emph{neighbourhood (window) function}: it equals $1$ for
+        $\bm{y}_k=\bm{y}_{k^*}$ and decreases monotonically with lattice
+        distance.
+\end{enumerate}
+
+\begin{notebox}[title={SOM has no objective function}]
+The SOM update rule cannot be derived from a single scalar energy or
+loss function.
+Practical consequences:
+\begin{itemize}
+  \item No theoretical basis for choosing $\eta$, neighbourhood width, or
+        stopping criterion.
+  \item No guarantee that topographic ordering is achieved.
+  \item No convergence proof.
+  \item Different runs cannot be compared objectively.
+  \item Overfitting is not detectable.
+  \item The result carries no probability density and cannot be handed to a
+        downstream probabilistic model.
+\end{itemize}
+GTM (Section~\ref{sec:gtm}) was developed as a principled probabilistic
+replacement.
+\end{notebox}
 
 \subsection{Examples}
 
-% TODO
+\textbf{Example 1 — 1-D SOM in a 2-D circle.}
+Initially all weights are collapsed to a single point.
+Over ${\sim}150{,}000$ updates the 1-D chain of neurons unfolds to trace
+the boundary of the circle, filling the circular data distribution.
+
+\textbf{Example 2 — 2-D SOM on a uniform square.}
+A $10\times 10$ grid of neurons progressively fills the square data space;
+by 300{,}000 steps the grid covers the entire region uniformly.
+\emph{With a different random initialisation} the grid develops kinks that
+do \textbf{not} disappear even after 400{,}000 steps — a local minimum
+with no way to detect or escape it.
+
+\textbf{Non-uniform sampling.}
+When data density is higher at the centre than the border, the SOM
+allocates more neurons to the centre — the grid is compressed there and
+stretched at the boundary, reflecting the input distribution.
 
 
 % ==========================================================
@@ -1491,73 +2235,642 @@ preferred in practice when outliers are expected.
 
 \subsection{The Method}
 
-% TODO
+A \textbf{mixture model} defines a generative distribution over observed data $\bm{x}$ by
+introducing a discrete latent variable $j \in \{1,\ldots,l\}$ that indexes the
+component:
+\[
+  p(\bm{x}\mid\theta) = \sum_{j=1}^{l} p(j)\, p(\bm{x}\mid j,\theta_j),
+\]
+where $p(j)=w_j \geq 0$ with $\sum_j w_j = 1$ are the \emph{mixture weights}
+and $p(\bm{x}\mid j,\theta_j)$ is the $j$-th component density.
+The model provides a flexible way to represent multi-modal or multi-cluster
+distributions as a convex combination of simpler component distributions.
+
+\textbf{Bayesian cluster assignment.}
+Given an observation $\bm{x}$, the posterior probability of belonging to
+component $j$ is obtained via Bayes' theorem:
+\[
+  p(j\mid\bm{x},\theta)
+  = \frac{w_j\, p(\bm{x}\mid j,\theta_j)}{\displaystyle\sum_{t=1}^{l} w_t\, p(\bm{x}\mid t,\theta_t)}.
+\]
+This \emph{soft} assignment (also called \emph{responsibility}) is the key
+quantity in the E-step of EM.
+
+\textbf{Log-likelihood gradient.}
+The gradient of the log-likelihood with respect to component parameters
+$\theta_j$ factorises cleanly:
+\[
+  \frac{\partial}{\partial\theta_j}\log p(\bm{x}\mid\theta)
+  = p(j\mid\bm{x},\theta)\;\frac{\partial}{\partial\theta_j}\log p(\bm{x}\mid j,\theta_j).
+\]
+The overall gradient is therefore the posterior-weighted sum of component
+gradients — exactly the structure exploited by EM.
 
 \subsection{Mixture of Gaussians}
 
-% TODO
+In a \textbf{mixture of Gaussians} (MoG) each component is a multivariate
+Gaussian $\mathcal{N}(\bm{x}\mid\bm{\mu}_j,\bm{\Sigma}_j)$.
+EM iterates between computing soft assignments (E-step) and maximising the
+expected complete-data log-likelihood (M-step).
+
+\textbf{E-step.}
+Compute the responsibility $r_{ij} = p(j\mid\bm{x}_i,\theta)$ for every
+sample–component pair:
+\[
+  r_{ij}
+  = \frac{w_j\,\mathcal{N}(\bm{x}_i\mid\bm{\mu}_j,\bm{\Sigma}_j)}
+         {\displaystyle\sum_{t=1}^{l} w_t\,\mathcal{N}(\bm{x}_i\mid\bm{\mu}_t,\bm{\Sigma}_t)}.
+\]
+
+\textbf{M-step.}
+Update the parameters using the responsibilities:
+\begin{align*}
+  w_j^{\text{new}} &= \frac{1}{n}\sum_{i=1}^{n} r_{ij},\\[4pt]
+  \bm{\mu}_j^{\text{new}} &= \frac{\displaystyle\sum_i r_{ij}\,\bm{x}_i}
+                                  {\displaystyle\sum_i r_{ij}},\\[4pt]
+  \bm{\Sigma}_j^{\text{new}} &= \frac{\displaystyle\sum_i r_{ij}
+      \bigl(\bm{x}_i-\bm{\mu}_j^{\text{new}}\bigr)\bigl(\bm{x}_i-\bm{\mu}_j^{\text{new}}\bigr)\T}
+                                     {\displaystyle\sum_i r_{ij}}.
+\end{align*}
+
+\textbf{MAP-MoG.}
+The ML solution can degenerate (a single-sample component with $\bm{\Sigma}_j\to\bm{0}$).
+Adding conjugate priors regularises the solution:
+\begin{itemize}
+  \item \textbf{Wishart} prior on the precision: $\mathcal{W}(\bm{\Sigma}_j^{-1}\mid\alpha,\bm{\Psi})$.
+  \item \textbf{Dirichlet} prior on the weights: $\mathcal{D}(\bm{w}\mid\gamma)$.
+  \item \textbf{Gaussian} prior on the means: $\mathcal{N}(\bm{\mu}_j\mid\bm{\nu}_j,\eta^{-1}\bm{\Sigma}_j)$.
+\end{itemize}
+The MAP-EM updates replace ML formulas with:
+\begin{align*}
+  w_j^{\text{new}} &= \frac{\displaystyle\sum_i r_{ij} + \gamma - 1}{n + l(\gamma-1)},\\[4pt]
+  \bm{\mu}_j^{\text{new}} &= \frac{\displaystyle\sum_i r_{ij}\,\bm{x}_i + \eta\,\bm{\nu}_j}
+                                  {\displaystyle\sum_i r_{ij} + \eta},\\[4pt]
+  \bm{\Sigma}_j^{\text{new}} &= \frac{\displaystyle\sum_i r_{ij}
+      (\bm{x}_i-\bm{\mu}_j^{\text{new}})(\bm{x}_i-\bm{\mu}_j^{\text{new}})\T
+      + 2\bm{\Psi} + \eta(\bm{\mu}_j^{\text{new}}-\bm{\nu}_j)(\bm{\mu}_j^{\text{new}}-\bm{\nu}_j)\T}
+    {\displaystyle\sum_i r_{ij} + 2\alpha + m + 2}.
+\end{align*}
+
+Sensible defaults: $\alpha=m/2$,\ $\bm{\Psi}=\tfrac{1}{2}\bm{I}$ (or
+$\tfrac{1}{2}\operatorname{cov}(\bm{x})$),\ $\gamma=1$ (uniform Dirichlet,
+no prior on weights),\ $\eta=0$ (no mean prior),\ $\bm{\nu}_j=\operatorname{mean}(\bm{x})$.
+
+\begin{intbox}[title={Deriving the MAP weight update}]
+Maximise $\log p(\bm{x}\mid\theta) + \log p(\bm{w})$ subject to
+$\sum_j w_j = 1$ using a Lagrange multiplier $\lambda$:
+\[
+  \frac{\partial}{\partial w_j}\Bigl[\textstyle\sum_j\sum_i r_{ij}\log w_j
+    + (\gamma-1)\log w_j + \lambda(1-\textstyle\sum_j w_j)\Bigr] = 0
+  \;\Rightarrow\;
+  w_j = \frac{\sum_i r_{ij}+\gamma-1}{\lambda}.
+\]
+Summing over $j$ and using $\sum_j w_j=1$ gives $\lambda = n+l(\gamma-1)$.
+\end{intbox}
 
 \subsection{Mixture of Poissons}
 
-% TODO
+When data are \textbf{non-negative integer counts} the Gaussian assumption
+is inappropriate.
+A \textbf{mixture of Poissons} uses Poisson component distributions:
+\[
+  p(x) = \sum_{j=1}^{l} w_j\,\mathcal{P}(x;\lambda_j),
+  \qquad
+  \mathcal{P}(x;\lambda_j) = \frac{\lambda_j^x\,e^{-\lambda_j}}{x!}.
+\]
+The mean and variance of component $j$ are both $\lambda_j$, so the model
+can capture over-dispersed count distributions via a heterogeneous mixture.
+
+\textbf{EM via Jensen's inequality.}
+The log-likelihood $\log\sum_j w_j\mathcal{P}(x_i;\lambda_j)$ contains a log
+of a sum, which is intractable to optimise directly.
+Introduce auxiliary variables $w_{ji}\geq 0$ with $\sum_j w_{ji}=1$
+and apply Jensen's inequality to the concave log:
+\[
+  \log\sum_j w_j\mathcal{P}(x_i;\lambda_j)
+  = \log\sum_j w_{ji}\cdot\frac{w_j\mathcal{P}(x_i;\lambda_j)}{w_{ji}}
+  \;\geq\; \sum_j w_{ji}\log\frac{w_j\mathcal{P}(x_i;\lambda_j)}{w_{ji}}.
+\]
+The bound is tight when $w_{ji} \propto w_j\mathcal{P}(x_i;\lambda_j)$,
+which defines the E-step.
+
+\textbf{E-step.} Set
+\[
+  w_{ji}^{\text{new}}
+  = \frac{w_j^{\text{old}}\,\mathcal{P}(x_i;\lambda_j^{\text{old}})}
+         {p(x_i;\bm{w}^{\text{old}},\bm{\lambda}^{\text{old}})}.
+\]
+
+\textbf{M-step.} Maximise the lower bound over $\bm{w}$ and $\bm{\lambda}$:
+\[
+  w_j^{\text{new}} = \frac{1}{n}\sum_i w_{ji},
+  \qquad
+  \lambda_j^{\text{new}} = \frac{\displaystyle\sum_i w_{ji}\,x_i}
+                                 {\displaystyle\sum_i w_{ji}}.
+\]
+The $\lambda_j$ update is the responsibility-weighted sample mean —
+exactly as expected for the sufficient statistic of the Poisson distribution.
+
+Regularisation: a Dirichlet prior $\mathcal{D}(\bm{w}\mid\gamma)$ on the
+weights and a (non-informative) uniform prior on each $\lambda_j$.
 
 \subsection{Examples}
 
-% TODO
+\paragraph{Initialization strategies for MoG.}
+EM is sensitive to initialisation.
+Three strategies are common:
+\begin{itemize}
+  \item \textbf{``em''}: run several short, low-tolerance EM passes from
+        different random starts, then continue with a full precise run from
+        the best solution found.
+  \item \textbf{``rnd''}: purely random initialisations; pick the run with
+        the highest final log-likelihood.
+  \item \textbf{``svd''}: use the singular-value decomposition of the data
+        matrix to derive a structured, data-adaptive starting point.
+\end{itemize}
+On a 2D synthetic dataset with 8 elongated clusters, the ``em'' and ``svd''
+strategies reliably find the correct 8-cluster partition;
+``rnd'' is more prone to poor local optima.
+
+\paragraph{Covariance constraints.}
+The shape, volume, and orientation of each Gaussian component can be constrained
+to regularise the model or to reflect prior knowledge.
+Using Mclust notation, a three-letter code describes the multivariate constraint:
+
+\begin{itemize}
+  \item \textbf{EII}: spherical, equal volume across components.
+  \item \textbf{VII}: spherical, unequal volume.
+  \item \textbf{EEI / VEI / EVI / VVI}: diagonal covariance (axis-aligned clusters),
+        with equal/varying combinations of volume and shape.
+  \item \textbf{EEE / EEV / VEV / VVV}: full ellipsoidal covariance with
+        equal/varying volume, shape, and orientation.
+\end{itemize}
+
+Applied to a synthetic 2D dataset with 3 true clusters (banana-shaped, curved),
+a fully unconstrained MoG (VVV, 3 components) correctly recovers the three
+cluster shapes, while spherical or diagonal constraints produce boundary errors.
+Increasing to 6 components with tight covariance constraints causes over-splitting:
+each true cluster is divided into 2 spurious sub-clusters.
+
+\paragraph{Multiple Tissue dataset.}
+MoG is applied to the Multiple Tissue dataset using the 76 genes with largest
+variance, projected onto the first two principal components.
+With 3 components (spherical, unequal volume) the three tissue types (liver,
+brain, adipose) are partially separated but brain and adipose overlap.
+With 4 components (spherical or diagonal) the partition improves;
+diagonal covariance with varying volume and shape gives a qualitatively better
+result, tracking the elongated liver cluster more accurately.
+Increasing to 5, 6, or 7 spherical components over-splits the clusters,
+showing that model selection (choosing $l$) is crucial.
 
 \section{\textit{k}-Means Clustering}
 
 \subsection{The Method}
 
-% TODO
+$k$-means is obtained from a mixture of Gaussians by imposing three
+simplifying assumptions:
+\begin{enumerate}
+  \item equal weights $w_j = 1/l$;
+  \item spherical and equal covariance $\bm{\Sigma}_j^{-1} = \bm{I}$;
+  \item \emph{hard} (discrete) cluster membership — a sample belongs to
+        exactly one cluster.
+\end{enumerate}
+Under these assumptions the soft responsibility $r_{ij}$ collapses to a
+binary indicator: $p(j\mid\bm{x}_i,\bm{\mu}_j)=1$ if $j=\arg\min_k\|\bm{x}_i-\bm{\mu}_k\|$,
+zero otherwise.
+The only free parameters are the $l$ cluster centres $\bm{\mu}_j$.
+
+\begin{defbox}[title={$k$-means algorithm}]
+\textbf{Initialise}: choose $l$ cluster centres $\bm{\mu}_j$.\\
+\textbf{Iterate} until convergence:
+\begin{enumerate}
+  \item \emph{Assignment step}: assign each $\bm{x}_i$ to the nearest centre,
+        $c_{\bm{x}_i} = \arg\min_k\|\bm{x}_i - \bm{\mu}_k\|$.
+  \item \emph{Update step}: recompute each centre as the mean of its
+        assigned points,
+        $\bm{\mu}_j^{\text{new}} = \frac{1}{n_j}\sum_{i:\,c_{\bm{x}_i}=j}\bm{x}_i$,
+        where $n_j = \#\{i : c_{\bm{x}_i}=j\}$.
+\end{enumerate}
+\end{defbox}
+
+\textbf{Properties}: $k$-means is fast and robust to outliers (hard assignment
+prevents a single outlier from shifting all means), but it is simple (only
+spherical, equal-size clusters) and sensitive to initialisation.
+A centre placed near outliers can remain stuck there,
+failing to model the true cluster distribution.
+
+\textbf{Fuzzy $k$-means} replaces the hard membership with a soft
+(``softmax'') membership controlled by a parameter $b > 1$:
+\[
+  p^b(j\mid\bm{x}_i,\bm{\mu}_j)
+  = \frac{\|\bm{x}_i-\bm{\mu}_j\|^{-2/(b-1)}}
+         {\sum_{k=1}^l \|\bm{x}_i-\bm{\mu}_k\|^{-2/(b-1)}}.
+\]
+The centre update becomes the responsibility-weighted mean:
+\[
+  \bm{\mu}_j^{\text{new}}
+  = \frac{\sum_i p^b(j\mid\bm{x}_i,\bm{\mu}_j)\,\bm{x}_i}
+         {\sum_i p^b(j\mid\bm{x}_i,\bm{\mu}_j)},
+\]
+and the minimised objective is
+$\sum_j\sum_i p^b(j\mid\bm{x}_i,\bm{\mu}_j)\,\|\bm{x}_i-\bm{\mu}_j\|^2$.
+As $b\to 1$ this recovers hard $k$-means; as $b\to\infty$ all memberships
+converge to $1/l$ (fully fuzzy).
 
 \subsection{Examples}
 
-% TODO
+\paragraph{Synthetic 2D data (5 clusters).}
+On a synthetic dataset with 5 Gaussian clusters, $k$-means with $l=5$
+recovers the true partition (cluster centres at the true means) when
+initialised well.
+Local minima arise frequently:
+one failure mode is that one model centre explains two true clusters while
+a second true cluster is divided between two model centres;
+another is that three model centres all compete for the same true cluster
+while one true cluster is unmodelled.
+These failures highlight why multiple random restarts are necessary in practice.
+
+\paragraph{Synthetic 2D data ($k=8$).}
+With $l=8$ and 5 true clusters the model must split some clusters.
+Different initialisations produce markedly different partitions,
+confirming the strong dependence on initialisation.
+
+\paragraph{Iris data.}
+$k$-means with $l=3$ on the first two PCA components of the Iris dataset
+typically recovers two of the three species exactly, with errors only at
+the border between the two overlapping classes (\emph{Iris versicolor}/\emph{Iris
+virginica}).
+Occasionally a suboptimal initialisation merges the two overlapping clusters
+and splits the well-separated one — these solutions have higher objective
+values but cannot always be distinguished from the correct solution by the
+$k$-means objective alone.
+
+\paragraph{Multiple Tissue data.}
+$k$-means with $l=4$ on the Multiple Tissue dataset correctly identifies
+the four tissue types in the most typical run.
+Suboptimal initialisations place a centre in the empty region between the
+adipose and brain clusters, producing a qualitatively different partition.
 
 \section{Hierarchical Clustering}
 
 \subsection{The Method}
 
-% TODO
+\textbf{Hierarchical clustering} represents the cluster structure as a
+\emph{dendrogram} — a tree whose leaves are individual samples and whose
+internal nodes encode the distance at which two sub-trees were merged (or
+split).
+Cutting the dendrogram at a chosen height yields a flat partition;
+varying the cut gives a nested family of solutions at every granularity.
+
+Two broad strategies exist:
+\begin{itemize}
+  \item \textbf{Agglomerative (bottom-up)}: start with $n$ singleton clusters
+        and greedily merge the closest pair at each step.
+  \item \textbf{Divisive (top-down)}: start with one cluster containing all
+        points.
+        A common approach builds the \emph{minimal spanning tree} of the
+        pairwise distance graph and then removes the largest edge to split
+        into two clusters, repeating recursively.
+        Alternatively, remove the edge that is considerably larger than
+        other edges within its cluster.
+\end{itemize}
+
+\textbf{Linkage criteria} define the distance between two clusters $A$ and $B$:
+\begin{align*}
+  d_{\min}(A,B)  &= \min_{\bm{a}\in A,\,\bm{b}\in B}\|\bm{a}-\bm{b}\|
+                  & &\text{(single linkage)}\\
+  d_{\max}(A,B)  &= \max_{\bm{a}\in A,\,\bm{b}\in B}\|\bm{a}-\bm{b}\|
+                  & &\text{(complete linkage)}\\
+  d_{\text{avg}}(A,B) &= \frac{1}{n_A n_B}\sum_{\bm{a}\in A}\sum_{\bm{b}\in B}
+                         \|\bm{a}-\bm{b}\|
+                  & &\text{(average linkage / UPGMA)}\\
+  d_{\text{mean}}(A,B) &= \|\bar{\bm{a}}-\bar{\bm{b}}\|
+                  & &\text{(centroid / mean linkage)}
+\end{align*}
+where $n_A,n_B$ are the cluster sizes and $\bar{\bm{a}},\bar{\bm{b}}$ are
+the cluster means.
+The element-level distance $\|\cdot\|$ can be Euclidean, Manhattan, or
+Mahalanobis.
+
+\begin{intbox}[title={Linkage behaviour}]
+\textbf{Complete linkage} avoids elongated clusters — it guarantees that
+the diameter (largest intra-cluster distance) stays small — but clusters
+may not be well-separated.
+\textbf{Single linkage} ensures any two points from different clusters are
+far apart; it is used for \emph{leave-one-cluster-out} cross-validation
+where an entire new group is withheld.
+\textbf{Average linkage (UPGMA)} is a commonly used compromise.
+\end{intbox}
+
+\textbf{Ward's method} merges the pair of clusters whose union minimises the
+total within-cluster sum of squares — a variance-based criterion that tends
+to produce compact, spherical clusters of similar size.
 
 \subsection{Examples}
 
-% TODO
+\paragraph{US Arrest data.}
+The 50 US states are clustered on four crime-rate variables.
+Ward's dendrogram produces two clean super-clusters (high-crime vs.\ low-crime
+states) with a clear gap, giving an unambiguous 2-cluster cut.
+Single linkage exhibits \emph{chaining}: states are added one at a time to a
+growing chain, producing an unbalanced dendrogram with little internal
+structure.
+Complete and average linkage produce intermediate results, broadly consistent
+with Ward's partition.
+McQuitty, median, and centroid methods give similar dendrograms to average
+linkage on this dataset.
+
+\paragraph{Synthetic 5-cluster data.}
+Ward's distance produces a perfect recovery of all 5 Gaussian clusters when
+the dendrogram is cut at the right height.
+Complete and average linkage also recover the correct partition.
+Single linkage again suffers from chaining and produces a poor cut.
+
+\paragraph{Iris data.}
+With 3 clusters, Ward's and average linkage both achieve good (but not perfect)
+separations — a few \emph{Iris versicolor}/\emph{Iris virginica} points are
+misassigned at the class boundary.
+Single linkage chains through the overlapping region and fails to isolate the
+third species cleanly.
+Increasing to 5 clusters over-splits the data; the extra clusters appear at
+boundary points marked by misassignment arrows.
+
+\paragraph{Multiple Tissue data.}
+With 4 clusters, Ward's linkage correctly groups the four tissue types
+(liver, brain, adipose, colon/kidney mix) with only a few misassigned points.
+Complete and average linkage with 4 clusters produce similar quality.
+Single linkage with 4 clusters chains the liver samples into one huge cluster
+and isolates small outliers instead of identifying the biological tissue groups.
+Increasing to 6 clusters with Ward's or average linkage over-splits the data,
+creating biologically meaningless sub-clusters.
 
 \section{Similarity-Based Clustering}
 
+\textbf{Similarity-based clustering} groups objects using only pairwise
+similarities, without requiring an explicit feature-vector representation.
+Similarities can come from web links, social interactions,
+co-occurrence counts (co-expressed genes, co-cited papers),
+spatial distances, sequence alignments, or structural comparisons.
+
 \subsection{Aspect Model}
 
-% TODO
+The \textbf{aspect model} applies to discrete data of co-occurring pairs
+$(x,y)$ — for example, person $x$ buys product $y$, or word $x$ appears in
+document $y$.
+The data are counts $n(x,y)$.
+
+\begin{defbox}[title={Aspect model}]
+Introduce a hidden class variable $z \in \{z_1,\ldots,z_l\}$.
+Conditional on $z$, $x$ and $y$ are independent:
+\[
+  p(x,y) = \sum_z p(z)\,p(x\mid z)\,p(y\mid z).
+\]
+\end{defbox}
+
+The hidden factor $z$ acts as the common cause of both $x$ and $y$,
+explaining their correlation without direct dependence.
+\emph{Example}: hot-chocolate consumption and crime rate are both driven by
+cold weather ($z$), so $x \perp y \mid z$.
+
+\textbf{EM for the aspect model.}
+\begin{itemize}
+  \item \textbf{E-step}: compute the posterior
+        $p(z\mid x,y) = \dfrac{p(z)\,p(x\mid z)\,p(y\mid z)}
+                               {\sum_{z'} p(z')\,p(x\mid z')\,p(y\mid z')}$.
+  \item \textbf{M-step}: update the parameters using the weighted counts
+        $n(x,y)$:
+        \begin{align*}
+          p(z) &= \sum_{x,y} n(x,y)\,p(z\mid x,y),\\
+          p(y\mid z) &= \frac{\sum_x n(x,y)\,p(z\mid x,y)}{p(z)},\\
+          p(x\mid z) &= \frac{\sum_y n(x,y)\,p(z\mid x,y)}{p(z)}.
+        \end{align*}
+\end{itemize}
+
+\textbf{Clustering.}
+Objects $x$ are clustered via the marginal posterior
+$p(z\mid x) \propto p(x\mid z)\,p(z)$, where $p(x)=\sum_{z,y}p(z)\,p(x\mid z)\,p(y\mid z)$.
+Each value of $z$ represents one cluster; analogous formulas cluster $y$ or
+pairs $(x,y)$.
 
 \subsection{Affinity Propagation}
 
 \subsubsection{The Method}
 
-% TODO
+\textbf{Affinity propagation} (AP) is a similarity-based,
+\emph{exemplar-based} clustering method: cluster centres must be actual data
+points (\emph{exemplars} or \emph{prototypes}).
+Unlike $k$-centres clustering — which also enforces this constraint but
+requires a good initialisation and works only for a small number of clusters —
+AP determines both the exemplars and the cluster memberships simultaneously
+via message passing, without needing the number of clusters specified in
+advance.
+
+Four quantities drive the algorithm:
+\begin{itemize}
+  \item \textbf{Similarities} $s(i,k)$: how well object $k$ can serve as an
+        exemplar for object $i$ (e.g.\ negative squared distance,
+        $s(i,k)=-\|\bm{x}_i-\bm{x}_k\|^2$).
+  \item \textbf{Preferences} $s(k,k)$: the prior probability that object $k$
+        becomes an exemplar; a uniform value controls the expected number of
+        clusters. \emph{Higher preference → more cluster centres; lower
+        preference → fewer cluster centres.}
+  \item \textbf{Responsibilities} $r(i,k)$: message from $i$ to candidate
+        exemplar $k$, reflecting how strongly $k$ should be the exemplar for
+        $i$ relative to competing candidates.
+  \item \textbf{Availabilities} $a(i,k)$: message from candidate exemplar $k$
+        to object $i$, reflecting how much evidence $k$ collects from other
+        objects that it should be an exemplar.
+\end{itemize}
+
+\begin{defbox}[title={Affinity Propagation update rules}]
+Initialise $a(i,k)=0$.  Iterate, applying damping with factor $\lambda\in[0,1)$
+to improve numerical stability (e.g.\ $\lambda=0.5$ by default):
+\begin{align*}
+  r(i,k) &= s(i,k) - \max_{k',\,k'\neq k}\bigl\{a(i,k') + s(i,k')\bigr\},\\[4pt]
+  a(i,k) &= \min\!\Bigl\{0,\;r(k,k) + \sum_{i',\,i'\notin\{i,k\}}\max\{0,r(i',k)\}\Bigr\}
+             \quad (i\neq k),\\[4pt]
+  a(k,k) &= \sum_{i',\,i'\neq k}\max\{0,r(i',k)\}.
+\end{align*}
+Object $i$ is assigned to the exemplar $k^* = \arg\max_k\{a(i,k)+r(i,k)\}$.
+
+Each message is updated as a weighted average of the new value and the previous value:
+$r_{\text{new}} \leftarrow (1-\lambda)\,r_{\text{computed}} + \lambda\,r_{\text{old}}$
+(same for $a$). A larger $\lambda$ makes convergence slower but more stable; a smaller $\lambda$
+converges faster but may oscillate.
+\end{defbox}
+
+\begin{intbox}[title={Intuition behind the messages}]
+The responsibility $r(i,k)$ drops when a competing candidate $k'$ has high
+similarity and availability to $i$ — it measures how uniquely suited $k$ is
+to represent $i$.
+The self-availability $a(k,k)$ grows when many other objects send positive
+responsibilities to $k$, confirming $k$ as a strong exemplar.
+Together the two messages implement a competition: candidates that gather
+broad support become exemplars; others do not.
+\end{intbox}
+
+\textbf{Limitation.} AP implicitly assumes spherical clusters of equal size
+because similarities are typically Euclidean distances.
+When cluster sizes differ, AP cannot adjust the effective bandwidth per
+cluster, and elements of a large diffuse cluster may be assigned to a nearby
+compact cluster instead.
 
 \subsubsection{Examples}
 
-% TODO
+\paragraph{Toy graph (convergence illustration).}
+Starting from a fully connected graph of $\sim$25 nodes, the messages evolve
+over 6 iterations: edges redistribute, 3–4 exemplars emerge (highlighted in
+red), and by convergence each point points exclusively to its exemplar.
+
+\paragraph{Face images.}
+On a face database AP selects a small number of representative faces
+(exemplars, highlighted in coloured boxes); all other faces point to their
+nearest exemplar.
+Compared with $k$-centres clustering run on the same data,
+AP finds higher-quality exemplars for the 15 hardest-to-represent images.
+
+\paragraph{Airport clustering.}
+AP applied to air-travel efficiency between 456 North American airports
+identifies 7 hub exemplars.
+The assignment reflects domestic vs.\ international flight patterns —
+e.g.\ the Canada–USA border separates Toronto and Philadelphia hubs.
+The dense Seattle–Vancouver corridor causes Pacific northwest cities to be
+assigned to the Seattle hub.
+
+\paragraph{Synthetic 2D data: balanced clusters (x7).}
+On a dataset with 6 clusters (3 large / 3 small by variance), AP correctly
+identifies 6 exemplars and recovers the clean partition when all clusters are
+roughly spherical and well-separated.
+
+\paragraph{Synthetic 2D data: mixed-size clusters (x7A, x9, d6).}
+When one dense small cluster sits inside or near a large diffuse cluster,
+AP merges them — it cannot detect the small cluster inside the large one
+because it assumes equal cluster variances.
+On the x9 dataset (6 clusters of 2 small, 2 medium, 2 large) AP conflates
+one pair, producing 5 clusters instead of 6.
+On the 6-D d6/d6A datasets (one large + three small clusters, 100 samples,
+PCA visualisation), AP again assigns elements of the large cluster to smaller
+neighbours — the large cluster has no single exemplar that would win the
+competition.
+
+\paragraph{Iris data.}
+AP with default preference ($p=0$) produces a good 3-cluster partition with
+a few misassignments at the \emph{Iris versicolor}/\emph{Iris virginica}
+boundary, similar to $k$-means and MoG.
+
+\paragraph{Multiple Tissue data.}
+With preference $p=0$ AP finds 4 clusters that largely match the tissue types,
+with a few misassigned samples.
+Increasing the preference to $p=1$ over-clusters into many singleton exemplars
+(every point becomes its own cluster), showing sensitivity to the preference
+hyperparameter.
 
 \subsection{Similarity-based Mixture Models}
 
 \subsubsection{Similarity-based Mixture of Gaussians}
 
-% TODO
+\textbf{Similarity-based mixture models} are mixture models that operate
+solely on pairwise similarities $k(\bm{x}_j, \bm{x}_i)$ between the $n$
+training points — no explicit feature vectors are used.
+This is closely related to kernel methods: the input to the algorithm is the
+$n\times n$ kernel matrix $K_{ij} = k(\bm{x}_j, \bm{x}_i)$.
+
+Starting from a Gaussian mixture
+$p(\bm{x}) = \sum_{j=1}^{K} p(j)\,k(\bm{x};\bm{\mu}_j,\bm{\Sigma}_j)$,
+introduce a scalar variance $\sigma_i^2$ per component and define
+\[
+  k(\bm{x};\bm{\mu}_i,\sigma_i^2) = \frac{1}{\sigma_i^m}\,k(\bm{x},\bm{\mu}_i)^{1/\sigma_i^2},
+\]
+so the model becomes
+\[
+  p(\bm{x}) = \sum_{j=1}^{K} p(j)\,\frac{1}{\sigma_j^m}\,k(\bm{x},\bm{\mu}_j)^{1/\sigma_j^2}.
+\]
+The component variance $\sigma_j^2$ controls the width of cluster $j$,
+allowing the model to handle clusters of different sizes — a key advantage
+over affinity propagation.
+
+\begin{intbox}[title={Connection to standard MoG}]
+If $k(\bm{x},\bm{\mu}_i) = \mathcal{N}(\bm{x}\mid\bm{\mu}_i,\bm{I})$ and
+$\sigma_i^2=1$ for all $i$, this reduces to a standard spherical MoG.
+The similarity-based formulation generalises this to arbitrary positive
+semi-definite kernels, and expresses all update rules solely in terms of
+the given similarities $k(\bm{x}_k,\bm{x}_j)$.
+\end{intbox}
 
 \subsubsection{Representing the Centers}
 
-% TODO
+Setting $\alpha_i = p(i)$ and $\hat\alpha_{ik} = p(i\mid\bm{x}_k,\bm{\alpha})$,
+the weights satisfy
+\[
+  \alpha_i = \frac{1}{n}\sum_{k=1}^n \hat\alpha_{ik}.
+\]
+The EM centre update requires evaluating $\|\bm{x}_l - \bm{\mu}_i\|^2$.
+Assuming the Gaussian kernel
+$k(\bm{x}_k,\bm{x}_j)=\exp\!\bigl(-\tfrac{1}{2}\|\bm{x}_k-\bm{x}_j\|^2\bigr)$,
+so that $\|\bm{x}_k-\bm{x}_j\|^2 = -2\log k(\bm{x}_k,\bm{x}_j)$,
+one can show:
+\[
+  \|\bm{x}_l - \bm{\mu}_i\|^2
+  = \frac{\displaystyle-2\sum_k \hat\alpha_{ik}\log k(\bm{x}_k,\bm{x}_l)}{\displaystyle\sum_k \hat\alpha_{ik}}
+    + \frac{\displaystyle\sum_{k,j}\hat\alpha_{ik}\hat\alpha_{ij}\log k(\bm{x}_k,\bm{x}_j)}
+           {\displaystyle\Bigl(\sum_k \hat\alpha_{ik}\Bigr)^2}.
+\]
+This expresses the squared distance to the (virtual) centre entirely through
+pairwise similarities — no explicit $\bm{\mu}_i$ needs to be stored or
+updated.
+The updated kernel value is
+$k(\bm{x}_i,\bm{\mu}_i)^{\text{new}} = \exp\!\bigl(-\tfrac{1}{2}\|\bm{x}_i-\bm{\mu}_i\|^2\bigr)$.
+
+The full covariance $\bm{\Sigma}_i$ could also be expressed via similarities,
+but this requires inverting an $n\times n$ matrix, which is computationally
+expensive and numerically unstable; only the scalar variance $\sigma_i^2$ is
+therefore estimated.
 
 \subsubsection{Update Rules}
 
-% TODO
+Define $\hat\alpha_i = \tfrac{1}{n}\sum_k \hat\alpha_{ik}$ and
+$\gamma_s = \sum_i \gamma_i$.
+The complete EM update cycle is:
+
+\begin{enumerate}
+  \item \textbf{E-step}: $\hat\alpha_{ik} = \dfrac{\alpha_i^{\text{old}}\,k(\bm{x}_k;\bm{\mu}_i,\sigma_i^2)}{p(\bm{x}_k)}$,\quad
+        $p(\bm{x}_k) = \sum_i \alpha_i^{\text{old}}\,k(\bm{x}_k;\bm{\mu}_i,\sigma_i^2)$.
+  \item \textbf{Weight update}: $\alpha_i^{\text{new}} = \dfrac{n\hat\alpha_i + \gamma_i - 1}{\gamma_s}$.
+  \item \textbf{Variance update}:
+        $(\sigma_i^2)^{\text{new}} = \dfrac{\displaystyle\sum_k \hat\alpha_{ik}(-2\log k(\bm{x}_k,\bm{\mu}_i)) + wS}{\displaystyle n\hat\alpha_i + w}$.
+  \item \textbf{Kernel update}: compute $-2\log k(\bm{x}_l,\bm{\mu}_i) = \|\bm{x}_l-\bm{\mu}_i\|^2$
+        from the similarity formula above, then set
+        $k(\bm{x}_l,\bm{\mu}_i)^{\text{new}} = \exp\!\bigl(-\tfrac{1}{2}\|\bm{x}_l-\bm{\mu}_i\|^2\bigr)$.
+\end{enumerate}
+
+Hyperparameters: $\gamma_i$ from a Dirichlet prior on $\bm{\alpha}$;
+$w$ and $S$ from a Wishart prior on the precisions $1/\sigma_i^2$.
 
 \subsubsection{Examples}
 
-% TODO
+\paragraph{x7 data (6 balanced clusters).}
+Both affinity propagation and EMcluster (similarity-based MoG EM) correctly
+recover all 6 clusters.
+The $\alpha_i$ and $\sigma_i^2$ traces over 200 EM iterations show rapid
+convergence: all $\alpha_i$ converge to $\approx 1/6$ and $\sigma_i^2$
+differentiates the two cluster sizes (small clusters settle to lower variance).
+
+\paragraph{x7A data (overlapping/mixed-size clusters).}
+AP merges one large and one small cluster; EMcluster correctly separates all 6.
+
+\paragraph{x9 data (6 clusters: 2 small / 2 medium / 2 large).}
+AP merges the two closest clusters; EMcluster identifies all 6 correctly.
+
+\paragraph{d6/d6A data (1 large + 3 small, 6-D).}
+AP cannot detect the large diffuse cluster and assigns its elements to
+smaller neighbours.
+EMcluster correctly identifies the large cluster by fitting a large $\sigma^2$
+to it, while the small clusters get small $\sigma^2$ values.
+
+The key advantage of the similarity-based MoG over AP is the per-component
+variance parameter $\sigma_i^2$: because AP uses raw similarities without
+adapting cluster width, it implicitly assumes equal-size spherical clusters
+and fails when cluster sizes differ substantially.
 
 
 % ==========================================================
@@ -1566,19 +2879,179 @@ preferred in practice when outliers are expected.
 
 \section{Types of Biclusters}
 
-% TODO
+Biclustering simultaneously clusters both the rows and the columns of a data matrix.
+A \emph{bicluster} is a pair $(I, J)$ where $I \subseteq \{1,\ldots,n\}$ is a subset of rows
+(e.g.\ genes) and $J \subseteq \{1,\ldots,m\}$ is a subset of columns (e.g.\ samples),
+such that the entries $X_{ij}$ for $i\in I, j\in J$ exhibit a coherent pattern.
+Unlike standard clustering, rows and columns can belong to multiple biclusters simultaneously,
+or to none at all.
+
+The literature distinguishes six types of biclusters ordered by increasing structural complexity:
+
+\begin{defbox}[title={Types of Biclusters}]
+Let $a_{ij}$ denote the entry in row $i$, column $j$ of the bicluster sub-matrix.
+\begin{itemize}
+  \item \textbf{Constant values:} $a_{ij} = c$ for all $i,j$ — all entries identical.
+  \item \textbf{Constant rows:} $a_{ij} = r_i$ — each row has a fixed value across all bicluster columns.
+  \item \textbf{Constant columns:} $a_{ij} = c_j$ — each column has a fixed value across all bicluster rows.
+  \item \textbf{Additive coherent values:} $a_{ij} = \mu + r_i + c_j$ — row and column offsets are additive;
+        rows are shifted versions of each other.
+  \item \textbf{Multiplicative coherent values:} $a_{ij} = \mu \cdot r_i \cdot c_j$ — rows are scalar
+        multiples of each other; columns are scalar multiples of each other.
+  \item \textbf{General coherent values:} rows (or columns) are related by a more general function;
+        includes the above as special cases.
+\end{itemize}
+\end{defbox}
+
+\begin{intbox}
+An additive coherent bicluster with a $5\times5$ sub-matrix can be visualised as:
+each entry equals a row offset $r_i$ plus a column offset $c_j$ plus a global mean $\mu$.
+Subtracting row means from each row flattens all rows to the same profile, confirming the
+additive structure. Multiplicative coherence means all rows are proportional — dividing each
+row by its mean yields identical rows.
+\end{intbox}
 
 \section{Overview of Biclustering Methods}
 
-% TODO
+Biclustering algorithms fall into four broad categories:
+
+\textbf{Variance minimization.}
+These methods search for sub-matrices with low internal variance.
+\emph{Cheng–Church $\delta$-biclusters} define the mean squared residue of a bicluster as
+\[
+  H(I,J) = \frac{1}{|I||J|} \sum_{i\in I, j\in J} \bigl(a_{ij} - a_{iJ} - a_{Ij} + a_{IJ}\bigr)^2,
+\]
+and accept any bicluster with $H(I,J)\leq\delta$.
+Related methods include $\delta$-cluster and $\delta$-pClusters.
+
+\textbf{Two-way clustering.}
+Iterative co-clustering procedures alternate between clustering rows and columns.
+Representative methods: CTWC (Coupled Two-Way Clustering), ITWC (Iterative Two-Way Clustering),
+and DCC (Double Conjugated Clustering).
+
+\textbf{Motif and pattern recognition.}
+Search for biclusters defined by expression patterns or ordinal relationships.
+Methods include xMOTIF (expression motif), OPSM (order-preserving sub-matrices),
+SPEC (spectral biclustering), and ISA (Iterative Signature Algorithm).
+
+\textbf{Probabilistic and generative models.}
+Fit a probabilistic model to the data and infer biclusters from the model parameters.
+Methods include SAMBA (probabilistic bipartite graph), PRMs, ProBic, cMonkey, Plaid model,
+BBC (Bayesian BiClustering), and \textbf{FABIA} (Factor Analysis for Bicluster Acquisition).
 
 \section{FABIA Biclustering}
 
-% TODO
+FABIA (Factor Analysis for Bicluster Acquisition) represents each bicluster as an
+\emph{outer product} of two sparse vectors.
+
+\begin{defbox}[title={FABIA Bicluster Representation}]
+A bicluster is the rank-1 matrix $\mathbf{u}_j \mathbf{y}_j^T$ where
+\begin{itemize}
+  \item $\mathbf{u}_j \in \mathbb{R}^m$ is a sparse \emph{prototype} (loading) vector — its non-zero entries
+        indicate which features (genes) belong to bicluster $j$.
+  \item $\mathbf{y}_j \in \mathbb{R}^n$ is a sparse \emph{factor} vector — its non-zero entries
+        indicate which samples belong to bicluster $j$.
+\end{itemize}
+The full data matrix is modelled as
+\[
+  X = \sum_{j=1}^{l} \mathbf{u}_j \mathbf{y}_j^T + \Gamma = Y U^T + \Gamma,
+\]
+where $X, \Gamma \in \mathbb{R}^{n \times m}$, $U \in \mathbb{R}^{m \times l}$, $Y \in \mathbb{R}^{n \times l}$,
+and $\Gamma$ is noise.
+Per sample: $\mathbf{x}_i = U \tilde{\mathbf{y}}_i + \boldsymbol{\varepsilon}_i$.
+\end{defbox}
+
+\subsection*{FABIA as Factor Analysis}
+
+The per-sample model $\mathbf{x} = U\tilde{\mathbf{y}} + \boldsymbol{\varepsilon}$ is a standard
+factor analysis (FA) model:
+\begin{itemize}
+  \item $U \in \mathbb{R}^{m \times l}$ is the loading matrix (factor loadings).
+  \item $\tilde{\mathbf{y}} \sim \mathcal{N}(\mathbf{0}, I)$ in standard FA.
+  \item $\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \Psi)$ with $\Psi$ diagonal (independent noise per feature).
+  \item $U$ explains the \emph{common variance}; $\Psi$ explains the \emph{independent variance}.
+\end{itemize}
+
+\subsection*{Sparseness via Laplace Priors}
+
+Standard FA does not produce sparse solutions. FABIA enforces sparseness by replacing the Gaussian
+prior on factors with a \textbf{Laplace prior}:
+
+\begin{thmbox}[title={FABIA Laplace Priors}]
+\[
+  p(\tilde{\mathbf{y}}) = \left(\tfrac{1}{\sqrt{2}}\right)^l \prod_{j=1}^{l} \exp\!\bigl(-\sqrt{2}\,|\tilde{y}_j|\bigr),
+\]
+\[
+  p(\mathbf{u}_j) = \left(\tfrac{1}{\sqrt{2}}\right)^m \prod_{k=1}^{m} \exp\!\bigl(-\sqrt{2}\,|u_{kj}|\bigr).
+\]
+These are Laplace (double-exponential) distributions, which have a sharp peak at zero,
+promoting sparse solutions.
+\end{thmbox}
+
+Because the posterior under Laplace priors is intractable, FABIA uses
+\textbf{variational EM}: a variational approximation to the posterior is maximised
+in the E-step, and the model parameters are updated in the M-step.
+
+\begin{intbox}
+The Laplace prior is a sparsity-inducing prior — analogous to the $\ell_1$ penalty in LASSO.
+Factors and loadings are driven towards zero unless there is strong evidence in the data,
+so only the samples and features that genuinely participate in a bicluster receive large values.
+The resulting sparse outer products $\mathbf{u}_j\mathbf{y}_j^T$ cleanly delimit rectangular
+bicluster regions in the data matrix.
+\end{intbox}
 
 \section{Examples}
 
-% TODO
+\textbf{Synthetic data.}
+On a $1000 \times 100$ dataset with 13 planted biclusters, FABIA recovers the correct
+bicluster structure: the absolute factor matrix $|Y|$ (samples $\times$ biclusters) and
+the absolute loading matrix $|U|$ (features $\times$ biclusters) both show clear
+block structure aligned with the planted biclusters.
+The reconstructed data $\hat{X} = YU^T$ visually reproduces the block pattern in the original matrix.
+
+\textbf{Super-Gaussian 50-dimensional data.}
+FABIA recovers latent structure in simulated super-Gaussian data with 50 features,
+demonstrating robustness beyond the Gaussian assumption of standard FA.
+
+\textbf{Iris dataset.}
+FABIA identifies two informative biclusters:
+\begin{itemize}
+  \item \emph{Bicluster 2} — petal features (petal length, petal width); separates \emph{Iris setosa}
+        from the other two species.
+  \item \emph{Bicluster 3} — sepal features (sepal length, sepal width); provides further separation
+        among \emph{Iris versicolor} and \emph{Iris virginica}.
+\end{itemize}
+A biplot visualises both features and samples in the same 2D space defined by the two biclusters.
+
+\textbf{Multiple Tissue dataset.}
+FABIA discovers tissue-specific expression signatures, with quality improving with more iterations:
+\begin{itemize}
+  \item \emph{500 iterations} — bicluster 2 separates prostate (green); bicluster 3 separates colon
+        (orange); a fourth bicluster separates lung (blue).
+  \item \emph{2000 iterations} — bicluster 4 clearly separates prostate; bicluster 1 separates colon;
+        biclusters 3 and 2 jointly help separate lung (blue) and breast (red).
+        More iterations produce sparser and more clearly separated solutions.
+\end{itemize}
+Because the FABIA solution is sparse, the top genes of a bicluster are directly interpretable.
+For the prostate bicluster the most relevant genes are \texttt{KLK3}, \texttt{ACPP},
+\texttt{KLK2}, \texttt{CUTL2}, and \texttt{RNF41} — all strongly associated with
+prostate tissue: KLK3 is the \emph{prostate-specific antigen} (PSA), ACPP is secreted
+by the epithelial cells of the prostate gland, and KLK2 cleaves pro-PSA into its active form.
+The biplot (biplots of bicluster 1 vs.\ 2 and of bicluster 1 vs.\ 3) confirms this:
+large circles mark the features (genes) that drive the bicluster; sparseness pushes most
+other features to zero, collapsing them onto the axes, so the signal is clean.
+
+\textbf{Breast cancer dataset.}
+Both PCA and FABIA biclustering separate the blue subclass clearly, but both have difficulty
+separating the red subclass.
+The biplot of biclusters 2 and 3 shows the three subclasses (cyan, green, blue) well separated
+with distinctive marker genes (PARBL, COL14A1, CRYAB, MIA visible in the biplot).
+
+\textbf{DLBCL dataset.}
+PCA separates the blue subclass; FABIA separates subclasses better because the red cluster
+is more clearly isolated in bicluster space than in principal component space.
+The biplot of biclusters 1 and 2 shows good subclass separation with NME1 as a prominent
+marker gene.
 
 
 % ==========================================================
@@ -1587,11 +3060,75 @@ preferred in practice when outliers are expected.
 
 \section{Hidden Markov Models in Bioinformatics}
 
-% TODO
+Hidden Markov models are the most prominent \emph{generative model} in bioinformatics.
+The generative perspective means that the model defines a probability distribution over
+output sequences; new sequences can be scored by their likelihood and sequences
+can be generated that are statistically similar to the training sequences.
+HMMs are well suited to protein and DNA sequences, which are discrete.
+
+\textbf{Gene prediction.}
+HMMs identify exons and introns along a genomic sequence.
+The tool GENSCAN achieves a base-pair specificity of 50\%–80\%.
+
+\textbf{Profile HMMs.}
+A profile HMM stores a \emph{multiple sequence alignment} in a model;
+new sequences are scored by their likelihood under the profile.
+When building a profile HMM from unaligned sequences, training can get stuck in local
+maxima; \emph{deterministic annealing} (used in HMMER) avoids this.
+Standard software packages: HMMER and SAM.
+The PFAM protein family database is built entirely on profile HMMs.
+
+Profile HMMs have inherent limitations:
+\begin{itemize}
+  \item Cannot discover long-range dependencies.
+  \item Cannot handle real-valued inputs (discrete alphabet only).
+  \item Cannot detect higher-order correlations between positions.
+  \item Cannot use a negative training set (only model what sequences look like, not what they are not).
+\end{itemize}
+
+\textbf{Other applications.}
+Remote homology detection, sequence scoring, HMMs combined with phylogenetic trees,
+and family databases (PFAM).
 
 \section{Hidden Markov Model Basics}
 
-% TODO
+An HMM is a graph of connected hidden states.
+The hidden state at time $t$ (sequence position $t$) is $u_t \in \{1,\ldots,S\}$.
+Each state produces an observation according to a probabilistic output distribution.
+The model evolves by jumping to another state or staying in the current state at each step.
+The set of all possible state sequences can be visualised as a trellis: $S$ rows (states)
+and $T$ columns (time steps), with each left-to-right path corresponding to one possible
+hidden sequence.
+
+\begin{defbox}[title={HMM Parameters}]
+\begin{itemize}
+  \item \textbf{Start probability:} $p_S(u_1)$ — probability of being in state $u_1$ at position 1.
+  \item \textbf{Transition probability:} $p(u_t \mid u_{t-1})$ — probability of transitioning
+        from state $u_{t-1}$ to state $u_t$.
+  \item \textbf{Emission probability:} $p(x_t \mid u_t)$ — probability of emitting observation $x_t$
+        from state $u_t$.
+\end{itemize}
+\textbf{Markov assumption:} the next state depends only on the current state (first-order).
+Higher-order HMMs condition on more history, e.g.\ second-order: $p(u_t \mid u_{t-1}, u_{t-2})$.
+\end{defbox}
+
+The probability of a hidden state sequence $u^T = (u_1, u_2, \ldots, u_T)$ of length $T$ is:
+\begin{equation}
+  p(u^T) = p_S(u_1) \prod_{t=2}^{T} p(u_t \mid u_{t-1}).
+\end{equation}
+
+The joint probability of a state sequence and an observation sequence $x^T = (x_1,\ldots,x_T)$ is:
+\begin{equation}
+  p(x^T, u^T) = p_S(u_1)\, p(x_1 \mid u_1) \prod_{t=2}^{T} p(u_t \mid u_{t-1})\, p(x_t \mid u_t).
+\end{equation}
+
+\begin{intbox}
+A simple two-state HMM has states \emph{on} ($u=1$) and \emph{off} ($u=0$) with
+self-loops (staying in the current state) and cross-transitions. Each state emits
+a characteristic output distribution. The trellis picture makes clear that computing
+$p(x^T)$ by summing over all $S^T$ paths is exponential — the forward algorithm
+provides an efficient dynamic-programming solution.
+\end{intbox}
 
 \section{Expectation Maximization for HMM: Baum-Welch Algorithm}
 

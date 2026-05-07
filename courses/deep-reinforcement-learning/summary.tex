@@ -607,17 +607,25 @@ move uniquely determines the distribution over future boards.
 Only tracking one piece's position would \emph{not} be Markov, since the hidden
 pieces still influence legal moves.
 
-\medskip
-\textbf{Example: Cleaning Robot.}
-Consider a robot vacuum with two battery states $\Sset = \{\texttt{high},
-\texttt{low}\}$.
-From \texttt{high} it can \texttt{wait} or \texttt{search}; from \texttt{low} it can
-additionally \texttt{recharge} (deterministically returns to \texttt{high}, reward 0).
-Searching yields higher expected reward than waiting
-($r_{\texttt{search}} > r_{\texttt{wait}}$) but may drain the battery, and running
-out of charge gives reward $-3$.
-The stochastic transition probabilities (parameterized by $\alpha, \beta \in (0,1)$)
-define a small finite MDP --- a concrete instance of the abstract framework above.
+\begin{exbox}[title={A Cleaning Robot as a tiny MDP}]
+The classic toy example.
+A robot vacuum has two battery states $\Sset = \{\texttt{high}, \texttt{low}\}$.
+From \texttt{high} it can \texttt{wait} (sit still, low reward, battery unchanged) or
+\texttt{search} (clean the room, high reward, but might drain to \texttt{low}).
+From \texttt{low} it can again \texttt{wait} or \texttt{search}, but now \texttt{search}
+risks running out of charge entirely --- which costs a big penalty (someone has to
+rescue the robot) and resets it to \texttt{high}. From \texttt{low} it can also
+\texttt{recharge}: deterministic transition back to \texttt{high}, zero reward.
+
+Concretely: $r_{\texttt{search}} > r_{\texttt{wait}} > 0$, running out gives reward $-3$,
+and stochastic transition probabilities $\alpha, \beta \in (0,1)$ control how often
+searching drains the battery.
+
+Tiny as it is, the example already contains every piece of the MDP framework: a finite
+state space, a state-dependent action set ($\texttt{recharge}$ only available in
+\texttt{low}), stochastic transitions, and a reward function. Once you can write the
+problem down like this, you can apply any of the algorithms in the rest of this course.
+\end{exbox}
 
 \section{Goals and Returns}
 
@@ -803,62 +811,97 @@ Pure greedy can suffer linear regret if it commits early to a suboptimal arm.
 
 \subsection{Algorithms}
 
-Bandit algorithms split into two families.
-\textbf{Value-based} methods maintain action-value estimates $Q_t(a)$ and derive a
-policy from them.
-\textbf{Policy-based} methods maintain action preferences directly.
+Bandit algorithms split into two families. \textbf{Value-based} methods estimate
+$Q_t(a)$ and derive a policy from those estimates. \textbf{Policy-based} methods skip
+estimation and tune action preferences directly. Below, we walk up the value-based
+ladder from naive to clever, then look at the policy-based alternative.
 
-\medskip
-\textbf{Greedy.}
-$A_t \in \argmax_a Q_t(a)$.
-Pure exploitation: always selects the arm with the highest current estimate.
-Achieves no exploration and can converge to a suboptimal arm if early samples are
-misleading.
+\paragraph{Greedy --- the cautionary tale.}
+$A_t \in \argmax_a Q_t(a)$. Pure exploitation: always pick the arm with the highest
+current estimate. Trivial to implement, and almost guaranteed to fail.
+A typical failure mode: the truly best arm gets unlucky on its first pull, drops to
+the bottom of the leaderboard, and never gets tried again --- because greedy never
+revisits an arm it thinks is bad. The agent locks in on whichever arm happened to
+look good early. Linear regret.
 
-\medskip
-\textbf{$\varepsilon$-Greedy.}
+\paragraph{$\varepsilon$-greedy --- a constant trickle of exploration.}
+The simplest fix: most of the time act greedily, but with probability $\varepsilon$
+pick uniformly at random. Now every arm gets sampled forever, so the estimates
+eventually concentrate on their true values.
 
 \begin{defbox}[title={$\varepsilon$-Greedy Action Selection}]
-With probability $1-\varepsilon$ select the greedy action
-$A_t \in \argmax_a Q_t(a)$.
-With probability $\varepsilon$ select uniformly at random from $\{1,\dots,k\}$.
+\[
+  A_t = \begin{cases}
+    \argmax_a Q_t(a), & \text{with probability } 1 - \varepsilon, \\
+    \text{uniform random from } \{1, \dots, k\}, & \text{with probability } \varepsilon.
+  \end{cases}
+\]
 \end{defbox}
 
-A fixed $\varepsilon > 0$ ensures ongoing exploration but wastes a constant fraction of
-steps on random actions indefinitely.
-\textbf{GLIE} schedules (Greedy in the Limit with Infinite Exploration,
-e.g.\ $\varepsilon_k = 1/k$) decay $\varepsilon \to 0$ while still exploring infinitely
-often --- meeting the conditions required for convergence guarantees.
+A fixed $\varepsilon > 0$ guarantees infinite exploration --- but also wastes a constant
+fraction of pulls on random actions forever, even after we have figured out which arm
+is best. The compromise is a \textbf{GLIE} schedule (Greedy in the Limit with Infinite
+Exploration), like $\varepsilon_k = 1/k$, that decays exploration over time while still
+sampling each arm infinitely often. Sub-linear regret, asymptotic convergence.
 
-\medskip
-\textbf{Upper Confidence Bound (UCB).}
+\paragraph{UCB --- explore the arms you are unsure about, not the ones you have written off.}
+$\varepsilon$-greedy treats all non-greedy arms equally. That is wasteful: an arm we
+have pulled $1{,}000$ times and know is bad gets the same exploration probability as
+one we have pulled twice and barely understand.
+UCB fixes this by adding an explicit \emph{uncertainty bonus} to each arm:
 
 \begin{thmbox}[title={UCB Action Selection}]
 \[
-  A_t \in \argmax_{a} \left[Q_t(a) + c\sqrt{\frac{\ln t}{N_t(a)}}\right],
+  A_t \in \argmax_{a} \left[\, Q_t(a) + c\, \sqrt{\frac{\ln t}{N_t(a)}}\, \right],
 \]
-where $c > 0$ controls the exploration bonus.
-Each arm must be tried at least once before applying the formula.
+where $c > 0$ controls how aggressively we explore.
+Pull each arm at least once before applying the formula (the bonus is undefined for $N_t(a) = 0$).
 \end{thmbox}
 
-The bonus $c\sqrt{\ln t / N_t(a)}$ is large for arms with few observations (high
-uncertainty) and shrinks as data accumulate.
-UCB explores \emph{selectively} --- prioritizing arms where evidence is weak --- unlike
-$\varepsilon$-greedy which explores uniformly regardless of confidence.
-If arm $a$ is neglected, $N_t(a)$ stays constant while $\ln t$ grows, so the bonus
-eventually makes $a$ worth revisiting.
-In short: \emph{exploit what you are confident is good; explore what you are unsure about}.
+The bonus $c\sqrt{\ln t / N_t(a)}$ shrinks as $N_t(a)$ grows, but never quite to zero
+--- $\ln t$ keeps inching up, so even well-understood arms occasionally get pulled
+again.
+The $\sqrt{\ln t / N_t(a)}$ shape is not arbitrary: it comes from a confidence
+interval on the empirical mean (Hoeffding's inequality), so the bonus is roughly
+``a 95\%-confidence upper bound on this arm's true value, given the data so far.''
+Acting on the upper bound is the principle of \textbf{optimism in the face of
+uncertainty}: when in doubt, act as if the unknown thing might be great --- because
+either it \emph{is} great (and you collect the reward), or it isn't (and you learn
+that and stop exploring it).
 
-\medskip
-\textbf{Thompson Sampling.}
-A Bayesian approach: maintain a \emph{posterior distribution} over each $q(a)$
-(e.g.\ a Beta distribution for Bernoulli rewards).
-At each step, draw one sample from each arm's posterior and select the arm with the
-highest sample.
-Arms with high posterior variance are sampled frequently; as evidence accumulates the
-posterior concentrates around the true value and exploitation dominates.
-Thompson Sampling achieves asymptotically optimal regret and often outperforms UCB
-in practice.
+\begin{intbox}[title={Why UCB beats $\varepsilon$-greedy}]
+$\varepsilon$-greedy: ``with 10\% probability, do something random.''
+UCB: ``with 100\% probability, do whatever has the highest value-plus-uncertainty.''
+
+The key difference: UCB knows \emph{which} arms it is uncertain about. It will keep
+sampling an arm that might be best, but it won't waste pulls on arms it has
+established are clearly bad. $\varepsilon$-greedy explores blindly; UCB explores
+strategically.
+\end{intbox}
+
+\paragraph{Thompson Sampling --- gambling with posteriors.}
+A Bayesian alternative: maintain a posterior distribution over each $q(a)$ instead of
+a point estimate. At each step, \emph{sample} one $\tilde q(a)$ from each arm's
+posterior, then act greedily on the samples.
+\begin{itemize}
+  \item Arms with high posterior variance (we are uncertain about them) produce widely
+    varying samples, sometimes large enough to win the argmax. Those arms get pulled.
+  \item Arms whose posterior is sharply peaked around a low value almost never produce
+    a high sample, so they are ignored.
+\end{itemize}
+
+\begin{intbox}[title={UCB vs.\ Thompson Sampling}]
+Both methods are uncertainty-aware, just with different decision rules.
+\textbf{UCB} is deterministic and optimistic: ``I'll pick the arm whose \emph{best
+plausible} value is highest.''
+\textbf{Thompson} is probabilistic and Bayesian: ``I'll pretend one specific value
+function is true (sampled from my beliefs) and act greedily on that.''
+Both achieve near-optimal regret. Thompson tends to outperform UCB on real problems
+because its randomization is naturally calibrated to the posterior, while UCB's
+$c\sqrt{\ln t / N_t}$ bonus is just a worst-case bound.
+This is the same UCB-vs.-Thompson choice we will see again in Chapter~6 when discussing
+deep-RL exploration.
+\end{intbox}
 
 \medskip
 \textbf{Gradient Bandits (policy-based).}
@@ -913,42 +956,71 @@ Dynamic Programming, Monte Carlo, and Temporal-Difference learning.
 
 \section{RL Taxonomy}
 
-Before diving in, it helps to know where different algorithms sit in the broader
-landscape. RL algorithms can be characterized along three orthogonal axes.
+Before diving into algorithms, it helps to have a mental map of where each one sits.
+The RL landscape can be carved up along three roughly independent axes: \emph{what}
+the agent learns, \emph{whose data} it learns from, and \emph{whether it has a model}
+of the environment.
 
-The first axis is \textbf{what gets learned}.
-\emph{Value-based} methods maintain an explicit value function and derive the
-policy implicitly (e.g.\ take the action with the highest Q-value).
-\emph{Policy-based} methods directly parameterize and optimize the policy without
-an intermediate value function.
-\emph{Actor-critic} methods maintain both: a policy (actor) that decides what
-to do, and a value function (critic) that evaluates how good the current situation is.
+\paragraph{What gets learned.}
+A method is \textbf{value-based} if it learns a value function and reads the policy
+off it (``in this state, the action with the highest Q-value is best, so do that'').
+\textbf{Policy-based} methods skip the value function and directly tune a policy;
+they answer ``what should I do?'' without ever asking ``how good is this state?''
+\textbf{Actor-critic} methods do both --- they keep a policy (the actor that picks
+actions) and a value function (the critic that judges them), and use the critic's
+opinions to improve the actor.
 
-The second axis is \textbf{which data are used}.
-\emph{On-policy} methods learn about the same policy that generates the data ---
-evaluation and behavior are the same policy.
-\emph{Off-policy} methods separate these two roles: the \emph{target policy} $\pi$
-is what we want to learn about, while the \emph{behavior policy} $\mu$ generates
-the actual data.
-This separation is powerful: it allows reusing data from old policies, learning
-from human demonstrations, or learning a greedy policy while behaving exploratorily.
-\emph{Offline} methods go even further and learn from a fixed pre-collected
-dataset with no environment interaction at all.
+\paragraph{Whose data.}
+\textbf{On-policy} methods are puritans: the policy they evaluate has to be the policy
+that collected the data. As soon as you change the policy, the old data is officially
+stale.
+\textbf{Off-policy} methods are pragmatists: the \emph{target} policy $\pi$ (what we
+want to learn) and the \emph{behavior} policy $\mu$ (what actually collected the data)
+can be different. That gap is what lets us reuse old experience, learn from human
+demonstrations, or learn a greedy policy while still exploring.
+\textbf{Offline} methods go to the extreme: a fixed dataset, no environment interaction
+at all.
 
-The third axis is \textbf{whether a model is available}.
-\emph{Model-based} methods use or learn a model of the environment dynamics
-$p(s',r\mid s,a)$ and can plan ahead by simulating transitions.
-\emph{Model-free} methods estimate value functions or policies directly from
-experience, never consulting a model.
+\paragraph{Model or no model.}
+\textbf{Model-based} methods use a model of the dynamics $p(s', r \mid s, a)$ ---
+either given to them or learned --- and can plan by simulating transitions.
+\textbf{Model-free} methods just learn from interaction, never bothering to predict
+what the environment will do next.
 
-These three axes are independent --- DQN is value-based, off-policy, and
-model-free; AlphaZero is actor-critic, on-policy, and model-based.
+\begin{intbox}[title={Composing the axes}]
+The three axes are largely independent, so any combination is possible:
+\begin{itemize}
+  \item \textbf{DQN}: value-based, off-policy, model-free.
+  \item \textbf{REINFORCE}: policy-based, on-policy, model-free.
+  \item \textbf{PPO / SAC}: actor-critic, on/off-policy, model-free.
+  \item \textbf{AlphaZero}: actor-critic, on-policy, model-based (it has a perfect
+    chess simulator and uses it to plan).
+\end{itemize}
+This chapter lives in the value-based + model-free corner of the cube.
+\end{intbox}
 
 \section{Bellman Equations}
 
 The Bellman equations are the mathematical backbone of tabular RL.
 They express a simple recursive insight: the value of being in a state equals
 the immediate reward you expect plus the discounted value of where you end up.
+This sounds almost trivial, but it is the engine that drives almost every algorithm
+in this chapter.
+
+\begin{intbox}[title={Where the recursion comes from}]
+Take the definition of the return, $G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \cdots$,
+and pull out the first reward:
+\[
+  G_t = R_{t+1} + \gamma\, \underbrace{(R_{t+2} + \gamma R_{t+3} + \cdots)}_{= G_{t+1}}.
+\]
+Take expectations on both sides given $S_t = s$ and a policy $\pi$, and the value
+function ``unrolls itself by one step'':
+\[
+  \vpi(s) = \E_\pi\!\bigl[\, R_{t+1} + \gamma\, \vpi(S_{t+1})\, \mid S_t = s\, \bigr].
+\]
+That is the entire content of the Bellman expectation equation. Everything below
+is just spelling out the expectation as a sum over actions and next states.
+\end{intbox}
 
 \begin{thmbox}[title={Bellman Expectation and Optimality Equations}]
 For any policy $\pi$, the value functions satisfy the \emph{expectation equations}:
@@ -963,18 +1035,27 @@ The \emph{optimal} value functions satisfy the \emph{optimality equations}:
 \end{align*}
 \end{thmbox}
 
-The expectation equations are \emph{linear} in the value function --- in
-principle, you could solve them as a linear system in $O(|\Sset|^3)$ operations.
-For anything but tiny MDPs, that is computationally prohibitive, so iterative
-methods are needed.
+The expectation equations are \emph{linear} in the value function --- in principle
+you could solve them as a linear system in $O(|\Sset|^3)$ operations.
+For anything but tiny MDPs that is computationally prohibitive, so iterative methods
+take over.
 
-The optimality equations look similar but replace the policy-weighted average
-with a $\max$.
-That $\max$ makes them nonlinear, so there is no closed-form solution.
-The key practical insight is this: once you have $\qstar$, the optimal policy
-is free --- just be greedy, $\pi^*(s) = \argmax_a\,\qstar(s,a)$.
-Using $\vstar$ instead requires the model to compute the $\argmax$, whereas
-$\qstar$ gives you the optimal action directly without any model.
+The optimality equations look almost the same but replace the policy-weighted
+average with a $\max$.
+That $\max$ makes them nonlinear, so there is no closed-form solution --- but it also
+gives them a beautiful interpretation: the optimal value of a state is what you get
+if you act greedily forever after this step.
+
+\begin{intbox}[title={Why $\qstar$ is more useful than $\vstar$}]
+Once you have $\qstar$, the optimal policy is free: $\pi^*(s) = \argmax_a \qstar(s, a)$.
+Just look up which action has the highest action-value and take it.
+
+If you only have $\vstar$, you have to compute
+$\argmax_a [\, r(s,a) + \gamma \sum_{s'} p(s' \mid s, a)\, \vstar(s')\, ]$ ---
+which requires the environment model.
+This is why action-value methods are so attractive in model-free settings:
+$\qstar$ tells you what to do without consulting any dynamics.
+\end{intbox}
 
 \section{Planning with Dynamic Programming}
 
@@ -1024,15 +1105,39 @@ the $\max$ rather than the policy-weighted sum:
     + \gamma\sum_{s'} p(s'\mid s,a)\,V_k(s')\right].
 \]
 This is equivalent to interleaving one step of evaluation with one step of
-improvement.
-Value iteration converges asymptotically (no finite termination guarantee), but
-is typically more efficient per iteration than running full policy evaluation.
+improvement: every iteration both evaluates and improves.
+Value iteration converges asymptotically (no finite termination guarantee) but is
+typically more efficient per iteration than running full policy evaluation.
+
+\begin{exbox}[title={Value iteration unrolling, by hand}]
+Imagine a tiny three-state corridor $s_1 - s_2 - s_3$, with $s_3$ a terminal goal
+giving reward $+1$ and $s_1, s_2$ giving reward $0$. Actions move deterministically
+left or right. Discount $\gamma = 0.9$. Initialize $V_0 = (0, 0, 0)$.
+
+\textbf{Iteration 1.} For each non-terminal state, take the best action.
+\begin{itemize}
+  \item $V_1(s_2) = \max\{\, 0 + 0.9 \cdot V_0(s_1),\; 1 + 0.9 \cdot V_0(s_3)\, \} = \mathbf{1}$ (go right).
+  \item $V_1(s_1) = \max\{\, 0 + 0.9 \cdot V_0(s_2),\; \dots\, \} = 0$.
+\end{itemize}
+\textbf{Iteration 2.}
+\begin{itemize}
+  \item $V_2(s_2) = 1 + 0.9 \cdot 0 = 1$ (still optimal to step right and collect).
+  \item $V_2(s_1) = 0 + 0.9 \cdot 1 = 0.9$ (one step toward $s_2$, then collect).
+\end{itemize}
+The reward propagates one step backward per iteration --- after $k$ iterations every
+state within $k$ steps of the goal has correct value. The greedy policy ``always
+move toward $s_3$'' is recovered immediately.
+
+That is the entire algorithm: forward Bellman backups, reward seeping backward through
+the state graph one step at a time, until the value function stops changing.
+\end{exbox}
 
 \begin{intbox}[title={Limitation of DP}]
 Both algorithms require knowing $p(s',r\mid s,a)$ for every transition.
 In most real-world settings this model is unavailable.
-Model-free methods, covered next, replace the model-based expectation
-with samples drawn from the environment.
+Model-free methods, covered next, replace the model-based expectation with samples
+drawn from the environment --- giving up exactness for the ability to learn from
+raw experience.
 \end{intbox}
 
 \section{Model-Free Prediction}
@@ -1151,55 +1256,127 @@ rather than sampling it.
 \subsection{Q-learning: off-policy TD control}
 
 Q-learning breaks the link between behavior and learning target.
-Regardless of which action the agent \emph{actually} takes next, the update
-uses the \emph{greedy} action at the next state:
+Regardless of which action the agent \emph{actually} takes next, the update uses
+the \emph{greedy} action at the next state:
 \[
   Q(S_t,A_t) \leftarrow Q(S_t,A_t)
   + \alpha\!\left[R_{t+1} + \gamma\max_{a'} Q(S_{t+1},a') - Q(S_t,A_t)\right].
 \]
-This is a sample-based approximation of the Bellman optimality equation for
-$\qstar$, and under standard conditions $Q$ converges to $\qstar$ regardless
-of the behavior policy (which just needs to ensure all state-action pairs get
-visited).
+This is a sample-based approximation of the Bellman optimality equation for $\qstar$,
+and under standard conditions $Q$ converges to $\qstar$ regardless of the behavior
+policy --- the behavior just needs to ensure every state-action pair gets visited.
 No importance-sampling correction is needed because the $\max$ target does not
 depend on the behavior policy at all.
 
 In one sentence: SARSA evaluates what the agent \emph{actually does}; Q-learning
 evaluates what the agent \emph{would do if it were greedy}.
 
+\begin{exbox}[title={Cliff Walking: SARSA vs.\ Q-learning}]
+A classic gridworld where the bottom row is a cliff: stepping into it gives a big
+negative reward and resets the agent to the start. The shortest path runs along the
+edge of the cliff; a longer, safer path goes through the top of the grid.
+
+Train both algorithms with $\varepsilon$-greedy exploration ($\varepsilon = 0.1$).
+\begin{itemize}
+  \item \textbf{Q-learning} learns the \emph{optimal} (cliff-edge) policy: its target
+    uses $\max_{a'}$, ignoring the fact that during exploration the agent will
+    occasionally take a random action --- and falling off the cliff while exploring
+    along the edge hurts.
+    Q-learning's $Q$-values reflect the value of \emph{playing perfectly}, even when
+    the actual behavior is noisy.
+  \item \textbf{SARSA} learns the \emph{safe} policy: its target uses the
+    next action $A_{t+1}$ that the policy actually picks --- which, with $\varepsilon$
+    chance, is random. Walking the cliff edge with random actions costs a lot in
+    expectation, so SARSA's $Q$-values penalize it and the policy detours through the
+    safer top row.
+\end{itemize}
+The lesson: SARSA optimizes the policy you're currently using (including its noise);
+Q-learning optimizes the greedy policy you'd play \emph{if} you stopped exploring.
+Once $\varepsilon$ is annealed to zero, both converge to the same optimal solution ---
+but their behavior during training is different in a way that actually matters in
+risky environments.
+\end{exbox}
+
 \subsection{Maximization bias and Double Q-learning}
 
 There is a subtle problem with the $\max$ in Q-learning.
-When $Q$ values are estimated with noise (as they always are from finite data),
+When $Q$-values are estimated with noise --- as they always are from finite data ---
 taking the maximum over noisy estimates produces a value that is systematically
-\emph{too high} --- the noise pushes the max upward.
+\emph{too high}. The noise pushes the max upward.
 This is called \textbf{maximization bias}.
+
+\begin{intbox}[title={Why max gets it wrong (concrete numbers)}]
+Suppose three actions in some state really have value $0$, but each $Q$-estimate
+is true value plus noise $\Normal(0, 1)$. So on any given update:
+\begin{itemize}
+  \item $Q(s, a_1), Q(s, a_2), Q(s, a_3)$ are all centered at zero on average.
+  \item $\E[\max_a Q(s, a)] \approx 0.85 > 0$ --- the maximum of three independent
+    standard Gaussians is biased high.
+\end{itemize}
+$Q$-learning's TD target uses this maximum, so it inflates value estimates by
+roughly $0.85$. The error compounds: inflated values get bootstrapped into
+neighboring states, which inflates them too, which inflates the original state more
+on the next update, and so on.
+The bias is worst exactly when it hurts most --- early in training, when noise is
+high and the agent commits to whichever action got lucky on the first few samples.
+\end{intbox}
+
+The fix is to \emph{decouple action selection from action evaluation}, so the noise
+in selection doesn't propagate into the evaluated value.
 
 \begin{defbox}[title={Double Q-Learning}]
 Maintain two independent estimates $Q^A$ and $Q^B$.
 Use one to \emph{select} the action and the other to \emph{evaluate} it:
-\begin{align*}
-  Q^A(S_t,A_t) &\leftarrow Q^A(S_t,A_t)
-    + \alpha\!\left[R_{t+1} + \gamma Q^B\!\left(S_{t+1},\argmax_a Q^A(S_{t+1},a)\right) - Q^A(S_t,A_t)\right].
-\end{align*}
-At each step, randomly choose which estimate to update; the other plays the
+\[
+  Q^A(S_t,A_t) \leftarrow Q^A(S_t,A_t)
+    + \alpha\!\left[R_{t+1} + \gamma\, Q^B\!\bigl(S_{t+1},\, \argmax_a Q^A(S_{t+1},a)\bigr) - Q^A(S_t,A_t)\right].
+\]
+At each step, flip a coin and update either $Q^A$ or $Q^B$; the other plays the
 evaluation role.
 Decoupling selection from evaluation breaks the positive correlation that drives
-the bias upward.
+the bias upward: $Q^A$ might overestimate $a_1$, but $Q^B$'s independent estimate
+of $a_1$ is just as likely to be too low.
 \end{defbox}
 
 \subsection{Off-policy learning and importance sampling}
 
-When using MC or SARSA-style updates off-policy --- learning about $\pi$ from
-data generated by $\mu$ --- the mismatch in action probabilities must be
-corrected.
-The \textbf{importance sampling ratio} $\rho_t = \pi(A_t\mid S_t)/\mu(A_t\mid S_t)$
-reweights each transition to look as if it came from $\pi$.
-For full trajectories the ratio is a product over the whole path.
-Off-policy MC multiplies the return by the full trajectory ratio $\rho_t^T$;
-off-policy SARSA uses only a single-step ratio $\rho_{t+1}$.
-Q-learning sidesteps the whole issue because its $\max$ target is already
-policy-agnostic.
+In off-policy learning, the agent collects data with a \emph{behavior policy} $\mu$
+(maybe $\varepsilon$-greedy, or human demonstrations, or a previous version of itself)
+but wants to learn about a different \emph{target policy} $\pi$ (maybe the greedy one).
+The catch is that any expectation we compute from $\mu$-collected data is, by default,
+an expectation under $\mu$ --- not the $\pi$ we care about.
+
+\textbf{Importance sampling} corrects this distribution mismatch by reweighting each
+sample according to how likely it would be under the target policy:
+\[
+  \rho_t \;=\; \frac{\pi(A_t \mid S_t)}{\mu(A_t \mid S_t)}.
+\]
+A transition where $\pi$ would have taken this action much more often than $\mu$
+gets a large weight; one where $\pi$ would rarely have chosen this action gets a small
+weight.
+
+\begin{intbox}[title={Reading the importance ratio}]
+$\rho_t > 1$: ``the target would have done this more often than the behavior --- count
+this transition for more.''
+
+$\rho_t < 1$: ``the target would have done this less often --- count it for less.''
+
+$\rho_t = 0$: ``the target would never have done this --- ignore the transition.''
+\end{intbox}
+
+Different methods need different amounts of correction.
+\textbf{Off-policy MC} reweights the entire return by the product of ratios over the
+whole trajectory, $\rho_t \rho_{t+1} \cdots \rho_{T-1}$ --- one mismatch anywhere in
+the future contaminates the credit at $t$.
+\textbf{Off-policy SARSA} only needs a single-step ratio $\rho_{t+1}$, because the
+TD target only looks one step ahead.
+\textbf{Q-learning} doesn't need any importance correction: its $\max_{a'}$ target
+ignores which action the behavior policy actually took, so there is no mismatch to
+correct.
+This is one reason Q-learning is the standard off-policy method --- it avoids the
+high-variance ratio products that haunt MC-style off-policy learning. We will see
+the price of those products again in Chapter~5 when we look at off-policy policy
+gradients.
 
 
 % ==========================================================
@@ -1376,61 +1553,1585 @@ general-purpose deep RL at scale.
 
 \section{Beyond DQN: Key Extensions}
 
-In the years after DQN, six targeted improvements addressed its remaining
-weaknesses.
-\textbf{Rainbow} (Hessel et al., 2018) combines all six into one agent,
-reaching DQN's final performance in $7\times$ fewer environment steps.
+DQN was a breakthrough but not the end of the story --- six targeted improvements
+plug six different weaknesses, and \textbf{Rainbow} (Hessel et al., 2018) combines all
+of them into one agent that reaches DQN's final performance in roughly $7\times$ fewer
+environment steps.
+The interesting thing about Rainbow is that no single ingredient is responsible for
+the gain --- ablating any one of them noticeably hurts. Each extension fixes a
+different bottleneck.
 
-\paragraph{Double DQN.}
-DQN's target uses the same frozen network to both \emph{select} the best action
-and \emph{evaluate} it --- the same maximization bias problem as tabular Q-learning.
-Double DQN decouples these: the online network selects,
-$a^* = \argmax_{a'}Q_\mathbf{w}(s',a')$, and the target network evaluates,
-$y = r + \gamma Q_{\mathbf{w}^-}(s', a^*)$.
+\paragraph{Double DQN --- fixing maximization bias.}
+DQN's target $y = r + \gamma \max_{a'} Q_{\mathbf{w}^-}(s', a')$ uses the \emph{same}
+frozen network to pick the best action and to evaluate its value. Whichever action
+got an inflated estimate from noise gets selected, and that inflated estimate is
+exactly the value used in the target. Same maximization bias as tabular Q-learning,
+just with a neural network making the noise.
+Double DQN decouples the two roles: the \emph{online} network selects the action,
+$a^* = \argmax_{a'} Q_\mathbf{w}(s', a')$, and the \emph{target} network evaluates it,
+$y = r + \gamma\, Q_{\mathbf{w}^-}(s', a^*)$.
+The two networks have correlated noise but not identical noise, so the worst of the
+upward bias is removed --- and DQN's notorious early-training overestimation largely
+disappears.
 
-\paragraph{Prioritized experience replay.}
-Uniform replay gives equal attention to all transitions, but not all are equally
-useful.
-Transitions with large TD error $|\delta_i|$ represent situations the network
-still gets wrong, so they should be replayed more often.
-Prioritized replay samples transition $i$ with probability proportional to
-$|\delta_i|^\alpha / \sum_k |\delta_k|^\alpha$, and corrects the resulting
-distributional bias with importance-sampling weights.
+\paragraph{Prioritized experience replay --- mining the buffer for surprises.}
+Uniform replay treats every transition the same. But some transitions are
+\emph{boring} --- the network already predicts them perfectly --- and some are
+\emph{informative} --- the network still gets them wrong.
+Sampling everything uniformly wastes most of the gradient budget on transitions the
+network already understands.
+Prioritized replay samples each transition $i$ with probability proportional to
+$|\delta_i|^\alpha / \sum_k |\delta_k|^\alpha$, where $\delta_i$ is the TD error
+(``how surprised was the network?''). Surprises get replayed more often. Because this
+biases the data distribution, an importance-sampling weight $w_i \propto (1/p_i)^\beta$
+corrects the resulting bias in the gradient. Result: faster learning, especially in
+sparse-reward Atari games where successful trajectories are rare.
 
-\paragraph{Dueling networks.}
-Every Q-value can be decomposed into two parts: how good is this
-\emph{state}, and how much \emph{better} is this action relative to the average?
-Formally, $Q(s,a) = V(s) + A(s,a) - \frac{1}{|\mathcal{A}|}\sum_{a'}A(s,a')$.
-A dueling network has a shared convolutional backbone that feeds into two
-separate heads (value and advantage).
-This is particularly useful when many actions have similar value: the value
-stream can still be trained from every transition, even when a specific action
-was not taken.
+\paragraph{Dueling networks --- separating ``where am I'' from ``what should I do''.}
+A Q-value bundles two questions into one number: how good is this state, and how
+much better is this action than typical?
+Sometimes the first question dominates (you're winning, every reasonable action
+keeps the lead) and sometimes the second does (the position is neutral, but one
+specific move wins). Mixing both into a single Q-head means the network spends
+capacity learning the same ``state value'' redundantly across all actions.
+A dueling architecture has a shared backbone that splits into two heads --- one for
+the state value $V(s)$ and one for the per-action advantage $A(s,a)$ --- and
+recombines them as $Q(s,a) = V(s) + A(s,a) - \tfrac{1}{|\mathcal{A}|}\sum_{a'} A(s,a')$.
+The mean-subtraction term enforces an identifiability constraint and avoids the
+two streams drifting in lockstep.
+The big practical win: the value head can still be trained from \emph{every}
+transition even when a particular action wasn't taken --- so generalization across
+states improves, especially when many actions have similar value.
 
-\paragraph{Multi-step returns.}
-Standard DQN uses a 1-step TD target.
-Replacing it with an $n$-step return
-$y_t^{(n)} = \sum_{k=0}^{n-1}\gamma^k R_{t+k+1} + \gamma^n\max_{a'}Q_{\mathbf{w}^-}(S_{t+n},a')$
-propagates reward signals faster through the network.
-Intermediate values like $n=3$ often work best.
+\paragraph{Multi-step returns --- propagating reward faster.}
+1-step TD ($n = 1$) is conservative: a reward at time $t$ takes one update to reach
+$t-1$, two to reach $t-2$, and so on. In sparse-reward games (where reward might be
+hundreds of steps away from the action that caused it) this is glacial.
+$n$-step returns $y_t^{(n)} = \sum_{k=0}^{n-1} \gamma^k R_{t+k+1} + \gamma^n \max_{a'} Q_{\mathbf{w}^-}(S_{t+n}, a')$
+collect $n$ actual rewards before bootstrapping, propagating credit $n$ steps in one
+go. The trade-off is variance (more random rewards summed in) and the fact that the
+target becomes slightly off-policy (the $n$-step rollout was generated by the old
+policy). Intermediate values like $n = 3$ to $5$ are usually a sweet spot.
 
-\paragraph{Distributional RL.}
-Standard Q-learning estimates $\E[G_t]$, but much information is lost by
-collapsing the return to a scalar.
-Distributional RL instead models the full \emph{distribution} of returns
-$Z(s,a)$, satisfying the distributional Bellman equation
-$Z(s,a) \overset{d}{=} R + \gamma Z(s',a')$.
-Training with cross-entropy loss on the return distribution provides a richer
-learning signal and leads to better representations.
+\paragraph{Distributional RL --- modeling the whole distribution, not just the mean.}
+Standard Q-learning learns $\E[G_t \mid s, a]$ --- a single scalar.
+But two actions can have the same expected return while one is consistently mediocre
+and the other is a high-variance gamble between disaster and triumph. The mean throws
+that away.
+Distributional RL learns the entire \emph{distribution} of returns $Z(s, a)$, satisfying
+the distributional Bellman equation $Z(s,a) \overset{d}{=} R + \gamma Z(s', a')$.
+The agent ends up modeling outcomes as probability distributions over a set of
+``atoms'' (e.g.\ $51$ discrete return levels, hence the original method's name C51).
+Empirically, training with a cross-entropy loss on these distributions produces much
+richer representations --- and improves performance even though we still extract a
+deterministic policy by taking the mean's argmax.
 
-\paragraph{Noisy Networks.}
-$\varepsilon$-greedy exploration adds the same random behavior in every state,
-ignoring the agent's uncertainty.
+\paragraph{Noisy Networks --- learning to explore.}
+$\varepsilon$-greedy is uniform: the same noise level everywhere, regardless of
+whether the agent is confident or confused. That is a bad use of exploration budget.
 Noisy Networks replace deterministic linear layers with stochastic ones:
-$y = (\mu^w + \sigma^w\!\odot\varepsilon^w)x + (\mu^b + \sigma^b\!\odot\varepsilon^b)$,
-where the noise parameters $\sigma^w, \sigma^b$ are \emph{learned}.
-The network automatically reduces noise in states where it is confident and
-maintains higher noise where it is uncertain, providing state-dependent exploration
-without a hand-tuned $\varepsilon$.
+\[
+  y = (\mu^w + \sigma^w \odot \varepsilon^w)\, x + (\mu^b + \sigma^b \odot \varepsilon^b),
+  \quad \varepsilon \sim \Normal(0, I).
+\]
+The noise scales $\sigma^w, \sigma^b$ are \emph{learned} alongside the means. Where
+the network is confident it shrinks $\sigma$ toward zero (less exploration); where it
+is uncertain it keeps $\sigma$ large (more exploration).
+This produces \emph{state-dependent} exploration without a hand-tuned $\varepsilon$
+schedule --- and on hard-exploration Atari games it makes a real difference.
+
+\begin{intbox}[title={Why six fixes, not one?}]
+Each Rainbow ingredient targets a separate failure mode of vanilla DQN: maximization
+bias (Double DQN), inefficient sampling (prioritized replay), wasted capacity in the
+value head (dueling), slow credit propagation (multi-step), information loss in the
+mean (distributional), and dumb exploration (noisy nets).
+None of these is a magic bullet by itself. Together they cover most of the obvious
+ways DQN leaks performance, which is why Rainbow's gain is greater than the sum of
+the individual contributions.
+\end{intbox}
+
+
+% ==========================================================
+%  CHAPTER 4 — POLICY-BASED METHODS
+% ==========================================================
+\chapter{Policy-Based Methods}
+
+So far every method in this course has learned a value function and then derived a
+policy from it --- usually $\varepsilon$-greedy w.r.t.\ a learned $q(s,a)$.
+This chapter takes the opposite route: we \emph{directly parameterize the policy
+itself} and learn its parameters by gradient ascent on the expected return.
+A value function may still appear (as a baseline, or as a critic) but it is no
+longer the primary object of learning.
+
+The motivation for this shift is concrete: there are tasks where value-based RL is a
+poor fit, and policy-based methods handle them naturally.
+
+\section{Why Bother With Policies Directly?}
+
+Recall the three families of RL methods:
+\begin{itemize}
+  \item \textbf{Value-based:} learn $q(s,a)$, derive $\pi(s) = \argmax_a q(s,a)$.
+  \item \textbf{Policy-based:} learn $\pi_\theta(a \mid s)$ directly --- no value function.
+  \item \textbf{Actor-critic:} learn both --- a parameterized policy (the actor) and a
+    value function (the critic) that helps train the actor.
+\end{itemize}
+
+Value-based methods are great when actions are discrete and the optimal policy is
+essentially deterministic. They run into trouble in two specific situations.
+
+\subsection{Continuous action spaces}
+
+Many real control problems have \emph{continuous} actions: a robot arm's joint
+torques live in $\R^d$, a car's steering and throttle are real numbers, locomotion
+involves dozens of simultaneous motor commands.
+Deriving a greedy policy in these settings means solving
+\[
+  a^*(s) \;=\; \argmax_{a \in \R^d}\, q(s,a)
+\]
+at every step.
+For a handful of discrete actions this is trivial --- compute $q(s,a)$ for each one
+and pick the largest.
+In a continuous space it is a global optimization problem inside the inner loop of
+training.
+There is no easy way to do it.
+
+A parameterized policy sidesteps the issue entirely: instead of finding the argmax
+of a learned function, we just \emph{output} the action (or a distribution over
+actions) directly from a network.
+
+\subsection{Deterministic policies are not always enough}
+
+Value-based control with greedy improvement converges to a \emph{deterministic}
+policy --- one action per state.
+For most problems, that is fine. For some, it is fatal.
+
+\begin{exbox}[title={Rock--Paper--Scissors}]
+The optimal policy in rock-paper-scissors against a savvy opponent is to play each
+move with probability $\tfrac{1}{3}$ --- the uniform Nash equilibrium.
+Any deterministic policy is trivially exploitable: play rock every time and your
+opponent will eventually figure out to play paper.
+Value-based RL cannot represent the optimal policy here, because greedy improvement
+always collapses to a single action.
+\end{exbox}
+
+\begin{exbox}[title={Aliased Gridworld}]
+A 1D gridworld where the agent's state representation is the binary feature vector
+\[
+  \phi(s) = [\text{wall up},\, \text{wall right},\, \text{wall down},\, \text{wall left}].
+\]
+The treasure sits in the middle, between two skull squares.
+The two ``corridor'' states on either side of the treasure look identical to the
+agent: same walls in the same directions. They are \emph{aliased}.
+
+Any deterministic policy on this aliased feature must take the same action in both
+corridor states. If it picks ``move left,'' the agent gets stuck on the left side;
+``move right'' and it gets stuck on the right. Either way the agent never reliably
+finds the treasure.
+
+A \emph{stochastic} policy that flips a coin in those aliased states ($\pi(\text{left}) =
+\pi(\text{right}) = 0.5$) reaches the treasure quickly with high probability,
+because the random walk is short and bounded. Direct policy learning can represent
+exactly this kind of policy.
+\end{exbox}
+
+\subsection{Interlude: POMDPs}
+
+The aliased gridworld is a small instance of a much bigger phenomenon.
+Up to now we have assumed the agent observes the true state $S_t$ --- a
+\textbf{fully observable MDP}.
+In practice the agent often sees only a partial \textbf{observation}
+$O_t \sim p(o \mid S_t)$, with the actual state $S_t$ hidden.
+This is a \textbf{Partially Observable MDP (POMDP)}.
+
+Once observations no longer contain the full state, the optimal action may depend
+on history (memory) or randomization (a stochastic policy).
+This course mostly ignores memory --- but allowing stochastic policies is essentially
+free with policy-based methods, and it solves a real subset of POMDP problems.
+
+\begin{intbox}
+The two reasons to want a stochastic policy are subtly different:
+\begin{itemize}
+  \item \textbf{Game-theoretic:} the optimal policy is genuinely mixed (rock-paper-scissors).
+  \item \textbf{Aliasing:} our state representation is incomplete, so randomization is
+    a cheap proxy for the missing information.
+\end{itemize}
+Both are out of reach for value-based control. Both are easy for policy-based methods.
+\end{intbox}
+
+\subsection{Trade-offs}
+
+Policy-based methods are not strictly better than value-based ones --- they buy
+flexibility at a cost.
+
+\paragraph{Advantages.}
+They optimize the true objective (expected return) directly, with no value-function
+intermediary.
+They handle continuous actions naturally.
+They can represent stochastic policies.
+Sometimes the policy is much simpler than the value function (think ``always go left''
+versus the maze of values that justifies it), and learning the simpler thing is
+easier.
+The choice of policy class can also encode prior knowledge about the problem's structure.
+
+\paragraph{Disadvantages.}
+They typically have higher \emph{variance} than value-based methods --- which we'll
+see directly when we look at the policy gradient.
+They can be less sample-efficient, get stuck in local optima, and the knowledge they
+learn tends to be specific to the policy class chosen --- it generalizes less than a
+value function would.
+
+\section{Setting Up the Optimization}
+
+A parameterized policy $\pi_\theta(a \mid s)$ is just a function from states to action
+distributions, with parameters $\theta$ (e.g.\ the weights of a neural network).
+The job is to find the parameters that maximize policy quality --- but first we need
+to define what ``quality'' means.
+There are two natural choices, depending on whether the task is episodic or continuing.
+
+\subsection{Episodic objective: average return per episode}
+
+For episodic tasks we measure the policy by the expected return from the
+starting-state distribution $d_0$:
+\[
+  J(\theta) \;=\; \E_{S_0 \sim d_0,\,\pi_\theta}\!\left[ \sum_{t=0}^{T} \gamma^t R_t \right]
+            \;=\; \E_{S_0 \sim d_0}\!\bigl[ v_{\pi_\theta}(S_0) \bigr].
+\]
+In words: \emph{the value of the start state, averaged over where the start state can be}.
+
+\subsection{Continuing objective: average reward per step}
+
+For continuing tasks the discounted episodic objective doesn't quite work --- the sum
+runs to infinity and the boundary effects of $S_0$ vanish.
+We use the average reward per step instead:
+\[
+  J(\theta) \;=\; \E_{\pi_\theta}[R_{t+1}]
+  \;=\; \sum_s d_{\pi_\theta}(s) \sum_a \pi_\theta(a \mid s) \sum_r p(r \mid s, a)\, r,
+\]
+where $d_{\pi_\theta}(s)$ is the \emph{stationary distribution} over states under
+$\pi_\theta$ --- the long-run fraction of time the agent spends in $s$.
+This is the expected reward in the states the policy visits.
+
+For the rest of this chapter, treat both objectives as ``the expected return $J(\theta)$.''
+The mathematical machinery that follows applies to both.
+
+\subsection{Optimization choices}
+
+Once we have $J(\theta)$, finding $\theta^* = \argmax_\theta J(\theta)$ is just
+optimization. There are two broad classes of methods.
+\begin{itemize}
+  \item \textbf{Gradient-free:} hill climbing, simplex / Nelder-Mead, genetic algorithms.
+    Useful when the policy isn't differentiable, but not competitive in the
+    high-dimensional regime where neural-network policies live.
+  \item \textbf{Gradient-based:} gradient ascent, conjugate gradient, quasi-Newton.
+    These require a way to compute or estimate $\nabla_\theta J(\theta)$ --- and
+    that is where things get interesting.
+\end{itemize}
+
+The rest of the chapter is about the gradient route.
+
+\section{Computing the Policy Gradient}
+
+The vanilla update is
+\[
+  \theta \;\leftarrow\; \theta + \alpha\, \nabla_\theta J(\theta),
+\]
+identical to ordinary gradient ascent.
+The challenge is that $J(\theta)$ is an \emph{expectation over trajectories}, and the
+trajectories themselves depend on $\theta$. We can't write down a closed form ---
+we need a way to estimate the gradient from samples.
+
+Three approaches:
+\begin{itemize}
+  \item \textbf{Finite differences:} perturb each parameter individually and look at
+    the change in $J$.
+  \item \textbf{Score function / log-likelihood trick:} a clever algebraic identity
+    that converts a gradient of an expectation into an expectation of a gradient.
+  \item \textbf{Policy gradient theorem:} the score-function trick, applied to the
+    full multi-step MDP setting.
+\end{itemize}
+
+\subsection{Finite differences}
+
+The crudest approach is to estimate each partial derivative numerically by perturbing
+the parameter:
+\[
+  \pd{J(\theta)}{\theta_i} \;\approx\; \frac{J(\theta + \varepsilon e_i) - J(\theta - \varepsilon e_i)}{2\varepsilon},
+\]
+where $e_i$ is the unit vector in the $i$-th direction.
+
+This is simple and works for any policy --- even non-differentiable ones.
+The bad news is that it requires $\bigO{n}$ rollouts of the entire policy for $n$
+parameters.
+For a neural net with millions of parameters this is hopeless, and the noise from
+sampling makes the estimate unreliable.
+
+\subsection{The score-function (log-likelihood) trick}
+
+For differentiable policies there is a much better approach. Use the identity
+\[
+  \nabla_\theta \pi_\theta(a \mid s)
+  \;=\; \pi_\theta(a \mid s)\, \frac{\nabla_\theta \pi_\theta(a \mid s)}{\pi_\theta(a \mid s)}
+  \;=\; \pi_\theta(a \mid s)\, \nabla_\theta \log \pi_\theta(a \mid s).
+\]
+The gradient of the log-probability $\nabla_\theta \log \pi_\theta(a \mid s)$ is called
+the \textbf{score function}.
+
+\begin{intbox}
+The score-function identity reads ``$\nabla \pi = \pi \cdot \nabla \log \pi$.'' Its
+purpose is to convert a $\nabla$ that sits \emph{outside} an expectation into a
+$\nabla \log \pi$ that sits \emph{inside} the expectation, where it can be sampled.
+This is the same trick that powers REINFORCE, variational inference, and policy
+gradient methods generally --- it is one of the most useful identities in modern
+ML.
+\end{intbox}
+
+To see why this matters, consider a one-step MDP (a contextual bandit): the agent
+sees $S_t$, picks $A_t$, gets reward $R_{t+1}$, and the episode ends.
+The objective is $J(\theta) = \E_{\pi_\theta}[R_{t+1}]$.
+Naively you might try ``sample $R$ and take the gradient,'' but $R$ depends on
+$\theta$ only through the action the policy happened to choose --- once sampled, $R$
+is just a number with no $\theta$ inside it.
+
+Apply the trick to push the gradient inside the expectation:
+\begin{align*}
+  \nabla_\theta J(\theta)
+  &= \nabla_\theta \sum_s d(s) \sum_a \pi_\theta(a \mid s)\, r_{s,a} \\
+  &= \sum_s d(s) \sum_a r_{s,a}\, \nabla_\theta \pi_\theta(a \mid s) \\
+  &= \sum_s d(s) \sum_a r_{s,a}\, \pi_\theta(a \mid s)\, \nabla_\theta \log \pi_\theta(a \mid s) \\
+  &= \E_{\pi_\theta}\!\bigl[\, R_{t+1}\, \nabla_\theta \log \pi_\theta(A_t \mid S_t)\, \bigr].
+\end{align*}
+Now the gradient is an expectation we can sample.
+The stochastic update is
+\[
+  \theta \;\leftarrow\; \theta + \alpha\, R_{t+1}\, \nabla_\theta \log \pi_\theta(A_t \mid S_t).
+\]
+This is the \textbf{REINFORCE update for one-step MDPs}.
+
+\subsection{Example: softmax policy}
+
+The standard discrete-action policy class is the softmax:
+\[
+  \pi_\theta(a \mid s) \;=\; \frac{e^{h_\theta(s,a)}}{\sum_b e^{h_\theta(s,b)}},
+\]
+where $h_\theta(s,a)$ is a learnable preference (logit) for action $a$ in state $s$.
+The score function is
+\[
+  \nabla_\theta \log \pi_\theta(A_t \mid S_t)
+  \;=\; \underbrace{\nabla_\theta h_\theta(S_t, A_t)}_{\text{preference of chosen action}}
+       \;-\; \underbrace{\sum_a \pi_\theta(a \mid S_t)\, \nabla_\theta h_\theta(S_t, a)}_{\text{expected preference under policy}}.
+\]
+Compare this to the gradient of softmax cross-entropy in supervised learning ---
+exactly the same shape: ``increase the preference of the action you took, decrease
+the average preference.''
+The reward-weighted version then says: ``do this more strongly when the reward was high.''
+
+In the linear case $h_\theta(s,a) = \theta\T \phi(s,a)$ the score function simplifies to
+\[
+  \nabla_\theta \log \pi_\theta(A_t \mid S_t)
+  \;=\; \phi(S_t, A_t) - \E_{\pi_\theta}\!\bigl[\phi(S_t,\cdot)\bigr]
+  \;=\; \phi(S_t, A_t) - \sum_a \pi_\theta(a \mid S_t)\, \phi(S_t, a),
+\]
+i.e.\ the difference between the chosen action's features and the policy's average
+features.
+
+\section{The Policy Gradient Theorem}
+
+The score-function trick gives us the gradient for one-step problems.
+The full multi-step case looks harder: an action $A_t$ affects all future rewards
+through state transitions, so naively you'd need to differentiate through the
+environment dynamics --- which the agent does not know.
+
+The remarkable result of the \textbf{policy gradient theorem} is that you don't have to.
+The gradient takes essentially the same shape as the bandit case, with $R_{t+1}$
+replaced by the action-value $q_{\pi_\theta}(S_t, A_t)$.
+
+\begin{thmbox}[title={Policy Gradient Theorem (Episodic)}]
+For any differentiable policy $\pi_\theta(a \mid s)$ and any starting-state
+distribution $d_0$, the gradient of $J(\theta) = \E_{d_0,\pi_\theta}[G_0]$ is
+\[
+  \nabla_\theta J(\theta)
+  \;=\; \E_{d_0,\, \pi_\theta}\!\left[\, \sum_{t=0}^{T}
+            \gamma^t\, q_{\pi_\theta}(S_t, A_t)\, \nabla_\theta \log \pi_\theta(A_t \mid S_t)\, \right].
+\]
+The gradient does \emph{not} require differentiating through the MDP dynamics.
+\end{thmbox}
+
+The proof is short enough to spell out --- and the structure is worth seeing once, because
+the same pattern reappears every time you derive a policy gradient.
+
+\paragraph{Step 1: write $J$ as an expectation over trajectories.}
+Let $\tau = (S_0, A_0, R_1, S_1, A_1, \dots)$ and $G(\tau) = \sum_t \gamma^t R_{t+1}$.
+Then
+\[
+  \nabla_\theta J(\theta)
+  = \nabla_\theta \E_{\pi_\theta}[G(\tau)]
+  = \nabla_\theta \sum_\tau p_{\pi_\theta}(\tau)\, G(\tau).
+\]
+
+\paragraph{Step 2: apply the score-function trick.}
+Push $\nabla_\theta$ inside via $\nabla p = p \nabla \log p$:
+\[
+  \nabla_\theta J(\theta)
+  = \sum_\tau p_{\pi_\theta}(\tau)\, G(\tau)\, \nabla_\theta \log p_{\pi_\theta}(\tau)
+  = \E_{\pi_\theta}\!\bigl[\, G(\tau)\, \nabla_\theta \log p_{\pi_\theta}(\tau)\, \bigr].
+\]
+
+\paragraph{Step 3: expand $\log p_{\pi_\theta}(\tau)$.}
+The trajectory probability factorizes as
+\[
+  p_{\pi_\theta}(\tau)
+  = p(S_0) \prod_{t=0}^{T} \underbrace{p(S_{t+1} \mid S_t, A_t)}_{\text{environment dynamics}}\;
+                          \underbrace{\pi_\theta(A_t \mid S_t)}_{\text{policy}}.
+\]
+Take the log and differentiate w.r.t.\ $\theta$.
+The initial-state distribution $p(S_0)$ and the transition probabilities
+$p(S_{t+1} \mid S_t, A_t)$ \textbf{do not depend on $\theta$}, so their gradients
+vanish:
+\[
+  \nabla_\theta \log p_{\pi_\theta}(\tau)
+  \;=\; \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(A_t \mid S_t).
+\]
+
+\begin{intbox}[title={The key step}]
+This is the moment the unknown environment dynamics drops out of the gradient.
+We never need a model of $p(s' \mid s, a)$. The gradient of the policy's
+log-probability is enough --- and we have that, because we wrote down the policy
+ourselves.
+\end{intbox}
+
+\paragraph{Step 4: causality / clean-up.}
+Substituting back gives
+\[
+  \nabla_\theta J(\theta)
+  = \E_{\pi_\theta}\!\left[\, G(\tau) \sum_t \nabla_\theta \log \pi_\theta(A_t \mid S_t)\, \right].
+\]
+A causality argument tightens this further: rewards $R_{k+1}$ with $k < t$ cannot
+depend on $A_t$ (the action hasn't happened yet), so in expectation those terms
+contribute zero.
+After splitting $G(\tau) = \sum_k \gamma^k R_{k+1}$ and dropping the zero-mean
+$k < t$ terms, the remaining reward-tail at step $t$ is the discounted return from
+$t$ onwards --- which in expectation equals $\gamma^t q_{\pi_\theta}(S_t, A_t)$.
+That gives the theorem. $\blacksquare$
+
+\begin{intbox}[title={What the policy gradient is doing}]
+At every visited $(S_t, A_t)$, the gradient says: take the score function
+$\nabla \log \pi_\theta(A_t \mid S_t)$ (which points in the parameter direction
+that increases the probability of $A_t$ in $S_t$), and weight it by how good the
+action turned out to be ($q_{\pi_\theta}(S_t, A_t)$).
+Good actions get their probability pushed up; bad actions get pushed down.
+The amazing part is that we never had to know how the environment works.
+\end{intbox}
+
+\subsection{From theorem to algorithm: REINFORCE}
+
+The theorem tells us \emph{what} the gradient is, but $q_{\pi_\theta}(S_t, A_t)$ is
+not directly observable.
+The simplest unbiased estimate is the actually observed return $G_t$ from a sampled
+episode:
+\[
+  q_{\pi_\theta}(S_t, A_t) = \E_{\pi_\theta}[G_t \mid S_t, A_t] \;\approx\; G_t.
+\]
+Substituting gives the \textbf{REINFORCE} algorithm (Williams, 1992):
+\[
+  \theta \;\leftarrow\; \theta + \alpha\, \gamma^t\, G_t\, \nabla_\theta \log \pi_\theta(A_t \mid S_t).
+\]
+
+\begin{thmbox}[title={REINFORCE (Monte-Carlo Policy Gradient)}]
+For each episode $S_0, A_0, R_1, \dots, S_T$ generated by $\pi_\theta$:
+\begin{enumerate}
+  \item Compute returns $G_t = R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^{T-t-1} R_T$
+    for every $t$.
+  \item For each $t$, update
+  $\theta \leftarrow \theta + \alpha\, \gamma^t\, G_t\, \nabla_\theta \log \pi_\theta(A_t \mid S_t).$
+\end{enumerate}
+\emph{Monte-Carlo} because we use the actual sampled return as the target.
+\end{thmbox}
+
+REINFORCE is unbiased --- in expectation it tracks the true policy gradient ---
+but it is \textbf{noisy}.
+$G_t$ is a sum of many random rewards, so its variance grows with the episode length,
+and the resulting gradient estimates can swing wildly between updates.
+
+\begin{exbox}[title={CartPole as a sanity check}]
+The textbook policy-gradient toy: balance a pole on a moving cart by pushing left or
+right. State: $S_t = (\text{position}, \text{speed}, \text{angle}, \text{angle-speed})$.
+Action: $A_t \in \{\text{left}, \text{right}\}$. Reward: $+1$ for every step the pole
+stays up; episode ends if it falls or after $200$ steps.
+Policy: a two-layer net with $32$ hidden tanh units and a softmax over the two actions.
+
+REINFORCE learns to balance, but the training curve is a noisy zigzag --- typical
+high-variance behavior. Adding a baseline (next section) smooths it out dramatically.
+\end{exbox}
+
+\section{Reducing Variance: Baselines}
+
+REINFORCE works, but its variance is brutal.
+The good news: we can reduce variance dramatically without introducing any bias.
+
+\subsection{The baseline identity}
+
+Pick any function $b(s)$ that depends only on the state, not on the action. Then
+\begin{align*}
+  \E_{\pi_\theta}\!\bigl[\, b(S_t)\, \nabla_\theta \log \pi_\theta(A_t \mid S_t)\, \bigr]
+  &= \E\!\left[\, b(S_t) \sum_a \pi_\theta(a \mid S_t)\, \nabla_\theta \log \pi_\theta(a \mid S_t)\, \right] \\
+  &= \E\!\left[\, b(S_t) \sum_a \nabla_\theta \pi_\theta(a \mid S_t)\, \right] \\
+  &= \E\!\left[\, b(S_t)\, \nabla_\theta \underbrace{\sum_a \pi_\theta(a \mid S_t)}_{=\, 1}\, \right]
+  \;=\; 0.
+\end{align*}
+The expected ``baseline term'' is exactly zero, regardless of what $b$ is.
+So we can subtract $b(S_t)$ from $G_t$ inside the REINFORCE update without changing the
+gradient in expectation:
+\[
+  \theta \;\leftarrow\; \theta + \alpha\, \gamma^t\,\bigl(G_t - b(S_t)\bigr)\, \nabla_\theta \log \pi_\theta(A_t \mid S_t).
+\]
+The expected gradient is unchanged.
+The variance, on the other hand, can be enormously reduced if we choose $b(S_t)$ to
+track $\E[G_t \mid S_t]$.
+
+\subsection{Why a state-value baseline?}
+
+The natural choice is the state-value function: $b(s) = v_\mathbf{w}(s)$, learned
+alongside the policy.
+The advantage interpretation makes this concrete:
+\[
+  G_t - v_\mathbf{w}(S_t) \;\approx\; q_{\pi_\theta}(S_t, A_t) - v_{\pi_\theta}(S_t)
+                                 \;=\; A_{\pi_\theta}(S_t, A_t),
+\]
+the \textbf{advantage} of action $A_t$ over the policy's average behavior in $S_t$.
+
+\begin{intbox}
+A baseline doesn't change \emph{which way} the gradient pushes; it changes \emph{how
+emphatically}.
+If every action in some state earns reward around $+100$, plain REINFORCE strongly
+increases the probability of \emph{all} of them --- but only one of them was actually
+above average.
+Subtracting the baseline cancels the common offset so only genuine differences
+in action quality move the policy.
+The right question shifts from ``was the cumulative reward high or low?'' to
+``was this action better or worse than typical?''
+On CartPole the practical effect is a much cleaner training curve.
+\end{intbox}
+
+In REINFORCE-with-baseline the value function is itself learned by regression on
+the same returns:
+\[
+  \mathbf{w} \;\leftarrow\; \mathbf{w} + \alpha_\mathbf{w}\bigl(G_t - v_\mathbf{w}(S_t)\bigr)\nabla_\mathbf{w} v_\mathbf{w}(S_t).
+\]
+But it is \emph{only} a baseline --- it does not provide the learning signal for the
+policy.
+The target for $\theta$ is still the Monte-Carlo return $G_t$.
+
+\section{Actor-Critic Methods}
+
+REINFORCE-with-baseline still uses the full Monte-Carlo return as its target.
+This is unbiased but high-variance, and it requires waiting for the episode to
+terminate before any update is possible.
+The natural next step is to \emph{bootstrap} the return --- exactly what TD does for
+value-based methods.
+
+\subsection{From baseline to critic}
+
+Replace $G_t$ with the one-step bootstrapped estimate
+$G_{t:t+1} = R_{t+1} + \gamma v_\mathbf{w}(S_{t+1})$ in the policy update:
+\begin{align*}
+  \theta &\leftarrow \theta + \alpha_\theta\, \gamma^t\bigl(G_{t:t+1} - v_\mathbf{w}(S_t)\bigr)\, \nabla_\theta \log \pi_\theta(A_t \mid S_t) \\
+         &= \theta + \alpha_\theta\, \gamma^t\bigl(R_{t+1} + \gamma v_\mathbf{w}(S_{t+1}) - v_\mathbf{w}(S_t)\bigr)\, \nabla_\theta \log \pi_\theta(A_t \mid S_t) \\
+         &= \theta + \alpha_\theta\, \gamma^t\, \delta_t\, \nabla_\theta \log \pi_\theta(A_t \mid S_t).
+\end{align*}
+The quantity in parentheses is just the TD error
+$\delta_t = R_{t+1} + \gamma v_\mathbf{w}(S_{t+1}) - v_\mathbf{w}(S_t)$ --- which doubles
+as a one-step advantage estimate.
+The value function is now doing two jobs at once: providing the baseline \emph{and}
+bootstrapping the return.
+
+\begin{defbox}[title={Actor-Critic (One-Step)}]
+Two parameter sets are learned simultaneously:
+\begin{itemize}
+  \item the \textbf{actor} $\pi_\theta(a \mid s)$ --- the parameterized policy.
+  \item the \textbf{critic} $v_\mathbf{w}(s)$ --- a value function used to estimate
+    advantages and to provide the policy's learning signal.
+\end{itemize}
+At each step compute
+$\delta_t = R_{t+1} + \gamma v_\mathbf{w}(S_{t+1}) - v_\mathbf{w}(S_t)$, then update
+\[
+  \mathbf{w} \,\leftarrow\, \mathbf{w} + \alpha_\mathbf{w}\, \delta_t\, \nabla_\mathbf{w} v_\mathbf{w}(S_t),
+  \qquad
+  \theta \,\leftarrow\, \theta + \alpha_\theta\, \gamma^t \delta_t\, \nabla_\theta \log \pi_\theta(A_t \mid S_t).
+\]
+\end{defbox}
+
+The big change relative to REINFORCE-with-baseline is that the critic now
+\emph{provides} the learning signal, not just a variance reduction.
+Updates can happen online, every step --- no need to wait for the episode to finish.
+
+\begin{intbox}[title={Bias--variance trade-off again}]
+\textbf{Pure Monte-Carlo} (REINFORCE) is unbiased but high-variance.
+\textbf{One-step bootstrap} (actor-critic) is low-variance but biased --- $v_\mathbf{w}$
+is only an approximation, and bootstrapping propagates its errors.
+You get faster, smoother learning but pay with some asymptotic correctness.
+This is exactly the same dial as $\lambda$ in TD($\lambda$) from the value-based
+chapter; the policy-gradient world has its own version of it (GAE, below).
+\end{intbox}
+
+\subsection{n-step actor-critic}
+
+The natural interpolation between one-step bootstrap and full Monte-Carlo is the
+$n$-step return:
+\[
+  G_t^{(n)} \;=\; \sum_{l=0}^{n-1} \gamma^l\, R_{t+l+1} \;+\; \gamma^n v_\mathbf{w}(S_{t+n}).
+\]
+The corresponding $n$-step advantage is $\hat\delta_t^{(n)} = G_t^{(n)} - v_\mathbf{w}(S_t)$,
+and the actor update uses it in place of $\delta_t$:
+\[
+  \theta \;\leftarrow\; \theta + \alpha_\theta\, \gamma^t\, \hat\delta_t^{(n)}\, \nabla_\theta \log \pi_\theta(A_t \mid S_t).
+\]
+Larger $n$ uses more of the actual reward signal (lower bias, higher variance);
+smaller $n$ relies more on the critic (higher bias, lower variance).
+Picking $n$ becomes a per-environment tuning problem.
+
+\subsection{Generalized Advantage Estimation (GAE)}
+
+Why pick a single $n$ at all? GAE (Schulman et al., 2015) averages over all of them
+with an exponential weighting.
+
+Let $\delta_t = R_{t+1} + \gamma v_\mathbf{w}(S_{t+1}) - v_\mathbf{w}(S_t)$ be the
+per-step TD error. The GAE estimator is
+\[
+  \hat A_t^{\text{GAE}(\lambda)}
+  \;=\; \sum_{l=0}^{\infty} (\gamma\lambda)^l\, \delta_{t+l}
+  \;=\; \delta_t + \gamma\lambda\, \delta_{t+1} + (\gamma\lambda)^2\, \delta_{t+2} + \cdots.
+\]
+This is exactly an exponentially-weighted combination of the $n$-step advantages
+$\hat\delta_t^{(n)}$ for all $n$, with $\lambda$ controlling how aggressively longer
+horizons are downweighted.
+
+\begin{intbox}
+GAE is the policy-gradient analogue of TD($\lambda$): same exponential weighting,
+same $\lambda$ knob.
+\begin{itemize}
+  \item $\lambda = 0$: pure one-step TD, $\hat A_t = \delta_t$. Maximally biased,
+    minimally noisy.
+  \item $\lambda = 1$: full Monte-Carlo advantage. Unbiased, maximally noisy.
+  \item $0 < \lambda < 1$: smooth interpolation; in practice
+    $\lambda \in [0.9, 0.97]$ is typical.
+\end{itemize}
+$\lambda$ and $\gamma$ play different roles --- $\gamma$ is the agent's actual
+discount on future reward, $\lambda$ is purely an estimator-side bias/variance knob.
+\end{intbox}
+
+GAE will reappear in the next chapter as the standard advantage estimator for modern
+actor-critic algorithms like A2C and PPO.
+
+\section{Recap}
+
+Policy-based methods learn the policy directly, by gradient ascent on the expected
+return. Three big ideas make this work.
+\begin{itemize}
+  \item The \textbf{score-function trick} converts $\nabla \E[\cdot]$ into
+    $\E[\nabla \log \pi \cdot \,\cdot\,]$, so the gradient becomes a sample-able
+    expectation.
+  \item The \textbf{policy gradient theorem} extends the trick to multi-step MDPs
+    and shows that we never need to differentiate through the environment.
+  \item \textbf{Baselines and critics} keep the gradient unbiased (or only mildly
+    biased) while drastically reducing its variance --- without them REINFORCE is
+    almost too noisy to be useful.
+\end{itemize}
+The next chapter pushes this further with modern actor-critic algorithms: deep,
+batched, and engineered to actually be stable on hard problems.
+
+
+% ==========================================================
+%  CHAPTER 5 — MODERN ACTOR-CRITIC ALGORITHMS
+% ==========================================================
+\chapter{Modern Actor-Critic Algorithms}
+
+Plain actor-critic with GAE is the algorithmic skeleton.
+Making it actually work on hard problems --- continuous control, sparse rewards,
+real-world robotics, language-model fine-tuning --- requires several more layers.
+This chapter walks through the modern landscape: NPG, TRPO, PPO on the on-policy side;
+DDPG, TD3, SAC on the off-policy / continuous-control side.
+
+Three concrete weaknesses of vanilla actor-critic motivate everything below.
+First, it is \textbf{on-policy} --- data collected with the current $\pi_\theta$ cannot
+be reused after $\theta$ changes, which is wasteful.
+Second, its updates are \textbf{unstable} --- small steps in parameter space can produce
+huge changes in action probabilities, and one bad step contaminates all future data.
+Third, even with baselines and GAE the gradient estimates remain \textbf{noisy}.
+Modern algorithms attack each of these weaknesses with a different tool.
+
+\section{A Unified View of Policy Gradients}
+
+Every policy-gradient method we have seen --- and most we are about to see ---
+shares the same structural form:
+\[
+  \nabla_\theta J(\theta) \;=\; \E\!\left[\, \sum_{t=0}^{T} \Psi_t\, \nabla_\theta \log \pi_\theta(A_t \mid S_t)\, \right],
+\]
+where $\Psi_t$ is the \emph{learning signal} for the action taken at time $t$.
+Different algorithms differ only in the choice of $\Psi_t$:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Choice of $\Psi_t$} & \textbf{Algorithm} \\
+\midrule
+$G_t$ (Monte-Carlo return)                                         & REINFORCE \\
+$G_t - v_\mathbf{w}(S_t)$                                          & REINFORCE with baseline \\
+$\delta_t = R_{t+1} + \gamma v_\mathbf{w}(S_{t+1}) - v_\mathbf{w}(S_t)$ & TD(0) actor-critic / A2C \\
+$G_t^{(n)} - v_\mathbf{w}(S_t)$                                    & $n$-step actor-critic \\
+$\sum_{l=0}^\infty (\gamma\lambda)^l \delta_{t+l}$                 & GAE (used in PPO) \\
+$q_\mathbf{w}(S_t, A_t)$                                           & Q-based actor-critic (DDPG, SAC) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Reading top-to-bottom, this is a spectrum from \textbf{maximum-bias-zero / variance-high}
+(REINFORCE) to \textbf{low-bias / low-variance} (actor-critic with a learned critic).
+The job of each algorithm is to pick a point on this spectrum and pair it with a way
+of stabilising the resulting updates.
+
+\subsection{Bias and variance, again}
+
+Every $\Psi_t$ sitting below the first row uses a learned value function and is
+therefore \emph{biased} --- the critic is only an approximation, and bootstrapping its
+errors propagate.
+
+\begin{intbox}[title={Compatible function approximation (briefly)}]
+There \emph{is} a way to pair the critic with the actor so that the policy-gradient
+estimate stays unbiased: choose features for the critic that are ``compatible'' with
+the policy's score function (Sutton et al., 2000). The compatible features are
+$\nabla_\theta \log \pi_\theta(s,a)$ themselves, and the critic is restricted to a
+linear function of those features.
+This is mathematically beautiful but in deep RL almost nobody uses it: the linearity
+constraint is way too restrictive for neural networks.
+The pragmatic deep-RL stance is ``low variance plus an expressive critic beats unbiasedness.''
+\end{intbox}
+
+\subsection{Why $\gamma^t$ usually disappears}
+
+Looking back at the policy gradient theorem, every term carried a $\gamma^t$ in front
+of the score function. In the slides and in most practical code that $\gamma^t$ is
+silently dropped. The reason is pragmatic: with $\gamma^t$, late-step gradients are
+exponentially down-weighted, and most of the learning signal comes from the first few
+steps of each episode --- which works poorly in practice.
+Dropping it gives a (slightly) biased estimator of the discounted return objective but
+a much better one for the average-reward objective, and it is what every modern
+implementation actually does.
+We follow that convention from now on.
+
+\section{Off-Policy Policy Gradients}
+
+The on-policy nature of REINFORCE / actor-critic is a real annoyance.
+Every gradient step requires fresh trajectories from the current $\pi_\theta$, and as
+soon as we update, all the previously collected data is technically off-policy.
+Throwing away data after one update is wasteful --- can we keep using it?
+
+\subsection{Importance sampling}
+
+If data was collected by some \emph{behavior policy} $\mu(a \mid s)$ but we want
+expectations under the \emph{target policy} $\pi(a \mid s)$, the standard fix is
+importance sampling:
+\[
+  \E_{a \sim \pi}[f(s,a)] \;=\; \E_{a \sim \mu}\!\left[\, \frac{\pi(a \mid s)}{\mu(a \mid s)}\, f(s,a)\, \right].
+\]
+The ratio $w = \pi/\mu$ is the per-action \textbf{importance weight}; large $w$ means
+the target policy would have taken this action much more often than the behavior
+policy did, and we re-weight accordingly.
+
+Applied to the policy gradient, the off-policy version is
+\[
+  \nabla_\theta J(\theta) \;=\; \E_\mu\!\left[\, \frac{\pi_\theta(a \mid s)}{\mu(a \mid s)}\, \nabla_\theta \log \pi_\theta(a \mid s)\, G_t\, \right],
+\]
+or, if we want to reweight an entire trajectory $\tau$ collected under $\mu$,
+\[
+  \nabla_\theta J(\theta) \;=\; \E_{\tau \sim \mu}\!\left[\, \prod_{t=0}^T \frac{\pi_\theta(a_t \mid s_t)}{\mu(a_t \mid s_t)}\, \sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_t \mid s_t)\, G(\tau)\, \right].
+\]
+
+\begin{intbox}[title={Why per-trajectory IS is doomed}]
+A product of $T$ ratios is a recipe for variance disaster.
+If even one ratio is $0.1$ or $10$, the whole trajectory's contribution swings by an
+order of magnitude.
+Over hundreds of timesteps the products either explode or collapse to zero, and the
+gradient estimate becomes useless.
+\textbf{Per-decision} importance sampling --- correcting only up to time $t$, not the
+whole future --- helps somewhat, but the underlying problem (unbounded variance from
+ratio products) remains.
+\end{intbox}
+
+In practice, deep-RL methods deal with this in one of two ways.
+\textbf{Constrain} the policy to stay close to the data-collecting policy, so the
+ratios stay bounded (TRPO, PPO --- next section).
+Or \textbf{avoid} importance sampling entirely and rely on a replay buffer + bootstrapped
+TD targets, which sidesteps the distribution-mismatch problem at the cost of additional
+bias (DDPG, SAC --- continuous-control section).
+
+\section{Stable Updates: NPG, TRPO, PPO}
+
+Even on-policy, large updates are dangerous.
+A small step in $\theta$ can move action probabilities a lot --- especially when the
+policy is near-deterministic and the score function blows up.
+A bad update produces a worse policy, which produces worse data, which produces an
+even worse update. Easy to spiral.
+
+The cure is to control updates in \emph{policy space}, not parameter space.
+
+\subsection{Measuring policy change with KL divergence}
+
+The natural way to measure ``how different are these two policies?'' is the
+KL divergence over action distributions:
+\[
+  \KL{\pi_{\theta_{\text{old}}}}{\pi_\theta}
+  \;=\; \E_{s \sim d_{\pi_{\theta_{\text{old}}}}}\!\left[\, \sum_a \pi_{\theta_{\text{old}}}(a \mid s) \log \frac{\pi_{\theta_{\text{old}}}(a \mid s)}{\pi_\theta(a \mid s)}\, \right].
+\]
+Small KL means similar action distributions in the states the old policy actually visits.
+The constrained update is then
+\[
+  \max_\theta J(\theta) \quad \text{s.t.} \quad \KL{\pi_{\theta_{\text{old}}}}{\pi_\theta} \le \epsilon.
+\]
+The trust region $\epsilon$ caps how far the policy can drift in one update --- which
+keeps both the gradient estimates and the importance ratios well-behaved.
+
+\subsection{Natural Policy Gradient (NPG)}
+
+The plain gradient $\nabla_\theta J$ is the steepest direction in \emph{parameter}
+space, not in policy space.
+The Natural Policy Gradient (Kakade, 2002) rescales it by the inverse of the local
+curvature of KL:
+\[
+  \theta \;\leftarrow\; \theta + \alpha\, F^{-1}\, \nabla_\theta J(\theta),
+\]
+where $F$ is the \textbf{Fisher information matrix},
+$F = \E[\nabla \log \pi_\theta\, \nabla \log \pi_\theta\T]$, the local Hessian of the
+KL in $\theta$.
+
+\begin{intbox}
+You can think of NPG as gradient ascent in a coordinate system where unit distance
+corresponds to a unit of KL divergence.
+A step of fixed length always changes the policy by roughly the same amount, regardless
+of how the parameters happen to be scaled.
+The price is the Fisher matrix, which is expensive to invert for neural networks
+(usually approximated with conjugate gradient).
+And NPG only uses a \emph{local} approximation to KL --- nothing prevents a single
+large step from violating the trust region.
+\end{intbox}
+
+\subsection{Trust Region Policy Optimization (TRPO)}
+
+TRPO (Schulman et al., 2015) makes the KL constraint explicit, optimizing a
+\textbf{surrogate objective} that's equivalent to $J(\theta)$ for small KL:
+\[
+  \max_\theta\; \E_{(s,a) \sim \pi_{\theta_{\text{old}}}}\!\left[\, \underbrace{\frac{\pi_\theta(a \mid s)}{\pi_{\theta_{\text{old}}}(a \mid s)}}_{r_t(\theta)}\, \hat A_t\, \right]
+  \quad \text{s.t.} \quad \KL{\pi_{\theta_{\text{old}}}}{\pi_\theta} \le \epsilon.
+\]
+
+Three things are happening here.
+The expectation is over data collected with $\pi_{\theta_{\text{old}}}$ (so we can reuse
+recent rollouts, not just the latest one).
+The importance ratio $r_t(\theta)$ corrects for the distribution mismatch.
+The KL constraint keeps the ratio close to $1$, which keeps the surrogate a faithful
+local approximation of the true objective.
+
+\begin{intbox}[title={Why a surrogate objective?}]
+The true objective $J(\theta) = \E_{\tau \sim \pi_\theta}[G(\tau)]$ has two practical
+problems:
+\begin{itemize}
+  \item We can't evaluate it without fresh data from $\pi_\theta$.
+  \item The data we have was collected under a different policy.
+\end{itemize}
+The surrogate solves both: it uses old data (plus a ratio correction) and it's
+\emph{provably} a local approximation to $J$ when KL stays small. Solve the surrogate
+with the trust region; you've effectively done a controlled step on the true objective.
+\end{intbox}
+
+TRPO is robust and sample-efficient, but algorithmically heavy --- second-order
+optimization, conjugate gradient, and a line search to enforce the KL bound.
+
+\subsection{Proximal Policy Optimization (PPO)}
+
+PPO (Schulman et al., 2017) replaces TRPO's hard KL constraint with a much simpler
+trick: \textbf{clip the ratio} so the optimization can never benefit from a too-large
+update:
+\[
+  L^{\text{CLIP}}(\theta)
+  = \E_{(s,a) \sim \pi_{\theta_{\text{old}}}}\!\left[\, \min\!\Bigl(\, r_t(\theta)\, \hat A_t,\; \mathrm{clip}\bigl(r_t(\theta),\, 1-\varepsilon,\, 1+\varepsilon\bigr)\, \hat A_t\, \Bigr)\, \right],
+\]
+with $r_t(\theta) = \pi_\theta(a_t \mid s_t)\,/\,\pi_{\theta_{\text{old}}}(a_t \mid s_t)$
+and $\varepsilon$ typically around $0.1$--$0.2$.
+
+\begin{thmbox}[title={PPO's clipped objective in plain English}]
+For a sample with positive advantage ($\hat A_t > 0$, ``this action was better than average''):
+\begin{itemize}
+  \item If $r_t(\theta) \le 1 + \varepsilon$, the gradient pushes up the action's
+    probability normally.
+  \item If $r_t(\theta) > 1 + \varepsilon$, the clip kicks in and the gradient becomes
+    zero --- you've already increased the probability enough; stop.
+\end{itemize}
+Symmetrically for $\hat A_t < 0$: probability is decreased until $r_t(\theta) = 1 - \varepsilon$,
+then no further.
+The minimum with the unclipped term ensures the optimizer cannot exploit the clip
+to undo a prior update.
+\end{thmbox}
+
+\begin{intbox}
+PPO is essentially TRPO with all the heavy machinery thrown away.
+No Fisher matrix, no conjugate gradient, no line search --- just first-order SGD on a
+clipped objective.
+The trust-region effect now comes from the clip itself: the surrogate stops changing
+once the ratio leaves $[1-\varepsilon, 1+\varepsilon]$, so further gradient steps in
+that direction do nothing useful.
+The result is that PPO can do \emph{multiple epochs of updates over the same batch}
+of trajectories --- vanilla actor-critic can only do one before the data goes stale.
+That alone is a huge win in sample efficiency.
+\end{intbox}
+
+PPO uses GAE for the advantage estimate, often adds an entropy bonus to keep the
+policy from collapsing prematurely, and is the workhorse for large-scale on-policy
+deep RL: Atari, MuJoCo, robotics simulators, RLHF for language models.
+
+\subsection{NPG, TRPO, PPO at a glance}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Constraint} & \textbf{Cost} & \textbf{Key idea} \\
+\midrule
+NPG  & implicit KL (Fisher) & second-order & natural gradient / KL geometry \\
+TRPO & hard KL bound        & second-order & explicit trust region \\
+PPO  & soft via clipping    & first-order  & cheap clipped surrogate \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All three are on-policy in the sense that data must come from $\pi_{\theta_{\text{old}}}$,
+but the trust region lets us \emph{reuse} that data for several update steps.
+The trade-off across the three is essentially complexity vs.\ rigor: NPG/TRPO have
+cleaner theory; PPO is what people actually run.
+
+\section{Continuous Control}
+
+Everything so far has been algorithm-agnostic about action spaces.
+Continuous actions just require a different policy parameterization --- the same
+gradient machinery still works.
+
+\subsection{The Gaussian policy}
+
+The standard stochastic policy for continuous control is a diagonal Gaussian:
+\[
+  A_t \sim \pi_\theta(\cdot \mid S_t) = \Normal(\mu_\theta(S_t),\, \Sigma_\theta(S_t)),
+\]
+where the network outputs the mean $\mu_\theta(s)$ and (optionally) a state-dependent
+covariance $\Sigma_\theta(s)$.
+Often the covariance is a single learned vector independent of $s$.
+The score function for fixed scalar variance $\sigma^2$ is
+\[
+  \nabla_\theta \log \pi_\theta(A_t \mid S_t) \;=\; \frac{A_t - \mu_\theta(S_t)}{\sigma^2}\, \nabla_\theta \mu_\theta(S_t).
+\]
+Read this as: \emph{nudge the mean toward the chosen action $A_t$, weighted by how
+unusual the action was given the current mean}.
+Combined with a positive advantage, the policy update moves the mean toward
+high-advantage samples; combined with a negative advantage, it moves the mean away
+from them.
+
+\subsection{Deterministic Policy Gradient (DPG)}
+
+For continuous actions there is also a non-stochastic alternative.
+If the critic $q_\mathbf{w}(s,a)$ is differentiable in $a$, we can take gradients
+\emph{through} the critic to improve a deterministic policy $a = \mu_\theta(s)$:
+\[
+  \nabla_\theta J(\theta)
+  \;=\; \E_{s \sim d_\mu}\!\left[\, \nabla_a q_\mathbf{w}(s,a)\big|_{a = \mu_\theta(s)}\, \nabla_\theta \mu_\theta(s)\, \right].
+\]
+
+\begin{intbox}
+The deterministic policy gradient avoids the high-variance ``sample then weight by
+score function'' loop.
+Instead, it asks the critic directly: ``which way in action space increases value?''
+and adjusts the actor's mean accordingly.
+The price: we need a critic that is accurate \emph{and smooth} in $a$. If the critic
+has sharp peaks or is wrong about the action gradient in some region, the actor
+chases bad signals --- which is why DPG-family methods need extra stabilization.
+\end{intbox}
+
+\subsection{Deep Deterministic Policy Gradient (DDPG)}
+
+DDPG (Lillicrap et al., 2015) is essentially \emph{DQN for continuous actions}:
+DPG, plus a replay buffer for off-policy learning, plus target networks for stability.
+\begin{itemize}
+  \item \textbf{Critic update} (TD regression on tuples sampled from the buffer):
+  \[
+    \min_\mathbf{w}\; \E_{(s,a,r,s') \sim \mathcal{D}}\!\left[\bigl(q_\mathbf{w}(s,a) - y\bigr)^2\right],
+    \quad y = r + \gamma\, q_{\mathbf{w}^-}\!\bigl(s',\, \mu_{\theta^-}(s')\bigr).
+  \]
+  \item \textbf{Actor update} (deterministic policy gradient through the critic):
+  \[
+    \max_\theta\; \E_{s \sim \mathcal{D}}\bigl[\, q_\mathbf{w}(s,\, \mu_\theta(s))\, \bigr].
+  \]
+  \item Target networks $\mathbf{w}^-, \theta^-$ track the live ones with a slow Polyak
+    average $\mathbf{w}^- \leftarrow \tau \mathbf{w} + (1-\tau)\mathbf{w}^-$.
+  \item Exploration is added by hand: $a_t = \mu_\theta(s_t) + \mathcal{N}_t$ with some
+    Gaussian or Ornstein--Uhlenbeck noise.
+\end{itemize}
+
+\begin{intbox}[title={DQN $\leftrightarrow$ DDPG correspondence}]
+Both algorithms are off-policy + replay + target nets + bootstrapped TD targets, with
+the same critic structure $q(s,a)$. The only difference is how the greedy action is
+obtained: DQN takes $\argmax_a q(s,a)$ explicitly (cheap for discrete actions);
+DDPG learns a parameterized maximizer $\mu_\theta(s) \approx \argmax_a q_\mathbf{w}(s,a)$
+(necessary for continuous actions). DDPG = DQN + a learned argmax.
+\end{intbox}
+
+DDPG works, but it is brittle. The critic tends to \emph{overestimate} Q-values, and
+those errors feed straight into the actor.
+
+\subsection{TD3}
+
+TD3 (Fujimoto et al., 2018) is DDPG with three concrete fixes for that brittleness:
+\begin{itemize}
+  \item \textbf{Clipped double-Q learning:} keep two critics $q_{\mathbf{w}_1}, q_{\mathbf{w}_2}$
+    and use $\min(q_1, q_2)$ in the target.
+    Two independent overestimates rarely peak at the same action, so taking the minimum
+    suppresses the bias.
+  \item \textbf{Delayed policy updates:} update the critic on every step but the actor
+    only every $d$ steps. Lets the critic catch up before chasing it.
+  \item \textbf{Target policy smoothing:} add a small clipped Gaussian noise to the
+    target action $\mu_{\theta^-}(s') + \tilde\varepsilon$ in the critic target. Prevents
+    the actor from exploiting sharp peaks in the (still imperfect) critic.
+\end{itemize}
+The result is the standard ``clean'' off-policy continuous-control baseline --- TD3
+on MuJoCo benchmarks is what every new paper is compared against.
+
+\subsection{Maximum-entropy RL and SAC}
+
+DDPG and TD3 still use \emph{deterministic} policies, with exploration tacked on as
+external action noise. That noise is brittle (state-independent, often poorly tuned)
+and the policy can collapse to a single suboptimal mode early in training.
+
+The cleaner approach is to learn a \textbf{stochastic} policy whose stochasticity is
+itself part of the objective. \textbf{Maximum-entropy RL} adds an entropy bonus:
+\[
+  J_{\text{ent}}(\theta)
+  \;=\; \E_{\pi_\theta}\!\left[\, \sum_{t=0}^{T} \gamma^t \bigl( R_{t+1} + \alpha\, \Ent(\pi_\theta(\cdot \mid S_t)) \bigr)\, \right],
+\]
+where $\Ent(\pi(\cdot \mid s)) = -\E_{a \sim \pi}[\log \pi(a \mid s)]$ is the entropy of
+the action distribution and $\alpha > 0$ is a temperature.
+
+\begin{intbox}[title={Why entropy as objective, not regularizer?}]
+Adding entropy to the objective changes \emph{which policy is optimal}, not just how we
+search for it.
+The optimal policy for the augmented objective has high reward \emph{and} high
+stochasticity.
+This means: sustained exploration (the policy refuses to become deterministic too
+early), robustness to value errors (a stochastic policy hedges across action choices),
+and smoother updates.
+A small entropy bonus is sometimes added to PPO too, but in SAC it is the principled
+core of the method.
+\end{intbox}
+
+Soft Actor-Critic (SAC) (Haarnoja et al., 2018) puts the maximum-entropy objective
+together with the off-policy machinery of DDPG/TD3:
+\begin{itemize}
+  \item Replay buffer (off-policy).
+  \item Two critics with target networks, trained with the entropy-augmented TD target
+  \[
+    y \;=\; r + \gamma\, \E_{a' \sim \pi_\theta}\!\bigl[\, q_{\mathbf{w}^-}(s', a') - \alpha \log \pi_\theta(a' \mid s')\, \bigr].
+  \]
+  \item Stochastic Gaussian (typically squashed-Gaussian) policy, updated to maximize
+    $\E_{a \sim \pi_\theta}[\, q_\mathbf{w}(s,a) - \alpha \log \pi_\theta(a \mid s)\, ]$
+    via the reparameterization trick.
+  \item Optionally, learn $\alpha$ itself by gradient descent against a target entropy.
+\end{itemize}
+
+\subsection{When to use what}
+
+Modern deep RL has roughly three workhorse algorithms, each with a distinct sweet spot:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+                & \textbf{PPO}        & \textbf{TD3}       & \textbf{SAC} \\
+\midrule
+Policy          & stochastic           & deterministic       & stochastic \\
+Data regime     & on-policy            & off-policy          & off-policy \\
+Best fit        & stable large-scale   & clean continuous    & robust, sample-efficient \\
+                & training             & control baseline    & control \\
+Use cases       & simulators, LLMs,    & benchmark control,  & robotics, real-world \\
+                & games (RLHF)         & precise actuation   & control \\
+Main trade-off  & data hungry          & weaker exploration  & more moving parts \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{intbox}
+Choosing between PPO, TD3, and SAC is a \emph{systems decision}, not just an
+algorithmic one.
+\textbf{PPO}: when you can run thousands of parallel environments cheaply and want
+something simple that almost always works.
+\textbf{TD3}: when you want the cleanest baseline for continuous benchmarks.
+\textbf{SAC}: when each environment step is expensive (real robots) and you need
+sample efficiency plus robust exploration.
+\end{intbox}
+
+\section{Recap}
+
+The progression from REINFORCE to modern actor-critic is a story of \textbf{controlled
+trade-offs}.
+
+\begin{itemize}
+  \item All policy-gradient methods share the form
+    $\nabla J = \E[\Psi_t \nabla \log \pi]$.
+    Different choices of $\Psi_t$ trade bias for variance.
+  \item Vanilla actor-critic has three weaknesses --- on-policy, unstable, noisy ---
+    and modern algorithms each address them differently.
+  \item \textbf{Trust-region methods (TRPO/PPO)} stabilize on-policy updates by
+    constraining the policy in KL space. PPO is what people actually run.
+  \item \textbf{Off-policy actor-critics (DDPG/TD3/SAC)} reuse data via a replay buffer,
+    use a parameterized maximizer for continuous actions, and stabilize the critic with
+    target networks, double-Q learning, and (in SAC) maximum-entropy policies.
+\end{itemize}
+
+The next chapter zooms out: even with the best of these algorithms, deep RL still fails
+on many problems. The bottlenecks are usually not algorithmic --- they're about
+exploration, credit assignment, and state representation.
+
+
+% ==========================================================
+%  CHAPTER 6 — CORE CHALLENGES IN DEEP RL
+% ==========================================================
+\chapter{Core Challenges in Deep RL}
+
+By now we have an algorithmic toolbox: DQN and its variants for value-based discrete
+control, PPO for stable on-policy optimization, DDPG / TD3 / SAC for off-policy continuous
+control. So why does deep RL still fail on so many real problems?
+
+The honest answer is that the algorithms are usually not the bottleneck. The same
+PPO that solves a benchmark in a few hours can fail completely on a problem that
+\emph{looks} similar but has a sparser reward, a higher-dimensional observation, or a
+longer horizon. Performance depends on the environment, the reward design, and the
+state representation almost as much as on the algorithm itself.
+
+Three core challenges sit underneath most failure modes:
+\begin{itemize}
+  \item \textbf{Exploration} --- collecting data that is informative and reward-relevant,
+    not just data.
+  \item \textbf{Credit assignment} --- figuring out which past actions caused the current
+    outcome.
+  \item \textbf{State representation} --- learning compact, informative latent states from
+    high-dimensional, possibly partial observations.
+\end{itemize}
+These are deeply interconnected: better representations help both exploration and
+credit assignment; better exploration provides the data needed for accurate credit
+signals; accurate credit assignment guides the representation toward decision-relevant
+features.
+
+This chapter walks through each in turn.
+
+\section{Exploration}
+
+Exploration in RL means collecting data that is \emph{informative} and \emph{reward-relevant}.
+Too little exploration and the agent locks in on a bad policy; too much random
+exploration and it wastes samples on irrelevant states.
+The goal isn't ``more randomness'' --- it is exploring the right states at the right
+time.
+
+\subsection{Why exploration is hard}
+
+Three structural features make exploration genuinely difficult in deep RL:
+\begin{itemize}
+  \item \textbf{Sparse rewards.} Useful feedback is rare. The agent could stumble around
+    for thousands of steps without seeing a single non-zero reward.
+  \item \textbf{High-dimensional state and action spaces.} The combinatorial explosion of
+    possibilities makes random exploration vanishingly unlikely to hit anything good.
+  \item \textbf{Long horizons.} A correct decision early on may pay off only much later
+    --- and the agent has to keep making the right calls in between.
+\end{itemize}
+
+\begin{exbox}[title={Montezuma's Revenge}]
+The classic poster child for hard exploration. The agent navigates an Atari maze of
+rooms, ladders, traps, and keys. Reward is given only after long, precise sequences
+of actions (pick up a key, descend, dodge skulls, climb back up, open a door).
+For years, plain DQN scored \emph{zero} --- the policy never reached the first
+reward and so had nothing to learn from.
+Algorithms only made progress by adding directed, exploration-aware bonuses.
+\end{exbox}
+
+\subsection{Baseline exploration: random and noise-based}
+
+The exploration tools we have already met are basic and undirected.
+\begin{itemize}
+  \item \textbf{$\varepsilon$-greedy} (value-based RL): act greedily with probability
+    $1 - \varepsilon$, else uniform random.
+    Simple, widely used, fine in small or dense-reward problems --- hopeless when good
+    behavior is more than a few random actions away.
+  \item \textbf{Action-space noise} (DDPG/TD3): $a_t = \mu_\theta(s_t) + \varepsilon$
+    with $\varepsilon \sim \Normal(0, \sigma^2)$.
+    Easy to add for continuous actions but the noise is independent across time and
+    state, leading to jittery, undirected exploration.
+  \item \textbf{Entropy regularization} (PPO/SAC): add an entropy bonus to the objective
+    so the policy doesn't collapse too soon.
+    Preserves stochasticity, but ``stochastic'' isn't the same as ``directed.''
+  \item \textbf{Noisy networks} (Rainbow): replace deterministic linear layers with
+    stochastic ones whose noise scales are \emph{learned}, giving state-dependent
+    exploration. A clear improvement over $\varepsilon$-greedy --- but still implicit,
+    no explicit notion of what is unknown.
+\end{itemize}
+
+\begin{intbox}[title={What's missing from these methods}]
+All of the above are essentially answers to ``how should I randomize my actions?''
+None of them answer the actually important question: \emph{where should I explore next?}
+That question requires a notion of \textbf{uncertainty}, \textbf{novelty}, or
+\textbf{surprise} --- something that distinguishes ``state I have already seen
+plenty of'' from ``state I know nothing about.''
+\end{intbox}
+
+\subsection{Three guiding principles for directed exploration}
+
+The literature on directed exploration revolves around three ideas:
+\begin{itemize}
+  \item \textbf{Uncertainty:} explore where the value estimate is uncertain.
+  \item \textbf{Novelty:} explore states the agent has rarely visited.
+  \item \textbf{Surprise:} explore transitions that the agent's model fails to predict.
+\end{itemize}
+These overlap in practice and most modern methods combine more than one.
+
+\subsection{Uncertainty-based exploration}
+
+The principled view: in early training the agent has \textbf{epistemic uncertainty}
+about the true value function (the kind of uncertainty that shrinks as you collect more
+data). Exploration should target state-action pairs where that uncertainty is high.
+
+The bandit literature gives two canonical strategies that scale to deep RL:
+\begin{itemize}
+  \item \textbf{UCB (optimism in the face of uncertainty):} act on the upper confidence bound,
+    $a_t = \argmax_a \bigl[\mu_t(a) + \beta\, \sigma_t(a)\bigr]$. Combines the
+    estimated value with a bonus for high uncertainty.
+  \item \textbf{Thompson sampling:} sample a value-function hypothesis from the posterior,
+    act greedily under that sample. Probabilistic and naturally exploration--exploitation
+    balanced.
+\end{itemize}
+
+Both require a way to estimate uncertainty over $Q$-values. Deep RL has no tractable
+posterior over neural-network parameters, so we approximate.
+
+\paragraph{Ensembles.}
+Maintain $K$ different $Q$-networks $Q^{(1)}, \dots, Q^{(K)}$ trained on the same data.
+The variance across the ensemble at $(s,a)$ is a proxy for epistemic uncertainty.
+Use it for UCB-style action selection or Thompson-style sampling of an acting head.
+
+\paragraph{Bootstrapped DQN.}
+Train each ensemble member on a different bootstrap subsample of the replay buffer
+(via per-transition masks). Sample one acting head per episode and act greedily under
+it for the whole episode. This produces \textbf{deep exploration}: temporally
+consistent, multi-step exploration, rather than the per-step noise of $\varepsilon$-greedy.
+
+\paragraph{Randomized priors.}
+A subtle failure mode of ensembles: in regions with little data, all heads can drift to
+the same uninformative value, becoming overconfidently identical. The fix is to add a
+\emph{fixed random prior function} $p^{(j)}(s,a)$ to each head:
+$\hat Q^{(j)}(s,a) = Q^{(j)}(s,a) + \lambda\, p^{(j)}(s,a)$.
+Train only $Q^{(j)}$; keep $p^{(j)}$ fixed. The frozen priors guarantee head diversity
+in unvisited regions, sustaining exploration even under sparse rewards.
+
+\subsection{Novelty-based exploration: intrinsic motivation}
+
+A different strategy: shape the reward so that visiting novel states is intrinsically
+rewarding. Combine the environment reward with an \textbf{intrinsic} bonus:
+\[
+  r_t \;=\; r_t^{\text{ext}} + \beta\, r_t^{\text{int}},
+\]
+where $r_t^{\text{int}}$ measures how new or surprising the current transition is.
+
+\paragraph{Count-based exploration.}
+The clean tabular version: $r_t^{\text{int}}(s_t) = 1 / \sqrt{N(s_t)}$ where $N(s_t)$ is
+the visitation count. Rare states get a big bonus that decays as they are visited
+more.
+In deep RL exact counts are impossible (no two pixel observations are ever identical),
+so we approximate via \textbf{pseudo-counts} from a density model, or via state hashing
+to map continuous observations to discrete bins.
+
+\paragraph{Curiosity / prediction error.}
+Instead of counting, measure how much the agent's model \emph{fails} to predict.
+\textbf{Random Network Distillation (RND)} fixes a random target network $f_{\text{target}}$
+and trains a predictor $f_\theta$ to mimic it on visited states.
+The intrinsic reward is the prediction error
+$r_t^{\text{int}} = \norm{f_\theta(s_t) - f_{\text{target}}(s_t)}^2$. Unseen states give
+high error; familiar states have low error. Simple, no environment model required, and
+remarkably effective on hard-exploration Atari games.
+
+The \textbf{Intrinsic Curiosity Module (ICM)} learns a feature encoder $\phi(s)$ together
+with a forward model $\hat\phi(s_{t+1}) = f(\phi(s_t), a_t)$ and rewards prediction error
+in feature space, $r_t^{\text{int}} = \norm{\hat\phi(s_{t+1}) - \phi(s_{t+1})}^2$.
+
+\paragraph{Disagreement-based.}
+Train an ensemble of forward models, use the variance across their predictions as
+the intrinsic reward. High disagreement = uncertain dynamics = worth exploring.
+This isolates \emph{epistemic} uncertainty (which more data can fix) from
+\emph{aleatoric} noise (which it cannot).
+
+\paragraph{Combining signals (NGU).}
+Modern methods combine multiple novelty signals.
+\textbf{Never Give Up} (Badia et al., 2020) uses both \emph{episodic novelty} (how
+often the state was visited within the current episode) and \emph{lifelong novelty}
+(RND-style: how unfamiliar across all training so far).
+The episodic component encourages within-episode exploration; the lifelong component
+maintains long-term exploration pressure.
+
+\begin{notebox}[title={The noisy-TV problem}]
+Curiosity-style intrinsic rewards have a famous failure mode.
+Imagine an Atari-like environment containing a TV that displays random noise. The
+prediction error of any model on the TV's pixels is permanently high --- the noise
+is unpredictable by definition. A naive curiosity-driven agent will sit in front of
+the TV forever, collecting maximum intrinsic reward and learning nothing useful.
+The fundamental issue: prediction error doesn't distinguish ``unfamiliar but learnable''
+from ``random and unlearnable.''
+Practical mitigations: normalize/clip intrinsic rewards, anneal $\beta$ over training,
+and combine multiple novelty signals (e.g.\ NGU's episodic + lifelong).
+\end{notebox}
+
+\subsection{Where exploration fits in the pipeline}
+
+Exploration can be injected at three different levels of the RL pipeline:
+\begin{itemize}
+  \item \textbf{Action selection:} $\varepsilon$-greedy, UCB, Thompson sampling, action noise.
+  \item \textbf{Model / value estimation:} noisy networks, ensembles, randomized priors.
+  \item \textbf{Reward shaping:} count-based bonuses, RND, ICM, disagreement.
+\end{itemize}
+The right level depends on the problem.
+For dense-reward control, action noise is usually enough.
+For sparse-reward, long-horizon, or partially-observable problems, you almost always
+need something at the value-estimation or reward-shaping level.
+
+\section{Credit Assignment}
+
+The \textbf{credit assignment problem}: when an outcome arrives, which past actions
+caused it?
+This is hard because most real problems have delayed and sparse feedback, with many
+irrelevant decisions sandwiched in between. The agent needs to disentangle informed
+choices from serendipitous outcomes --- and credit assignment is what does that.
+
+\begin{intbox}[title={Credit vs.\ value}]
+Value asks ``what return do I expect from this state?''
+Credit asks ``how much did this specific action contribute to that outcome?''
+Two related but distinct questions. A good value estimate doesn't automatically give
+good credit signals --- if the value drifts equally with both helpful and irrelevant
+actions, every action gets the same credit.
+\end{intbox}
+
+\subsection{Three root causes}
+
+Hard credit assignment usually comes from one of three structural features of the MDP:
+\begin{itemize}
+  \item \textbf{Depth} --- the temporal distance between an action and its outcome is large.
+    TD errors shrink exponentially as they propagate backward, so important actions far
+    from the reward get tiny gradients. Short-sighted methods develop a \emph{recency
+    bias}, attributing credit to whichever action happened to be near the reward.
+  \item \textbf{Density} --- few of the actions actually influence the outcome
+    (sparse-reward setting). Rare goal states mean most TD errors carry no information,
+    so updates are dominated by zero-information samples.
+  \item \textbf{Breadth} --- many alternative paths lead to the same outcome.
+    Credit gets diluted across all the equivalent trajectories, with no clear bottleneck
+    action to learn.
+\end{itemize}
+Knowing which of the three is dominant tells you which technique to reach for. No single
+method solves all three.
+
+\subsection{Time-contiguity methods (depth)}
+
+The default toolbox for moderate delays:
+\begin{itemize}
+  \item \textbf{TD($1$):} reward propagates backward one step per update. Slow on long horizons.
+  \item \textbf{$n$-step returns:} reward propagates back $n$ steps in one shot. Faster, but
+    higher variance.
+  \item \textbf{Eligibility traces / TD($\lambda$):} exponentially-weighted combination of
+    all $n$-step returns. The same idea on the policy-gradient side is \textbf{GAE}
+    from Chapter~4, which is now the default advantage estimator.
+\end{itemize}
+Larger $n$ or larger $\lambda$ accelerates credit propagation at the cost of variance.
+These methods address depth directly --- but if the depth is hundreds of steps and the
+reward is sparse, even $n$-step methods struggle.
+
+\subsection{Reducing breadth noise with advantages}
+
+Many actions in a trajectory simply don't matter --- they don't change the outcome.
+Naively, all of them get blamed/credited for the eventual reward, contributing noise.
+The advantage function $A(s,a) = q(s,a) - v(s)$ already does the right thing here:
+only \emph{above-} or \emph{below-average} actions get nonzero credit, irrelevant ones
+average out.
+TD handles \emph{when} reward is propagated; advantage handles \emph{whether the action
+mattered}. They are complementary, which is why GAE-style advantage estimation has
+become standard.
+
+\subsection{Return decomposition (RUDDER) for very long delays}
+
+When the reward is genuinely far from its cause, even $n$-step / $\lambda$-returns are
+not enough.
+\textbf{RUDDER} (Arjona-Medina et al., 2019) takes a different approach: \emph{move the
+reward to the important event}.
+
+The idea: train a sequence model (e.g.\ an LSTM) to predict the trajectory's future
+return $\hat G_t$ from $(s_0, a_0, \dots, s_t)$. Then redistribute reward so that each
+step gets the \emph{change} in predicted return:
+\[
+  \bar r_{t+1} \;=\; \hat G_{t+1} - \hat G_t.
+\]
+A large jump in predicted return marks an important event (``ah, this is when I
+realized I'd win''). After redistribution, the long-horizon, sparse-reward problem
+becomes a much easier local-credit problem, because reward now arrives at the actual
+causal moment.
+
+\subsection{Hindsight Experience Replay (HER) for sparse goals}
+
+For \textbf{goal-conditioned} problems with binary reward (you reached the goal or you
+didn't), most early trajectories fail and provide no learning signal --- the density
+challenge in pure form.
+
+\textbf{Hindsight Experience Replay} (Andrychowicz et al., 2017) flips the question:
+every failed trajectory \emph{succeeded at some other goal}, namely the state it
+actually reached. Relabel transitions as
+\[
+  (s_t, a_t, r_t, g) \;\longrightarrow\; (s_t, a_t, r'_t, g'),
+\]
+where $g' = s_T$ (or some achieved state) and $r'_t = 1$ iff $s_t = g'$. Train on
+both the original and the relabeled experience.
+
+\begin{intbox}
+HER turns the sparse failure signal into dense training data: even when the agent
+never reaches the original goal, it can still learn a useful goal-conditioned policy
+by reaching whatever it actually reached. Over many episodes the agent learns to
+reach a wide variety of subgoals --- and as that capability accumulates, reaching the
+intended goal becomes feasible.
+The catch: the MDP must be \emph{goal-conditioned}, with reward structure that
+generalizes across goals. Not every problem has that shape.
+\end{intbox}
+
+\subsection{Practical takeaways}
+
+\begin{itemize}
+  \item \textbf{Mild delay:} TD, $n$-step, GAE. The default tools, almost always present.
+  \item \textbf{Long delay:} return decomposition (RUDDER) when delays are extreme and
+    causal events are sparse.
+  \item \textbf{Sparse goal-conditioned reward:} hindsight relabeling (HER).
+  \item Diagnose first: depth vs.\ density vs.\ breadth. The right method depends on
+    which one is binding.
+\end{itemize}
+Credit assignment is also tightly coupled to representation: bad features make accurate
+credit assignment impossible, no matter the algorithm.
+
+\section{State Representation Learning}
+
+Raw observations are usually high-dimensional (image pixels, lidar scans), noisy, and
+often partial.
+A good \textbf{state representation} compresses these into a latent vector that keeps
+the control-relevant information and discards the rest.
+
+\subsection{End-to-end RL vs.\ SRL + RL}
+
+\paragraph{End-to-end.}
+Train a single policy/value network straight from observations to actions. The early
+layers implicitly learn features. This is the default in Atari-style benchmarks.
+The downsides: features are entirely shaped by the (often weak) RL gradient, generalization
+across tasks is poor, and sample efficiency is low.
+
+\paragraph{SRL + RL.}
+Decouple the encoder from the policy. First (or jointly) train an encoder
+$\phi: o \to x$ that produces a useful latent state, then run RL on top of $x$.
+Modular, often more sample-efficient, and the encoder transfers across tasks.
+
+The trade-off is essentially \emph{generality of the representation vs.\ alignment with the
+control objective}. Pure end-to-end is maximally aligned but data-hungry; pure SRL is
+maximally general but the auxiliary objective may not match what the policy needs.
+
+\subsection{What makes a representation good}
+
+Three desiderata are usually invoked:
+\begin{itemize}
+  \item \textbf{Structure:} the latent space should reflect the causal, task-relevant
+    structure of the environment, not arbitrary visual variation.
+  \item \textbf{Continuity:} nearby states in the world should map to nearby latents.
+    Small observation changes should produce small representation changes.
+  \item \textbf{Sparsity / disentanglement:} only a small number of latent dimensions
+    should be active per state. Reduces spurious correlations and makes downstream
+    learning easier.
+\end{itemize}
+
+\subsection{A taxonomy of SRL methods}
+
+The course groups online model-free SRL into six (overlapping) classes.
+
+\paragraph{Metric-based / bisimulation.}
+Shape the latent metric so that two states are close iff they produce similar rewards
+and similar transition dynamics. Bisimulation is the principled formalization
+(Ferns et al., 2004): states are \emph{bisimilar} iff for every action they yield the
+same reward and transition to bisimilar states. Strong abstraction, expensive to compute.
+
+\paragraph{Auxiliary tasks.}
+Add side losses to the encoder: \emph{reconstruction} (recover the observation from the
+latent), \emph{forward dynamics} (predict $\phi(s_{t+1})$ from $\phi(s_t)$ and $a_t$),
+\emph{inverse dynamics} (predict $a_t$ from $\phi(s_t)$ and $\phi(s_{t+1})$),
+\emph{reward prediction}. Provides a richer signal than the RL gradient alone, especially
+under sparse reward. The risk: an auxiliary loss may not align with what the controller
+needs (reconstruction wastes capacity on visually salient but task-irrelevant pixels).
+
+\paragraph{Data augmentation.}
+Apply visual augmentations (random crops, color jitter, masking, noise injection) to
+observations and require the encoder to be invariant. Cheap, and it consistently
+improves both sample efficiency and generalization in pixel-based RL. The caveat: too
+strong an augmentation can destroy task-relevant cues.
+
+\paragraph{Contrastive SRL.}
+Train the encoder so that positive pairs (same state under different augmentations,
+or temporally close observations) are close in latent space and negative pairs (random
+other states) are far. The standard NCE-style loss
+\[
+  \mathcal{L}_{\text{NCE}}
+  \;=\; -\E\!\left[\, \log \frac{\exp(\mathrm{sim}(\phi(o), \phi(o^+)))}
+                          {\exp(\mathrm{sim}(\phi(o), \phi(o^+))) + \sum_i \exp(\mathrm{sim}(\phi(o), \phi(o_i^-)))}\, \right]
+\]
+encourages a clustered, well-structured latent space without needing reconstructions
+or labels.
+
+\paragraph{Non-contrastive.}
+Same goal as contrastive (similar states close in latent space) but without explicit
+negative pairs --- using e.g.\ predictor networks and target encoders to prevent
+representational collapse (BYOL-style methods).
+
+\paragraph{Attention-based.}
+Learn attention masks over spatial or temporal features so that the encoder focuses on
+decision-relevant regions and suppresses distractors. Improves interpretability and
+robustness; adds architectural complexity.
+
+\subsection{Why representation matters in practice}
+
+A weak representation makes everything downstream harder.
+Bad features mean noisy value estimates, which produce noisy gradients, which produce
+noisy policies --- and the same algorithm that succeeds on a clean benchmark fails
+on a visually messy real-world task.
+Most progress in pixel-based deep RL over the last few years has come from better
+encoders (data augmentation, contrastive losses) rather than better RL algorithms.
+
+\section{Recap}
+
+Modern deep RL is bottlenecked by three intertwined problems, none of which is solved
+by ``pick a better algorithm.''
+
+\begin{itemize}
+  \item \textbf{Exploration:} how to discover rewarding behavior in large, sparse, or
+    deceptive environments.
+    Tools: noisy networks, uncertainty ensembles, bootstrap with randomized priors,
+    intrinsic motivation (RND, ICM, disagreement, NGU).
+  \item \textbf{Credit assignment:} how to attribute outcomes to past actions across long,
+    sparse, or branching horizons.
+    Tools: TD / $n$-step / GAE for moderate delays, advantages for breadth, RUDDER for
+    long delays, HER for sparse goal-conditioned reward.
+  \item \textbf{State representation:} how to learn compact, informative latents from
+    high-dimensional observations.
+    Tools: bisimulation, auxiliary tasks, data augmentation, contrastive and non-contrastive
+    SRL, attention.
+\end{itemize}
+
+These three challenges feed into one another. Better representations make exploration
+and credit assignment tractable. Better exploration provides the data needed for
+learning representations and assigning credit. Better credit assignment guides the
+representation toward features that actually matter for control. Real-world deep RL
+is usually about getting all three right simultaneously --- not finding a single magic
+algorithm.
 
 \end{document}
