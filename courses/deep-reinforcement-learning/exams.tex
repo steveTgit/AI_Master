@@ -1,0 +1,873 @@
+% ==========================================================
+%  EXAM QUESTIONS — DEEP REINFORCEMENT LEARNING
+%  Shares the visual language of summary.tex (same accent,
+%  same box style, same typography) but uses article class.
+%
+%  Coverage: credit assignment + the data-centric, planning,
+%  model-based, and foundation-model material (lectures 06–11).
+%  Real questions (IRL exam, credit-assignment quiz) are kept
+%  verbatim; the rest are mock questions in the same style.
+% ==========================================================
+
+\documentclass[11pt,oneside]{article}
+
+\usepackage[
+  a4paper,
+  top=2.4cm,
+  bottom=2.1cm,
+  left=2.3cm,
+  right=2.3cm,
+  headheight=15pt
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{bbm}
+\usepackage{enumitem}
+\usepackage{booktabs,array,multicol,longtable}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+
+% ── Colors ───────────────────────────────────────────────
+\definecolor{accent}{HTML}{1B3A5C}
+\definecolor{q@frame}{HTML}{1A5276}
+\definecolor{q@bg}{HTML}{F6FAFD}
+\definecolor{key@frame}{HTML}{1E8449}
+\definecolor{key@bg}{HTML}{F4FBF6}
+\definecolor{note@frame}{HTML}{9A6A00}
+\definecolor{note@bg}{HTML}{FEF9E7}
+
+% ── Box global style ─────────────────────────────────────
+\tcbset{
+  enhanced,
+  breakable,
+  arc=2.5mm,
+  boxrule=0.5pt,
+  left=4.5mm,
+  right=4mm,
+  top=2.5mm,
+  bottom=2.5mm,
+  fonttitle=\bfseries\small,
+  sharp corners=west,
+  parbox=false
+}
+
+\newtcolorbox{qbox}[1][]{
+  colback=q@bg,
+  colframe=q@frame,
+  borderline west={3.5pt}{0pt}{q@frame},
+  title={#1}
+}
+
+\newtcolorbox{keybox}[1][]{
+  colback=key@bg,
+  colframe=key@frame,
+  borderline west={3.5pt}{0pt}{key@frame},
+  title={#1}
+}
+
+\newtcolorbox{notebox}[1][]{
+  colback=note@bg,
+  colframe=note@frame,
+  borderline west={3.5pt}{0pt}{note@frame},
+  title={#1}
+}
+
+% ── Section headings ─────────────────────────────────────
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{accent}}
+  {}{0em}{}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.2ex plus 1ex minus .2ex}{1.8ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {}{0em}{}
+\titlespacing*{\subsection}{0pt}{2.2ex plus 1ex minus .2ex}{1.0ex plus .2ex}
+
+% ── Header & footer ──────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}Exam Questions — \coursetitle}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Document metadata ─────────────────────────────────────
+\newcommand{\coursetitle}{Deep Reinforcement Learning}
+
+% ── Question counter & macros ────────────────────────────
+\newcounter{question}
+\newcommand{\questiontitle}[1]{%
+  \stepcounter{question}\begin{qbox}[Question \thequestion: #1]}
+\newcommand{\closequestion}{\end{qbox}}
+
+\newcommand{\repeatnote}{\textit{\color{gray!70}Asked multiple times.}}
+\newcommand{\choice}{\item[$\square$] }
+\newcommand{\answerline}[1]{\makebox[#1]{\hrulefill}}
+\newcommand{\workingspace}[1]{%
+  \par\vspace{2pt}%
+  \begin{tcolorbox}[
+    enhanced,
+    breakable=false,
+    colback=white,
+    colframe=gray!40,
+    boxrule=0.45pt,
+    arc=0pt,
+    sharp corners,
+    height=#1,
+    left=3mm, right=3mm, top=3mm, bottom=3mm,
+    frame style={dashed}
+  ]%
+  \end{tcolorbox}%
+  \vspace{2pt}%
+}
+
+% ── Math macros ──────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1\,\|\,#2\right)}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\grad}{\nabla}
+\newcommand{\T}{^{\mathsf{T}}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\ind}{\mathbbm{1}}
+\newcommand{\dataset}{\mathcal{D}}
+\newcommand{\params}{\boldsymbol{\theta}}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\Sset}{\mathcal{S}}
+\newcommand{\Aset}{\mathcal{A}}
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+% ── Title page ───────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.4cm}
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}\par
+  \vspace{0.65cm}
+  {\fontsize{26}{32}\selectfont\bfseries\color{accent}Exam Questions\\[2pt] \coursetitle\par}
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}\par
+  \vspace{0.55cm}
+  {\large Stefan Eder\par}
+  \vspace{0.15cm}
+  {\small\color{gray!70}\today\par}
+\end{center}
+
+\vspace{0.9cm}
+\begin{notebox}[How this file is organized]
+A practice set for the second half of the course: credit assignment, imitation learning
+and offline RL, inverse RL, preference-based RL / RLHF, planning, model-based RL, and RL
+for foundation models. \textbf{Real} old-exam questions (the Inverse RL exam and the
+credit-assignment quiz) are reproduced verbatim with their answer choices intact; the
+remaining \textbf{mock} questions follow the same style to broaden coverage. All answers
+are in the \emph{Answer Key} at the end --- the question boxes are kept blank so the set
+can be used for self-testing.
+\end{notebox}
+
+\tableofcontents
+\newpage
+
+
+% ==========================================================
+\section{Credit Assignment (real quiz)}
+% ==========================================================
+\textit{\small From the credit-assignment / RUDDER quiz (DCA 2025), reproduced verbatim.}
+
+\questiontitle{Reward transformations preserving optimality}
+Which kind of transformation is \emph{guaranteed} to leave the set of optimal policies
+unchanged?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Clip to 1 all the rewards
+  \choice Any affine transformation of immediate rewards only
+  \choice A strictly monotonic transformation of the total return
+  \choice Squaring the reward at each step
+\end{itemize}
+\closequestion
+
+\questiontitle{Potential-based reward shaping}
+The slides note that \emph{potential-based reward shaping} is mathematically equivalent to\dots
+\begin{itemize}[leftmargin=1.8em]
+  \choice doubling the learning rate
+  \choice value-function normalization
+  \choice reward clipping
+  \choice initializing the $Q$-values with the potential function
+\end{itemize}
+\closequestion
+
+\questiontitle{LSTM vs.\ FNN prediction errors}
+Compared with a feed-forward network (FNN), an LSTM used for contribution analysis tends to
+produce \emph{lower-variance} differences in consecutive predictions. What statistical
+property of the LSTM's prediction errors explains this?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Errors are \emph{highly correlated}, so they cancel in the difference
+  \choice Errors have heavier tails, making large differences rare
+  \choice Errors are i.i.d.\ across time
+  \choice Errors are biased toward earlier time-steps
+\end{itemize}
+\closequestion
+
+\questiontitle{Risk of online potential learning}
+The slides note that potential-based shaping is \emph{equivalent to $Q$-value initialisation}
+$Q'(s,a) = Q(s,a) + \Phi(s)$. What practical risk does this equivalence highlight when $\Phi$
+is \emph{learned online} with TD-errors derived from sparse, delayed rewards?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Bias is re-introduced because $\Phi$ itself must be bootstrapped from delayed feedback
+  \choice The learning rate must be halved to keep $Q$-updates unbiased
+  \choice Shaping may over-count rewards, double-updating the same transition
+  \choice Eligibility traces converge to zero faster, causing under-estimation
+\end{itemize}
+\closequestion
+
+\questiontitle{The credit-assignment problem (Sutton \& Minsky)}
+According to R.\ Sutton and Minsky, what is the problem of credit assignment? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Assigning credit or blame for overall episodes that contributed to the expectation of the return
+  \choice Identifying models that get high rewards
+  \choice Assigning credit or blame for overall outcomes to each of the decisions that contributed to those outcomes
+  \choice Identifying actions that led to high rewards
+\end{itemize}
+\closequestion
+
+\questiontitle{MC, TD, and reward delay}
+Which of the following sentences are true? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Variance in MC increases with the delay of the reward
+  \choice TD methods correct the bias faster than MC
+  \choice TD($\lambda$) assigns credit faster than TD($0$)
+  \choice Variance in TD($0$) increases with the delay of the reward
+\end{itemize}
+\closequestion
+
+\questiontitle{Zero future reward and the Markov property}
+If we make the expected future rewards equal to zero (i.e.\ via reward redistribution), the
+$Q$-values are just the average of the immediate reward. Why is this \emph{not} possible in a
+standard MDP setting? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Because to have future expected reward zero, states must be enriched with the past, which breaks the Markov assumption
+  \choice It is completely possible in an MDP setting
+  \choice Because in this case the reward depends also on the previous state and action, and is therefore not Markov
+  \choice Because the reward is obtained before we enter the environment, and is therefore not causal, breaking the Markov property
+\end{itemize}
+\closequestion
+
+\questiontitle{Definition of a sequence-Markov decision process (SDP)}
+What is the definition of a sequence-Markov decision process (SDP), as seen in class?
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice A decision process equipped with a \textbf{Markov reward} and a \textbf{Markov policy}, but \textbf{transition probabilities} not required to be Markov
+  \choice A decision process equipped with a \textbf{Markov policy}, but \textbf{transition probabilities and reward} not required to be Markov
+  \choice A decision process equipped with a \textbf{Markov policy} and \textbf{Markov transition probabilities}, but a \textbf{reward} not required to be Markov
+  \choice A decision process equipped with a \textbf{Markov reward} and \textbf{Markov transition probabilities}, but a \textbf{policy} not required to be Markov
+\end{itemize}
+\closequestion
+
+\questiontitle{Return-equivalent SDPs}
+What is the definition of \textbf{return-equivalent} SDPs? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Two SDPs are return-equivalent if they differ only in their reward distributions but have the \textbf{same return per episode}
+  \choice Two SDPs are return-equivalent if they differ only in their reward distributions but have the \textbf{same expected return}
+  \choice Two SDPs are return-equivalent if they differ only in their reward distributions but have the \textbf{same expected return per episode}
+\end{itemize}
+\closequestion
+
+\questiontitle{The explaining-away problem}
+What is the \textbf{explaining-away problem} in MDPs, when a function $g$ is used to predict
+the return based on the sequence of actions and states? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Since later states are used for return prediction, earlier actions causing reward are missed
+  \choice Previous actions can explain away future states, breaking the Markov property
+  \choice Since the sequence of states and actions are mutually independent, the prediction needs every component to explain the return
+  \choice In an MDP, one only needs the difference of states/actions to make a prediction, not the whole sequence
+\end{itemize}
+\closequestion
+
+\questiontitle{LSTM vs.\ FFN for prediction}
+Which statements are true regarding differences between LSTM and feed-forward networks (FFN)
+for making future predictions? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice An LSTM will only learn to store information if a state-action pair has strong evidence for a change in the expected return
+  \choice FFNs are not suited for processing sequences
+  \choice LSTMs tend to have smaller prediction errors since they reuse past information
+  \choice FFNs are prone to prediction errors since they must extract information from every state to make a prediction at every timestep
+  \choice Prediction errors of LSTMs are more likely to cancel via prediction differences, since consecutive predictions rely on the same internal state and are highly correlated
+\end{itemize}
+\closequestion
+
+\questiontitle{Sensitivity analysis vs.\ contribution analysis}
+What is the main difference between sensitivity analysis (SA) and contribution analysis (CA)?
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice \textbf{SA} is gradient-based, while \textbf{CA} is not
+  \choice \textbf{CA} focuses on how a small change in the input changes the output, and \textbf{SA} focuses on how the input is responsible for the output
+  \choice \textbf{CA} is gradient-based, while \textbf{SA} is not
+  \choice \textbf{SA} focuses on how a small change in the input changes the output, and \textbf{CA} focuses on how the input is responsible for the output
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+\section{Imitation Learning and Offline RL (mock)}
+% ==========================================================
+
+\questiontitle{Compounding errors in behavioral cloning}
+A behavioral-cloning policy makes a mistake with probability $\epsilon$ under the expert's
+state distribution. According to Ross \& Bagnell (2010), how does the total error grow with
+the horizon $T$?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Linearly, $\bigO{T\epsilon}$, because errors are independent across steps
+  \choice Quadratically, $\bigO{T^2\epsilon}$, because an early mistake corrupts future states
+  \choice It stays bounded by $\epsilon$ regardless of $T$
+  \choice Logarithmically, $\bigO{\epsilon\log T}$
+\end{itemize}
+\closequestion
+
+\questiontitle{What DAgger requires}
+DAgger reduces the $\bigO{T^2}$ error of behavioral cloning to $\bigO{T}$. What is the central
+cost or requirement that makes it applicable?
+\begin{itemize}[leftmargin=1.8em]
+  \choice A reward function for every state
+  \choice An expert that can be \emph{queried for labels} on states the learner visits
+  \choice A known transition model of the environment
+  \choice A pretrained value function
+\end{itemize}
+\closequestion
+
+\questiontitle{Multimodal demonstrations}
+An expert demonstrates passing an obstacle on either the left or the right for similar states.
+Why does a behavioral-cloning policy with an MSE loss fail here, and name one fix.
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{Why standard off-policy RL fails offline}
+Running DQN or SAC on a fixed data set without new interaction typically diverges. What is the
+mechanism?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The replay buffer is too small to cover the state space
+  \choice The $\max_{a'} Q(s',a')$ backup queries out-of-distribution actions, whose values the network overestimates, and the error propagates via bootstrapping
+  \choice The learning rate must decay faster offline
+  \choice Off-policy methods cannot use a discount factor offline
+\end{itemize}
+\closequestion
+
+\questiontitle{Three families of offline RL}
+Name the three families of offline-RL methods and the single principle they all enforce.
+\workingspace{4cm}
+\closequestion
+
+\questiontitle{How IQL avoids OOD queries}
+Implicit Q-Learning (IQL) replaces the $\max_{a'} Q(s',a')$ target with expectile regression
+on a value function $V(s)$. Why does this avoid out-of-distribution action queries, and what
+does $V(s)$ approximate as the expectile $\tau \to 1$?
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{Trajectory stitching}
+Which offline-RL approaches can perform \emph{trajectory stitching} (combining sub-optimal
+trajectories into a better-than-dataset policy)?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The Decision Transformer, because it conditions on return-to-go
+  \choice Bellman-backup methods (CQL, IQL), because value propagates through bootstrapping
+  \choice Only behavior cloning
+  \choice No offline method can stitch
+\end{itemize}
+\closequestion
+
+\questiontitle{IL vs.\ offline RL}
+State the key difference in objective between imitation learning and offline RL, and which one
+can in principle exceed the quality of the data it is trained on.
+\workingspace{3cm}
+\closequestion
+
+
+% ==========================================================
+\section{Inverse Reinforcement Learning (real exam)}
+% ==========================================================
+\textit{\small From the Inverse RL exam, reproduced verbatim with original answer choices.}
+
+\questiontitle{MaxEnt IRL with function approximation}
+When using Maximum Entropy IRL with high-dimensional function approximation (e.g.\ neural
+networks), one key bottleneck is:
+\begin{itemize}[leftmargin=1.8em]
+  \choice The inability to compute gradients with respect to $\psi$
+  \choice The need to differentiate through a complex partition function or to run repeated forward--backward algorithms
+  \choice The requirement that all expert trajectories be perfect
+  \choice The immediate convergence toward a uniform distribution over all trajectories
+\end{itemize}
+\closequestion
+
+\questiontitle{Why Maximum Entropy IRL?}
+Why is Maximum Entropy IRL used?
+\begin{itemize}[leftmargin=1.8em]
+  \choice To ensure the reward function is constant across all states
+  \choice Because the method aims to retain as much randomness as possible, subject to matching expert statistics
+  \choice Because it cannot handle suboptimal demonstrations
+  \choice Because a Dirac delta distribution over the best path is always infeasible
+\end{itemize}
+\closequestion
+
+\questiontitle{A common challenge in IRL}
+What is a common challenge when performing IRL?
+\begin{itemize}[leftmargin=1.8em]
+  \choice There is always a single unique reward function consistent with the expert's behavior
+  \choice The learned reward is trivial to evaluate without further policy optimization
+  \choice Expert demonstrations may be suboptimal, complicating reward inference
+  \choice IRL does not require knowledge or assumptions about the environment's dynamics
+\end{itemize}
+\closequestion
+
+\questiontitle{Unique aspect of IRL vs.\ imitation learning}
+Compared to Imitation Learning (IL), a unique aspect of IRL is that IRL:
+\begin{itemize}[leftmargin=1.8em]
+  \choice Aims to learn the expert's reward rather than just copying actions
+  \choice Only works in deterministic environments
+  \choice Discards the idea of a reward function entirely
+  \choice Ignores expert demonstrations
+\end{itemize}
+\closequestion
+
+\questiontitle{Role of $p(\tau)$ in MaxEnt IRL}
+In Maximum Entropy IRL, the probability of a trajectory $\tau$ is written as
+$p_\psi(\tau \mid \mathcal{O}_{0:T}) \propto p(\tau)\exp(r_\psi(\tau))$. What is the role of
+$p(\tau)$ in this expression?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It enforces that all trajectories with the same reward get zero probability
+  \choice It encodes the environment's dynamics or ``how likely'' the raw trajectory is, independent of reward
+  \choice It ensures that the partition function is always $1$
+  \choice It guarantees that expert demonstrations appear with higher probability than random trajectories by default
+\end{itemize}
+\closequestion
+
+\questiontitle{Slack variable in maximum-margin IRL}
+Which statement correctly describes a slack variable $\zeta$ in maximum-margin IRL?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It controls how strictly the constraints must be satisfied, allowing the expert to be suboptimal
+  \choice It ensures the maximum margin has infinite size
+  \choice It forces the expert's trajectories to always have higher reward
+  \choice It is irrelevant in IRL and only used in supervised SVMs
+\end{itemize}
+\closequestion
+
+\questiontitle{What IRL starts with}
+In IRL, we typically start with:
+\begin{itemize}[leftmargin=1.8em]
+  \choice A set of expert demonstrations (trajectories)
+  \choice A fully known reward function from the environment
+  \choice A labeled dataset with correct actions for each state
+  \choice No knowledge about the environment's dynamics
+\end{itemize}
+\closequestion
+
+\questiontitle{Interpreting the MaxEnt IRL gradient}
+Consider the gradient of the Maximum Entropy IRL objective,
+$\E_{\tau\sim\pi^*}[\grad_\psi r_\psi(\tau)] - \E_{\tau\sim p^\psi(\tau\mid\mathcal{O}_{0:T})}[\grad_\psi r_\psi(\tau)]$.
+Conceptually, what does each term represent?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The first term decreases the expert's reward, the second increases the current policy's reward
+  \choice Both terms push the reward parameters in the same direction
+  \choice The first term reinforces expert trajectories; the second penalizes the policy's own trajectories
+  \choice They both approximate the state visitation frequencies
+\end{itemize}
+\closequestion
+
+\questiontitle{What makes MaxEnt IRL log-likelihood hard}
+When optimizing the log-likelihood in Maximum Entropy IRL, what makes this problem
+computationally challenging?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The partition function $Z$ involves a sum over all possible trajectories, which can be extremely large
+  \choice The gradient of the likelihood does not depend on $\psi$
+  \choice Each demonstration is guaranteed to be optimal
+  \choice The objective always converges in one iteration
+\end{itemize}
+\closequestion
+
+\questiontitle{Feature matching with a linear reward}
+In feature-matching IRL with a linear reward $r_\psi(s,a) = \psi\T f(s,a)$, which statement is
+true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The reward is assumed to be a non-linear function
+  \choice We aim to match the expert's feature expectations $\mu(\pi)$
+  \choice We never need to solve an MDP to update $\psi$
+  \choice The reward depends only on the next state transition
+\end{itemize}
+\closequestion
+
+\questiontitle{Purpose of the structured margin term}
+The structured max-margin IRL formulation uses a loss term $D(\pi_{\text{expert}}, \pi)$ in
+$\psi\T\mu(\pi_{\text{expert}}) > \max_\pi\bigl(\psi\T\mu(\pi) + D(\pi_{\text{expert}},\pi)\bigr)$.
+What is the purpose of $D(\pi_{\text{expert}}, \pi)$?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It ensures that only the final reward function matters
+  \choice It differentiates between policies that are ``almost'' like the expert versus those that are very different
+  \choice It nullifies any margin gained by suboptimal policies
+  \choice It speeds up the solver by removing constraints
+\end{itemize}
+\closequestion
+
+\questiontitle{Primary objective of max-margin IRL}
+In the maximum-margin approach to IRL (inspired by SVMs), what is the primary objective?
+\begin{itemize}[leftmargin=1.8em]
+  \choice To find the widest margin in the raw observations of states
+  \choice To maximize the margin between the expert's feature expectations and those of any other policy
+  \choice To minimize the number of slack variables to zero
+  \choice To guarantee that the expert policy is identical to all alternative policies
+\end{itemize}
+\closequestion
+
+\questiontitle{Primary goal of IRL}
+Which of the following is a primary goal of Inverse Reinforcement Learning?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Recover the reward function from expert demonstrations
+  \choice Perform clustering on reward signals
+  \choice Directly mimic the expert's actions without any reward model
+  \choice Randomize the learned policy to increase exploration
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+\section{Preference-Based RL, RLHF and DPO (mock)}
+% ==========================================================
+
+\questiontitle{The Bradley--Terry preference model}
+A reward model is trained from pairwise preferences $\tau_w \succ \tau_l$. Write the
+Bradley--Terry probability that $\tau_w$ is preferred in terms of the trajectory rewards
+$r_\theta(\tau_w), r_\theta(\tau_l)$, and state what loss is used to fit it.
+\workingspace{3cm}
+\closequestion
+
+\questiontitle{The KL penalty in RLHF}
+The RLHF objective is $\max_\theta \E_{y\sim\pi_\theta}[\,r_\phi(x,y) - \beta\log\frac{\pi_\theta(y\mid x)}{\pi_{\text{ref}}(y\mid x)}\,]$.
+What is the role of the KL term, and what failure mode does it mitigate?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It increases the entropy of the reward model
+  \choice It keeps the policy close to the reference (SFT) model, mitigating reward overoptimization
+  \choice It guarantees the reward model is unbiased
+  \choice It replaces the need for a value function in PPO
+\end{itemize}
+\closequestion
+
+\questiontitle{Two anchors in PPO-style RLHF}
+PPO-style RLHF uses two distinct reference points. Identify each and what it controls.
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{What DPO eliminates}
+Direct Preference Optimization (DPO) rewrites the RLHF problem so that the reward and partition
+function cancel. What does this eliminate compared to standard RLHF, and what is the main
+limitation of DPO?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It eliminates the SFT step; limitation: it needs more human labels
+  \choice It eliminates the separate reward model and the RL loop, becoming supervised learning on preference pairs; limitation: it assumes a fixed offline preference set
+  \choice It eliminates the KL penalty; limitation: it diverges
+  \choice It eliminates pretraining; limitation: it cannot scale
+\end{itemize}
+\closequestion
+
+\questiontitle{Goodhart's law and reward hacking}
+Give the statement of Goodhart's law as it applies to RL, and one concrete example of reward
+hacking discussed in the lecture.
+\workingspace{3cm}
+\closequestion
+
+\questiontitle{GRPO vs.\ PPO}
+Group Relative Policy Optimization (GRPO) avoids one expensive component of PPO-style RLHF.
+Which component, and how does GRPO obtain its advantage estimate instead?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It avoids the reward model; it uses human labels directly
+  \choice It avoids the separate value (critic) network; it standardizes rewards within a group of sampled outputs for the same prompt
+  \choice It avoids the KL penalty; it clips more aggressively
+  \choice It avoids sampling; it uses a fixed dataset
+\end{itemize}
+\closequestion
+
+\questiontitle{RLAIF and Constitutional AI}
+What problem does RLAIF address, and what is the key insight that makes it work?
+\workingspace{3cm}
+\closequestion
+
+
+% ==========================================================
+\section{Planning and Search (mock)}
+% ==========================================================
+
+\questiontitle{The four phases of MCTS}
+List the four phases of Monte Carlo Tree Search in order, and state which action is finally
+played at the root.
+\workingspace{4cm}
+\closequestion
+
+\questiontitle{The UCT tree policy}
+UCT selects actions by $a^* = \argmax_a[\,Q(s,a) + c\sqrt{\ln N(s)/N(s,a)}\,]$. Explain what
+each of the two terms encourages and the role of $c$.
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{AlphaZero's network}
+How does AlphaZero differ from AlphaGo, and what does its single network $f_\theta(s)$ output?
+\begin{itemize}[leftmargin=1.8em]
+  \choice AlphaZero adds a human-games dataset; the network outputs only a value
+  \choice AlphaZero removes human games, the rollout policy, and supervised pretraining; one network outputs both a policy prior $\mathbf{p}$ and a value $v$
+  \choice AlphaZero replaces MCTS with $Q$-learning; the network outputs $Q$-values
+  \choice AlphaZero uses two separate networks trained on expert data
+\end{itemize}
+\closequestion
+
+\questiontitle{MCTS as policy improvement}
+In AlphaZero, why is MCTS described as a ``policy-improvement operator,'' and what role does
+the network play with respect to the search?
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{The branching problem}
+At depth $d$ with branching factor $b$, a full search tree has how many nodes, and name the two
+classical remedies MCTS uses to make the search tractable.
+\answerline{4cm}
+\closequestion
+
+\questiontitle{Random shooting vs.\ CEM}
+For continuous-control trajectory optimisation, contrast random shooting with the Cross-Entropy
+Method (CEM). What does CEM do that random shooting does not?
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{Model Predictive Control}
+In MPC, the agent optimizes an $H$-step action sequence but executes only part of it. Which
+part, and why does this help when the model is imperfect?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It executes the whole sequence open-loop; this is faster
+  \choice It executes only the first action, then re-plans, which corrects for model errors after each real transition
+  \choice It executes the last action; this maximizes lookahead
+  \choice It executes a random action from the sequence for exploration
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+\section{Model-Based RL (mock)}
+% ==========================================================
+
+\questiontitle{Dyna-Q and the planning steps}
+In Dyna-Q, real experience updates the model and the $Q$-function, while imagined experience
+updates only the $Q$-function. What does the algorithm reduce to when the number of planning
+steps $K = 0$?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Monte Carlo control
+  \choice Ordinary model-free $Q$-learning
+  \choice Policy iteration
+  \choice Behavioral cloning
+\end{itemize}
+\closequestion
+
+\questiontitle{Why MBPO uses short rollouts}
+MBPO starts model rollouts from real replay-buffer states and keeps them very short (often
+$k=1$--$5$). Explain the trade-off that motivates short rollouts.
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{Aleatoric vs.\ epistemic uncertainty}
+Define aleatoric and epistemic uncertainty, and state which one can be reduced by collecting
+more data and which one matters most for model-based RL planning.
+\workingspace{4cm}
+\closequestion
+
+\questiontitle{Ensembles and uncertainty}
+A single Gaussian neural-network model outputs a mean and variance. Which type of uncertainty
+does its predictive variance capture, and what must you do instead to estimate epistemic
+uncertainty?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It captures epistemic uncertainty; nothing more is needed
+  \choice It captures aleatoric uncertainty; for epistemic uncertainty you need disagreement between an ensemble of models
+  \choice It captures both equally; ensembles are unnecessary
+  \choice It captures neither; only Bayesian neural networks work
+\end{itemize}
+\closequestion
+
+\questiontitle{Model exploitation}
+What is model exploitation in model-based RL, and name two mitigations.
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{PETS}
+PETS combines three ingredients for continuous control. Name them and state what ``trajectory
+sampling'' (rolling out particles through the ensemble) achieves.
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{Latent world models}
+Why do agents like Dreamer and MuZero learn a \emph{latent} state $z_t$ instead of predicting
+in the raw observation space? Give two reasons.
+\workingspace{3.5cm}
+\closequestion
+
+
+% ==========================================================
+\section{RL for Foundation Models (mock)}
+% ==========================================================
+
+\questiontitle{Autoregressive generation as RL}
+Map an autoregressive language model onto the RL formalism: what plays the role of the policy,
+the state, the action, and the reward?
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{Pretraining as imitation}
+Why is language-model pretraining described as a form of behavioral cloning, and why is it
+``not enough'' to produce a helpful assistant?
+\workingspace{3.5cm}
+\closequestion
+
+\questiontitle{GRPO advantage normalization}
+In GRPO, $G$ outputs are sampled for the same prompt $x$ and the advantage is
+$\hat A_i = (r_i - \mathrm{mean}(r_{1:G}))/(\mathrm{std}(r_{1:G}) + \delta)$. At what level
+(token or sequence) is $\hat A_i$ computed, and how is it applied to the tokens of output $y_i$?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Token-level; applied independently to each token
+  \choice Sequence-level; the same $\hat A_i$ is applied to all tokens of output $y_i$
+  \choice It is not an advantage at all; it is a reward
+  \choice It is computed across prompts, not within a group
+\end{itemize}
+\closequestion
+
+\questiontitle{Verifiable rewards (RLVR)}
+What is the key idea of Reinforcement Learning with Verifiable Rewards (RLVR), and why is a
+composite reward $r(y) = \lambda_{\text{format}} r_{\text{format}}(y) + \lambda_{\text{correct}} r_{\text{correct}}(y)$
+often used?
+\workingspace{4cm}
+\closequestion
+
+\questiontitle{SFT vs.\ RLHF vs.\ RLVR}
+For each of SFT, RLHF, and RLVR, give the training signal it relies on and its main risk.
+\workingspace{4.5cm}
+\closequestion
+
+\questiontitle{Generalist agents}
+Gato uses one Transformer with the same weights across Atari, robotics, captioning, and
+dialogue. What makes this possible, and how was Gato primarily trained?
+\workingspace{3.5cm}
+\closequestion
+
+
+% ==========================================================
+%  ANSWER KEY
+% ==========================================================
+\newpage
+\section*{Answer Key}
+\addcontentsline{toc}{section}{Answer Key}
+
+\textit{\small Real-exam answers (Q1--12 credit assignment, Q21--33 IRL) follow the official keys;
+mock answers give the intended solution.}
+
+\subsection*{Credit Assignment (real)}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=3pt]
+  \item \textbf{C} --- a strictly monotonic transformation of the \emph{total return} preserves the argmax over policies; affine/clipping/squaring of per-step rewards need not.
+  \item \textbf{D} --- potential-based shaping with $\Phi$ is equivalent to initializing $Q$-values with the potential function.
+  \item \textbf{A} --- the LSTM's consecutive prediction errors are highly correlated, so they cancel in the difference, giving lower variance.
+  \item \textbf{A} --- if $\Phi$ is learned online from sparse, delayed TD-errors, it must itself be bootstrapped, which re-introduces bias.
+  \item \textbf{C} --- credit assignment is assigning credit/blame for overall outcomes to each of the decisions that contributed.
+  \item \textbf{A, C} --- variance in MC grows with reward delay; TD($\lambda$) assigns credit faster than TD($0$).
+  \item \textbf{C} --- with zero expected future reward the reward depends on the previous state/action, so it is no longer Markov.
+  \item \textbf{C} --- an SDP has a Markov policy and Markov transitions, but the reward need not be Markov.
+  \item \textbf{B} --- return-equivalent SDPs differ only in reward distribution but have the same \emph{expected return}.
+  \item \textbf{A} --- because later states are used for prediction, earlier reward-causing actions get explained away (missed).
+  \item \textbf{A, B, C, D, E} --- all statements about LSTM vs.\ FFN prediction are correct.
+  \item \textbf{D} --- SA measures how a small input change affects the output; CA measures how the input is \emph{responsible} for the output.
+\end{enumerate}
+
+\subsection*{Imitation Learning and Offline RL (mock)}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=3pt, start=13]
+  \item \textbf{B} --- error grows quadratically, $\bigO{T^2\epsilon}$, because mistakes change future states.
+  \item \textbf{B} --- DAgger needs an expert that can label the learner's on-policy states.
+  \item MSE \emph{averages} the two valid modes ($\approx\frac12(a_{\text{left}}+a_{\text{right}})$), driving into the obstacle. Fix: mixture-of-Gaussians head, latent-variable model (CVAE/flow), or autoregressive action discretization.
+  \item \textbf{B} --- the $\max_{a'}Q$ backup queries OOD actions; the net overestimates them and the error propagates through bootstrapping.
+  \item Behavior regularization (stay close to $\pi_\beta$), conservative value estimation (CQL), and sequence modeling (Decision Transformer). Common principle: \emph{do not trust the model at out-of-distribution inputs.}
+  \item IQL regresses $V(s)$ using \emph{expectile} loss over \emph{dataset actions only}, so no unseen action is ever evaluated; as $\tau\to1$, $V(s)$ approaches a soft $\max_{a\in\dataset}Q(s,a)$.
+  \item \textbf{B} --- Bellman-backup methods (CQL, IQL) can stitch; the Decision Transformer cannot.
+  \item IL matches the expert (upper bound: expert level); offline RL maximizes reward and can in principle exceed the dataset's behavior policy.
+\end{enumerate}
+
+\subsection*{Inverse Reinforcement Learning (real)}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=3pt, start=21]
+  \item \textbf{B} --- differentiating through the partition function / repeated forward--backward passes.
+  \item \textbf{B} --- retain maximum randomness subject to matching expert statistics.
+  \item \textbf{C} --- expert demonstrations may be suboptimal.
+  \item \textbf{A} --- IRL learns the expert's reward rather than copying actions.
+  \item \textbf{B} --- $p(\tau)$ encodes environment dynamics / how likely the raw trajectory is, independent of reward.
+  \item \textbf{A} --- the slack variable relaxes the constraints, allowing a suboptimal expert.
+  \item \textbf{A} --- IRL starts with a set of expert demonstrations (trajectories).
+  \item \textbf{C} --- first term reinforces expert trajectories; second penalizes the policy's own trajectories.
+  \item \textbf{A} --- the partition function $Z$ sums over all possible trajectories.
+  \item \textbf{B} --- we aim to match the expert's feature expectations $\mu(\pi)$.
+  \item \textbf{B} --- $D$ differentiates ``almost-expert'' policies from very different ones (structured margin).
+  \item \textbf{B} --- maximize the margin between the expert's feature expectations and those of any other policy.
+  \item \textbf{A} --- recover the reward function from expert demonstrations.
+\end{enumerate}
+
+\subsection*{Preference-Based RL, RLHF and DPO (mock)}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=3pt, start=34]
+  \item $P(\tau_w\succ\tau_l)=\sigma(r_\theta(\tau_w)-r_\theta(\tau_l))$, with $r_\theta(\tau)=\sum_{(s,a)\in\tau}r_\theta(s,a)$; fit by maximizing log-likelihood (binary cross-entropy on the preference label).
+  \item \textbf{B} --- the KL term keeps $\pi_\theta$ near the SFT reference, mitigating reward overoptimization.
+  \item KL penalty: $\pi_\theta$ vs.\ $\pi_{\text{ref}}$ (SFT) --- stay close to the trusted assistant. PPO clipping: $\pi_\theta$ vs.\ $\pi_{\theta_{\text{old}}}$ --- keep each update step stable.
+  \item \textbf{B} --- DPO removes the separate reward model and the RL loop (pure supervised learning on pairs); limitation: it assumes a fixed offline preference set.
+  \item ``When a measure becomes a target, it ceases to be a good measure.'' Example: the OpenAI boat-race agent spinning to collect speed boosts instead of finishing (or a verbose/sycophantic RLHF model; a robot moving the camera so an object only \emph{appears} grasped).
+  \item \textbf{B} --- GRPO drops the value/critic network and standardizes rewards within a group of sampled outputs for the same prompt.
+  \item RLAIF replaces human annotators with a strong LLM because human labelling does not scale; key insight: critique is easier than generation. Constitutional AI encodes the values as written principles the model uses to critique and revise its own outputs.
+\end{enumerate}
+
+\subsection*{Planning and Search (mock)}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=3pt, start=41]
+  \item Selection (tree policy / UCT) $\to$ Expansion $\to$ Simulation (rollout) $\to$ Backpropagation. The action with the \emph{highest visit count} at the root is played.
+  \item $Q(s,a)$ exploits promising branches; $c\sqrt{\ln N(s)/N(s,a)}$ explores under-visited actions (large when $N(s,a)$ is small). $c$ sets the exploration--exploitation balance.
+  \item \textbf{B} --- AlphaZero removes human games, the rollout policy, and supervised pretraining; one network outputs both a policy prior $\mathbf{p}$ and a value $v$.
+  \item MCTS turns the raw network policy $\mathbf{p}_\theta$ into a stronger search policy $\pi_{\text{MCTS}}\propto N(s,a)^{1/\tau}$; the network is then trained to \emph{amortize} (imitate) that improved search and the final outcome.
+  \item $b^d$ nodes. Remedies: depth reduction (a learned value function replaces deep rollouts) and breadth reduction (expand only promising branches).
+  \item Random shooting samples action sequences uniformly and keeps the best; CEM \emph{iteratively refits} the sampling distribution to the elite (best-scoring) sequences, concentrating samples on good regions.
+  \item \textbf{B} --- MPC executes only the first action, then re-plans, correcting model errors after each real transition.
+\end{enumerate}
+
+\subsection*{Model-Based RL (mock)}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=3pt, start=48]
+  \item \textbf{B} --- with $K=0$ Dyna-Q is ordinary model-free $Q$-learning.
+  \item Short rollouts trade off model usefulness against compounding error: longer rollouts give more imagined data but accumulate model error and invite exploitation. Starting from real states and imagining only a few steps keeps synthetic data trustworthy. Goal: use the model only where it is accurate.
+  \item Aleatoric = inherent environment randomness (not reducible with more data); epistemic = uncertainty from limited data / OOD queries (reducible). Epistemic uncertainty matters most for MBRL --- it tells the planner where the model should not be trusted.
+  \item \textbf{B} --- a single Gaussian net captures aleatoric uncertainty (predictive variance); epistemic uncertainty requires disagreement across an ensemble.
+  \item Model exploitation: a policy optimized against a learned model finds and exploits its errors (e.g.\ a glitch giving infinite simulated reward). Mitigations: limit the planning horizon, penalize uncertainty (pessimistic planning), and frequently retrain on new real data.
+  \item Probabilistic ensemble (dynamics + uncertainty), CEM (action-sequence search), and trajectory sampling (ensemble rollouts). Trajectory sampling propagates model disagreement into the planning, so uncertain actions are down-weighted.
+  \item Raw observations are high-dimensional, partial, contain irrelevant variation, and may miss history-dependent information; a latent $z_t$ summarizes the useful information for control (the goal is a control-useful representation, not perfect reconstruction).
+\end{enumerate}
+
+\subsection*{RL for Foundation Models (mock)}
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=3pt, start=54]
+  \item Policy = $\pi_\theta(y_t\mid x,y_{<t})$ (the LM); state = prompt + generated prefix; action = next token (or tool call); reward = preference / verifier / task-success signal.
+  \item Pretraining maximizes token likelihood on text, i.e.\ it \emph{imitates} the conditional distribution of the data --- behavioral cloning. It is not enough because it learns plausible (and conflicting) continuations, not instruction-following, calibration, refusal, or alignment with preferences.
+  \item \textbf{B} --- $\hat A_i$ is sequence-level (one value per output) and the same $\hat A_i$ is applied to all tokens of $y_i$.
+  \item RLVR replaces a learned preference reward with an automatic checker (math verifier, unit tests, API check, game score). The composite reward teaches both \emph{format} (answer must be extractable/parseable) and \emph{correctness} (extracted answer passes the verifier); without a format term, capability is underestimated.
+  \item SFT: demonstrations --- risk: limited by examples. RLHF: human preferences --- risk: proxy reward hacking / overoptimization. RLVR: automatic verifier --- risk: narrow rewards and hacking the verifier.
+  \item Tokenizing all modalities (text, vision, state, actions) into a shared sequence makes language modeling and action prediction structurally identical, so one Transformer can serve all tasks. Gato was trained primarily by supervised sequence modeling (imitation) on mixed datasets.
+\end{enumerate}
+
+
+\end{document}

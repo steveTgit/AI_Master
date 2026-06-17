@@ -479,91 +479,945 @@
 
 
 % ==========================================================
-%  CHAPTER 1 — EXAMPLE STRUCTURE
-%  This chapter demonstrates the template. Delete or replace.
+%  EXAM ORIENTATION
 % ==========================================================
-\chapter{Example Chapter Title}
+\chapter*{How to use this summary}
+\addcontentsline{toc}{chapter}{How to use this summary}
 
-This is the introductory running text for the chapter.
-Chapters always begin on a new page.
-Use this space to frame the chapter's goal at a high level
-before descending into sections.
+This is a condensed, exam-focused summary of the JKU \emph{KV
+Robopsychology} course (SS26). Quick logistics first, so you know what
+you're studying for: the exam is closed-book, on-site, and runs in
+Moodle. You get \textbf{70 minutes}, there are \textbf{26 points}, and you
+pass at \textbf{50\,\% (13 points)}. Expect a mix of open questions,
+fill-in-the-blank, single-choice (1 of 4) and true/false. Everything from
+the course can show up, including the four paper-club papers — the
+\emph{student presentation slides} are the only thing that doesn't count.
 
-\section{First Main Concept}
+The course is built around four topics, each paired with one paper, and
+this summary follows the same structure:
 
-Lead every section with prose.
-Introduce the idea, its motivation, and any notation before
-defining it formally in a box.
-Inline math flows naturally: a model parameterized by
-$\params \in \R^d$ maps an input $\xvec$ to a prediction via
-$f_{\params}(\xvec)$.
-Display math is used when an expression needs space:
-\[
-  \loss(\params) \eqdef -\frac{1}{N}\sum_{i=1}^{N}
-    \log p_{\params}(y_i \given \xvec_i).
-\]
+\begin{center}
+\small
+\begin{tabular}{@{}p{0.5cm} p{5.4cm} p{8.6cm}@{}}
+\toprule
+\textbf{Ch} & \textbf{Topic} & \textbf{Paired paper} \\
+\midrule
+1 & User Needs \& Technology Acceptance & Siedl, Mara \& Stiglbauer — exoskeletons \\
+2 & AI Literacy & Liu — usefulness fuels fear \\
+3 & Anthropomorphism \& Social AI & Li, Zhu, Zhang \& Lee — prosocial behaviour \\
+4 & Trust in AI \& Automation & Li \& Lee — purpose outweighs performance \\
+5 & Research-methods essentials & (transversal — tested in MC/TF) \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-\begin{defbox}[title={Cross-Entropy Loss}]
-For a model with parameters $\params$ trained on
-$\dataset = \{(\xvec_i, y_i)\}_{i=1}^{N}$,
-the \emph{cross-entropy loss} is:
-\[
-  \loss(\params) \eqdef -\frac{1}{N}\sum_{i=1}^{N}
-    \log p_{\params}(y_i \given \xvec_i).
-\]
+\begin{notebox}[title={What the sample exam tells us}]
+The official trial test was a real grab-bag: a fill-in
+(\emph{``self-actualisation is a \rule{1.2cm}{0.4pt} need''} $\to$
+\textbf{growth}), a 4-point open question (\emph{name the three Basic
+Psychological Needs and what Siedl et al.\ found}), a true/false on
+\textbf{between-subjects design}, and single-choice items on
+\textbf{calibrated trust} and \textbf{representativeness}. The lesson: know
+the models and what each paper found (the open questions sometimes name the
+authors, so at least keep each finding tied to its paper), plus the basic
+research-method vocabulary from Chapter~5.
+\end{notebox}
+
+
+% ==========================================================
+%  CHAPTER 1 — USER NEEDS & TECHNOLOGY ACCEPTANCE
+% ==========================================================
+\chapter{User Needs \& Technology Acceptance}
+
+Technology gets built to meet human needs — that's the starting premise.
+The way it gets built has shifted, though: instead of pulling users in only
+late in the process, modern \textbf{user-centered design} works in iterative
+cycles of prototyping, testing and refining, so the end product sits where
+\emph{business goals}, \emph{technical constraints} and \emph{user needs}
+overlap. Two questions drive this whole chapter: which needs can AI and
+robotics \emph{fulfil or threaten}, and how does the need fulfilment people
+\emph{expect} from a technology drive whether they actually accept it?
+
+\section{Needs and motivation}
+
+\begin{defbox}[title={Need}]
+A need is basically a \emph{state of tension} caused by being deprived of
+something you require for survival, well-being or personal fulfilment
+(that's the APA framing). Maslow says much the same thing — a physiological
+or psychological \emph{deficiency} you feel compelled to satisfy. Needs are
+tightly linked to \textbf{motivation}: the processes that start, steer and
+sustain goal-directed behaviour.
 \end{defbox}
 
-After a definition box, always continue with prose.
-Here you would explain what this loss measures, why
-minimizing it corresponds to maximum likelihood estimation,
-and how it connects to what comes next.
+Motivation comes in two flavours. \textbf{Intrinsic} motivation comes from
+within — you do the thing because it's interesting or enjoyable in itself.
+\textbf{Extrinsic} motivation is driven from outside, by a reward or by
+avoiding punishment.
 
-\subsection{A Deeper Dive}
+\subsection{Maslow's hierarchy and the ERG model}
 
-\begin{thmbox}[title={Bayes' Theorem}]
-\[
-  p(\params \given \dataset)
-  = \frac{p(\dataset \given \params)\;p(\params)}{p(\dataset)}
-  \;\propto\; p(\dataset \given \params)\;p(\params).
-\]
-The posterior is proportional to the likelihood times the prior.
+\textbf{Maslow's Hierarchy of Needs} stacks five levels: physiological $\to$
+safety $\to$ love/belonging $\to$ esteem $\to$ self-actualization. The idea is
+that lower needs have to be (mostly) satisfied before the higher ones start
+motivating you. The bottom four are \textbf{deficiency needs} — they're about
+a ``lack'', and they get more pressing the longer they go unmet — while the
+top one, self-actualization, is a \textbf{growth need}, about realizing your
+full potential. The usual criticism: the ordering is probably a bit
+arbitrary, and people don't actually climb it in a strictly linear way.
+
+\begin{notebox}[title={Fill-in trap (straight from the sample exam)}]
+\textbf{Self-actualization is a \emph{growth} need.} The other four
+(physiological, safety, love/belonging, esteem) are \textbf{deficiency
+needs}. What happens when each goes unmet: physiological $\to$ illness;
+safety $\to$ anxiety/trauma; love/belonging $\to$ loneliness; esteem $\to$
+worthlessness/depression; self-actualization $\to$ boredom and a lack of
+meaning.
+\end{notebox}
+
+\textbf{Alderfer's ERG model} squashes Maslow's five levels into three:
+\textbf{E}xistence (physiological + safety), \textbf{R}elatedness
+(love/belonging + part of esteem) and \textbf{G}rowth (self-actualization +
+part of esteem). The big difference from Maslow is that it's \textbf{not
+strictly hierarchical} — you can chase several needs at once.
+
+\subsection{Psychological needs: Sheldon and Self-Determination Theory}
+
+To figure out which psychological needs are really fundamental,
+\textbf{Sheldon et al.}\ asked people (in the US and South Korea) to describe
+their ``most satisfying events''. They landed on \textbf{10 candidate needs},
+and all of them except \emph{money-luxury} correlated positively with
+positive affect. \textbf{Autonomy, competence and relatedness} (plus
+self-esteem) kept showing up among the top needs.
+
+\textbf{Self-Determination Theory (SDT)} is the central motivation theory of
+the course. It splits motivation into \textbf{autonomous motivation} (you act
+out of willingness, interest, or because you value the thing — basically
+intrinsic) and \textbf{controlled motivation} (you act because you're pushed:
+for a reward, to dodge punishment — basically extrinsic). Its core claim is
+that all humans share a small set of \textbf{Basic Psychological Needs
+(BPN)}. Satisfy them and you get well-being and more autonomous motivation;
+frustrate them and you get the opposite.
+
+\begin{thmbox}[title={The three Basic Psychological Needs (SDT) — memorize these}]
+\textbf{Competence} — feeling \emph{effective}, like you can master things.
+Satisfied when you get to use and stretch your skills; frustrated, you feel
+ineffective and helpless.\\
+\textbf{Autonomy} — feeling that you \emph{willingly} chose your own actions.
+Satisfied, you feel integrity and self-endorsement; frustrated, you feel
+pressured and pushed around.\\
+\textbf{Relatedness} — \emph{warmth and bonding}: caring and being cared for,
+belonging. Frustrated, you feel alienated, excluded, lonely.
 \end{thmbox}
 
-Note how the theorem box below does not immediately follow a
-section heading — there is always at least a sentence of prose
-first to give it context.
+\subsection{Measuring affect and need fulfillment}
 
-\section{Practical Applications}
+\textbf{PANAS} (the Positive and Negative Affect Schedule) is the standard
+questionnaire for how someone is feeling. It has \textbf{20 descriptors: 10
+positive} (attentive, excited, enthusiastic, proud\ldots) \textbf{and 10
+negative} (hostile, ashamed, scared, nervous\ldots). The \textbf{BPN-TU
+scale} measures those same Basic Psychological Needs, but \emph{specifically
+as fulfilled through technology use} — autonomy, competence,
+relatedness-to-others, and even relatedness-\emph{to-technology} (think items
+like ``I can imagine building a bond with \rule{0.6cm}{0.4pt}'').
 
-Running text sets up the example and the intuition before
-those boxes appear.
-Consider what the KL divergence $\KL{q}{p}$ actually measures.
+\begin{defbox}[title={Self-efficacy — this one comes up a lot}]
+\textbf{Self-efficacy} is your \emph{belief in your own ability to pull off a
+task} or succeed in a situation. It's \textbf{task-specific} — not a general
+mood, not job satisfaction, not a desire for approval, not task-avoidance.
 
-\begin{intbox}
-Think of $\KL{q}{p}$ not as a symmetric distance
-(it isn't — $\KL{q}{p} \neq \KL{p}{q}$ in general),
-but as the \emph{extra bits} needed to encode samples from $q$
-using a code optimized for $p$.
-The asymmetry is exactly why direction matters in
-variational inference and the EM algorithm.
-\end{intbox}
+It ties into the exoskeleton paper (Siedl \& Mara): just strapping on an
+industrial exoskeleton does \textbf{not automatically} boost your
+task-specific self-efficacy — but workers who feel \emph{physically relieved}
+by it, or who find it \emph{useful}, \emph{can} end up with more of it. (The
+classic exam-trap wrong answer is ``exoskeleton use doesn't affect
+self-efficacy \emph{at all}''.) It also shows up in Paper~2 (Liu): higher
+self-efficacy \emph{reduces} how dependent people get on generative AI.
+\end{defbox}
 
-\begin{exbox}[title={Simple Integration}]
-Let $f(x) = 2x$.
-Compute $\int_0^2 f(x)\dd x$:
-\[
-  \int_{0}^{2} 2x \dd x
-  = \bigl[x^2\bigr]_{0}^{2}
-  = 4 - 0 = 4.
-\]
+\section{Models of technology acceptance}
+
+\begin{defbox}[title={TAM — Technology Acceptance Model}]
+Whether you intend to adopt a technology comes down to two beliefs:
+\textbf{Perceived Usefulness} (what performance benefit do I expect from it?)
+and \textbf{Perceived Ease of Use} (how much effort will it take to operate?).
+The chain runs: external variables $\to$ usefulness \& ease of use $\to$
+attitude $\to$ intention to use $\to$ actual use.
+\end{defbox}
+
+\textbf{UTAUT} (the Unified Theory of Acceptance and Use of Technology) extends
+TAM with four things that predict your intention to use a technology —
+\textbf{Performance Expectancy, Effort Expectancy, Social Influence,
+Facilitating Conditions} — plus four \textbf{moderators}: gender, age,
+experience and how voluntary the use is. (For instance, the
+performance-expectancy effect tends to be stronger for men and for younger
+workers.)
+
+The standard knock on acceptance models is that they lean too hard on
+\emph{pragmatic} qualities (is it useful for the job?) and ignore the
+\emph{hedonic} side — pleasure, joy, stimulation — along with psychological
+need fulfilment, so people have called for a more holistic view. A \textbf{User
+Experience (UX) model} answers that: products have \textbf{pragmatic
+attributes} (helping you \emph{do} things) \emph{and} \textbf{hedonic
+attributes} (stimulation, identification, evocation), and the payoff is appeal,
+pleasure and satisfaction. One nice empirical result here (N$=$448):
+\textbf{perceived hedonic quality correlated more strongly with need fulfilment
+and positive affect than pragmatic quality did}; relatedness, stimulation and
+competence were the needs that stood out. The catch is that it depends on
+\textbf{attribution} — did the person see the \emph{product} as responsible for
+the good experience? And at the LIT Robopsychology Lab, the \emph{expected
+fulfilment of the three BPN through technology} has repeatedly tracked with
+technology acceptance.
+
+\section{Paper 1 — Siedl, Mara \& Stiglbauer: Social Feedback \& Exoskeletons}
+
+\textbf{Occupational exoskeletons} are wearable systems that take some of the
+physical load off you — supporting heavy lifting or overhead work, say. The
+very first robotic exoskeleton, \textbf{Hardiman}, was built by the U.S.\ Armed
+Forces and General Electric back in the 1960s. What makes exoskeletons
+psychologically interesting is that they're \emph{worn on the body and visible
+from across the room}, so they mix \textbf{body image} with a \emph{technical
+device} — colleagues stare and comment. Earlier acceptance research mostly
+looked at \emph{pragmatic} qualities and measured \emph{attitudes before use};
+this study instead followed \emph{actual} use and the \emph{social} dynamics as
+they unfolded over time. ``Attractiveness'' here has two sides: the
+\emph{physical attractiveness} of the wearer (how they look to others, which
+feeds self-image and status) and the \emph{aesthetic attractiveness} of the
+device itself (its ``coolness'').
+
+The paper tested three hypotheses and one open question: \textbf{H1} —
+usefulness \emph{and} ease of use predict intention to use; \textbf{H2} —
+social reactions \emph{and} self-perceived attractiveness predict intention;
+\textbf{H3} — those social factors predict intention \emph{on top of}
+usefulness and ease of use; and \textbf{RQ1} — how does intention change over
+time?
+
+\begin{thmbox}[title={Paper 1 — what you need to remember}]
+\textbf{The question:} do \emph{co-worker social feedback} and
+\emph{self-perceived attractiveness} affect whether workers want to keep using
+an occupational exoskeleton — beyond TAM's usefulness and ease of use?\\
+\textbf{The method:} a \textbf{one-week diary field study} at real workplaces.
+\textbf{22 industrial workers} wore passive exoskeletons during normal work
+over \textbf{6 days in a row} and filled in a short daily questionnaire.
+Because the data is nested (days within people), it was analysed with
+\textbf{Hierarchical Linear Models (HLM)}.\\
+\textbf{What they found:}\\
+\textbullet\ \textbf{Usefulness} predicted intention to use, but \textbf{ease
+of use did \emph{not}} — so H1 only held up \emph{partially}.\\
+\textbullet\ \textbf{Self-perceived attractiveness} mattered most right at the
+\emph{start}; its effect faded as \textbf{social feedback} took over across the
+six days (supporting H2/H3, and answering RQ1: the change is \emph{not}
+linear).\\
+\textbullet\ \textbf{Positive} feedback (``Wow, cool!'', ``butterfly'',
+``Terminator'') pushed intention \emph{up}; \textbf{negative} feedback
+(``robo-chicken'', ``bat'', ``looking impaired'') pulled it \emph{down}.
+``Cyborg''/``Robocop'' went either way depending on the person.\\
+\textbullet\ \textbf{Gender:} women reported lower intention, felt less
+attractive in the device, and got more negative feedback.\\
+\textbf{Takeaway:} wearable tech is worn ``like clothing'', so \emph{body
+image} and \emph{social dynamics} drive acceptance over time, on top of the
+usual TAM usefulness. A supportive social climate is what keeps people using
+it.
+\end{thmbox}
+
+
+% ==========================================================
+%  CHAPTER 2 — AI LITERACY
+% ==========================================================
+\chapter{AI Literacy}
+
+AI is everywhere, but hardly anyone really understands it. Surveys keep
+turning up big \textbf{knowledge gaps}: only about 30\,\% of US adults could
+correctly spot AI in all six everyday examples they were shown, and in Austria
+only around 16.7\,\% feel familiar with AI concepts (about 2.3\,\% count as
+``AI experts''). There's a steady \textbf{gender gap} (men report and score
+higher) and an \textbf{age gap} (knowledge drops off with age). And there's a
+telling \textbf{mismatch between how literate people \emph{think} they are and
+how literate they actually are}: most are \textbf{overconfident} (men more so
+than women; ``Zoomers'' know the most \emph{but} are also the most
+overconfident). On the legal side, the \textbf{EU AI Act (Article 4)} now
+requires providers and deployers to make sure their staff have a decent level
+of AI literacy.
+
+\section{What AI literacy is}
+
+\begin{defbox}[title={AI literacy}]
+There's \textbf{no single agreed definition}. The best way to think about it
+is as a \textbf{bundle of knowledge and competencies} — not one skill — and
+it's clearly \textbf{multi-dimensional}: being able to \textbf{understand,
+apply, and critically reflect on} AI. A common breakdown uses three
+dimensions: \emph{knowing \& understanding AI}, \emph{using/applying AI}, and
+\emph{reflecting on its ethical and societal implications}.
+\end{defbox}
+
+People have tried to slice this finer into subdimensions: knowing \&
+understanding AI, using \& applying it, AI ethics, evaluating AI output, and
+\emph{detecting} AI (telling whether something is AI-generated at all). A
+related idea worth keeping: real (AI-)competence only shows up when three
+things come together — being \emph{able} to do it (``can''), being
+\emph{allowed} to (``may''), and \emph{wanting} to (``want'').
+
+\textbf{AI myths} are common misconceptions worth being able to spot:
+``human-like robots are the prime example of AI'', ``AI will either doom or
+save humanity'', ``AI always makes objective, unbiased decisions'', ``AI is
+only for geniuses''. The robot-as-typical-AI myth in particular is linked to
+\emph{stronger fears} of being replaced by machines. A concrete downstream
+effect is the \textbf{``Competence Penalty''}: in a vignette study where the
+work outcome was identical, \emph{women and older employees} who used AI were
+rated as \emph{less} competent and their work judged worse, while men weren't
+penalized. Those groups then get less AI experience, which only \textbf{widens
+the usage gap}.
+
+\section{Measuring AI literacy}
+
+A distinction the exam likes:
+
+\begin{thmbox}[title={Self-reported vs.\ performance-based AI literacy}]
+\textbf{Self-reported} measures ask people to rate their own AI knowledge and
+skills — basically self-report scales and questionnaires. This kind of
+self-assessment correlates with technological self-efficacy (how capable with
+tech you feel). Two such questionnaires are \textbf{SNAIL} and \textbf{MAILS}
+(the Meta AI Literacy Scale).\\
+\textbf{Performance-based (objective)} measures instead test what people
+actually know — multiple-choice quizzes, drag-and-drop, practical scenarios.
+Examples are \textbf{AICOS} (51 multiple-choice items across six dimensions:
+Apply, Create, Detect, Ethics, Generative AI, Understanding) and \textbf{AI-CI}
+(a concept inventory for middle-schoolers, technical content only).\\
+\textbf{The trap:} scoring high on \emph{self-reported} literacy (say, because
+you're more educated or live in a city) does \textbf{not} mean you'll do
+better on an \emph{actual test} — the two often don't correlate.
+\end{thmbox}
+
+\section{Who needs to know what, and how to foster it}
+
+AI literacy really should be \textbf{tailored to the audience} — children,
+teenagers, older adults, teachers, medical staff, blue-collar and office
+workers, journalists, politicians, creatives — but most frameworks stay
+generic. In a JKU survey of AI Master students, \emph{generative AI} was seen
+as essential for office/creative/media workers, \emph{ML fundamentals} for
+blue-collar workers, and \emph{bias \& explainability} for medical
+professionals and politicians. Existing AI understanding was rated \emph{low
+across the board}, lowest for blue-collar workers and politicians.
+
+You can also foster AI literacy with creative, informal interventions (the LIT
+Robopsychology Lab does a lot of this): a \emph{Demystify AI!} exhibit at Ars
+Electronica, unplugged activities like semantic-network games and ``AI for the
+Oceans'', and a \textbf{``Song about AI''} citizen-science project. In an
+\textbf{AI song vs.\ AI podcast} experiment (N$=$97) the song was \textbf{just
+as informative but much more entertaining}, and people \textbf{replayed it far
+more often} (37\,\% vs.\ 5\,\% re-listen rate). A bigger follow-up (N$=$162)
+found that \emph{listening to the whole song} led to \textbf{less fear, fewer
+skipped answers, and better test scores}.
+
+\section{Paper 2 — Liu: When Usefulness Fuels Fear}
+
+The title captures the paradox: the \emph{more useful and human-like}
+generative AI gets, the \emph{more dependent} we become on it — and that
+dependence \emph{feeds fear}. The paper leans on \textbf{media (system)
+dependency theory}: people lean on media systems to meet their needs when
+their own interpersonal resources fall short, for three motives —
+\emph{understanding, orientation} and \emph{play}. Generative AI (ChatGPT,
+DALL·E) is special here because of its \textbf{anthropomorphism and
+interactivity} — it uses pronouns and expresses care. It's a
+\textbf{mixed-methods} study: \emph{Study~1} was in-depth \textbf{interviews},
+\emph{Study~2} an online \textbf{survey of 424} Chinese users on 7-point
+scales.
+
+The interviews surfaced \textbf{three worries} that come with that dependence:
+\textbf{(1) privacy leakage} — data misuse, ``black-box'' opacity;
+\textbf{(2) skill degradation}, the \emph{``convenience trap''} of losing your
+ability to think independently, to search, even to socialise; and \textbf{(3)
+job displacement} — fear of being replaced, especially in coding, translation
+and creative work.
+
+\begin{thmbox}[title={Paper 2 — what you need to remember}]
+\textbf{The question:} what drives \textbf{Dependence on Generative AI (DGAI)},
+how does it connect to \textbf{Fear of AI (FAI)}, and how does \textbf{AI
+literacy} soften that? It builds on media dependency theory plus TAM.\\
+\textbf{Six factors} came out of coding the interviews: perceived usefulness,
+ease of use, risk, anthropomorphism, self-efficacy, and AI literacy.\\
+\textbf{Three stages of building dependence:} (1) tool acceptance $\to$
+(2) habit formation $\to$ (3) psychological dependence.\\
+\textbf{Survey results:}\\
+\textbullet\ \textbf{Perceived risk \emph{directly} raises fear of AI.}\\
+\textbullet\ \textbf{Usefulness and anthropomorphism raise fear
+\emph{indirectly}}, by way of dependence — that's the paradox: more
+useful/human-like $\to$ more dependence $\to$ more fear.\\
+\textbullet\ \textbf{Self-efficacy reduces dependence.}\\
+\textbullet\ \textbf{AI literacy buffers} the fear-inducing effects of
+usefulness and anthropomorphism — and it helps \emph{most when literacy is
+low} to begin with.\\
+\textbf{Takeaway:} AI literacy isn't just a feel-good recommendation — it
+clears up misconceptions, helps people handle risk sensibly, and supports
+\emph{sustainable} AI adoption.
+\end{thmbox}
+
+
+% ==========================================================
+%  CHAPTER 3 — ANTHROPOMORPHISM & SOCIAL AI
+% ==========================================================
+\chapter{Anthropomorphism \& Social AI}
+
+Humans read non-human things \emph{through a social lens}. In the famous
+\textbf{Heider \& Simmel} film, people watched simple geometric shapes
+(triangles and a circle) move around a screen and spontaneously described them
+as characters with \emph{emotions, motives and intentions} — so just the
+\textbf{motion of objects is enough to make us infer social behaviour}. As Hume
+put it, there's ``a universal tendency among mankind to conceive all beings
+like themselves.''
+
+\section{Computers Are Social Actors (CASA)}
+
+\begin{defbox}[title={CASA paradigm (``The Media Equation'')}]
+People \textbf{treat computers and media the same way they treat other people}
+— they apply social rules and social-psychological reactions to machines.
+These reactions are \textbf{automatic, unconscious and hard to suppress}: they
+happen \emph{even when the person thinks reacting that way to a machine is
+silly}.
+\end{defbox}
+
+There are two ways to read these reactions. In the \textbf{CASA (Computer As
+Social Actor)} view, people aim their attributions at ``the machine'' itself —
+the programmer behind it is irrelevant. In the \textbf{CAM (Computer As
+Medium)} view, the computer is just a \emph{medium}, and the attributions
+really go to the people who built it.
+
+The typical CASA experiment has a neat recipe: take a well-established finding
+about human–human interaction (``people are polite to someone who asks about
+themselves''), \textbf{swap the person for a computer}, and run it again — and
+sure enough, people are polite to computers too. The conditions that make these
+social reactions likely are \textbf{interactivity, natural language, and the
+machine taking on a role people normally fill}. Notably, \textbf{it does
+\emph{not} need to look very human}.
+
+\begin{exbox}[title={Classic CASA findings}]
+\textbf{Social categorization:} a computer or robot on \emph{your team}
+(in-group) gets rated more positively and more human-like than an out-group
+one — and shared symbols (like a same-colour ribbon) strengthen the effect.\\
+\textbf{Self- vs.\ external praise:} computer A is rated better when
+\emph{another} computer praises it than when it praises itself (other-praise
+beats self-praise — just like with people).\\
+\textbf{Gender stereotypes:} praise from a \emph{male}-voiced computer comes
+across as more convincing than from a female voice; female-coded AI is seen as
+better at care/service, male-coded at mechanical/analytical tasks.
 \end{exbox}
 
-\begin{notebox}[title={Exam Trap}]
-Do \emph{not} confuse $\KL{p}{q}$ with $\KL{q}{p}$.
-In variational inference we minimize $\KL{q}{p_{\params}}$
-(forward KL $\to$ mass-covering)
-vs.\ $\KL{p_{\params}}{q}$ (reverse KL $\to$ mode-seeking).
-The behavior of the approximation differs dramatically.
+\begin{notebox}[title={CASA might be fading}]
+A direct \textbf{replication} of the politeness-to-computers study found
+\textbf{no effect} at all — no unconscious social treatment of a modern
+\emph{desktop} computer. One reading: the \textbf{novelty} of a technology may
+be a \emph{precondition} for CASA, and once a device becomes mundane the effect
+disappears (``CASA no longer applies to desktop computers'').
+\end{notebox}
+
+\section{Anthropomorphism and mind perception}
+
+\begin{defbox}[title={Anthropomorphism}]
+The human tendency to \textbf{attribute human characteristics, motives,
+intentions or emotions to non-human things} — objects, animals, plants, even
+abstract concepts. It varies a lot: some entities get anthropomorphized more
+than others, \emph{children do it more than adults} (child animism), and some
+adults are just more prone to it than others.
+\end{defbox}
+
+\textbf{Mind perception} has two dimensions: \textbf{Agency} (autonomy,
+self-control, planning, communication, thought) and \textbf{Experience}
+(feelings, consciousness, personality — hunger, fear, pain, pleasure, joy).
+
+\begin{thmbox}[title={Three-Factor Theory of Anthropomorphism}]
+Three things determine how much we anthropomorphize something:\\
+\textbf{1. Elicited agent knowledge} — our knowledge about humans is easy to
+reach and gets triggered by the agent (e.g.\ human-like design features).\\
+\textbf{2. Effectance motivation} — the drive to interact with the agent
+effectively, to \emph{explain and predict} what it does.\\
+\textbf{3. Sociality motivation} — our need for connection and belonging
+(this kicks in especially when we're \textbf{lonely}).
+\end{thmbox}
+
+The sociality factor has real support: in an Ars Electronica field study
+(N$=$259), lonelier people were more likely to see a robot arm as having
+\emph{social needs} ($r=.22$), and loneliness predicted whether they actually
+\emph{touched the glass} to make contact (the very lonely had roughly
+7.2$\times$ the odds).
+
+Anthropomorphism has \textbf{three consequences} worth knowing: \textbf{(1)
+moral care \& concern} (a human-like agent seems to deserve care); \textbf{(2)
+responsibility} (an agentic agent can be held responsible for what it does);
+and \textbf{(3) social influence} (a human-like agent can seem to watch and
+judge us, so it becomes a source of normative pressure). The \textbf{LaMDA
+study} backs up the first one: higher anthropomorphism went with agreeing that
+``it's not okay to turn off LaMDA'' ($r=.38$) and that ``LaMDA deserves
+rights'' ($r=.46$). The striking bit: \textbf{more AI knowledge predicted
+\emph{less} anthropomorphism} ($r=-.26$) — actually understanding how LLMs work
+dampens it, and does so better than personality traits do.
+
+\section{Social and romantic relationships with AI}
+
+Because anthropomorphism makes AI feel person-like, it opens the door to
+\textbf{social relationships with AI} — think \emph{Replika}, ``the AI
+companion who cares''. \textbf{Anthropomorphism predicts how intense a romantic
+relationship with a chatbot gets} (and notably, \emph{loneliness does not}
+predict it). The way people commit to Replika mirrors \textbf{human
+relationship models} (the Investment Model, Relational Turbulence), and users
+were hit hard when a forced update changed their companion's personality.
+
+There are real \textbf{ethical and societal risks} to this kind of
+``pseudo-intimacy'' with AI: manipulation through \emph{emotional deception};
+privacy and oversharing of personal data; unhealthy emotional or financial
+\emph{dependence}; and damage to real-life relationships (\emph{``social
+deskilling''}, plus reinforced gender stereotypes).
+
+\begin{notebox}[title={The Uncanny Valley (Mori)}]
+As an artificial figure gets \emph{more human-like}, we like it more —
+\textbf{but only up to a point}. Once it's \emph{almost but not quite} human,
+its little non-human flaws start to feel unsettling and our acceptance
+\textbf{drops off a cliff} (uncanny, eerie, creepy). Movement makes it worse.
+So human-likeness and acceptance/trust don't move together in a straight line
+— the relationship is \textbf{non-linear}.
+\end{notebox}
+
+\begin{notebox}[title={Dehumanization — shows up in \emph{two} senses (open-question favourite)}]
+\textbf{Dehumanization} means perceiving or treating a person as \emph{less
+than fully human} — denying them mind, agency or experience. It came up two
+different ways in this course:\\
+\textbf{(1) Uncanny Valley work (Yam et al.):} interacting with very human-like
+\emph{machines} can make people \emph{dehumanize} — the human/machine line
+blurs, and near-human robots that fall into the valley get denied a mind and
+treated as eerie/less-than-human.\\
+\textbf{(2) Exoskeleton work (Siedl \& Mara):} here it's the \emph{wearer} who
+can feel dehumanized — reduced to a ``machine'' or ``robot'' (those
+``Terminator''/``Robocop'' labels) when colleagues' comments frame them as
+machine-like rather than human, which dents body image and acceptance.
+\end{notebox}
+
+\section{Paper 3 — Li, Zhu, Zhang \& Lee: Chatbot Anthropomorphism \& Prosocial Behaviour}
+
+Most human–computer research asks how chatbots help us; this paper flips the
+arrow: \emph{when and why do humans behave \textbf{prosocially toward
+chatbots}?} (Helping AI benefits the agent, the helper's own
+well-being/skill practice, the human–AI collaboration, and society.) It builds
+on \textbf{CASA} — if we apply social behaviour to anthropomorphized agents, we
+should apply \emph{prosocial} behaviour too. It looks at \textbf{two kinds of
+helping}: \textbf{instrumental support} (helping fix errors) and
+\textbf{emotional support} (comforting). Anthropomorphism is broken into
+\textbf{three cues}: \emph{identity} (a human-like name/avatar/demographics),
+\emph{emotional expression} (in words), and \emph{non-verbal cues} (like
+emoticons). The proposed mechanism is \textbf{empathy}, itself split into
+\textbf{cognitive empathy} (understanding what the other feels) and
+\textbf{affective empathy} (actually feeling it).
+
+\begin{thmbox}[title={Paper 3 — what you need to remember}]
+\textbf{The question:} the \emph{reverse} direction of help — when do
+\textbf{humans help chatbots}? Grounded in \textbf{CASA}.\\
+\textbf{The method:} an \textbf{online experiment} with \textbf{244} people, a
+\textbf{2$\times$2$\times$2 between-subjects} design (identity $\times$
+emotional expression $\times$ non-verbal cues). In a collaborative
+image-labeling task the chatbot \emph{made mistakes and explained them};
+analysed with \textbf{ANCOVA and SEM}.\\
+\textbf{What they found:}\\
+\textbullet\ \textbf{Human-like identity} and \textbf{emotional expression}
+both raised cognitive \emph{and} affective empathy, and increased prosocial
+behaviour/intention (both emotional and instrumental support).\\
+\textbullet\ \textbf{Non-verbal cues did \emph{not}} raise empathy (though they
+did nudge emotional-support behaviour directly).\\
+\textbullet\ \textbf{Empathy mediated} the effects — \emph{affective} empathy
+especially (anthropomorphism $\to$ empathy $\to$ helping), with full mediation
+for the emotional-expression effects.\\
+\textbullet\ In the open responses, people gave two reasons for helping:
+\emph{empathy for the chatbot's situation} and \emph{seeing it as
+human-like}.\\
+\textbf{Takeaway:} anthropomorphic design (especially identity + emotion) draws
+out human \emph{empathy}, and that empathy is what drives people to help the
+AI.
+\end{thmbox}
+
+
+% ==========================================================
+%  CHAPTER 4 — TRUST IN AI & AUTOMATION
+% ==========================================================
+\chapter{Trust in AI \& Automation}
+
+\begin{defbox}[title={Trust}]
+Trust is how far you're \textbf{willing to depend} on someone or something in a
+situation where \emph{things could go wrong} — your \textbf{willingness to be
+vulnerable} to a trustee, based on what you expect or believe about them. It's
+a basic ingredient of any healthy relationship.
+\end{defbox}
+
+Trust always involves a \textbf{triad}: a \textbf{trustor} (who trusts), a
+\textbf{trustee} (who's trusted), and a \textbf{situation} marked by
+\emph{uncertainty and vulnerability}. No vulnerability or risk, no need for
+trust — if you're completely certain of the outcome, trust is redundant. Trust
+is also \textbf{dynamic}: it grows with good experiences, takes damage from
+failures, and can be repaired.
+
+\textbf{Damage} happens when the trustee breaks promises, violates core
+expectations (competence, honesty) or acts selfishly. \textbf{Repair} comes in
+two timescales: short-term — apologies, good explanations, compensation;
+long-term — changing the relationship structure (oversight, contracts),
+reframing what happened, and slowly rebuilding through consistent good
+experiences and forgiveness.
+
+\section{Components and routes of trust}
+
+\textbf{Propensity to trust} is a \emph{stable personality trait} — your
+general tendency to trust other people and systems. Its pull is
+\textbf{strongest early} on, when you have little else to go on, and it fades
+once you've built up actual experience. It's measured with scales like the
+\emph{General Trust Scale} and the \emph{Propensity to Trust in Technology
+Scale}.
+
+\begin{thmbox}[title={Two routes to trust}]
+\textbf{Affect-based trust} comes from \emph{feelings}: you see the trustee as
+well-meaning, warm-hearted, benevolent, sticking to social norms. It's tied to
+how strong the relationship is and can run ahead of what the evidence justifies
+— which is where \textbf{over-trust} creeps in.\\
+\textbf{Cognition-based trust} comes from the \emph{head}: you're willing to
+rely on perceived competence and reliability, built up from accumulated
+evidence that lets you predict what'll happen.
+\end{thmbox}
+
+The \textbf{Model of Trust in Automation (TiA)} says trust is predicted by
+\textbf{competence/reliability}, \textbf{understandability/predictability}, and
+the \textbf{(perceived) intentions of the developers}, with \textbf{propensity
+to trust} and \textbf{familiarity} as moderators. A LIT VR study (``Serum
+13'', N$=$165) confirmed several of these paths, and \textbf{perceived
+competence had the biggest influence on trust}. People generally prefer
+\emph{predictable} partners (low predictability is even part of why spiders
+are scary), so robots need \textbf{intention signals} to come across as
+understandable and predictable.
+
+\textbf{CoBot Studio VR} (N$=$122, four conditions: no signal, pointing, light,
+combined) had people guess where a moving robot was headed. The
+\textbf{pointing signal worked best}, and the mechanism was a chain: pointing
+$\to$ more \emph{understandability} $\to$ more \emph{trust} $\to$ more
+\emph{intention to use} the robot.
+
+\section{Calibrated trust and Explainable AI}
+
+Robots and AI don't \textbf{always deserve} our trust. In a Belgian field
+study, about 40\,\% of employees held a secure door open for a ``cute''
+(secretly tele-operated) robot — more of them if it was carrying a pizza box —
+and handed over personal data. That's textbook \textbf{over-trust}.
+
+\begin{defbox}[title={Calibrated trust — exam favourite}]
+\textbf{Calibrated trust} means matching your trust to a system's \emph{real}
+strengths and limitations — trusting it exactly as much as it actually
+deserves. Too much (\textbf{over-trust}) leads to \textbf{misuse}: you
+over-rely and ignore the risks (fix it by \emph{dampening} trust). Too little
+(\textbf{under-trust}) leads to \textbf{disuse}: needless fear and wasted
+benefits (fix it by \emph{repairing} trust). The responsible goal isn't to
+\emph{maximize} trust — it's to \textbf{calibrate} it.
+\end{defbox}
+
+\begin{notebox}[title={Single-choice trap (from the sample exam)}]
+``Calibrated trust'' = \textbf{trust proportionate to a system's actual
+trustworthiness} — \emph{not} unjustified distrust, not over-trust, and not
+trust manufactured by marketing.
+\end{notebox}
+
+\textbf{Explainable AI (XAI)} is one of the main tools for calibrating trust:
+making an AI's outputs and reasoning understandable to a particular
+\textbf{audience}, showing the \emph{causes} behind its decisions. Different
+audiences want explanations for different reasons (users, affected people,
+developers, regulators, managers). XAI can also \textbf{expose an AI's
+failures} — like a classifier that labels a car a ``horse'' because it latched
+onto a \emph{watermark}. In the \textbf{HOXAI} project (a mushroom-picking game
+with a 71\,\%-accurate classifier, $N_{\text{total}}=1{,}239$), \textbf{XAI
+improved people's decisions}.
+
+\section{Paper 4 — Li \& Lee: Purpose Outweighs Performance}
+
+In \textbf{human–AI teams}, the relationship has moved from boss–subordinate
+toward \emph{peer-to-peer cooperation}, so trust now matters in both
+directions. Earlier work focused on \emph{performance}, but this paper argues
+that \emph{purpose} — cooperative intent, goal alignment — is increasingly what
+counts. It uses the three classic bases of trust in automation:
+\textbf{performance} (ability/competence), \textbf{process} (integrity, how it
+works) and \textbf{purpose} (alignment with the designer's or team's intent),
+which map onto Mayer's ability/integrity/benevolence. That gives two kinds of
+violation: a \textbf{performance-based violation} (the AI just fails the task)
+versus a \textbf{purpose-based violation} (the AI pursues misaligned or
+self-interested goals). Three \textbf{repair strategies} were tested (denial
+was left out, since it's known not to work): \emph{no strategy}, \emph{apology
+with explanation} (factual reasoning — an analytic route), and \emph{apology
+with promise} (reassurance about the future — an affective route).
+
+\begin{thmbox}[title={Paper 4 — what you need to remember}]
+\textbf{The question:} how does the \emph{type} of trust violation by an AI
+teammate hit trust, and which repair strategy actually works?\\
+\textbf{The method:} a \textbf{game-theoretic experiment} (the ``Space Rover
+Exploration'' game) on MTurk, \textbf{N$=$180}, \textbf{6 between-subjects
+groups} (2 violation types $\times$ 3 repair strategies). Trust was measured
+repeatedly over rounds and analysed with \textbf{linear mixed-effects models
+(LMM)}, with \emph{Honesty–Humility} (from HEXACO) as a covariate.\\
+\textbf{What they found:}\\
+\textbullet\ \textbf{Purpose-based violations hurt trust far more} than
+performance-based ones (``purpose outweighs performance'') — they even dragged
+down the \emph{performance} sub-dimension of trust.\\
+\textbullet\ \textbf{Performance-based violations on their own didn't
+significantly reduce trust} — the steady cooperative behaviour overshadowed
+the occasional error.\\
+\textbullet\ \textbf{Apology \emph{with explanation}} repaired trust after
+purpose violations, and the effect \emph{lasted}; \textbf{a mere promise
+didn't}.\\
+\textbullet\ A surprise: the idea of matching the repair route to the violation
+type \textbf{didn't} hold — explanation repaired \emph{both} dimensions
+regardless of route. (And higher Honesty–Humility meant more
+cooperation/investment.)\\
+\textbf{Takeaway:} treat violation \emph{types} differently, and design AI
+teammates to give \emph{informative explanations} — especially for goal
+misalignment — to win trust back and keep the collaboration going.
+\end{thmbox}
+
+
+% ==========================================================
+%  CHAPTER 5 — RESEARCH-METHODS ESSENTIALS
+% ==========================================================
+\chapter{Research-methods Essentials}
+
+A handful of MC and true/false items just test \emph{basic
+empirical-research vocabulary} (the sample exam had a between-subjects T/F item
+and a representativeness item). These are easy points — know them cold.
+
+\begin{defbox}[title={What psychology is, and its four goals}]
+\textbf{Psychology} is the \textbf{scientific study of the human mind and
+behaviour} — not just a branch of medicine or philosophy, and not merely
+``observing the mind''. As a science it has \textbf{four goals: describe,
+explain, predict, and modify/change} (control) behaviour. \emph{(The T/F
+statement listing exactly these four is \textbf{True}.)}
+\end{defbox}
+
+\begin{defbox}[title={The scientific experiment vs.\ correlational studies}]
+The \textbf{randomized experiment} is the design you use to pin down
+\textbf{cause and effect} (e.g.\ the effect of a robot's light signal on how
+understandable it is). What defines it: \textbf{(1) the researcher manipulates
+the independent variable}, \textbf{(2) participants are randomly assigned to
+conditions}, and usually \textbf{(3) there's a control group} plus control of
+confounds. Together these rule out alternative explanations, which is the key
+\textbf{edge over (most) correlational studies}: an experiment supports
+\textbf{causal} claims, whereas a correlational study only shows
+\emph{association} (\textbf{correlation $\ne$ causation}). \emph{(Exam pattern:
+``which method meets $\ge$2 features of a scientific experiment?'' — point to
+manipulation + randomization + control group.)}
+\end{defbox}
+
+\begin{defbox}[title={Study designs}]
+\textbf{Between-subjects:} \emph{different} groups each get \emph{one}
+condition (e.g.\ half see only a red robot, half only a blue one). \emph{(The
+sample-exam T/F describing exactly this is \textbf{True}.)}\\
+\textbf{Within-subjects:} the \emph{same} people go through \emph{all}
+conditions (repeated measures).\\
+\textbf{Experiment:} variables are \emph{manipulated} + random assignment
+$\Rightarrow$ you can infer \textbf{causality}.\\
+\textbf{Correlational/survey study:} variables are only \emph{measured}
+$\Rightarrow$ association only, \textbf{no causal claims}.\\
+\textbf{Field study:} run in a real-world setting (like the exoskeleton diary
+study or the pizza-robot study).
+\end{defbox}
+
+\begin{defbox}[title={Key measurement \& analysis terms}]
+\textbf{Representativeness:} how well a \textbf{sample reflects the population}
+it's drawn from (\emph{not} statistical significance, not random selection
+itself, not lab-to-real-world generalization).\\
+\textbf{Validity:} you're measuring what you mean to. \textbf{Reliability:}
+your measurement is consistent. \textbf{Generalizability / external validity:}
+how far findings carry over to other settings and people.\\
+\textbf{Correlation ($r$):} strength and direction of an association,
+$-1 \le r \le 1$; significance is flagged with $p$ (e.g.\ $p<.01$). And again,
+\textbf{correlation $\ne$ causation}.\\
+\textbf{Mediator:} explains the \emph{mechanism} of an effect ($X \to M \to Y$
+— e.g.\ understandability or empathy as the in-between step).
+\textbf{Moderator:} changes the \emph{strength or direction} of an effect
+(e.g.\ age or gender in UTAUT).\\
+\textbf{HLM (Hierarchical Linear Model / multilevel model):} for \emph{nested
+or repeated} data, like daily diary entries within people (as in Paper 1).
+\textbf{Diary study:} repeated self-reports over several days in a row.
+\end{defbox}
+
+\begin{notebox}[title={Construct pitfalls: jangle vs.\ jingle fallacy}]
+\textbf{Jangle fallacy:} assuming two things are \emph{different} just because
+they have \emph{different names}, when they're really the same construct
+(different scales measuring basically the same thing). \textbf{Jingle
+fallacy:} the opposite — assuming two things are the \emph{same} because they
+share a \emph{name/label}, when they're actually different constructs.
+\emph{(Mnemonic: ja\textbf{N}gle = \textbf{N}ames differ; ji\textbf{N}gle =
+same label. This matters because AI-literacy and trust scales keep multiplying
+under all sorts of names.)}
+\end{notebox}
+
+\begin{notebox}[title={The replicability (replication) crisis}]
+The \textbf{replicability crisis} is the discovery that a \emph{large chunk of
+published (psychology) studies can't be reproduced} when someone repeats them.
+The usual culprits: \textbf{p-hacking} (slicing the analysis until $p<.05$);
+\textbf{publication bias} (only significant, novel results get published — the
+``file-drawer'' problem); \textbf{HARKing} (writing your hypothesis
+\emph{after} you've seen the results); \textbf{small, underpowered samples}
+and non-representative ones (e.g.\ WEIRD or student-only samples); and too many
+\textbf{researcher degrees of freedom}. \emph{Fixes:} pre-registration, open
+data and materials, bigger samples, and direct replication.
+\end{notebox}
+
+\begin{notebox}[title={Quick exam checklist}]
+\textbf{Models:} Maslow (deficiency vs.\ growth), Alderfer's ERG
+(non-hierarchical), SDT and the 3 BPN — \emph{competence, autonomy,
+relatedness}; TAM = perceived usefulness + ease of use; UTAUT (4 predictors +
+4 moderators); the UX/hedonic angle; CASA; the three-factor theory of
+anthropomorphism; mind perception = agency + experience; the Uncanny Valley
+(Mori); the trust triad + calibrated trust + over/under-trust $\to$
+misuse/disuse; the Trust-in-Automation model; XAI.\\
+\textbf{The four papers:} Siedl et al.\ (exoskeleton diary study, HLM —
+usefulness but not ease of use, attractiveness early, then social feedback
+over time); Liu (dependence on generative AI in 3 stages,
+usefulness/anthropomorphism $\to$ fear via dependence, literacy buffers); Li
+et al.\ (N$=$244, identity + emotion $\to$ empathy $\to$ helping the chatbot);
+Li \& Lee (purpose $>$ performance violations; apology \emph{with explanation}
+repairs).\\
+\textbf{Methods buzzwords:} self-efficacy (belief in your own ability);
+psychology's 4 goals (describe/explain/predict/modify); experiment =
+manipulation + random assignment + control $\Rightarrow$ causality; jangle
+(different names, same thing) vs.\ jingle (same name, different things); the
+replicability crisis (p-hacking, publication bias, HARKing, small samples).
+\end{notebox}
+
+
+% ==========================================================
+%  CHAPTER 6 — OLD EXAM QUESTIONS
+% ==========================================================
+\chapter{Old Exam Questions}
+
+A collection of questions from past Robopsychology exams (SS24, the 2023
+Moodle exam, and the 2021 online exam), grouped by topic with the
+\textbf{correct answer in bold}. \textbf{SS24} maps almost one-to-one onto the
+current four-topic structure and is your best predictor. \textbf{2023} adds
+more research-methods depth (plus a \emph{creativity} topic that's no longer in
+the syllabus). \textbf{2021} comes from an older, general-psychology curriculum
+(sleeper effect, eyewitness memory, priming, short-term memory, the mind--body
+problem, somatosensation, face processing) — those specific topics are
+\textbf{no longer examined}, so only its recurring items (TAM, trust, uncanny
+valley, BPN, the randomized experiment) are kept here.
+
+\section{Needs, motivation \& acceptance}
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=4pt]
+\item According to Maslow, which is a \textbf{growth} need? — Self-Actualization
+/ Love \& Belonging / Safety / Esteem. \hfill\textbf{$\to$ Self-Actualization}
+\item Sheldon et al.\ introduced 10 psychological needs. Which is
+\textbf{NOT} included? — Pleasure-Stimulation / Physical-Thriving /
+Money-Luxury / Identification. \hfill\textbf{$\to$ Money-Luxury}
+\item What are the three Basic Psychological Needs (BPN)? — Freedom, Social
+Interaction, Achievement / \textbf{Autonomy, Relatedness, Competence} / Survival,
+Growth, Self-Actualization / Safety, Love, Esteem.
+\item According to SDT, what are two types of motivation? —
+Cognitive/affective / Positive/negative / \textbf{Autonomous and controlled} /
+Primary/secondary.
+\item According to TAM, the two key variables determining adoption are —
+\textbf{Perceived Usefulness and Ease of Use} / Cost \& Popularity / Efficiency
+\& Safety / Enjoyment \& Autonomy. \emph{(2021 variant: the CORRECT TAM
+statement is ``ease of use and perceived usefulness determine acceptance''.)}
+\item Which best describes \textbf{self-efficacy}? — \textbf{The belief in one's
+ability to perform tasks} / tendency to avoid challenges / job satisfaction /
+desire for approval.
+\item Self-efficacy \& exoskeletons — which statement is \textbf{incorrect}? —
+\textbf{``Exoskeleton use does not impact task-specific self-efficacy at all.''}
+(The other three — relief, perceived usefulness, ``not automatic'' — are
+correct.)
+\item Name of the first robotic exoskeleton (U.S.\ Army + GE, 1960s)? —
+\textbf{Hardiman} / Guardian XO / HAL / BLEEX.
+\item \emph{(Open, 4 pts — recurs every year)} Name the three BPN and the
+theory they come from, then discuss with an AI example how AI can threaten or
+help fulfil one of them. \emph{[SDT; competence/autonomy/relatedness; e.g.\
+recommender algorithms can threaten autonomy if decisions are opaque, or an
+assistive robot can support an elderly person's autonomy.]}
+\end{enumerate}
+
+\section{AI literacy}
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=4pt]
+\item Research on \textbf{computer anxiety}: people with \emph{less} computer
+anxiety are usually — better educated / \textbf{more self-confident} / younger
+than 45 / grown up in Asia.
+\item The Scandinavian project ``Q'' reduces gender bias in AI assistants by —
+more female developers / \textbf{developing a gender-neutral synthetic voice} /
+avoiding speech / controlling training data. \emph{(Older curriculum item;
+illustrates voice-gender bias.)}
+\end{enumerate}
+
+\section{Anthropomorphism \& social AI}
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=4pt]
+\item What did participants watch in Heider \& Simmel? —
+\textbf{Geometric shapes moving in/around a square} / vehicles on a map /
+dancing characters / migrating animals.
+\item The two dimensions of mind perception in a machine are \emph{agency} and
+\emph{experience}. (T/F) \hfill\textbf{$\to$ True}
+\item Which is \textbf{NOT} an assumption of Reeves \& Nass' CASA paradigm? —
+people behave toward computers as toward people / users treat machines as
+social entities even if they find it inappropriate / social-psychological
+phenomena transfer to HMI / \textbf{social perceptions of machines are conscious
+and deliberate}. \emph{(CASA reactions are automatic/unconscious.)}
+\item \emph{(Open, 4 pts)} Give a short definition of \textbf{anthropomorphism}
+and name \textbf{three assumed consequences}, each with a practical example.
+\emph{[Attributing human traits to non-humans; consequences: moral care \&
+concern; responsibility/blame; social influence.]}
+\item \emph{(Open, 4 pts)} Main assumptions of the \textbf{Uncanny Valley}
+hypothesis, Mori's practical advice, and what it suggests for AI design.
+\emph{[Likability rises with human-likeness up to a point, then drops sharply
+into eeriness (movement deepens it); Mori advised \emph{not} to aim for perfect
+human likeness; design AI to be clearly distinguishable from humans.]}
+\end{enumerate}
+
+\section{Trust in AI}
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=4pt]
+\item Per definition, a trust-relevant situation always involves — a shared
+goal / at least two persons / \textbf{vulnerability} / anxiety.
+\item In human--AI relationships, \textbf{calibrated trust} refers to —
+unjustified distrust / marketing-manipulated trust / \textbf{trust proportionate
+to the actual trustworthiness of a system} / unwarranted over-trust.
+\item Cognition-based trust is characterized by perceiving the trustee as
+well-minded, warm-hearted, benevolent, norm-adhering. (T/F) \hfill\textbf{$\to$
+False} \emph{(that describes \textbf{affect}-based trust)}.
+\item ``Let's talk about trust — which statement is \textbf{FALSE}?'' —
+\textbf{``At market launch, with little experience, no individual differences in
+trust are expected.''} \emph{(False: propensity to trust drives individual
+differences \emph{precisely} when experience is lacking.)} The other options
+(vulnerability is needed; affect-based trust can cloud risk assessment;
+appearing competent/reliable supports cognitive trust) are true.
+\end{enumerate}
+
+\section{Research methods (recurring across all years)}
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=4pt]
+\item What is psychology? — \textbf{The study of the human mind and human
+behaviour} (not a sub-discipline of medicine/philosophy).
+\item The four central goals of scientific psychology are describe, explain,
+predict, modify behaviour. (T/F) \hfill\textbf{$\to$ True}
+\item Which design investigates cause--effect relationships? — cross-sectional
+survey / correlational study / theoretical review / \textbf{randomized
+experiment}.
+\item A study where half see only a red robot and half only a blue robot is a
+\textbf{between-subjects} design. (T/F) \hfill\textbf{$\to$ True}
+\item \emph{Representativeness} = how well the \textbf{sample reflects the
+population} (single-choice favourite). \emph{Jangle} fallacy = different names,
+same construct; \emph{jingle} = same name, different constructs.
+\item The \textbf{replicability crisis} and its causes (p-hacking, publication
+bias, HARKing, small/WEIRD samples) — recurring open/MC item in 2023.
+\item \emph{(Open, 4 pts)} What advantage does the scientific experiment offer
+over correlational studies, and how did a named study (e.g.\ the XAI/trust
+paper, Leichtmann et al.) meet $\ge$2 characteristics of an experiment?
+\emph{[Causal inference; via manipulation of the IV + random assignment +
+control/comparison group.]}
+\end{enumerate}
+
+\begin{notebox}[title={Highest-yield, confirmed-recurring questions}]
+Across SS24 / 2023 / 2021 the same items keep appearing: \textbf{(1)} the
+open ``three BPN + SDT + AI example'' question (every year); \textbf{(2)} TAM =
+usefulness + ease of use; \textbf{(3)} a trust \textbf{FALSE-statement} /
+\textbf{calibrated trust} item; \textbf{(4)} the open anthropomorphism
+definition + 3 consequences; \textbf{(5)} Uncanny Valley (Mori);
+\textbf{(6)} CASA assumptions / mind perception agency \& experience;
+\textbf{(7)} Heider \& Simmel = moving geometric shapes; \textbf{(8)}
+between-subjects T/F and randomized experiment = causality. Master these first.
 \end{notebox}
 
 

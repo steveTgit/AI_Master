@@ -945,6 +945,7 @@ exploration emerges from the softmax sampling itself.
 %  CHAPTER 2 — TABULAR VALUE-BASED METHODS
 % ==========================================================
 \chapter{Tabular Value-Based Methods}
+\label{chap:tabular}
 
 Lecture 02 is organized around a single central question: \emph{how do we
 actually solve for an optimal policy?}
@@ -3133,5 +3134,1196 @@ learning representations and assigning credit. Better credit assignment guides t
 representation toward features that actually matter for control. Real-world deep RL
 is usually about getting all three right simultaneously --- not finding a single magic
 algorithm.
+
+
+% ==========================================================
+%  CHAPTER 7 — DATA-CENTRIC RL: IMITATION LEARNING & OFFLINE RL
+% ==========================================================
+\chapter{Imitation Learning and Offline RL}
+
+Every algorithm so far has been \emph{online}: the agent acts, collects fresh
+transitions, updates its policy, and then collects more data with the improved policy.
+Even off-policy methods with replay buffers still gather new environment experience
+as they go. In many real domains this loop is impossible. You cannot test an untrained
+policy on patients, explore freely in live traffic, wear out a real robot, or experiment
+on millions of live users. The data already exists; the question is whether we can learn
+a good policy \emph{from data alone}.
+
+This chapter studies the \textbf{data-centric} regime, where the data set is fixed.
+Two settings sit at opposite ends of a spectrum. \emph{Imitation learning} has
+demonstrations but no reward and merely tries to reproduce expert behavior.
+\emph{Offline RL} has reward-labelled logs and tries to do \emph{better} than the data
+that generated them. Both face the same underlying obstacle: a policy trained on one
+distribution of states and actions must generalize to a different distribution at
+deployment. Controlling that \textbf{distributional shift} is the unifying theme.
+
+\begin{intbox}
+Three learning paradigms, distinguished by where the data comes from.
+\textbf{Online RL:} the agent collects its own data with the current policy.
+\textbf{Off-policy RL:} a replay buffer mixes old and new data, but the agent still
+acts in the environment. \textbf{Offline (batch) RL:} a fixed data set $\dataset$
+collected once by some behavior policy $\pi_\beta$, with \emph{no} further interaction.
+Offline RL can only learn behaviors that are sufficiently represented in $\dataset$ ---
+you cannot recover what was never tried.
+\end{intbox}
+
+\section{Imitation Learning}
+
+The simplest fixed-data problem is to learn from \emph{expert actions with no rewards}.
+We are given a demonstration data set
+\[
+  \dataset = \{(s_i, a_i)\}_{i=1}^N, \qquad a_i \sim \tilde\pi(\cdot \mid s_i),
+\]
+where $\tilde\pi$ is an (unknown) expert policy, and we want a policy
+$\pi_\theta(a \mid s) \approx \tilde\pi(a \mid s)$. We use imitation rather than RL
+from scratch because no reward function is required, expert knowledge shortcuts long
+exploration, and the imitator is a powerful initialization for subsequent RL.
+
+\subsection{Behavioral Cloning}
+
+\textbf{Behavioral cloning (BC)} treats imitation as ordinary supervised learning:
+predict the expert's action from the state.
+\[
+  \hat{\params} = \argmin_{\params}\; \E_{s \sim p_{\text{data}}}\,
+    \loss\bigl(\tilde\pi(s),\, \pi_\theta(s)\bigr).
+\]
+The loss depends on the action type: mean-squared error for continuous actions and
+cross-entropy for discrete ones,
+\[
+  \loss_{\text{BC}} = \frac{1}{N}\sum_{k=1}^N \norm{\pi_\theta(s_k) - a_k}^2
+  \qquad\text{or}\qquad
+  \loss_{\text{BC}} = -\frac{1}{N}\sum_{k=1}^N \log \pi_\theta(a_k \mid s_k).
+\]
+ALVINN (1989), an early self-driving system, was a BC network mapping camera and
+range-finder input to a steering direction; it drove real highways but its core
+weakness was already visible --- distribution shift between training and deployment.
+
+\subsection{The distribution shift problem}
+
+BC learns from states the \emph{expert} visits, $s \sim p_{\text{data}}(s)$, but at
+deployment it visits states \emph{it itself} reaches, $s \sim p_{\pi_\theta}(s)$.
+A small prediction error nudges the agent into a state slightly off the expert manifold;
+in that unfamiliar state it errs more; errors compound. The training and deployment
+distributions diverge:
+\[
+  p_{\text{data}}(s) \neq p_{\pi_\theta}(s).
+\]
+
+\begin{thmbox}[title={Compounding errors (Ross \& Bagnell, 2010)}]
+If the learned policy makes a mistake with probability $\epsilon$ under the expert's
+state distribution, then over a horizon $T$ its total error grows as
+\[
+  \text{policy error} \;\le\; \text{expert error} + T^2\epsilon.
+\]
+The error is \emph{quadratic} in the horizon: there are $T$ opportunities to leave the
+expert trajectory, and each early mistake can corrupt up to $T-t$ future states, giving
+$\bigO{T^2}$. Even tiny per-step error becomes severe on long trajectories.
+\end{thmbox}
+
+One partial fix is to augment the data with recovery behavior. NVIDIA's end-to-end
+driving system (2016) mounted left/right cameras in addition to the center one and added
+corrective steering labels, effectively teaching the network how to return to the lane
+center --- injecting off-distribution recovery states into the data set.
+
+\subsection{DAgger: dataset aggregation}
+
+The principled fix is to make the training distribution match the deployment
+distribution. \textbf{DAgger} (Dataset Aggregation) rolls out the \emph{current learner},
+visits the states it actually reaches, and asks the expert to label those states.
+The data set grows over iterations, and the learner is repeatedly retrained on the
+union. This drives the error growth down from $\bigO{T^2}$ to $\bigO{T}$.
+
+\begin{thmbox}[title={DAgger}]
+Given expert $\tilde\pi$ and a mixing schedule $\beta_i$, initialize $\dataset$ with
+expert demonstrations and train $\pi_{\theta_1}$. For $i = 1, \dots, N$:
+\begin{enumerate}
+  \item Define the rollout policy $\pi_i = \beta_i\,\tilde\pi + (1-\beta_i)\,\pi_{\theta_i}$
+    (mostly expert early on, mostly learner later).
+  \item Sample trajectories with $\pi_i$ and collect the states they visit.
+  \item Query the expert for labels: $\dataset_i = \{(s, \tilde\pi(s))\}$ on those states.
+  \item Aggregate $\dataset \leftarrow \dataset \cup \dataset_i$ and retrain
+    $\pi_{\theta_{i+1}}$ on all of $\dataset$.
+\end{enumerate}
+\end{thmbox}
+
+DAgger's cost is that the expert must be \emph{queryable at training time}. A human
+labeller is expensive, a simulator expert needs a simulator, and a real-world expert
+(a patient, an unsafe environment) is often unavailable. When the expert cannot be
+queried, we must fall back to purely offline methods.
+
+\subsection{Failure modes beyond distribution shift}
+
+\begin{notebox}[title={Three classic imitation traps}]
+\textbf{Non-Markovian behavior.} Humans condition on history, not just the current state
+($\tilde\pi(a_t \mid o_t, o_{t-1}, \dots) \neq \tilde\pi(a_t \mid s_t)$): checking mirrors
+before a lane change, turning after an earlier landmark. A policy that sees only $s_t$
+misses these temporal dependencies. \emph{Fix:} recurrent or transformer policies over
+the observation history.
+
+\textbf{Causal confusion.} The agent learns spurious correlations instead of causes.
+A brake light correlates with braking, so the policy learns ``brake light $\Rightarrow$
+brake'' --- but the light appears \emph{because} the agent brakes; the causality is
+reversed. Any feature correlated with expert actions can become a false cause.
+\emph{Fix:} causal reasoning, disentangled representations.
+
+\textbf{Multimodal behavior.} The expert demonstrates several valid responses to the
+same state (pass the obstacle left \emph{or} right). An MSE loss averages the modes,
+$\pi_\theta(s) \approx \tfrac{1}{2}(a_{\text{left}} + a_{\text{right}})$ ---
+driving straight into the obstacle. \emph{Fix:} mixture-of-Gaussians output heads,
+latent-variable models (CVAE, flows), or autoregressive discretization of actions.
+\end{notebox}
+
+When we can no longer query the expert, two roads open. If rewards are available, use
+\emph{offline RL}; if rewards are unavailable, use \emph{inverse RL}
+(\cref{chap:irl}).
+
+\section{Offline Reinforcement Learning}
+
+\textbf{Offline RL} learns a near-optimal policy from a fixed data set without any new
+interaction. The data set $\dataset = \{(s^i, a^i, s'^i, r^i)\}$ was collected by a
+behavior policy $\pi_\beta$ (possibly unknown, possibly a mixture); write $d^{\pi_\beta}(s,a)$
+for its state-action visitation. The RL objective is unchanged,
+\[
+  \max_\pi\; J(\pi) = \E_{\tau \sim p_\pi(\tau)}\!\left[\sum_{t=0}^{H} \gamma^t r(s_t, a_t)\right],
+\]
+but we cannot draw new samples from $p_\pi(\tau)$ during training.
+
+\subsection{Why standard off-policy RL is not enough}
+
+In principle DQN or SAC could train on a fixed buffer. In practice they fail. Standard
+off-policy methods still collect fresh experience that gradually tracks the current
+policy; removing that adaptation mechanism is exactly what makes the setting hard.
+With $\dataset$ frozen, the learned policy $\pi$ inevitably drifts away from $\pi_\beta$,
+and it begins to ask the value function about actions that were never observed.
+
+The damage enters through the bootstrapped maximization. Q-learning improves the policy
+by $\pi(s) = \argmax_a Q(s,a)$ and backs up
+\[
+  Q(s,a) \leftarrow r(s,a) + \gamma \max_{a'} Q(s', a').
+\]
+The $\max_{a'}$ queries $Q$ at actions \emph{not in $\dataset$}. A neural network
+extrapolates unpredictably and can assign spuriously high values to out-of-distribution
+(OOD) actions; the error is then propagated backward by bootstrapping, and the greedy
+policy happily selects actions with high predicted but low true value. Offline RL must
+estimate values beyond the data support, and naive bootstrapping makes this catastrophic.
+
+\begin{intbox}
+The common principle behind every offline RL method: \emph{do not trust the model at
+out-of-distribution inputs.} The three families differ only in how they enforce it ---
+constrain the policy, penalize the values, or avoid the OOD query altogether.
+\end{intbox}
+
+\subsection{Behavior regularization}
+
+The most direct idea is to keep the learned policy close to the behavior policy, so it
+never selects unsupported actions:
+\[
+  \max_\pi\; J(\pi) \quad\text{subject to}\quad D(\pi \,\|\, \pi_\beta) \le \delta.
+\]
+Implementations add a KL penalty $\loss = -J(\pi) + \lambda\,\KL{\pi}{\pi_\beta}$,
+a behavioral-cloning auxiliary loss $\loss = -J(\pi) + \lambda\,\loss_{\text{BC}}$, or a
+hard support constraint $\pi(a\mid s) = 0$ whenever $(s,a) \notin \dataset$. The trade-off
+is sharp: a tight constraint is safe but limits improvement (the policy collapses toward
+BC), while a loose one may still extrapolate dangerously.
+
+\subsection{Conservative Q-Learning (CQL)}
+
+CQL keeps standard Bellman training but explicitly \emph{pushes down} $Q$-values for OOD
+actions while pulling up the values of actions actually in the data:
+\[
+  \min_Q\; \Bigl(\underbrace{\E_{s\sim\dataset,\, a\sim\mu(a\mid s)}[Q(s,a)]}_{\text{minimize OOD }Q}
+  \;-\; \underbrace{\E_{(s,a)\sim\dataset}[Q(s,a)]}_{\text{maximize in-data }Q}\Bigr)
+  + \loss_{\text{TD}},
+\]
+where $\mu$ is a broad action distribution (e.g.\ uniform). The resulting $Q_{\text{CQL}}$
+is a \emph{lower bound} on the true $Q^\pi$, so a policy maximizing the conservative
+$Q$ still improves while overestimation of unseen actions is suppressed. CQL is strong
+across locomotion, manipulation, and real-world benchmarks.
+
+\subsection{Implicit Q-Learning (IQL)}
+
+IQL avoids OOD queries entirely. Instead of the OOD-querying target
+$Q(s,a) \leftarrow r + \gamma \max_{a'} Q(s', a')$, it replaces the $\max_{a'}$ with an
+\emph{expectile regression} on a value function over \emph{dataset actions only}:
+\[
+  V(s) = \argmin_V\; \E_{a\sim\dataset(s)}\bigl[\loss^\tau\bigl(Q(s,a) - V(s)\bigr)\bigr],
+  \qquad
+  \loss^\tau(u) = \abs{\tau - \ind[u < 0]}\, u^2.
+\]
+The loss is asymmetric. When $Q(s,a) > V(s)$ ($u>0$) and $\tau \approx 1$, the penalty
+is $\approx u^2$ (large), so high-$Q$ actions strongly push $V$ \emph{up}; when
+$Q(s,a) < V(s)$ ($u<0$), the penalty is $\approx (1-\tau)u^2 \approx 0$, so low-$Q$
+actions barely pull $V$ down. As $\tau \to 1$, $V(s)$ approaches a soft
+$\max_{a\in\dataset} Q(s,a)$ --- the best value \emph{achievable within the data} ---
+without ever evaluating an unseen action. A separate policy-extraction step then recovers
+the policy.
+
+\subsection{Decision Transformer: RL as sequence modeling}
+
+A radically different route bypasses Bellman backups altogether. The
+\textbf{Decision Transformer} treats a trajectory as a sequence of
+(return-to-go, state, action) triples,
+\[
+  \hat R_t = \sum_{t'=t}^{H} r_{t'}, \qquad
+  (\hat R_1, s_1, a_1,\; \hat R_2, s_2, a_2,\; \dots),
+\]
+and trains a GPT-style causal transformer to predict the next action given the
+return-to-go. At test time you \emph{condition} on a desired return $\hat R_1 = R_{\text{target}}$
+and let the model autoregressively generate actions that achieve it. There are no Bellman
+backups and no OOD extrapolation, and it scales with data and model size. Its weakness is
+\emph{trajectory stitching}: it cannot easily combine fragments of suboptimal trajectories
+into a better-than-any-single-trajectory policy.
+
+\begin{notebox}[title={Stitching: who can and who cannot}]
+\emph{Stitching} means assembling a better-than-dataset policy by combining sub-trajectories
+from different episodes. Methods built on Bellman backups (CQL, IQL) propagate value
+through bootstrapping and \emph{can} stitch. Behavior-regularized methods stitch only
+weakly (they are tied to $\pi_\beta$). Sequence models like the Decision Transformer
+\emph{cannot} stitch --- they imitate returns they have seen, not values they can compose.
+\end{notebox}
+
+\section{Two Sides of the Same Coin}
+
+Imitation learning and offline RL answer different questions but share one disease.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Aspect} & \textbf{Imitation Learning} & \textbf{Offline RL} \\
+\midrule
+Objective       & match the expert        & maximize reward \\
+Data quality    & expert demonstrations   & any $\pi_\beta$ \\
+Reward required & no                      & yes \\
+Core challenge  & distribution shift      & $Q$-value extrapolation \\
+Key algorithm   & DAgger                  & CQL, IQL \\
+Upper bound     & expert level            & above the dataset possible \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In imitation learning, training is on $p_{\text{data}}(s)$ but deployment is on
+$p_{\pi_\theta}(s)$; errors compound as $J(\pi_\theta) \le J(\tilde\pi) + T^2\epsilon$,
+and DAgger's on-policy labels reduce this to $T\epsilon$. In offline RL, the $Q$-function
+is evaluated at OOD $(s,a)$ pairs and overestimation propagates through Bellman backups;
+the fixes constrain the policy (behavior regularization), penalize OOD values (CQL), or
+avoid the query (IQL). The central lesson is the same throughout: \textbf{learning from a
+fixed distribution while generalizing to a new one requires explicit design choices to
+control the resulting shift.}
+
+
+% ==========================================================
+%  CHAPTER 8 — INVERSE RL AND PREFERENCE-BASED RL
+% ==========================================================
+\chapter{Inverse RL and Preference-Based Reward Learning}
+\label{chap:irl}
+
+Imitation learning copies the expert's \emph{actions}; offline RL assumes the reward is
+given. But in most real tasks the objective is neither demonstrated cleanly nor written
+down. What is ``success'' for a manipulation task, ``helpful'' for a dialogue system,
+or the right trade-off between comfort and speed for a car? When the reward is implicit,
+ambiguous, or multi-objective, \textbf{reward design becomes part of the learning
+problem}. This chapter asks: can the data itself reveal the objective?
+
+Different signals answer different questions. Demonstrations show what good behavior
+\emph{looks like} (inverse RL). Pairwise preferences say which of two behaviors is
+\emph{better} (preference-based RL, RLHF). Scalar feedback rates how good a behavior was
+(reward modeling). And AI feedback asks whether the labelling itself can be scaled
+(RLAIF). The unifying risk arrives at the end: any learned reward is a \emph{proxy} for
+the true objective, and proxies can be exploited.
+
+\section{Why Learn the Reward?}
+
+Imitation captures \emph{what} the expert does but not \emph{why}. A cloned policy
+breaks when the environment changes, when the agent's capabilities differ from the
+expert's, or when it leaves the demonstrated distribution. \textbf{Inverse RL (IRL)}
+instead infers the reward function the expert appears to be optimizing. A reward
+\emph{transfers}: a new agent can re-optimize it in new situations. Where forward RL maps
+reward $\to$ behavior, inverse RL maps behavior $\to$ reward.
+
+The formal ingredients are an MDP \emph{without} reward,
+$\mathcal{M}\setminus r = (\Sset, \Aset, p, \gamma)$, expert demonstrations
+$\dataset = \{\tau_i\}$, and a parametric reward family $r_\psi(s,a)$. We seek $r_\psi$
+under which the expert is (near-)optimal.
+
+\begin{notebox}[title={IRL is ill-posed}]
+Many reward functions explain the same behavior. A constant reward $r(s,a)=c$ makes
+\emph{every} policy optimal, and infinitely many non-trivial rewards are also consistent
+with a given set of demonstrations. We cannot simply invert the optimality conditions;
+we need an extra \emph{principle} to select among feasible rewards. The two classical
+principles are maximum margin (Abbeel \& Ng, 2004) and maximum entropy (Ziebart et al.,
+2008).
+\end{notebox}
+
+\section{Feature Matching and Maximum-Margin IRL}
+
+Assume the reward is linear in hand-designed features,
+\[
+  r_\psi(s,a) = \psi\T f(s,a),
+\]
+where $f(s,a)$ describes \emph{what happens} and the weights $\psi$ describe \emph{what
+matters}. The value of a policy then depends only on its expected discounted features:
+\[
+  J(\pi) = \E_\pi\!\left[\sum_{t=0}^\infty \gamma^t r_\psi(s_t,a_t)\right]
+         = \psi\T \underbrace{\E_\pi\!\left[\sum_{t=0}^\infty \gamma^t f(s_t,a_t)\right]}_{\mu(\pi)\;\text{feature expectation}}.
+\]
+Two policies with identical feature expectations earn identical reward. Matching reward
+therefore reduces to \emph{matching feature expectations}: find $\psi$ such that the
+expert's $\mu(\tilde\pi)$ scores at least as high as any other policy's:
+$\psi\T \mu(\tilde\pi) \ge \psi\T \mu(\pi)$ for all $\pi$.
+
+\subsection{The maximum-margin principle}
+
+Among the many $\psi$ that satisfy the constraint, prefer those that make the expert
+\emph{clearly} better than alternatives, by a margin $m$:
+\[
+  \psi\T \mu(\tilde\pi) > \max_{\pi\in\Pi}\, \psi\T \mu(\pi) + m.
+\]
+This is exactly the support-vector-machine idea. Since $\psi$ and $10\psi$ both satisfy
+the constraint, we fix the margin to $1$ and minimize the weight norm instead
+($m \propto 1/\norm{\psi}$):
+\[
+  \min_\psi\; \norm{\psi}^2 \quad\text{s.t.}\quad
+  \psi\T \mu(\tilde\pi) \ge \psi\T \mu(\pi) + 1 \quad \forall \pi.
+\]
+Not all wrong policies are equally wrong. \textbf{Structured} max-margin IRL replaces the
+fixed margin with a similarity-dependent one, requiring a larger margin against policies
+that differ more from the expert:
+\[
+  \min_\psi\; \norm{\psi}^2 \quad\text{s.t.}\quad
+  \psi\T \mu(\tilde\pi) \ge \psi\T \mu(\pi) + D(\tilde\pi, \pi) \quad \forall \pi,
+\]
+where $D(\tilde\pi,\pi)$ measures policy dissimilarity. A slack variable can relax these
+constraints to allow a suboptimal expert.
+
+\begin{thmbox}[title={Maximum-margin IRL loop}]
+Collect demonstrations $\dataset$ and estimate the expert feature expectation
+$\tilde\mu$. For $i = 1,\dots,K$:
+\begin{enumerate}
+  \item Set the reward $r_\psi(s,a) = \psi\T f(s,a)$.
+  \item Solve the RL problem under $r_\psi$ to get policy $\pi_\psi$.
+  \item Compute its feature expectation $\mu(\pi_\psi)$.
+  \item Update $\psi$ so that $\psi\T\tilde\mu > \psi\T\mu(\pi_\psi) + D(\tilde\pi,\pi_\psi)$.
+\end{enumerate}
+\end{thmbox}
+
+Its limitations are intrinsic: it repeatedly solves a full RL problem, assumes
+near-optimal demonstrations, leaves many feasible rewards, and is hard to scale to
+nonlinear rewards.
+
+\section{Maximum-Entropy IRL}
+
+Rather than assuming the expert is perfectly optimal, model demonstrations
+\emph{probabilistically}. Introduce a binary optimality variable $\mathcal{O}_t$ with
+\[
+  p(\mathcal{O}_t = 1 \mid s_t, a_t) \propto \exp\bigl(r_\psi(s_t, a_t)\bigr),
+\]
+so that high-reward actions are \emph{more likely} to be optimal, not strictly required.
+Trajectories with larger total reward then become more probable:
+\[
+  p(\tau \mid \mathcal{O}_{1:T}) \propto p(\tau)\,\exp\!\left(\sum_{t} r_\psi(s_t, a_t)\right).
+\]
+
+\textbf{Maximum-entropy IRL} chooses, among all rewards consistent with the data, the one
+inducing the \emph{most uniform} (maximum-entropy) trajectory distribution:
+\[
+  p_\psi(\tau) = \frac{1}{Z_\psi}\, p(\tau)\,\exp\bigl(r_\psi(\tau)\bigr),
+  \qquad Z_\psi = \int p(\tau)\,\exp\bigl(r_\psi(\tau)\bigr)\,\dd\tau.
+\]
+Here $p(\tau)$ encodes the environment dynamics --- how likely the raw trajectory is,
+\emph{independent of reward} --- $\exp(r_\psi(\tau))$ up-weights high-reward trajectories,
+and $Z_\psi$ normalizes. Maximizing the likelihood of the expert trajectories gives a
+gradient with a clean interpretation:
+\[
+  \grad_\psi \loss
+  = \underbrace{\E_{\tau\sim\tilde\pi}\bigl[\grad_\psi r_\psi(\tau)\bigr]}_{\text{increase expert reward}}
+  - \underbrace{\E_{\tau\sim p_\psi(\tau)}\bigl[\grad_\psi r_\psi(\tau)\bigr]}_{\text{decrease current-policy reward}}.
+\]
+Raise the reward of expert trajectories, lower the reward of trajectories the current
+model prefers; the gradient is zero exactly when the model's trajectory distribution
+\emph{matches} the expert's. This resolves the ambiguity with a unique, principled
+solution.
+
+\begin{notebox}[title={MaxEnt IRL: strengths and the partition-function cost}]
+Strengths: a principled probabilistic model, a soft optimality assumption that handles
+noisy or suboptimal demonstrations, and compatibility with flexible reward
+parameterizations. Costs: it repeatedly solves the RL problem, computing state-visitation
+frequencies is expensive, it often assumes known dynamics, and it does not fully remove
+ambiguity (reward-shaping transformations remain). With high-dimensional function
+approximators the key bottleneck is \emph{the partition function $Z_\psi$} --- a sum over
+all possible trajectories --- which forces differentiating through $Z$ or running repeated
+forward--backward passes.
+\end{notebox}
+
+\section{Generative Adversarial Imitation Learning (GAIL)}
+
+MaxEnt IRL alternates expensively between reward learning and policy optimization.
+\textbf{GAIL} short-circuits this by matching expert behavior \emph{adversarially}, in the
+style of a GAN. A discriminator $D_\psi(s,a)$ learns to tell expert state-action pairs
+from policy ones, while the policy $\pi_\theta$ learns to produce pairs that fool it.
+The discriminator's output \emph{is} the reward signal:
+\[
+  r(s,a) = -\log\bigl(1 - D_\psi(s,a)\bigr).
+\]
+The policy is trained with ordinary policy gradients on this reward; at convergence its
+state-action visitation distribution is indistinguishable from the expert's. GAIL needs
+no known dynamics and avoids explicit reward recovery --- it learns a policy directly,
+treating ``recover reward, then optimize'' as a single adversarial game.
+
+\section{Preference-Based Reward Learning}
+
+Demonstrations require a human to actually \emph{perform} the task --- infeasible when the
+expert lacks the robot's physical capability, when the action space is high-dimensional,
+or when demonstration is simply tedious. \emph{Comparing} two behaviors is far easier than
+producing one. Preference-based RL shows two trajectory clips and asks ``which is better?''
+Critiquing scales to domains where demonstration is impossible.
+
+Given a human judgment $\tau_w \succ \tau_l$ (segment $w$ preferred to $l$), the
+\textbf{Bradley--Terry} model estimates the preference probability from the segments'
+total predicted reward:
+\[
+  P(\tau_w \succ \tau_l) = \sigma\bigl(r_\theta(\tau_w) - r_\theta(\tau_l)\bigr),
+  \qquad r_\theta(\tau) = \sum_{(s,a)\in\tau} r_\theta(s,a).
+\]
+We learn the reward by maximizing the log-likelihood of observed preferences,
+\[
+  \max_\theta\; \E_{\tau_w \succ \tau_l}\bigl[\log \sigma\bigl(r_\theta(\tau_w) - r_\theta(\tau_l)\bigr)\bigr],
+\]
+which is just binary cross-entropy with soft targets; the reward model can be any network.
+The overall loop alternates sampling trajectory segments from the current policy, querying
+annotators for preferences, updating $r_\theta$ with the Bradley--Terry loss, and running
+RL on the learned reward. Human labelling is the bottleneck.
+
+\subsection{Active query selection}
+
+Since annotation is expensive, query the pairs that are most \emph{informative}.
+\emph{Uncertainty sampling} picks the pair whose preference the model is least sure about,
+$(\tau_i,\tau_j)^* = \argmax \Var_\theta[\sigma(r_\theta(\tau_i) - r_\theta(\tau_j))]$.
+\emph{Ensemble disagreement} trains $K$ reward models on the same data and queries the
+pairs where they disagree most --- disagreement approximates epistemic uncertainty, hence
+the most informative label. This can cut annotation cost by an order of magnitude.
+
+\section{Modern Alignment: RLHF and DPO}
+
+\textbf{RLHF} (Reinforcement Learning from Human Feedback) is the same preference-learning
+idea applied at the scale of large language models. The pipeline:
+\begin{enumerate}
+  \item Pre-train a language model on large text corpora.
+  \item Supervised fine-tuning (SFT) on high-quality (prompt, response) pairs.
+  \item Collect preferences: for each prompt, humans pick the better of two responses.
+  \item Train a reward model $r_\theta(x,y)$ via the Bradley--Terry loss.
+  \item RL fine-tuning: maximize $r_\theta$ with PPO, plus a KL penalty from the SFT model.
+\end{enumerate}
+This is the InstructGPT / ChatGPT recipe --- algorithmically identical to Christiano et al.
+(2017), just scaled. \textbf{RLAIF} replaces human annotators with a strong language model
+(``which response is less harmful?''), exploiting that critique is easier than generation
+even for an AI; Constitutional AI encodes the values as a written set of principles the
+model uses to critique and revise its own outputs.
+
+\subsection{Direct Preference Optimization (DPO)}
+
+The reward-model-plus-PPO loop is expensive and sensitive. DPO observes that the
+KL-regularized RLHF objective has a closed-form optimal policy,
+\[
+  \pi^*(y\mid x) \propto \pi_{\text{ref}}(y\mid x)\,\exp\!\left(\tfrac{1}{\beta} r^*(x,y)\right),
+\]
+which can be \emph{rearranged} to express the reward implicitly in terms of the policy:
+\[
+  r(x,y) = \beta \log \frac{\pi^*(y\mid x)}{\pi_{\text{ref}}(y\mid x)} + \beta\log Z(x).
+\]
+Substituting this into the Bradley--Terry likelihood makes the reward $r$ (and the
+intractable $Z(x)$) cancel, leaving a pure supervised objective over preference pairs:
+\[
+  \loss_{\text{DPO}}(\theta) = -\E_{(\tau_w, \tau_l)}\!\left[
+    \log \sigma\!\left(\beta \log \frac{\pi_\theta(\tau_w)}{\pi_{\text{ref}}(\tau_w)}
+      - \beta \log \frac{\pi_\theta(\tau_l)}{\pi_{\text{ref}}(\tau_l)}\right)\right].
+\]
+No separate reward model, no RL loop --- just supervised learning on preferences, which is
+simpler and more stable than PPO-based RLHF. Its limits: it assumes a fixed offline
+preference set and cannot easily absorb a changing reward signal. The lesson is that the
+RL loop can sometimes be \emph{bypassed entirely}.
+
+\section{Reward Hacking and Goodhart's Law}
+
+Every method in this chapter shares one vulnerability: \textbf{the learned reward is a
+proxy for the true objective, and any proxy can be exploited.} The IRL reward depends on
+feature design and the demonstrations; the preference reward is trained on finite,
+possibly biased comparisons; a goal classifier is fooled by states outside its training
+distribution; the RLHF reward model is over-optimized by the policy.
+
+\begin{intbox}
+\textbf{Goodhart's Law:} ``When a measure becomes a target, it ceases to be a good
+measure.'' The agent optimizes the proxy $r_\psi$, not the true reward $r^*$. Classic
+examples: the OpenAI boat-race agent that spins in circles collecting speed-boost tokens
+instead of finishing; a robot that moves the camera so an object \emph{appears} grasped;
+an RLHF model that learns verbose, sycophantic answers that score well. The common thread
+is that the proxy has loopholes the designer never anticipated.
+\end{intbox}
+
+\textbf{Reward overoptimization} is the quantitative version: as $r_\theta$ is optimized
+harder, true performance first rises, then \emph{degrades}, because the policy finds
+adversarial inputs that score high without being genuinely good. The standard mitigation
+is a KL penalty to a reference policy,
+\[
+  \max_\pi\; \E[r_\theta] - \beta\,\KL{\pi}{\pi_{\text{ref}}},
+\]
+which keeps the policy near the distribution on which the reward model was trained.
+The core takeaway of data-centric RL: \emph{the reward is a hypothesis about what the
+agent should achieve --- like any hypothesis, treat it with skepticism and validate it.}
+
+
+% ==========================================================
+%  CHAPTER 9 — PLANNING WITH A MODEL
+% ==========================================================
+\chapter{Planning with a Model}
+\label{chap:planning}
+
+Humans and animals \emph{simulate} future outcomes before acting: a chess player explores
+candidate moves mentally, a robot plans a collision-free trajectory. Every method so far
+has been \emph{model-free} --- the agent observes $(s,a,r,s')$ tuples and updates value or
+policy estimates directly, with no explicit model of the world. This is unbiased but
+sample-hungry, and each real interaction can be expensive in time, hardware, or safety.
+What if the agent could think ahead using an internal model? This chapter assumes we
+\emph{have} a model (given or learned) and asks how to \emph{plan} with it;
+\cref{chap:mbrl} asks how to learn one.
+
+\section{What Is a Model?}
+
+A \textbf{model} of the environment is a function that predicts what happens when the
+agent acts: a transition model $s_{t+1} \sim p_\phi(s_{t+1}\mid s_t, a_t)$ and a reward
+model $\hat r = r_\phi(s_t, a_t)$. Together they define a \emph{simulated MDP}: given any
+$(s,a)$, the agent can produce a prediction $(s', r)$ without touching the real
+environment.
+
+Models vary along several axes. Their \emph{origin} can be \emph{known} (given exactly,
+e.g.\ the rules of chess or Go) or \emph{learned} from data. Their \emph{output} can be
+deterministic, $s' = f(s,a)$, or stochastic, $s' \sim p(\cdot\mid s,a)$. They can operate
+in the raw observation space or in a learned \emph{latent} space (as in MuZero). And they
+can be full or only local/partial. A model unlocks four capabilities: planning (search
+over action sequences), synthetic Dyna-style rollouts, policy gradients backpropagated
+through the model, and uncertainty-guided exploration. This chapter focuses on planning.
+
+\section{Planning vs.\ Learning}
+
+\emph{Model-free learning} interacts with the real environment and updates value/policy
+from real transitions: unbiased but sample-hungry. \emph{Planning} uses a model to
+simulate transitions and search over imagined trajectories: fast once the model is known,
+but model errors propagate. The two are \emph{not} mutually exclusive --- the most powerful
+agents do both. Model-free methods often need millions of environment steps; model-based
+methods can reach comparable performance with orders of magnitude fewer real interactions,
+especially when the environment is expensive to simulate and the dynamics are accurate
+(low-dimensional, smooth). The caveat: model errors can cause catastrophic policy updates.
+
+\section{Dynamic Programming as Planning}
+
+Dynamic programming (\cref{chap:tabular}) already \emph{is} planning: it assumes the MDP
+$p(s'\mid s,a),\, r(s,a)$ is known and uses it to improve values or policies via Bellman
+backups, with no new environment data. The two classic control algorithms:
+\[
+  \text{Value iteration:}\quad
+  V_{k+1}(s) = \max_a\!\left[r(s,a) + \gamma \sum_{s'} p(s'\mid s,a) V_k(s')\right] \;\forall s,
+\]
+\[
+  \text{Policy iteration:}\quad
+  V^{\pi_k}(s) = \sum_a \pi_k(a\mid s)\!\left[r(s,a) + \gamma\sum_{s'} p(s'\mid s,a) V^{\pi_k}(s')\right],
+\]
+followed by greedy improvement $\pi_{k+1}(s) = \argmax_a[\,r(s,a) + \gamma\sum_{s'}p(s'\mid s,a)V^{\pi_k}(s')\,]$.
+
+But DP plans over the \emph{entire} MDP: every state, every action, every possible next
+state. It requires an explicit model, performs full-state sweeps, sums over all next
+states at each backup, and offers no generalization in tabular form (similar states are
+unrelated table entries). For large problems this is hopeless. The key shift for the rest
+of the chapter: \emph{instead of solving the whole MDP, plan only from the current state.}
+
+\section{Forward Search and Simulation-Based Search}
+
+\textbf{Forward search} selects the best action by lookahead from the current state. It
+builds a search tree with $s_t$ at the root, uses the model to look ahead, and solves only
+the sub-MDP starting from \emph{now} --- there is no need to solve the whole MDP.
+
+\textbf{Simulation-based search} is the sample-based variant: simulate trajectories from
+$s_t$ using the model $\hat p_\phi$ and a policy $\pi$, then apply \emph{any} model-free
+method (Monte Carlo, SARSA, Q-learning) to the simulated data. Simulation is using a model
+to generate imaginary experience. Concretely, Monte Carlo simulation search rolls out $K$
+full episodes from $s_t$ and estimates local values from the mean simulated return:
+\[
+  \hat v(s_t) = \frac{1}{K}\sum_{k=1}^K G_t^k \approx v^\pi(s_t),
+  \qquad
+  \hat q(s_t, a) = \frac{1}{K}\sum_{k=1}^K G_t^k \approx q^\pi(s_t, a),
+  \quad A_t = \argmax_a \hat q(s_t, a).
+\]
+No global value function is needed --- estimates are \emph{local} to $s_t$ --- and the
+model can be a black box that only needs to generate samples $(r, s')$.
+
+\begin{notebox}[title={The branching problem}]
+Full tree expansion explodes. At depth $d$ with branching factor $b = \abs{\Aset}$, the
+tree has $b^d$ nodes. Chess: $b\approx 35$, $d\approx 80 \Rightarrow 35^{80}\approx 10^{123}$.
+Go: $b\approx 250$, $d\approx 150$, far beyond any computer. Two classical remedies:
+\emph{depth reduction} (replace deep rollouts with a value function $\hat V(s)$) and
+\emph{breadth reduction} (only expand promising branches). MCTS addresses both.
+\end{notebox}
+
+\section{Monte Carlo Tree Search}
+
+\textbf{MCTS} builds a \emph{partial} lookahead tree using Monte Carlo simulations, growing
+it asymmetrically toward promising regions. Four phases repeat many times:
+\begin{enumerate}
+  \item \textbf{Selection:} from the root, traverse to a leaf using a \emph{tree policy} (UCT).
+  \item \textbf{Expansion:} add one or more child nodes to the selected leaf.
+  \item \textbf{Simulation:} run a rollout from the new node to a terminal state using a fast
+    \emph{default policy} (e.g.\ random).
+  \item \textbf{Backpropagation:} update visit counts $N(s,a)$ and value estimates $Q(s,a)$
+    along the path back to the root.
+\end{enumerate}
+After the budget is exhausted, play the action with the \emph{highest visit count} at the
+root. The tree grows asymmetrically (promising subtrees are visited more), simulations give
+unbiased value estimates with no value function needed, and over time estimates converge to
+the true minimax value.
+
+\subsection{UCT: the tree policy}
+
+How do we decide which node to expand? \textbf{UCT} (Upper Confidence Bounds for Trees)
+applies UCB1 at each node, balancing exploitation against exploration:
+\[
+  a^* = \argmax_a\!\left[\, Q(s,a) + c\sqrt{\frac{\ln N(s)}{N(s,a)}}\,\right].
+\]
+Here $Q(s,a)$ is the mean return from simulations through $(s,a)$, $N(s)$ the total visits
+to $s$, $N(s,a)$ the visits via action $a$, and $c$ an exploration constant. High $Q$
+exploits promising branches; a low $N(s,a)$ relative to $N(s)$ explores under-visited ones.
+UCT converges to the minimax-optimal action as the number of simulations $\to \infty$.
+MCTS is \emph{anytime} (more simulations improve the decision), \emph{selective} (computation
+focuses on promising branches), and \emph{black-box} (needs only a simulator).
+
+\subsection{From rollouts to learned value functions}
+
+MCTS's bottleneck is leaf evaluation. The classical Monte Carlo rollout
+$\hat V(s_{\text{leaf}}) = \tfrac{1}{K}\sum_k G^k(s_{\text{leaf}})$ is poor in complex
+domains: a random rollout policy is a weak evaluator, each rollout costs $\bigO{d}$ model
+queries, and long rollouts have high variance. The fix is to replace expensive rollouts
+with a \emph{learned value function} $V_\theta(s_{\text{leaf}})$, trained on game outcomes,
+Monte Carlo returns, TD targets, or self-play. $V_\theta$ gives $\bigO{1}$ leaf evaluation,
+generalizes across states, and has lower variance, while MCTS still provides local
+decision-time search and an improved policy at the root. \textbf{Neural MCTS} combines
+search for local improvement with function approximation for generalization.
+
+\section{AlphaGo and AlphaZero}
+
+Go has simple rules but $\sim 10^{170}$ legal positions, an enormous branching factor, and
+no simple hand-designed evaluation function --- classical minimax search is infeasible. It
+needs both selective search and learned heuristics.
+
+\textbf{AlphaGo} (2016) combined MCTS with three learned networks: a large policy network
+$p_\sigma(a\mid s)$ (trained by supervised learning on expert moves, then improved by
+self-play policy gradients, used as a prior over promising actions in the tree), a fast
+rollout policy $p_\pi$ (small, used to simulate from leaves), and a value network
+$v_\theta(s)$ (trained on self-play outcomes to estimate the win probability and evaluate
+leaves). Its tree policy mixed the policy prior into selection and evaluated leaves by
+blending the value network with a rollout outcome.
+
+\textbf{AlphaZero} (2017) keeps the core idea --- MCTS + policy/value networks + self-play
+--- but removes the human expert games, the separate rollout policy, and the supervised
+pre-training, and uses a \emph{single} network predicting both policy and value,
+$f_\theta(s) = (\mathbf{p}, v)$.
+
+\begin{intbox}[title={Search improves the policy; learning amortizes search}]
+At each expanded node the network gives a prior $\mathbf{p}$ and a value $v$; MCTS uses them
+to produce an improved search policy $\pi_{\text{MCTS}}(a\mid s) \propto N(s,a)^{1/\tau}$.
+Self-play with MCTS at every state generates training targets $(s_t,\, \pi_{\text{MCTS}},\, z)$
+where $z$ is the final game outcome. The network is then trained to predict both:
+\[
+  \loss(\theta) = \underbrace{(v_\theta(s_t) - z)^2}_{\text{value loss}}
+  - \underbrace{\pi_{\text{MCTS}}\T \log \mathbf{p}_\theta}_{\text{policy loss}}
+  + \underbrace{c\norm{\theta}^2}_{\text{regularization}}.
+\]
+\textbf{MCTS is a policy-improvement operator}: it turns the raw network policy
+$\mathbf{p}_\theta$ into the stronger $\pi_{\text{MCTS}}$, and the network is trained to
+\emph{amortize} that improved search. Self-play provides an automatic curriculum --- the
+opponent improves alongside the agent --- and values are always read from the current
+player's perspective, inducing minimax-like reasoning.
+\end{intbox}
+
+\section{Trajectory Optimisation}
+
+Tree search works for discrete actions, but in continuous control, branching over all
+actions is impossible. Instead, plan by directly optimizing an \emph{action sequence}:
+\[
+  \mathbf{a}^*_{0:H-1} = \argmax_{\mathbf{a}_{0:H-1}} \sum_{t=0}^{H-1} r(s_t, a_t),
+  \qquad s_{t+1} = f(s_t, a_t),
+\]
+where $f$ is a queryable dynamics model and $H$ the planning horizon. Trajectory
+optimization searches over action sequences, not tree nodes.
+
+\textbf{Model Predictive Control (MPC)} plans over a finite horizon but executes only the
+\emph{first} action, then re-plans:
+\[
+  \mathbf{a}^*_{t:t+H-1} = \argmax_{\mathbf{a}_{t:t+H-1}} \sum_{\tau=t}^{t+H-1} r(s_\tau, a_\tau),
+  \qquad \text{execute } a_t = a^*_t,\ \text{observe } s_{t+1},\ \text{re-plan}.
+\]
+Re-planning after each real transition corrects for model errors, avoids committing to a
+long open-loop plan, and naturally handles changing situations.
+
+How do we solve the inner optimization? Two derivative-free methods:
+\begin{itemize}
+  \item \textbf{Random shooting:} sample $N$ action sequences uniformly, simulate each under
+    the model, and execute the first action of the best one. Simple and trivially
+    parallelizable, needs no gradients, but covers high-dimensional action spaces poorly.
+  \item \textbf{Cross-Entropy Method (CEM):} iteratively fit the sampling distribution to the
+    best sequences. Start from $\Normal(\mathbf{0}, \sigma^2\eye)$ over action sequences;
+    each iteration sample $N$ sequences, score them, keep the top elites $\mathcal{E}$, and
+    refit $\mu \leftarrow \E_\mathcal{E}[\mathbf{a}]$, $\Sigma \leftarrow \Cov_\mathcal{E}[\mathbf{a}]$.
+    Robust, works with non-differentiable models, effective in low-to-medium action
+    dimensions, but the Gaussian assumption can miss multimodal solutions and scales poorly
+    to very high dimensions.
+\end{itemize}
+
+Both tree search and trajectory optimisation are \emph{online planners}: they spend
+computation at decision time using a model. Tree search suits discrete actions and deep,
+branching lookahead with UCT/value-net guidance; shooting and CEM suit continuous actions
+and short, MPC-style horizons.
+
+\begin{notebox}[title={What changes when the model is learned}]
+Everything here assumed a \emph{queryable} model $s_{t+1} = f(s_t,a_t)$. When the model is
+learned from data, $s_{t+1}\sim p_\phi(\cdot\mid s_t,a_t)$, four problems appear: model
+error, compounding error over rollouts, distribution shift (the planner queries unfamiliar
+states), and model exploitation (the policy exploits model mistakes). \Cref{chap:mbrl}
+tackles these.
+\end{notebox}
+
+
+% ==========================================================
+%  CHAPTER 10 — LEARNING MODELS (MODEL-BASED RL II)
+% ==========================================================
+\chapter{Learning Models}
+\label{chap:mbrl}
+
+\Cref{chap:planning} assumed a queryable model: dynamic programming, tree search,
+AlphaZero, and CEM all needed $p(s'\mid s,a)$ and $r(s,a)$. In most real problems the
+model is \emph{not} given --- it must be learned from data. This chapter is about
+learning a dynamics model, the characteristic ways learned models fail, and the
+algorithms (Dyna, MBPO, PETS, latent world models) that use a learned model while
+controlling its errors.
+
+\begin{intbox}[title={The model-based RL loop}]
+Model-free RL goes \emph{experience $\to$ value/policy} directly. Model-based RL inserts
+a model in the middle: \emph{experience $\to$ model}, then \emph{model $\to$ plan/imagine
+$\to$ value/policy}. The agent collects transitions, fits a model
+$\hat p_\phi(s'\mid s,a),\, \hat r_\phi(s,a)$, plans or imagines with it, and updates the
+policy from real \emph{and} imagined data. The model is the extra source of training data
+that buys sample efficiency.
+\end{intbox}
+
+\section{Learning a Model from Transitions}
+
+The minimal model for one-step rollouts is a transition model (deterministic
+$s_{t+1}\approx f_\phi(s_t,a_t)$ or stochastic $s_{t+1}\sim p_\phi(\cdot\mid s_t,a_t)$)
+plus a reward model $\hat r_t = r_\phi(s_t,a_t)$. Both are trained by ordinary supervised
+learning on a data set $\dataset = \{(s_t,a_t,r_t,s_{t+1})\}$:
+\[
+  \loss_{\text{trans}}(\phi) = \frac{1}{\abs{\dataset}}\sum \norm{s' - f_\phi(s,a)}^2
+  \quad\text{(or }-\log p_\phi(s'\mid s,a)\text{)},
+  \qquad
+  \loss_{\text{rew}}(\phi) = \frac{1}{\abs{\dataset}}\sum \bigl(r - r_\phi(s,a)\bigr)^2.
+\]
+Architecture follows the observation type: an MLP for low-dimensional states, a CNN for
+images, an RNN for partial observability. The reward model is often simpler (scalar
+output) and sometimes known analytically.
+
+The quality of a learned model depends critically on \emph{which} data is collected. A
+random policy gives broad but mostly irrelevant coverage; the current policy gives data
+where the agent actually operates (accurate where it matters); a replay-buffer mixture
+keeps all past transitions; and active, uncertainty-driven collection queries the
+environment where the model is least confident.
+
+\section{Why Learned Models Fail}
+
+\begin{notebox}[title={Three failure modes of learned models}]
+\textbf{1. Distributional shift.} The model is trained on the data-collection policy, but
+the planning policy visits states the model has never seen,
+$(s,a)\sim\pi_{\text{plan}} \neq (s,a)\sim\pi_{\text{data}}$. Model errors are undefined
+off-distribution and the planner confidently exploits artefacts --- the same covariate
+shift as imitation learning (recall DAgger). \emph{Fix:} re-collect data under the
+planning policy (iterative MBRL); uncertainty-aware planning.
+
+\textbf{2. Compounding errors.} A per-step error $\epsilon$ accumulates over a rollout:
+total error $\le H\epsilon$ (linear, or worse for divergent dynamics). With
+$\epsilon\approx 0.01$ and $H=100$ the error reaches the scale of the state itself; value
+estimates on such trajectories are meaningless. \emph{Fix:} short rollouts, mix with real
+data, penalize uncertainty.
+
+\textbf{3. Model exploitation.} A policy optimized against a learned model finds its
+\emph{weaknesses}. The classic example is a robot that discovers a model glitch and
+vibrates indefinitely to accumulate infinite simulated reward. \emph{Fix:} limit the
+planning horizon, plan pessimistically (penalize uncertainty), frequently re-train on new
+real data.
+\end{notebox}
+
+These pressures create an \textbf{accuracy--usability trade-off}. A short horizon ($H$
+small) keeps compounding error low and predictions accurate but limits planning depth and
+needs a good value function at the leaf. A long horizon gives a richer learning signal but
+suffers high compounding error and likely model exploitation, demanding a very accurate
+model. The practical recommendation: \emph{keep $H$ short (5--20 steps) and combine
+imagined data with real data.}
+
+\section{Re-planning at Every Step: MPC + CEM}
+
+The simplest way to use a learned model is to plan with it at decision time and re-plan
+continuously, exactly as in \cref{chap:planning}. \textbf{MPC} runs a receding-horizon
+loop: at state $s_t$, optimize an action sequence under the learned model, execute only
+the first action, observe $s_{t+1}$, and repeat:
+\[
+  \mathbf{a}^* = \argmax_{a_t,\dots,a_{t+H-1}} \sum_{k=0}^{H-1} \gamma^k\, \hat r(s_{t+k}, a_{t+k}).
+\]
+Re-planning at each step \emph{corrects for model errors} but is computationally expensive
+(an inner optimization every step) and works with any black-box model. The inner optimizer
+is usually \textbf{CEM}: represent each action as an independent Gaussian
+$p(a_t) = \Normal(\mu_t, \sigma_t^2\eye)$; sample $K$ sequences, simulate each under
+$\hat p_\phi$, keep the top-$N$ elites, refit $\mu_t,\sigma_t$ to the elites, iterate, and
+execute $\mu_0$. CEM is derivative-free and parallelizable but uses a separate distribution
+per time step (trajectories need not be smooth or physically consistent) and keeps no
+memory between MPC steps (warm-starting helps).
+
+\section{Dyna: Learning from Imagined Transitions}
+
+\textbf{Dyna} (Sutton, 1991) is the early, influential framework for combining model
+learning with model-free RL. Its key insight: \emph{imagined transitions from a learned
+model can be treated like ordinary experience.} Real experience updates the model
+\emph{and} the value/policy; imagined experience updates the value/policy only. Each real
+transition can be followed by $K$ model-generated updates, so a good model greatly improves
+sample efficiency --- and crucially, the model need \emph{not} be used for explicit
+lookahead planning.
+
+\begin{thmbox}[title={Dyna-Q}]
+Given a $Q$-function, learned model $\hat p_\phi$, and replay buffer $\dataset$:
+\begin{enumerate}
+  \item \textbf{Act:} choose $a_t \leftarrow \epsilon$-greedy$(Q, s_t)$; observe $r_t, s_{t+1}$.
+  \item \textbf{Learn from real experience} $(s_t,a_t,r_t,s_{t+1})$: update $Q$, update the
+    model $\hat p_\phi$, store the transition in $\dataset$.
+  \item \textbf{Learn from imagined experience}, repeat $K$ times: sample
+    $(s,a)\sim\dataset$, predict $(r',s')\sim\hat p_\phi(\cdot\mid s,a)$, and update $Q$ with
+    the imagined transition.
+  \item Advance to $s_{t+1}$ and repeat.
+\end{enumerate}
+\end{thmbox}
+
+With $K=0$ this is plain model-free Q-learning; with $K>0$ each real step is supplemented by
+$K$ model-generated value updates. The caveats: a wrong model produces misleading imagined
+transitions, the model can become outdated in non-stationary environments, and standard Dyna
+only samples \emph{previously visited} $(s,a)$ pairs (limited exploration).
+\textbf{Dyna-Q+} repurposes the model for exploration, adding a bonus for state-action pairs
+not tried for a long time:
+\[
+  r^+(s,a) = r(s,a) + \kappa\sqrt{\tau(s,a)},
+\]
+where $\tau(s,a)$ is the time since $a$ was last tried in $s$ --- useful when the
+environment may have changed. Dyna is the blueprint for modern MBRL: real data $\to$
+learned model $\to$ synthetic data $\to$ policy.
+
+\section{Model-Based Policy Optimization (MBPO)}
+
+Long rollouts from an imperfect model drift away from realistic trajectories. \textbf{MBPO}
+combines a learned dynamics model with an off-policy actor-critic (SAC) and makes two design
+choices to keep the synthetic data trustworthy: \emph{short model rollouts starting from
+real states} in the replay buffer, and \emph{mixed replay} (train SAC on a mixture of real
+and imagined transitions). Start from states the model has actually seen, imagine only a
+few steps, and use the synthetic transitions to improve the policy.
+
+\begin{thmbox}[title={MBPO}]
+Given policy $\pi_\theta$, model ensemble $\{\hat p_{\phi_i}\}$, real buffer
+$\dataset_{\text{real}}$, model buffer $\dataset_{\text{model}}$:
+\begin{enumerate}
+  \item \textbf{Collect real data:} roll out $\pi_\theta$ in the environment; add to
+    $\dataset_{\text{real}}$.
+  \item \textbf{Train the model:} fit the ensemble on $\dataset_{\text{real}}$.
+  \item \textbf{Generate imagined data:} sample $s_0\sim\dataset_{\text{real}}$ and roll out
+    $\pi_\theta$ for $k$ \emph{short} model steps; add transitions to $\dataset_{\text{model}}$.
+  \item \textbf{Update the policy:} train SAC on minibatches from
+    $\dataset_{\text{real}}\cup\dataset_{\text{model}}$.
+  \item Repeat.
+\end{enumerate}
+Key hyperparameter: rollout length $k$, typically very short (1--5 steps), sometimes even
+$k=1$.
+\end{thmbox}
+
+The rollout length balances two effects: $k=0$ has no model bias but no synthetic data;
+small $k$ gives useful extra data with limited model error; large $k$ gives more imagined
+experience but compounding error. \emph{The goal is not to build a perfect simulator --- it
+is to use the model only where it is accurate enough.} MBPO matches strong model-free SAC
+with far fewer real steps on MuJoCo locomotion (often $\sim 20\times$ more efficient), and
+the model \emph{ensemble} is essential for reducing bias and estimating uncertainty. Seen
+this way, MBPO is a modern, error-controlled Dyna-style algorithm: where Dyna-Q uses
+Q-learning, simple models, one-step samples, and replayed start states, MBPO uses SAC, a
+neural ensemble, short rollouts, and real replay states.
+
+\section{Probabilistic Models and Ensembles}
+
+A deterministic model gives a single prediction $s' = f_\phi(s,a)$ and cannot say how
+reliable it is. A useful model should predict not just \emph{what} may happen but \emph{how
+reliable} the prediction is. There are two distinct sources of uncertainty:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Type} & \textbf{Source} & \textbf{Reducible with more data?} \\
+\midrule
+Aleatoric & inherent environment randomness (noisy sensors, stochastic transitions) & no \\
+Epistemic & limited knowledge (model queried far from training data) & yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+Aleatoric uncertainty is part of the \emph{environment}; epistemic uncertainty is part of
+the \emph{model}.
+
+A \textbf{Gaussian neural network} outputs a mean and variance,
+$p_\phi(s'\mid s,a) = \Normal(\mu_\phi(s,a), \Sigma_\phi(s,a))$, trained by maximizing the
+likelihood of observed transitions. The mean predicts the most likely next state and the
+variance captures noisy or ambiguous outcomes --- it models \emph{aleatoric} uncertainty.
+But a large predictive variance is not the same as knowing the model is outside its
+training data: predictive variance does not capture \emph{epistemic} uncertainty. For that
+we need model \emph{disagreement}.
+
+\textbf{Deep ensembles} train $M$ independent models $\{p_{\phi_i}\}_{i=1}^M$ on the same
+data with different seeds, initializations, or bootstraps. If they agree, the prediction is
+reliable; if they disagree, the query is likely out-of-distribution. For Gaussian members,
+the total predictive variance decomposes cleanly:
+\[
+  \Var_{\text{ens}}[s'] =
+  \underbrace{\frac{1}{M}\sum_i \Sigma_{\phi_i}}_{\text{within-model: aleatoric}}
+  + \underbrace{\frac{1}{M}\sum_i (\mu_{\phi_i} - \bar\mu)^2}_{\text{between-model: epistemic}}.
+\]
+In MBRL epistemic uncertainty is the important one --- it tells the planner where the model
+\emph{should not be trusted}. Ensembles are then used for model selection (sample one model
+per imagined rollout), uncertainty-aware planning (avoid high-disagreement actions),
+pessimistic value estimates (penalize uncertain regions), and active data collection.
+
+\subsection{PETS: planning with an ensemble}
+
+\textbf{PETS} (Probabilistic Ensembles with Trajectory Sampling) combines all the pieces for
+continuous control: a probabilistic ensemble for the dynamics, CEM for action-sequence
+search, and \emph{trajectory sampling} to propagate uncertainty. During CEM planning, each
+candidate action sequence is evaluated by rolling out several \emph{particles} through the
+ensemble. Two schemes: TS1 keeps one model fixed per rollout (a single coherent hypothesis),
+while TS$\infty$ samples a fresh ensemble member at each step. Trajectory sampling makes
+disagreement between models actually affect planning. In short, PETS is MPC with CEM where
+candidate sequences are scored by averaging the returns of particles rolled out through the
+probabilistic ensemble.
+
+\section{Latent World Models}
+
+So far the model was a one-step transition predictor over the raw state,
+$(s_{t+1}, r_t)\sim p_\phi(\cdot\mid s_t,a_t)$, assuming $s_t$ is already a good
+representation. A \textbf{world model} instead learns an internal state representation and
+predicts future experience from it:
+\[
+  z_t = e_\phi(o_{\le t}, a_{<t}), \qquad (z_{t+1}, r_t)\sim p_\phi(\cdot\mid z_t, a_t).
+\]
+A world model is not just a next-state predictor --- it learns \emph{what state information
+the agent should carry forward} for imagination and decision making.
+
+Raw observations are often the wrong state for control: high-dimensional (images, sensors,
+text), partial (one frame need not reveal the full state), full of irrelevant variation
+(background, lighting, noise), or missing history-dependent information (velocity, memory,
+hidden variables). A latent state $z_t$ summarizes the useful information from the history.
+\emph{The goal is not perfect reconstruction --- it is a representation useful for control.}
+Examples: \textbf{World Models} (Ha \& Schmidhuber, 2018) learn latent dynamics and optimize
+a controller in imagined rollouts; \textbf{Dreamer} learns recurrent latent dynamics and
+trains an actor-critic purely in imagination; \textbf{MuZero} learns \emph{value-equivalent}
+latent dynamics and runs MCTS in latent space. Same high-level idea: learn an internal
+model, then use imagined futures to improve decisions.
+
+\section{When Does Model-Based RL Help?}
+
+MBRL works best when real data is expensive (robotics, chemistry, clinical trials), the
+dynamics are smooth and learnable (continuous locomotion, manipulation), short planning
+horizons suffice (so model errors stay bounded), and the reward is dense (easy to fit a
+reward model). It is harder when observations are high-dimensional and complex (raw pixels
+need a latent model), dynamics are discontinuous or stochastic (contacts, multi-agent),
+the reward is sparse, or distribution shift is severe (rapidly changing environment).
+Across all of these, the recurring strategy is the same: \emph{trust the model only where
+it is accurate, and keep correcting it with real data.}
+
+
+% ==========================================================
+%  CHAPTER 11 — RL FOR FOUNDATION MODELS
+% ==========================================================
+\chapter{RL for Foundation Models}
+\label{chap:fm}
+
+Two trends are reshaping AI. \textbf{Foundation models} (LLMs, vision-language, multimodal)
+are trained on large-scale data, carry strong general-purpose representations, and are
+adapted by prompting, supervised fine-tuning, or post-training. \textbf{Agentic AI} systems
+act, use tools, and interact with environments through multi-step reasoning and feedback.
+This chapter shows that the RL vocabulary of the whole course --- behavior cloning,
+preference learning, policy gradients, KL constraints, reward hacking, model-based thinking
+--- reappears almost unchanged when a foundation model becomes a decision-making system.
+
+\section{Autoregressive Generation as Sequential Decision-Making}
+
+An autoregressive language model factorizes a response as
+$p_\theta(y\mid x) = \prod_{t=1}^T p_\theta(y_t\mid x, y_{<t})$ and is trained by maximum
+likelihood. This is \emph{exactly} a policy: reading it as RL,
+\[
+  \pi_\theta(a_t\mid s_t) = p_\theta(y_t\mid x, y_{<t}),
+\]
+the \emph{state} is the prompt plus the generated prefix, the \emph{action} is the next
+token (or a tool call), and the \emph{reward} is a preference, a verifier, or a task-success
+signal. Temperature, top-$p$, and decoding rules are part of the effective policy. The same
+network can act as a text simulator or as an environment actor.
+
+\begin{notebox}[title={What makes language RL difficult}]
+\textbf{Huge discrete action space} --- tens or hundreds of thousands of tokens.
+\textbf{Long horizons} --- early words shape later possibilities.
+\textbf{Sparse sequence-level rewards} --- the answer is judged only after generation.
+\textbf{Partial, conflicting objectives} --- helpfulness, truthfulness, style, safety, and
+brevity can clash.
+\textbf{Distribution shift} --- optimizing the model changes the very text people see and
+rate. The good news: we already studied every ingredient needed to cope.
+\end{notebox}
+
+\section{LLM Training: Pretraining, SFT, Preferences}
+
+\textbf{Pretraining is behavior cloning from text.} Maximizing
+$\sum_{(x,y)\in\dataset_{\text{text}}} \sum_t \log \pi_\theta(y_t\mid x, y_{<t})$ imitates
+the conditional distribution of internet, book, and code text. This is powerful because the
+data contains many latent skills --- but it is \emph{not} the same as optimizing for being a
+helpful assistant. Pretraining learns plausible continuations and many \emph{conflicting}
+behaviors; users want instruction-following, calibrated answers, refusal in unsafe cases,
+and consistency with preferences.
+
+\textbf{Supervised fine-tuning (SFT)} is instruction-following imitation: collect
+demonstrations $(x, y^*)\sim\dataset_{\text{demo}}$ and fine-tune with the same token-level
+likelihood objective. SFT is simple, stable, cheap relative to RL, and usually the first
+step toward an assistant --- but it says ``copy this behavior,'' not ``search for outputs
+humans prefer.''
+
+To go further we need a preference signal. Humans find \emph{comparison} easier than writing
+the ideal answer, so we collect pairs and train a reward model with the Bradley--Terry
+objective (\cref{chap:irl}):
+\[
+  P_\phi(y_w \succ y_l\mid x) = \sigma\bigl(r_\phi(x, y_w) - r_\phi(x, y_l)\bigr),
+  \qquad
+  \loss_{\text{RM}}(\phi) = -\E_{(x,y_w,y_l)}\bigl[\log\sigma\bigl(r_\phi(x,y_w) - r_\phi(x,y_l)\bigr)\bigr].
+\]
+The reward model scores complete responses; it is a learned \emph{proxy} for human
+preference, not ground truth.
+
+\section{RLHF Objective and PPO}
+
+RLHF optimizes the policy against the learned reward while staying close to the SFT
+reference, via a KL-regularized objective:
+\[
+  \max_\theta\; \E_{y\sim\pi_\theta(\cdot\mid x)}\!\left[\,
+    r_\phi(x, y) - \beta \log \frac{\pi_\theta(y\mid x)}{\pi_{\text{ref}}(y\mid x)}\right].
+\]
+Here $r_\phi$ is the reward model and $\pi_{\text{ref}}$ is usually the SFT policy; the KL
+penalty keeps the policy near the reference. This is the \emph{target} objective; PPO is one
+way to optimize it approximately, with the clipped policy-gradient surrogate
+\[
+  L^{\text{PPO}}(\theta) = \E\bigl[\min\bigl(\rho_t(\theta) A_t,\, \mathrm{clip}(\rho_t(\theta), 1-\epsilon, 1+\epsilon) A_t\bigr)\bigr],
+  \qquad
+  \rho_t(\theta) = \frac{\pi_\theta(y_t\mid x, y_{<t})}{\pi_{\theta_{\text{old}}}(y_t\mid x, y_{<t})},
+\]
+where the advantage $A_t$ is estimated from rewards and a learned value function.
+
+\begin{intbox}[title={Two anchors in PPO-style RLHF}]
+PPO-RLHF holds the policy between \emph{two} reference points that do different jobs. The
+\textbf{KL penalty} compares $\pi_\theta$ to $\pi_{\text{ref}}$ (the SFT model) --- it keeps
+the \emph{content} close to the trusted assistant and curbs reward overoptimization. The
+\textbf{PPO clipping} compares $\pi_\theta$ to $\pi_{\theta_{\text{old}}}$ (the previous
+policy) --- it keeps each \emph{update step} stable. Don't conflate them: one anchors where
+you end up, the other anchors how far you move per step.
+\end{intbox}
+
+\subsection{Group Relative Policy Optimization (GRPO)}
+
+PPO-RLHF needs a separate value network for $A_t$, which is costly at LLM scale.
+\textbf{GRPO} removes it. Sample a \emph{group} of $G$ outputs for the same prompt, score
+them all, and convert each reward into a \emph{group-relative advantage} by standardizing
+within the group:
+\[
+  \hat A_i = \frac{r_i - \mathrm{mean}(r_{1:G})}{\mathrm{std}(r_{1:G}) + \delta}.
+\]
+The single sequence-level advantage $\hat A_i$ is applied to all tokens of output $y_i$, and
+the update keeps the PPO-style clip plus a token-level KL penalty to the reference:
+\[
+  L^{\text{GRPO}}(\theta) = \E\!\left[\frac{1}{G}\sum_{i=1}^G \frac{1}{\abs{y_i}}
+    \sum_t \Bigl(\min\bigl(\rho_{i,t}\hat A_i,\, \mathrm{clip}(\rho_{i,t}, 1-\epsilon, 1+\epsilon)\hat A_i\bigr)
+    - \beta\, D_{\mathrm{KL},i,t}\Bigr)\right].
+\]
+Using the group as its own baseline avoids a learned value function, reducing memory and
+compute --- which is why GRPO is central to recent reasoning-model training.
+
+\section{RLHF Failure Modes and Verifiable Rewards}
+
+RLHF inherits every reward-proxy pathology from \cref{chap:irl}: \emph{reward hacking}
+(optimize what the reward model likes, not human intent), \emph{overoptimization} (quality
+drops after too many RL steps), \emph{preference misspecification} (style or confidence
+rewarded over correctness), \emph{mode collapse} (generic safe-sounding answers become
+attractive), and \emph{distribution shift} (the reward model scores outputs unlike its
+training data). Learned reward models are useful but imperfect proxies.
+
+When the answer can be checked automatically, we can sidestep the learned proxy.
+\textbf{RLVR} (Reinforcement Learning with Verifiable Rewards) replaces preference rewards
+with \emph{automatic checkers}: math (final answer matches a verifier), code (tests pass),
+tool use (an API result satisfies a check), games (win/loss observed), or structured domains
+(symbolic constraints satisfied). Cheap verifier rewards allow many sampled attempts per
+prompt and have been central to recent reasoning models and specialized agents. Reward
+design matters: an answer must be both \emph{checkable} and \emph{correct}, so a composite
+reward teaches both format and correctness,
+\[
+  r(y) = \lambda_{\text{format}}\, r_{\text{format}}(y) + \lambda_{\text{correct}}\, r_{\text{correct}}(y),
+\]
+where the format reward rewards a parseable answer (JSON, tagged fields) and the correctness
+reward rewards passing the verifier. Format failures otherwise cause us to underestimate the
+model's true capability.
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Method} & \textbf{Signal} & \textbf{Strength} & \textbf{Main risk} \\
+\midrule
+SFT  & demonstrations     & stable imitation         & limited by examples \\
+RLHF & human preferences  & aligns subjective quality & proxy reward hacking \\
+DPO  & preference pairs   & simple and stable        & offline preference limits \\
+RLVR & automatic verifier & scalable objective signal & narrow rewards, hacking the verifier \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Generalist Agents}
+
+Once everything --- instruction text, visual observations, state observations, previous
+actions --- is tokenized into a shared sequence representation, language modeling and action
+prediction become structurally identical. \textbf{Gato} (Reed et al., 2022) exploits this:
+one multimodal, multi-task, multi-embodiment Transformer with the \emph{same weights}
+playing Atari, controlling robots, captioning images, and holding dialogue, with inputs and
+outputs serialized into token sequences. Gato is deployed as a policy over observations and
+actions but trained primarily by supervised sequence modeling on mixed data --- ``a policy
+can be general without being generally intelligent.''
+
+Modern agentic systems extend a generalist policy with tools, memory/retrieval, evaluators,
+and control loops: the foundation model becomes a \emph{controller} that reads a task
+instruction, queries memory and tools, observes environment state, and receives feedback from
+tests, rewards, or users. Learning can target the model, tool use, planning, or task success,
+drawing on the full menu: imitation (copy traces or stronger models), offline RL (logs of
+tool use), preference optimization, verifiable rewards, and online RL (live interaction, with
+strong safety filters). Pure online trial-and-error is often too expensive or risky, so
+practical systems lean heavily on data, simulators, and verifiers.
+
+\begin{intbox}[title={Text as computation: planning before acting}]
+A reasoning model can \emph{spend tokens computing} before committing to an action ---
+``\texttt{<think>} plan, reason, check \texttt{</think>}'' then ``\texttt{<answer>} action
+\texttt{</answer>}.'' The final answer, tool call, or command is the action the environment
+sees; feedback from a verifier, tool, or user can trigger another round of planning. This is
+\cref{chap:planning}'s lookahead idea --- spend computation at decision time --- expressed in
+natural language instead of a search tree.
+\end{intbox}
+
+The mapping back to classic RL is exact but broadened. The \emph{policy} is a foundation
+model rather than a task-specific network; the \emph{state} is context, memory, screen,
+files, and history rather than a fixed observation; the \emph{action} is tokens, tool calls,
+clicks, code, or commands; the \emph{reward} comes from tests, users, preferences, and task
+success; the \emph{environment} is software, the web, tools, and people; and \emph{training}
+is a mixture of SFT, RLHF, RLVR, tools, and logs rather than RL in a single task
+distribution. Generalist agents still fit the RL vocabulary --- the state, action, reward,
+and environment simply become broader and less cleanly specified.
 
 \end{document}
