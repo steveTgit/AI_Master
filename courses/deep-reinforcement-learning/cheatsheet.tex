@@ -1,0 +1,385 @@
+% ==========================================================
+%  DEEP REINFORCEMENT LEARNING — 2-SIDED EXAM CHEAT SHEET
+%  Page 1: formulas.  Page 2: rules, intuitions, exam traps.
+%  Tiny dense font on purpose — everything must fit on 2 sides.
+%  Shares the repo accent (#1B3A5C) and typography.
+% ==========================================================
+\documentclass[a4paper]{article}
+
+\usepackage[top=0.7cm,bottom=0.7cm,left=0.7cm,right=0.7cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{bbm}
+% ── handwritten look ─────────────────────────────────────
+% Euler (Zapf's hand-drawn math) for math, Comic Neue for text,
+% so a traced copy reads as genuine handwriting throughout.
+\usepackage[euler-digits]{eulervm}
+\usepackage{comicneue}
+\renewcommand*\familydefault{\sfdefault}
+\usepackage{xcolor}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{array,booktabs}
+\usepackage{tikz}\usetikzlibrary{calc}
+\usepackage{eso-pic}
+
+% ── density settings ─────────────────────────────────────
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.4pt}
+\linespread{0.94}
+\setlength{\columnsep}{10pt}
+\setlength{\columnseprule}{0.4pt}
+\renewcommand{\arraystretch}{0.95}
+
+\definecolor{accent}{HTML}{1B3A5C}
+\renewcommand{\columnseprulecolor}{\color{accent!30}}
+
+\setlist[itemize]{leftmargin=1.0em,itemsep=0pt,topsep=0.5pt,parsep=0pt,
+  label=\textcolor{accent}{\scriptsize$\bullet$}}
+
+% ── compact section header ───────────────────────────────
+\newcommand{\hd}[1]{%
+  \par\addvspace{3.6pt}%
+  {\color{accent}\bfseries\small #1}\par
+  \vspace{-4pt}{\color{accent!45}\rule{\linewidth}{0.4pt}}\par\vspace{1.2pt}}
+
+% ── math macros ──────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\KL}[2]{D_{\mathrm{KL}}(#1\,\|\,#2)}
+\newcommand{\grad}{\nabla}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\T}{^{\mathsf{T}}}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\abs}[1]{\lvert #1 \rvert}
+\newcommand{\Sset}{\mathcal{S}}
+\newcommand{\Aset}{\mathcal{A}}
+\newcommand{\dataset}{\mathcal{D}}
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\ind}{\mathbbm{1}}
+\newcommand{\Ent}{\mathrm{H}}
+\newcommand{\eye}{\mathbf{I}}
+
+\pagestyle{empty}
+
+% ── optional orientation grid (compile with \def\GRID{}) ──
+% Horizontal lines at the footnotesize baseline pitch (8.93pt = 0.3149cm),
+% numbered every 5 rows; vertical markers at the two column edges + gutter.
+\ifdefined\GRID
+\AddToShipoutPictureBG{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \foreach \i [evaluate=\i as \y using -0.7-\i*0.3149] in {0,...,90}{
+      \draw[accent!14,line width=0.12pt]
+        ($(current page.north west)+(0.7cm,\y cm)$) --
+        ($(current page.north west)+(20.3cm,\y cm)$);}
+    \foreach \x in {0.7,10.32,10.67,20.3}{
+      \draw[accent!22,line width=0.18pt]
+        ($(current page.north west)+(\x cm,-0.7cm)$) --
+        ($(current page.north west)+(\x cm,-29.0cm)$);}
+    \foreach \i [evaluate=\i as \y using -0.7-\i*0.3149] in {0,5,...,90}{
+      \node[font=\tiny,color=accent!55,anchor=east]
+        at ($(current page.north west)+(0.62cm,\y cm)$) {\i};
+      \node[font=\tiny,color=accent!45,anchor=center]
+        at ($(current page.north west)+(10.49cm,\y cm)$) {\i};}
+  \end{tikzpicture}}
+\fi
+
+\begin{document}
+\footnotesize
+
+% ==========================================================
+%  PAGE 1 — FORMULAS
+% ==========================================================
+\begin{multicols}{2}
+
+\hd{MDP \& Returns}
+MDP $\langle\Sset,\Aset,\mathcal{P},\gamma\rangle$, dynamics $p(s',r|s,a)$.\\
+$p(s'|s,a)=\sum_r p(s',r|s,a)$,\; $r(s,a)=\E[R_{t+1}|s,a]$\\
+Markov: future $\perp$ past $\mid$ present.\\
+Return: $G_t=\sum_{k\ge0}\gamma^k R_{t+k+1}=R_{t+1}+\gamma G_{t+1}$\\
+Const.\ reward: $G_t=r/(1-\gamma)$. Episodic: $\gamma{=}1$ ok.
+
+\hd{Value Functions \& Bellman}
+$v_\pi(s)=\E_\pi[G_t|S_t{=}s]$,\; $q_\pi(s,a)=\E_\pi[G_t|s,a]$\\
+$v_\pi(s)=\sum_a\pi(a|s)\,q_\pi(s,a)$\\
+Advantage: $A_\pi(s,a)=q_\pi(s,a)-v_\pi(s)$\\
+\textbf{Bellman exp.:}
+$v_\pi(s)=\sum_a\pi(a|s)[\,r(s,a)+\gamma\sum_{s'}p(s'|s,a)v_\pi(s')\,]$\\
+\textbf{Bellman opt.:}
+$v_*(s)=\max_a[\,r+\gamma\sum_{s'}p\,v_*(s')\,]$\\
+$q_*(s,a)=r+\gamma\sum_{s'}p\max_{a'}q_*(s',a')$\\
+exp.\ eq \emph{linear}$\Rightarrow$closed-form ($O(|\Sset|^3)$); opt.\ eq \emph{nonlinear} (max), no closed-form.\\
+Greedy: $\pi_*(s)=\argmax_a q_*(s,a)$ (no model; from $v_*$ needs model).
+
+\hd{Bandits}
+$Q_t(a)=\frac{1}{N_t(a)}\sum R_n\ind_{A_n=a}$\\
+Incremental: $Q\!\leftarrow\!Q+\alpha(R-Q)$;\, $\alpha{=}1/N$ avg, const.\ $\alpha$ recency.\\
+Regret: $\Delta_a=q^*-q(a)$, $L_t=\sum\Delta_{A_n}$.\\
+$\varepsilon$-greedy: random w.p.\ $\varepsilon$, else greedy; const $\varepsilon{\Rightarrow}Q{\to}q$ but \emph{linear} regret; decay (GLIE)$\Rightarrow$sublinear.\\
+UCB: $A_t=\argmax_a[\,Q_t(a)+c\sqrt{\ln t/N_t(a)}\,]$\\
+Thompson: sample $\tilde q(a)\!\sim\!P(q(a))$, act greedy.\\
+Gradient: $\pi_t(a)=\frac{e^{H_t(a)}}{\sum_b e^{H_t(b)}}$;\\
+$H\!\leftarrow\!H+\alpha(R_t-\bar R_t)(\ind_{a=A_t}-\pi_t(a))$
+
+\hd{Dynamic Programming (model known)}
+Policy eval.: $V\!\leftarrow\!\sum_a\pi(a|s)[r+\gamma\sum_{s'}pV]$\\
+Value iter.: $V\!\leftarrow\!\max_a[r+\gamma\sum_{s'}pV]$\\
+Improve: $\pi'(s)=\argmax_a q_\pi(s,a)$\\
+Policy iter.\ = eval$\to$improve (finite); VI = 1 backup each.
+
+\hd{MC / TD / multi-step}
+MC: $V(S_t)\!\leftarrow\!V+\alpha(G_t-V)$ \,(unbiased, high var).\\
+TD(0): $V\!\leftarrow\!V+\alpha\,\delta_t$,\; $\delta_t{=}R_{t+1}{+}\gamma V(S_{t+1}){-}V(S_t)$\\
+\,(biased, low var, bootstraps, online).\\
+$n$-step: $G_t^{(n)}=\sum_{l=0}^{n-1}\gamma^l R_{t+l+1}+\gamma^n V(S_{t+n})$\\
+$\lambda$-ret.: $G_t^\lambda=(1{-}\lambda)\sum_n\lambda^{n-1}G_t^{(n)}$;\, $\lambda{=}0$ TD, $\lambda{=}1$ MC.\\
+GAE: $\hat A_t=\sum_{l\ge0}(\gamma\lambda)^l\delta_{t+l}$\\
+Bootstrap: DP,TD (use estimate). Sample: MC,TD. TD both; DP neither samples.
+
+\hd{TD Control}
+SARSA (on): $Q\!\leftarrow\!Q+\alpha[R{+}\gamma Q(S',A'){-}Q]$\\
+Exp.\ SARSA: target $R+\gamma\sum_{a'}\pi(a'|S')Q(S',a')$\\
+Q-learning (off): $Q\!\leftarrow\!Q+\alpha[R{+}\gamma\max_{a'}Q(S',a'){-}Q]$\\
+Double Q: $Q^A\!\leftarrow\!Q^A+\alpha[R+\gamma\,Q^B(S',\argmax_a Q^A(S',a))-Q^A]$\\
+IS ratio: $\rho_t=\pi(A_t|S_t)/\mu(A_t|S_t)$\\
+off-MC: $\prod\rho$;\, off-SARSA: $\rho_{t+1}$;\, Q-learn: none.
+
+\hd{Value Approx.\ \& DQN}
+Obj.: $J(\mathbf{w})=\E_\pi[(v_\pi(S)-v_\mathbf{w}(S))^2]$\\
+SGD: $\Delta\mathbf{w}=\alpha(\text{target}-v_\mathbf{w})\grad_\mathbf{w}v_\mathbf{w}$\\
+Linear: $v_\mathbf{w}=\mathbf{x}(s)\T\mathbf{w}$; tabular = one-hot.\\
+DQN target: $y=r+\gamma\max_{a'}Q_{\mathbf{w}^-}(s',a')$\\
+Loss: $L=\frac1B\sum(y_j-Q_\mathbf{w}(s_j,a_j))^2$; $\mathbf{w}^-$ frozen.\\
+Double DQN: $a^*{=}\argmax Q_\mathbf{w}(s')$, $y{=}r{+}\gamma Q_{\mathbf{w}^-}(s',a^*)$\\
+Dueling: $Q=V+A-\tfrac1{|\Aset|}\sum_{a'}A$\\
+PER: $p_i\propto|\delta_i|^\alpha$, weight $w_i\propto(1/p_i)^\beta$\\
+Noisy net: $y{=}(\mu^w{+}\sigma^w\!\odot\varepsilon)x+\dots$,\ $\sigma$ learned.\\
+$n$-step: $y=\sum_{k=0}^{n-1}\gamma^k R_{t+k+1}+\gamma^n\max_{a'}Q_{\mathbf{w}^-}(S_{t+n},a')$\\
+Distrib.\ (C51): $Z(s,a)\overset{d}{=}R+\gamma Z(s',a')$; $51$ atoms, cross-ent.\ loss, act on mean.
+
+\hd{Policy Gradient}
+$J(\theta)=\E_{d_0}[v_{\pi_\theta}(S_0)]$ (epis.)\\
+$=\sum_s d_\pi(s)\sum_a\pi r(s,a)$ (avg-reward).\\
+Score trick: $\grad\pi=\pi\,\grad\log\pi$.\\
+\textbf{PG theorem:}\\
+$\grad J=\E_\pi[\sum_t\gamma^t q_\pi(S_t,A_t)\grad\log\pi(A_t|S_t)]$\\
+(dynamics drop out — no model).\\
+REINFORCE: $\theta\!\leftarrow\!\theta+\alpha\gamma^t G_t\grad\log\pi$\\
+Baseline $b(s)$: $\E[b\grad\log\pi]=0$;\\
+use $G_t-v_\mathbf{w}(S_t)\approx A_\pi$ (var$\downarrow$, no bias).\\
+Actor-critic: $\theta\!\leftarrow\!\theta+\alpha\gamma^t\delta_t\grad\log\pi$,\, $\delta_t$ TD-error.\\
+Softmax score: $\grad\log\pi=\phi(s,a)-\E_\pi[\phi(s,\cdot)]$\\
+Unified: $\grad J=\E[\sum_t\Psi_t\grad\log\pi]$, $\Psi\in\{G_t,\,G_t{-}v,\,\delta_t,\,\hat A^{GAE},\,q_\mathbf{w}\}$.
+
+\hd{Trust-Region / On-policy}
+Ratio $r_t(\theta)=\pi_\theta/\pi_{\theta_{old}}$.\\
+NPG: $\theta\!\leftarrow\!\theta+\alpha F^{-1}\grad J$,\ $F{=}\E[\grad\log\pi\grad\log\pi\T]$\\
+TRPO: $\max\,\E[r_t\hat A_t]$ s.t.\ $\KL{\pi_{old}}{\pi_\theta}\le\epsilon$\\
+PPO: $L^{CLIP}=\E[\min(r_t\hat A_t,\ \mathrm{clip}(r_t,1{-}\varepsilon,1{+}\varepsilon)\hat A_t)]$\\
+clip active (grad${=}0$): $r{>}1{+}\varepsilon\,\&\,A{>}0$, or $r{<}1{-}\varepsilon\,\&\,A{<}0$.
+
+\hd{Continuous Control}
+Gaussian $\pi=\Normal(\mu_\theta(s),\sigma^2)$;\\
+score $=\frac{A_t-\mu_\theta}{\sigma^2}\grad\mu_\theta$.\\
+DPG: $\grad_\theta J=\E[\grad_a q_\mathbf{w}(s,a)|_{\mu_\theta}\grad_\theta\mu_\theta]$\\
+DDPG critic $y=r+\gamma q_{\mathbf{w}^-}(s',\mu_{\theta^-}(s'))$; actor max $q(s,\mu_\theta)$.\\
+TD3: $y=r+\gamma\min(Q_1,Q_2)$ at $\mu_{\theta^-}+\tilde\varepsilon$; delayed actor.\\
+SAC: $J=\E[\sum_t\gamma^t(R_{t+1}+\alpha\Ent(\pi(\cdot|S_t)))]$,\ $\Ent=-\E[\log\pi]$;\\
+$y=r+\gamma\,\E_{a'}[\min Q_{\mathbf{w}^-}-\alpha\log\pi(a'|s')]$.
+
+\hd{Exploration bonuses}
+$r_t=r_t^{ext}+\beta\,r_t^{int}$.\\
+Count: $r^{int}=1/\sqrt{N(s)}$ (pseudo-counts in deep).\\
+RND: $r^{int}=\norm{f_\theta(s)-f_{tgt}(s)}^2$.\\
+ICM: $r^{int}=\norm{\hat\phi(s_{t+1})-\phi(s_{t+1})}^2$.\\
+UCB: $\mu(a)+\beta\sigma(a)$; ensemble var $\approx$ epistemic.
+
+\hd{Credit Assignment}
+RUDDER redistribution: $\bar r_{t+1}=\hat G_{t+1}-\hat G_t$.\\
+HER: relabel goal $g'{=}s_T$, $r'{=}\ind_{s_t=g'}$.
+
+\hd{Imitation \& Offline}
+BC: $\min_\theta\,\E\,\ell(\tilde\pi(s),\pi_\theta(s))$ (MSE / CE).\\
+Compounding: $J(\pi)\le J(\tilde\pi)+T^2\epsilon$ \,(DAgger$\to T\epsilon$).\\
+DAgger roll-out: $\pi_i=\beta_i\tilde\pi+(1{-}\beta_i)\pi_{\theta_i}$, expert labels.\\
+CQL: push $\downarrow Q$(OOD) $-$ $\uparrow Q$(data) $+L_{TD}$ (lower bnd).\\
+IQL: expectile $L^\tau(u)=|\tau-\ind_{u<0}|u^2$, $u{=}Q{-}V$; $\tau{\to}1{:}\ V{\approx}\max_{a\in\dataset}Q$.\\
+Decision Transf.: condition on return-to-go $\hat R_t=\sum_{t'\ge t}r_{t'}$.
+
+\hd{Inverse RL}
+Linear: $r_\psi=\psi\T f(s,a)$, $\mu(\pi)=\E_\pi\sum\gamma^t f$.\\
+Max-margin: $\min\norm{\psi}^2$ s.t.\ $\psi\T\mu(\tilde\pi)\ge\psi\T\mu(\pi)+D(\tilde\pi,\pi)$.\\
+MaxEnt: $p_\psi(\tau)=\frac1{Z_\psi}p(\tau)e^{r_\psi(\tau)}$;\\
+$\grad_\psi L=\E_{\tilde\pi}[\grad r]-\E_{p_\psi}[\grad r]$.\\
+GAIL reward: $r=-\log(1-D_\psi(s,a))$.
+
+\hd{Preference / RLHF / DPO}
+Bradley--Terry: $P(\tau_w{\succ}\tau_l)=\sigma(r_\theta(\tau_w)-r_\theta(\tau_l))$.\\
+RM loss: $-\E[\log\sigma(r(y_w)-r(y_l))]$ (BCE).\\
+RLHF: $\max_\theta\E_{y\sim\pi_\theta}[r_\phi(x,y)-\beta\log\frac{\pi_\theta}{\pi_{ref}}]$.\\
+DPO reward id.: $r=\beta\log\frac{\pi_\theta}{\pi_{ref}}+\beta\log Z$;\\
+$L_{DPO}=-\E[\log\sigma(\beta\log\frac{\pi_\theta(\tau_w)}{\pi_{ref}}-\beta\log\frac{\pi_\theta(\tau_l)}{\pi_{ref}})]$.\\
+GRPO adv.: $\hat A_i=\frac{r_i-\mathrm{mean}(r_{1:G})}{\mathrm{std}(r_{1:G})+\delta}$ (no critic).\\
+RLVR: $r=\lambda_{fmt}r_{fmt}+\lambda_{cor}r_{cor}$.
+
+\hd{Planning \& Search}
+Full tree: $b^d$ nodes.\\
+MCTS phases: select(UCT)$\to$expand$\to$\\simulate$\to$backprop; play $\max N(s,a)$.\\
+anytime; needs only a queryable sim (not differentiable); asymmetric.\\
+UCT: $\argmax_a[Q(s,a)+c\sqrt{\ln N(s)/N(s,a)}]$\\
+AlphaZero $f_\theta(s){=}(\mathbf p,v)$; PUCT $U=Q+cP\frac{\sqrt N}{1+n}$;\\
+$\pi_{MCTS}\propto N(s,a)^{1/\tau}$;\\
+$L=(v-z)^2-\pi_{MCTS}\T\log\mathbf p+c\norm\theta^2$.\\
+MPC: $\argmax\sum_{k}^{H-1}\gamma^k\hat r$, exec.\ first action, re-plan.\\
+CEM: sample$\to$keep elites$\to$refit $\mu,\Sigma$.
+
+\hd{Model-Based RL}
+Model loss: $\norm{s'-f_\phi(s,a)}^2$ (or $-\log p_\phi$).\\
+Compounding rollout err $\le H\epsilon$.\\
+Ensemble var $=\underbrace{\tfrac1M\sum\Sigma_i}_{aleatoric}+\underbrace{\tfrac1M\sum(\mu_i-\bar\mu)^2}_{epistemic}$.\\
+Dyna-Q: real$\to$update $Q$+model; imagine $K$$\to$update $Q$. $K{=}0$: Q-learning.\\
+Dyna-Q+: $r^+=r+\kappa\sqrt{\tau(s,a)}$.\\
+MBPO: SAC + short ($k{=}1$–$5$) rollouts from real states + mixed replay.\\
+PETS: prob.\ ensemble $+$ trajectory sampling (particles thru members) $+$ MPC/CEM.\\
+World model: $z_t{=}e_\phi(o_{\le t},a_{<t})$, predict $(z_{t+1},r_t)$ in latent space.\\
+World Models / Dreamer (AC in imagination) / MuZero (value-equiv.\ latent $+$ MCTS).
+
+\end{multicols}
+
+\newpage
+% ==========================================================
+%  PAGE 2 — RULES, INTUITIONS, EXAM TRAPS
+% ==========================================================
+\begin{multicols}{2}
+
+\hd{Taxonomy (3 axes)}
+\textbf{Task:} \emph{Prediction} $=$ policy evaluation: fixed $\pi$, estimate $v_\pi/q_\pi$ (``how good is $\pi$?''). \emph{Control} $=$ policy optimization: find the best $\pi$ (``what to do?''). PI/VI are control algorithms (eval$+$improve).\\
+\textbf{What:} value-based ($q\to\pi$) / policy-based ($\pi_\theta$) / actor-critic (both).\\
+\textbf{Whose data:} on-policy (eval $=$ behavior) / off-policy ($\pi\neq\mu$, reuse data) / offline (fixed $\dataset$).\\
+\textbf{Model:} model-based (uses $p$) / model-free.\\
+DQN: val, off, free. REINFORCE: pol, on, free. PPO/SAC: AC. AlphaZero: AC, on, model-based.
+
+\hd{Bias–variance dial}
+MC/REINFORCE: unbiased, high var, needs full episode.\\
+TD/AC: biased (bootstrap), low var, online.\\
+Knobs: $n$ (steps), $\lambda$ (TD$\lambda$/GAE), $\lambda{=}0$ TD…$\lambda{=}1$ MC.\\
+$\gamma$ = agent's discount (real); $\lambda$ = estimator var knob only.\\
+Baseline: no bias change, big var drop $\Rightarrow$ ``better/worse than typical''.
+
+\hd{Core traps \& gotchas}
+\begin{itemize}
+\item $q_*$ gives $\pi_*$ \emph{free}; $v_*$ needs the model to act.
+\item Continuing task needs $\gamma{<}1$; episodic allows $\gamma{=}1$.
+\item Q-learning needs \emph{no} IS (max ignores $\mu$); off-MC needs product $\prod\rho$ (var explodes); SARSA needs single $\rho$.
+\item \textbf{Maximization bias:} $\max$ over noisy $Q$ biased \emph{high} $\Rightarrow$ Double Q / Double DQN (decouple select vs.\ evaluate).
+\item \textbf{Deadly triad:} func.\ approx.\ + bootstrap + off-policy $\Rightarrow$ may diverge. DQN tames it (replay + target net).
+\item \textbf{SARSA vs Q (cliff):} SARSA = safe (learns the noisy policy it follows); Q = optimal/risky (learns greedy). Equal once $\varepsilon{\to}0$.
+\item Semi-gradient: ignore $\grad$ through TD target.
+\item $\gamma^t$ in PG usually \emph{dropped} in practice.
+\item Expected SARSA: lower var than SARSA (averages $A'$).
+\end{itemize}
+
+\hd{Stable PG / continuous}
+\textbf{PPO two anchors:} KL-to-$\pi_{ref}$ (SFT) = where you \emph{end up} (anti-overopt); clip-to-$\pi_{old}$ = how far you \emph{step}. Don't conflate.\\
+PPO clip $\Rightarrow$ multiple epochs per batch.\\
+DDPG = DQN + learned argmax $\mu_\theta$ (continuous).\\
+\textbf{TD3 = DDPG + 3 fixes:} clipped double-Q ($\min$), delayed actor, target-policy smoothing.\\
+\textbf{SAC:} entropy in the \emph{objective} (not a regularizer) $\Rightarrow$ changes which policy is optimal; sustained exploration + robustness.\\
+Use: PPO (parallel sims, LLMs), TD3 (clean cts.\ baseline), SAC (real robots, sample-eff.).
+
+\hd{Exploration}
+Undirected: $\varepsilon$-greedy, action noise, entropy, noisy nets — answer ``how to randomize'', not ``where''.\\
+Directed = uncertainty / novelty / surprise.\\
+Bootstrapped DQN + randomized priors $\Rightarrow$ deep (temporally consistent) exploration.\\
+\textbf{Noisy-TV problem:} pure prediction-error curiosity gets stuck on unpredictable noise; can't tell ``unfamiliar'' from ``random''. Fix: NGU (episodic+lifelong), clip/anneal $\beta$.
+
+\hd{Credit assignment (real quiz)}
+3 root causes: \textbf{depth} (delay), \textbf{density} (sparse), \textbf{breadth} (many paths).\\
+Var of MC $\uparrow$ with reward delay; TD($\lambda$) assigns credit faster than TD(0).\\
+Tools: TD/$n$-step/GAE (mild), RUDDER (long delay), HER (sparse goals), advantage (breadth).\\
+\textbf{SDP:} Markov policy + Markov transitions, reward \emph{need not} be Markov.\\
+\textbf{Return-equivalent:} same \emph{expected return per episode}.\\
+\textbf{Explaining-away:} later states predict return $\Rightarrow$ earlier causal actions get missed.\\
+Zero future reward $\Rightarrow$ must enrich state w/ past $\Rightarrow$ breaks Markov.\\
+\textbf{SA vs CA:} SA = how small input change moves output (gradient); CA = how input is \emph{responsible} (not gradient). LSTM errors correlated $\Rightarrow$ cancel in differences (low var).\\
+Potential-based shaping $\equiv$ $Q$-init $Q'{=}Q{+}\Phi$ (online $\Phi$ re-adds bias).\\
+Optimality preserved by \emph{strictly monotonic transform of total return} (not per-step affine/clip/square).
+
+\hd{Imitation \& Offline}
+BC trains on $p_{data}$, deploys on $p_{\pi_\theta}$ $\Rightarrow$ shift; error $T^2\epsilon$. DAgger fixes to $T\epsilon$ but needs a \emph{queryable} expert.\\
+BC traps: non-Markov (history), causal confusion (brake-light), multimodal (MSE averages modes $\to$ split the obstacle; fix = MoG / CVAE / autoregressive).\\
+\textbf{Offline fails:} $\max_{a'}Q$ queries OOD actions $\Rightarrow$ overestimate $\Rightarrow$ bootstrapped blow-up.\\
+Principle: \emph{don't trust the model OOD.} 3 families: behavior-reg, conservative value (CQL), avoid query (IQL).\\
+\textbf{Stitching:} Bellman methods (CQL/IQL) \emph{can}; Decision Transformer \emph{cannot} (imitates returns).\\
+IL upper bound = expert; offline RL \emph{can exceed} the dataset.
+
+\hd{IRL \& reward learning}
+\textbf{IRL ill-posed:} const.\ $r$ makes all $\pi$ optimal $\Rightarrow$ need a principle (max-margin / max-entropy).\\
+IRL learns the \emph{reward} (transfers); IL just copies actions.\\
+Start = expert demos; assume dynamics often known.\\
+MaxEnt: keep max randomness s.t.\ matching expert feature stats; gradient = $\uparrow$expert $-$ $\downarrow$policy reward.\\
+\textbf{Bottleneck:} partition function $Z$ = sum over all trajectories (differentiate through it / fwd-bwd).\\
+Slack var = allow suboptimal expert. $p(\tau)$ = dynamics, reward-independent.\\
+Feature matching: match $\mu(\pi)$; needs solving an MDP each step.
+
+\hd{Alignment / LLMs}
+Pretraining = BC from text; not enough (plausible, conflicting; no instruction-follow / refusal).\\
+\textbf{DPO} removes the reward model \emph{and} RL loop $\to$ supervised on pairs; limit: fixed offline prefs.\\
+\textbf{GRPO} drops the value/critic net; baseline = group-standardized rewards; $\hat A_i$ sequence-level, same for all tokens of $y_i$.\\
+\textbf{RLVR:} automatic verifier (math/code/tests); composite format+correctness (else capability underrated).\\
+SFT: demos (limited). RLHF: prefs (proxy hacking). RLVR: verifier (narrow / hack verifier).\\
+Gato: tokenize all modalities $\Rightarrow$ one Transformer; trained by supervised sequence modeling.
+
+\hd{Reward hacking / Goodhart}
+``When a measure becomes a target it ceases to be a good measure.''\\
+Overoptimization: true perf rises then \emph{falls}; mitigate with $\KL{\pi}{\pi_{ref}}$.\\
+Examples: boat-race spinning for boosts; camera moved so object \emph{looks} grasped; verbose/sycophantic RLHF.
+
+\hd{Planning \& Model-based}
+MCTS plays \textbf{highest visit count}, not highest $Q$. MCTS = policy-improvement operator; net amortizes the search.\\
+AlphaZero vs AlphaGo: drops human games, rollout policy, supervised pretrain; one net $(\mathbf p,v)$.\\
+MPC executes \emph{first} action only, then re-plans $\Rightarrow$ corrects model error.\\
+Random shooting (uniform, keep best) vs CEM (refit distribution to elites).\\
+Dyna-Q $K{=}0$ $\Rightarrow$ plain Q-learning.\\
+\textbf{Aleatoric} = env noise (irreducible); \textbf{epistemic} = lack of data (reducible, matters for planning). Single Gaussian net = aleatoric only; need an \emph{ensemble} for epistemic.\\
+Model traps: dist.\ shift, compounding error, \emph{model exploitation} (policy finds glitches). Fix: short $H$, mix real data, penalize uncertainty.\\
+MBRL helps: data expensive, smooth dynamics, short $H$, dense reward.\\
+\textbf{Latent world model (Dreamer/MuZero):} raw obs often wrong for control (high-dim, partial, distractors) $\Rightarrow$ learn $z$ useful for \emph{control}, not reconstruction. PETS \emph{trajectory sampling} = roll particles thru ensemble $\Rightarrow$ carries uncertainty across the horizon.
+
+\hd{Quick families}
+DQN line: Double, PER, Dueling, multi-step, distributional (C51), noisy $\to$ \textbf{Rainbow} (all 6).\\
+Value: TD, SARSA, Q, DQN. Policy: REINFORCE, TRPO, PPO. AC: A2C/A3C, DDPG, TD3, SAC. Model-based: Dyna-Q, MPC, AlphaZero, MuZero, Dreamer.
+
+\hd{Convergence conditions}
+\textbf{GLIE:} every $(s,a)$ visited $\infty$ often \emph{and} policy $\to$ greedy; e.g.\ $\varepsilon_t{=}1/t$ ($\varepsilon_t{\to}0$, $\sum\varepsilon_t{=}\infty$).\\
+\textbf{Robbins--Monro} steps: $\sum_t\alpha_t{=}\infty$, $\sum_t\alpha_t^2{<}\infty$ (e.g.\ $\alpha_t{=}1/t$).\\
+Tabular Q-learning $\to q_*$ if all $(s,a)$ seen $\infty$ often + RM steps (any behavior).\\
+Greedy bandit: linear regret; $\varepsilon$-decay / UCB / Thompson: sublinear.
+
+\hd{Numbers worth knowing}
+$\E[\max$ of 3 $\Normal(0,1)]\approx0.85$ (max-bias).\\
+PPO clip $\varepsilon\approx0.1$–$0.2$; GAE $\lambda\approx0.9$–$0.97$.\\
+$n$-step sweet spot $3$–$5$; MBPO rollout $k{=}1$–$5$.\\
+DQN: $84{\times}84$ gray, 4 stacked frames, 49 Atari, human-level on 29.\\
+Rainbow $\approx7\times$ fewer steps; MBPO $\approx20\times$ more sample-eff.\\
+Effective horizon $\approx\tfrac1{1-\gamma}$ ($\gamma{=}0.99\to100$ steps; $\gamma{\to}0$ myopic).
+
+\hd{Why stochastic / POMDP}
+Value-based greedy $\Rightarrow$ \emph{deterministic} policy.\\
+Need stochastic when: (i) optimum is mixed (rock–paper–scissors $\to\tfrac13$ each); (ii) aliasing / POMDP (aliased gridworld $\to$ coin-flip escapes).\\
+Policy-based gives both for free; value-based cannot.
+
+\hd{State representation (SRL)}
+Good latent: structure, continuity, sparsity/disentangle.\\
+Methods: bisimulation (reward+dynamics metric), auxiliary (recon/fwd/inv-dyn/reward), data augmentation, contrastive (NCE), non-contrastive (BYOL), attention.\\
+Reconstruction wastes capacity on salient-but-irrelevant pixels.\\
+End-to-end (aligned, data-hungry) vs SRL+RL (general, maybe misaligned).
+
+\end{multicols}
+\end{document}

@@ -869,7 +869,7 @@ Given input set $\mathbf{H}^{(0)} \in \R^{d\times T}$ ($T$ patches):
   \mathbf{V}^{(l)} = \mathbf{W}_V \mathbf{H}^{(l-1)},
 \]
 \[
-  \mathbf{H}^{(l)} = \softmax\!\left(\frac{\mathbf{Q}^{(l)} {\mathbf{K}^{(l)}}^\T}{\sqrt{d_k}}\right)\mathbf{V}^{(l)}.
+  \mathbf{H}^{(l)} = \softmax\!\left(\frac{\mathbf{Q}^{(l)} {\mathbf{K}^{(l)}}\T}{\sqrt{d_k}}\right)\mathbf{V}^{(l)}.
 \]
 The attention matrix is $T\times T$, so complexity is $\bigO{T^2}$ —
 quadratic in the number of patches (and prohibitive for full-resolution images).
@@ -901,7 +901,7 @@ minimize similarity of negatives.
   = -\log \frac{\exp\!\bigl(\cos(\hvec_0,\hvec_j)/\tau\bigr)}
                {\sum_{l=1}^{L} \exp\!\bigl(\cos(\hvec_0,\hvec_l)/\tau\bigr)},
 \]
-where $\cos(\hvec_i,\hvec_j) = \frac{\hvec_i^\T \hvec_j}{\norm{\hvec_i}\norm{\hvec_j}}$
+where $\cos(\hvec_i,\hvec_j) = \frac{\hvec_i\T \hvec_j}{\norm{\hvec_i}\norm{\hvec_j}}$
 is cosine similarity and $\tau > 0$ is a temperature hyperparameter.
 \end{thmbox}
 
@@ -941,7 +941,253 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{Semantic Segmentation}
 
-% TODO: Fill in from lecture (20.3.)
+The four fundamental vision tasks form a natural ladder of difficulty.
+\emph{Image classification} hands back a single label for the whole picture.
+\emph{Object detection} draws a box around each thing it finds.
+\emph{Semantic segmentation} goes all the way down to the pixel: every single
+pixel gets a class label (road, car, pedestrian, sky, \dots).
+\emph{Instance segmentation} does the same but also keeps the individual objects
+apart --- this cow versus that cow --- and we get to it later via Mask R-CNN.
+
+The defining feature of semantic segmentation is that the output has the
+\emph{same spatial size as the input}. We are not collapsing the image down to a
+single decision; we are producing a full-resolution label map. That one
+requirement --- keep (or recover) the resolution --- is what makes the whole
+chapter interesting, because everything a classification CNN does (pooling,
+striding) is busy throwing resolution away. The art is in getting it back.
+
+\section{What we are optimizing, and how we measure it}
+
+The natural thing to ask of a segmentation is: \emph{how many pixels did we get
+right?} Raw pixel accuracy is a weak metric, though, because most pixels in a
+typical scene are easy background. The standard score is instead the
+\textbf{Intersection over Union} (IoU), also called the \emph{Jaccard index}.
+For two pixel sets $\mathcal{A}$ (predicted) and $\mathcal{B}$ (ground truth),
+
+\begin{thmbox}[title={Intersection over Union (Jaccard index)}]
+\[
+  J(\mathcal{A},\mathcal{B})
+  = \frac{|\mathcal{A} \cap \mathcal{B}|}{|\mathcal{A} \cup \mathcal{B}|}
+  = \frac{|\mathcal{A} \cap \mathcal{B}|}
+         {|\mathcal{A}| + |\mathcal{B}| - |\mathcal{A} \cap \mathcal{B}|}.
+\]
+IoU is $1$ for a perfect overlap and $0$ for disjoint sets. The
+\emph{mean IoU} (mIoU) averages the per-class scores,
+$J = \frac{1}{K}\sum_{k=1}^{K} J_k(\mathcal{A}_k,\mathcal{B}_k)$,
+where $\mathcal{A}_k,\mathcal{B}_k$ are the predicted and true pixels of class $k$.
+\end{thmbox}
+
+Why IoU and not accuracy? IoU punishes both kinds of mistake at once: predicting
+too few pixels (you lose intersection) \emph{and} predicting too many (you inflate
+the union). It is also insensitive to class imbalance, which is exactly why
+people report the per-class mean. We will meet IoU again in the next chapter as
+the matching criterion for bounding boxes --- it is the workhorse overlap measure
+of all of computer vision.
+
+\subsection{The output of the network}
+
+The simplest possible segmentation head is almost embarrassingly direct:
+make the last layer a convolution with \emph{as many feature maps as there are
+classes}, apply a \textbf{softmax across the channel (class) dimension at every
+spatial location}, and train with a per-pixel \textbf{cross-entropy loss}.
+Each pixel is then just a tiny classification problem, and the loss is the sum
+over all pixels. Everything in this chapter is a variation on how to feed this
+head a feature map that is both \emph{high resolution} and \emph{semantically
+rich} --- two goals that pull in opposite directions.
+
+\section{The building blocks}
+
+\subsection{Recovering resolution: upsampling and unpooling}
+
+A classification backbone downsamples aggressively, so the deep feature map is
+tiny (e.g.\ $7\times 7$). To produce a full-size label map we have to go back up.
+The cheap, non-learned ways to do this are collectively called \emph{unpooling}:
+
+\begin{itemize}
+  \item \textbf{Nearest neighbor} --- copy each value into its $2\times2$ block.
+  \item \textbf{``Bed of nails''} --- place the value in one corner and zero-fill
+        the rest.
+  \item \textbf{Bilinear interpolation} --- smoothly interpolate between values
+        (the usual default).
+  \item \textbf{Max-unpooling with switch variables} --- remember \emph{where}
+        each max came from during pooling, and put the value back exactly there
+        on the way up. This pairs an unpooling layer with a specific pooling
+        layer and keeps fine spatial detail aligned.
+\end{itemize}
+
+\subsection{Learnable upsampling: transposed convolutions}
+
+Fixed interpolation is fine, but we would rather \emph{learn} how to upsample.
+That is what a \textbf{transposed convolution} does (you will also see it called
+``deconvolution'' or ``fractionally strided convolution''). Intuitively, an
+ordinary stride-2 convolution moves the kernel two output pixels for every one
+input pixel and shrinks the map; a transposed convolution does the reverse ---
+it moves \emph{two output pixels per one input pixel} and grows the map. Each
+input value acts as a weight that ``stamps'' a copy of the kernel onto the
+output, and overlapping stamps are summed.
+
+\begin{intbox}
+Why ``transposed''? Write an ordinary convolution as a matrix--vector product
+$\zvec = \mathbf{W}\xvec$, where $\mathbf{W}$ is a big sparse (Toeplitz) matrix
+that maps, say, $\R^{16}\to\R^{4}$. The kernel weights appear, shifted, along
+its rows. Upsampling is then just multiplying by the \emph{transpose}:
+$\mathbf{W}\T$ maps $\R^{4}\to\R^{16}$. Same weights, transposed connectivity ---
+hence the name. It is a real, learnable layer, not a fixed interpolation.
+\end{intbox}
+
+\subsection{The receptive field, and why segmentation cares}
+
+The \textbf{receptive field} of a neuron is the patch of input pixels that can
+possibly influence it. In classification we barely think about it; in
+segmentation it is central, because to label a pixel correctly the network often
+needs to ``see'' a large surrounding region (is this gray blob road or sky?).
+Along one spatial dimension it grows as
+
+\begin{thmbox}[title={Receptive-field growth}]
+\[
+  v^{L} = 1 + \sum_{l=1}^{L}\left( (R^{[l]}-1)\prod_{m=1}^{l-1} S^{[m]} \right),
+\]
+where $R^{[l]}$ is the kernel size at layer $l$ and $S^{[m]}$ the stride at
+layer $m$. A kernel larger than $1$ adds neighbourhood; crucially, that addition
+is \emph{amplified by the product of all earlier strides}.
+\end{thmbox}
+
+This is the tension in a nutshell. Striding/pooling is the cheapest way to grow
+the receptive field fast, but it also destroys the resolution we are trying to
+output. So either we downsample and then fight to upsample again (encoder--decoder
+designs), or we find a way to enlarge the receptive field \emph{without}
+downsampling at all.
+
+\subsection{Dilated (atrous) convolutions}
+
+The second option is the \textbf{dilated} (a.k.a.\ \emph{atrous}, ``with holes'')
+convolution. It spreads the kernel taps apart by a dilation factor $l$ so they
+cover a wider area while still using the same number of weights:
+\[
+  (h *_{l} k)(a,b) = \sum_{i}\sum_{j} h(a + l\,i,\; b + l\,j)\, k(i,j).
+\]
+With $l=1$ this is the ordinary convolution. The receptive-field formula picks up
+the dilation factor as another multiplier,
+\[
+  v^{L} = 1 + \sum_{l=1}^{L}\left( (R^{[l]}-1)\,D^{[l]}\prod_{m=1}^{l-1} S^{[m]} \right).
+\]
+Stacking dilated convolutions with rates $1,2,4,8,\dots$ makes the receptive
+field grow \emph{exponentially} while the feature-map resolution stays put.
+
+\begin{intbox}
+Dilation buys you a big receptive field for free, in resolution terms: no pooling,
+no information thrown away. The price is paid in compute --- because you never
+downsample, every later layer still operates on a large feature map, so there are
+many more neurons to evaluate. It is a resolution-for-compute trade, the mirror
+image of pooling.
+\end{intbox}
+
+\section{Architectures}
+
+\subsection{Fully Convolutional Networks (FCN, Long et al., 2015)}
+
+The foundational idea: take a classification net (AlexNet, VGG, GoogLeNet) and
+\textbf{``convolutionalize''} it. A fully-connected layer that maps a
+$7\times7\times512$ block to $4096$ units is mathematically identical to a
+convolution with a $7\times7$ kernel and $4096$ output channels --- a
+$1\times1$-output convolution on that input. Once you see FC layers as
+convolutions, you can run the whole network on a \emph{larger} image and, instead
+of one classification vector, you get a coarse spatial grid of class scores ---
+a low-resolution heatmap (``tabby cat'' becomes a tabby-cat heatmap).
+
+To turn that coarse heatmap back into a full-size label map, FCN uses
+\textbf{transposed convolutions}, and it adds \textbf{skip connections} that pull
+in higher-resolution feature maps from earlier layers, so fine detail is not lost.
+Its main weakness is a \emph{small effective receptive field}, which shows up as
+blocky, context-confused predictions (a bus is partly labelled boat, train, car).
+
+\subsection{Deconvolution Network (Noh et al., 2015)}
+
+DeconvNet takes the symmetry seriously and dedicates \emph{equal compute to going
+back up}. It is the classic \textbf{encoder--decoder ``hourglass''}: a VGG-16-style
+encoder squeezes the image down to a bottleneck, and a mirror-image decoder built
+from \emph{unpooling} and transposed-convolution layers blows it back up. The
+unpooling steps use \textbf{switch variables} --- the remembered max locations from
+the matching pooling layer --- so spatial structure is restored faithfully.
+
+\subsection{U-Net (Ronneberger et al., 2015)}
+
+U-Net is the encoder--decoder idea \emph{plus} skip connections, and it is still
+the default for biomedical image segmentation. At every level of the decoder, the
+corresponding encoder feature map is \textbf{concatenated} onto the upsampled
+feature map before the next convolutions. This hands the decoder both the
+high-level ``what'' (from the bottleneck) and the high-resolution ``where'' (from
+the skip), so it can paint sharp boundaries. The architecture is cleanly
+symmetric --- $2\times2$ down/up-sampling steps, each followed by two $3\times3$
+convolutions --- and the paper introduced a \textbf{weighted loss} that
+up-weights the thin separating membranes between touching cells, where mistakes
+matter most.
+
+\subsection{Context aggregation by dilated convolutions (Yu \& Koltun, 2016)}
+
+This is dilated convolution put to work as a dedicated \textbf{context module}
+bolted onto a segmentation front-end. A short stack of $3\times3$ convolutions
+with dilation $1,1,2,4,8,16,\dots$ aggregates multi-scale context and pushes the
+receptive field up to $67\times67$ \emph{without any downsampling and without
+rescaling the image}, which measurably improves accuracy.
+
+\subsection{PSPNet --- Pyramid Scene Parsing (Zhao et al., 2017)}
+
+PSPNet's insight is that a \emph{single} global context vector helps, so
+\emph{several context regions at different scales} should help more. Its
+\textbf{pyramid pooling module} pools the feature map at multiple grid
+resolutions (e.g.\ $1\times1$, $2\times2$, $3\times3$, $6\times6$), processes each
+with a $1\times1$ convolution, upsamples them all back, and concatenates. The
+final classifier therefore sees context summarised at many scales at once. It won
+the 2017 ImageNet scene-parsing challenge and set new state of the art on Pascal
+VOC and Cityscapes.
+
+\subsection{The DeepLab family (Chen et al., 2017--2019)}
+
+DeepLab is, roughly, Google's segmentation counterpart to the Inception line in
+classification, and it weaves the previous ideas together.
+\begin{itemize}
+  \item \textbf{DeepLab V2} introduces \textbf{Atrous Spatial Pyramid Pooling
+        (ASPP)}: spatial pyramid pooling, but with parallel \emph{atrous}
+        convolutions at several rates (e.g.\ $6,12,18,24$) instead of pooling, so
+        multi-scale context is gathered while resolution is preserved.
+  \item \textbf{DeepLab V3} uses atrous convolutions \emph{inside the encoder} to
+        keep the output stride small, and combines ASPP with a global image-pooling
+        branch.
+  \item \textbf{DeepLab V3+} adds an \textbf{efficient decoder} on top, getting the
+        best of both worlds: an atrous, context-rich encoder \emph{and} a light
+        decoder that recovers sharp boundaries.
+  \item \textbf{Auto-DeepLab} (2019) hands the architecture itself over to
+        \textbf{Neural Architecture Search}: start from a densely connected
+        super-net, learn the relative importance of each connection (and when to
+        down/up-sample), and read off a good path. It matches DeepLab V3+ with
+        about half the parameters and \emph{without} ImageNet pre-training.
+\end{itemize}
+
+\subsection{Foundation model: Segment Anything (SAM, 2023)}
+
+SAM reframes segmentation as a \textbf{promptable} task: given an image and a
+prompt --- a point, a box, a rough mask, or even text --- return a valid mask.
+The architecture is three parts: an \textbf{image encoder} (an MAE-pretrained
+vision transformer) that is run once per image, a lightweight \textbf{prompt
+encoder} (borrowed from CLIP, which is what lets it accept text), and a small
+\textbf{mask decoder} (a standard transformer decoder). It is trained with a
+combination of \textbf{focal loss and dice loss}. The hard part, and the real
+contribution, was the \textbf{data engine}: a model-in-the-loop annotation
+process that bootstrapped \emph{SA-1B}, over one billion masks on eleven million
+images. The payoff is zero-shot transfer --- SAM segments objects it was never
+explicitly trained on, steered purely by the prompt.
+
+\section{The through-line}
+
+Every architecture in this chapter is answering the same three demands at once:
+\emph{fine local detail} (to get boundaries right), \emph{strong high-level
+features} (to know what each region is), and \emph{wide regional context} (to
+disambiguate using surroundings). Downsampling is needed to grow the receptive
+field cheaply and to keep compute down; upsampling (interpolation, unpooling,
+transposed convolutions) is needed to get back to full resolution; skip
+connections, dilated convolutions, and pyramid/ASPP modules are the tricks that
+let a network satisfy all three demands without one of them killing another.
 
 
 % ==========================================================
@@ -949,7 +1195,257 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{Object Detection and Localization}
 
-% TODO: Fill in from lecture (27.3.)
+This chapter is about putting boxes around things. The progress here over a short
+window was dramatic: detection accuracy (mean Average Precision) roughly tripled
+between 2012 and 2017, from $\approx 5$ for the best pre-deep-learning method to
+$46$ for Mask R-CNN --- and, strikingly, it \emph{also} tripled \emph{within}
+the deep-learning era as architectures improved.
+
+\begin{notebox}[title={A note on notation}]
+The loss functions in this chapter get crowded, so the lecture fixes a
+convention. Box coordinates use the upright letters $\mathsf{x},\mathsf{y},
+\mathsf{w},\mathsf{h}$ (position, width, height) --- deliberately distinct from
+the input $\xvec$, the label $\yvec$, weights $\weights$, and hidden state
+$\hvec$. A hat denotes a prediction: $(\hat{y}_\mathsf{x},\hat{y}_\mathsf{y},
+\hat{y}_\mathsf{w},\hat{y}_\mathsf{h})$ is a predicted box versus the label
+$(y_\mathsf{x},y_\mathsf{y},y_\mathsf{w},y_\mathsf{h})$. A superscript $i$ picks
+out region $i$ of the image, and a subscript $k$ picks out a class. The
+worst-case full quantity $\hat{y}^{\,i}_{k,\mathsf{x}}$ reads ``predicted
+$\mathsf{x}$-coordinate, class $k$, region $i$''.
+\end{notebox}
+
+\section{From localization to detection}
+
+\textbf{Single-object localization} is the easy case and the right place to start.
+There is exactly one object, and we want both its class and its box. The trick is
+to recognise that finding the box is just \emph{regression}: take an
+ImageNet-pretrained CNN backbone and attach \emph{two heads} to its final feature
+map. The \textbf{classification head} (often frozen) predicts the class scores;
+the \textbf{regression head} (fine-tuned) predicts the four box coordinates
+$(\hat{y}_\mathsf{x},\hat{y}_\mathsf{y},\hat{y}_\mathsf{w},\hat{y}_\mathsf{h})$.
+Train the regression head against the ground-truth box and you are done.
+
+\textbf{Object detection} is where it gets hard, for one structural reason: the
+number of objects is \emph{not known in advance}. You cannot have a fixed-size
+output of ``four coordinates'' when an image might contain one sheep or fifteen.
+Naively, you would have to run a classifier over every possible sub-window at
+every scale --- hopelessly expensive. The whole chapter is the story of doing
+this efficiently.
+
+\subsection{Measuring a detector}
+
+A detection is counted correct when its box overlaps the ground truth well enough,
+the standard threshold being $\text{IoU} > 0.5$. From there we count:
+\textbf{true positives} (correct detections, IoU $>0.5$), \textbf{false positives}
+(spurious or badly-placed boxes), and \textbf{false negatives} (objects we
+missed). These give precision and recall,
+\[
+  P = \frac{\text{TP}}{\text{TP}+\text{FP}}, \qquad
+  R = \frac{\text{TP}}{\text{TP}+\text{FN}}.
+\]
+Now sweep the confidence threshold from high to low: each setting gives a
+$(R,P)$ point, tracing a precision--recall curve. \textbf{Average Precision} (AP)
+summarises that curve into one number; the classic definition is the 11-point
+interpolated average,
+
+\begin{thmbox}[title={Average Precision (11-point interpolation)}]
+\[
+  \text{AP} = \frac{1}{11}\sum_{R \in \{0,\,0.1,\,\dots,\,1.0\}}
+              \max_{R' \ge R} P(R').
+\]
+For each recall level we take the \emph{best precision achievable at that recall
+or higher}, then average over the eleven levels. The \textbf{mean AP (mAP)}
+averages AP over all classes --- this is \emph{the} headline detection metric.
+\end{thmbox}
+
+\section{The two-stage framework}
+
+Most accurate detectors share a common skeleton, worth holding in your head before
+the specific models:
+\begin{enumerate}
+  \item \textbf{Image-level computation.} Process the whole image once, producing
+        a feature map $\hvec = h(\xvec)$ (and, in modern versions, a set of region
+        proposals).
+  \item \textbf{Region proposals.} Some mechanism suggests a few hundred-to-thousand
+        candidate boxes likely to contain objects.
+  \item \textbf{Region-level computation.} For each proposed region, extract its
+        features $\boldsymbol{r}=f(\hvec, r)$, transform them to a fixed size, and
+        feed them to one or more \textbf{heads} (classification, box regression,
+        possibly a mask).
+\end{enumerate}
+The history of two-stage detectors is essentially the history of making steps
+1--3 cheaper and more shared. Watch what migrates from the slow per-region path
+into the cheap run-once-per-image path.
+
+\subsection{Overfeat (2013)}
+
+The earliest deep approach. It uses an AlexNet backbone, run at \textbf{multiple
+scales and multiple strides}, treating the convolutionalized network as a dense
+sliding-window detector that emits spatial feature maps. A regression layer
+predicts box coordinates, and a \textbf{greedy merging} algorithm fuses the
+hundreds of resulting boxes into final detections. It won the ImageNet
+localization challenge.
+
+\subsection{R-CNN (2014)}
+
+R-CNN splits the work cleanly into image-level and region-level stages.
+At image level, \textbf{selective search} --- a heuristic, non-learned algorithm
+--- proposes $\sim$2000 candidate regions by hierarchically grouping pixels that
+look alike (similar colour, texture, \dots). At region level, each proposal is
+\textbf{cropped and warped} to a fixed size, pushed through \textbf{AlexNet} to
+get features, and then classified by an \textbf{SVM}, with a separate
+\textbf{linear regression} refining the box offsets.
+
+\begin{notebox}[title={Why R-CNN is slow}]
+The CNN is run \emph{from scratch on every one of the $\sim$2000 cropped regions}.
+There is essentially no computation shared between overlapping proposals, so a
+single image takes many seconds. Every later model is, in part, a fix for this.
+\end{notebox}
+
+\subsection{SPPNet (2014)}
+
+The key realisation: we should run the convolutional layers \emph{once on the
+whole image} and only do per-region work afterwards. The obstacle is that the
+fully-connected head needs a \emph{fixed-size} input, while regions have arbitrary
+sizes. \textbf{Spatial Pyramid Pooling (SPP)} solves this: it splits any region
+into a fixed number of bins (at several pyramid levels) and pools within each bin,
+so \emph{any} input size yields the \emph{same} output length. R-CNN with SPP
+instead of crop-and-warp is dramatically faster because the expensive convolutions
+are shared.
+
+\subsection{Fast R-CNN (2015)}
+
+Fast R-CNN cleans SPPNet up into a single, almost end-to-end model. The whole
+image goes through a fully-convolutional backbone once. Each proposal is then
+mapped onto the feature map and passed through \textbf{RoI pooling} --- a
+one-level SPP that snaps the region to the feature grid and pools it to a fixed
+$h\times w$ --- and the result feeds a small MLP with \textbf{two heads at once}:
+a softmax \emph{classifier} and a \emph{bounding-box regressor}. Training is now a
+single multi-task objective; only the region proposals remain external.
+
+\subsection{Faster R-CNN (2015)}
+
+The last external piece was selective search, and it was the bottleneck. Faster
+R-CNN replaces it with a learned \textbf{Region Proposal Network (RPN)} that
+shares the backbone's features --- so proposals come almost for free.
+
+The RPN slides a small network over the feature map. The clever bit is
+\textbf{anchor boxes}: at each location it does \emph{not} just look at the
+$3\times3$ patch under the kernel, but considers $k$ pre-defined anchor boxes of
+various sizes and aspect ratios centred there. For each anchor it predicts an
+\textbf{``objectness'' score} (is there an object?) and a \textbf{transformation}
+of the anchor toward a tight box. With $k$ anchors per location the head emits
+$2k$ scores and $4k$ coordinates.
+
+\begin{intbox}
+Anchors decouple ``where to look'' from the kernel size. A small $3\times3$
+kernel can propose a large box, because it is not classifying its own little
+receptive field --- it is predicting how to \emph{stretch a pre-attached anchor}
+into the real object. That is what lets one cheap sliding network propose objects
+across a wide range of scales and shapes.
+\end{intbox}
+
+RPN and the detection heads share the backbone, and the lecture notes the
+practical recipe: a \textbf{4-step alternating training} (pre-train each, then
+jointly fine-tune), with SGD at learning rate $\approx 0.003$ later dropped.
+
+\subsection{Mask R-CNN (2017): on to instance segmentation}
+
+Mask R-CNN adds a third head --- a small \textbf{FCN that predicts a binary
+segmentation mask} for each region --- on top of Faster R-CNN, giving
+\emph{instance} segmentation (per-object masks, not just per-class pixels). Two
+details matter:
+
+\begin{itemize}
+  \item \textbf{RoIAlign} replaces RoI pooling. RoI pooling \emph{snaps} the
+        region to the integer feature grid, and those roundings, harmless for a
+        coarse box, blur a pixel-accurate mask. RoIAlign skips the snapping and
+        samples the feature map with \textbf{bilinear interpolation} at exact
+        locations, keeping things properly aligned.
+  \item \textbf{Per-class sigmoid masks.} The mask branch outputs one mask per
+        class with \emph{independent sigmoids} (no softmax across classes), and the
+        loss is back-propagated \emph{only} from the mask of the ground-truth class.
+        Decoupling mask prediction from classification this way works better than
+        forcing the classes to compete.
+\end{itemize}
+
+\section{One-stage detectors}
+
+Two-stage detectors are accurate but pay for the propose-then-classify pipeline.
+\textbf{One-stage} detectors throw out the proposal stage and predict everything
+in a single forward pass --- much faster, historically a bit less accurate.
+
+\subsection{YOLO --- You Only Look Once (2016)}
+
+YOLO lays an $S\times S$ grid over the image (e.g.\ $7\times 7$) and makes
+\emph{every grid cell} responsible for predicting objects centred in it. Each cell
+outputs $E$ bounding boxes (each with coordinates plus a confidence) and a
+$K$-vector of class probabilities, so the whole network produces one fixed-size
+tensor.
+
+\begin{thmbox}[title={YOLO output tensor}]
+Each grid cell predicts $E$ boxes ($\mathsf{x},\mathsf{y},\mathsf{w},\mathsf{h}$
+plus a confidence $\mathsf{c}$ each) and $K$ class scores, so the output has shape
+\[
+  S \times S \times (5E + K).
+\]
+For $S=7$, $E=2$, $K=20$ this is $7\times 7\times 30$, i.e.\
+$\yvec \in \R^{7\times 7\times 30}$.
+\end{thmbox}
+
+The loss is a sum of several squared-error terms, each switched on by an
+indicator $\ind^{\text{obj}}$ for cells that actually contain an object (and
+$\ind^{\text{no obj}}$ for those that do not), weighted by coefficients
+$\lambda_1,\dots,\lambda_5$:
+\[
+\begin{aligned}
+L(\yvec,\hat{\yvec}) =\;
+& \lambda_1 \sum_{s_1,s_2}\sum_{e} \ind^{\text{obj}}_{s_1,s_2}
+  \Big[(\hat{y}_{\mathsf{x}}-y_{\mathsf{x}})^2+(\hat{y}_{\mathsf{y}}-y_{\mathsf{y}})^2\Big] \\
++\;& \lambda_2 \sum_{s_1,s_2}\sum_{e} \ind^{\text{obj}}_{s_1,s_2}
+  \Big[(\sqrt{\hat{y}_{\mathsf{w}}}-\sqrt{y_{\mathsf{w}}})^2
+       +(\sqrt{\hat{y}_{\mathsf{h}}}-\sqrt{y_{\mathsf{h}}})^2\Big] \\
++\;& \lambda_3 \sum_{s_1,s_2}\sum_{e} \ind^{\text{obj}}_{s_1,s_2}
+  (\hat{y}_{\mathsf{c}}-y_{\mathsf{c}})^2
+ + \lambda_4 \sum_{s_1,s_2}\sum_{e} \ind^{\text{no obj}}_{s_1,s_2}
+  (\hat{y}_{\mathsf{c}}-y_{\mathsf{c}})^2 \\
++\;& \lambda_5 \sum_{s_1,s_2} \ind^{\text{obj}}_{s_1,s_2}
+  \sum_{k=1}^{K}(\hat{y}_{k}-y_{k})^2 .
+\end{aligned}
+\]
+The $\lambda$'s are there to \emph{balance} the terms: localization versus
+confidence, and especially object versus the overwhelmingly more numerous
+no-object cells. Note the $\sqrt{\;}$ on width and height --- it makes a fixed
+error on a small box count more than the same error on a large box. YOLO is fast
+enough for real-time detection.
+
+\subsection{SSD --- Single Shot MultiBox Detector (2016)}
+
+SSD is one-stage like YOLO, but it predicts from \textbf{feature maps at several
+scales} rather than a single grid. Shallow, high-resolution maps catch small
+objects; deep, coarse maps catch large ones. Re-using intermediate
+representations this way improves multi-scale detection at one-stage speed.
+
+\subsection{Cleaning up: Non-Maximum Suppression}
+
+Whatever the detector, it spits out many overlapping boxes for the same object.
+\textbf{Non-Maximum Suppression (NMS)} is the final filter: keep the box with the
+highest confidence, compute its IoU against the rest, and discard any that overlap
+it too much; repeat. What was a thicket of red boxes becomes one clean box per
+object.
+
+\section{How they compare, and what came next}
+
+The trade-off is consistent: \textbf{two-stage methods are accurate but slow};
+\textbf{one-stage methods are fast but less accurate}. Bigger backbones (ResNet,
+Inception-ResNet) raise accuracy, with diminishing returns as you spend more GPU
+time. After Mask R-CNN the field moved toward detection in \emph{point clouds}
+(Point R-CNN --- 3D detection from LIDAR is a research focus at JKU, where
+localizing oriented 3D boxes from unordered points is much harder than 2D),
+detection in \emph{video}, efficiency improvements, and swapping in
+\textbf{ViT backbones} under the same Mask R-CNN framework. Two threads the
+lecture flags but does not detail are region-based fully-convolutional networks
+(R-FCN) and feature pyramid networks (FPN).
 
 
 % ==========================================================
@@ -957,7 +1453,124 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{Autoencoders}
 
-% TODO: Fill in from lecture (17.4.)
+With autoencoders we leave supervised vision behind and start the
+\emph{generative and unsupervised} half of the course. It helps to see the map
+first. The methods in this part of the course split into two families. On one
+side sit the genuine \textbf{generative models}, which try to capture the data
+distribution $p(\xvec)$ so you can sample new data from it; these split further
+into \emph{explicit-density} models --- \emph{tractable} ones like normalizing
+flows and autoregressive flows, and \emph{approximate} ones like VAEs --- and
+\emph{implicit-density} models like GANs. On the other side sit the
+\textbf{density-free} methods --- and that is where the autoencoder lives.
+
+\begin{intbox}
+This placement is the single most important thing to understand about a plain
+autoencoder: it is \emph{density-free}. It never models $p(\xvec)$ and it is not,
+by itself, a generative model. It just learns to \emph{compress and reconstruct}.
+Everything that feels disappointing about an autoencoder when you try to generate
+with it, and everything the VAE adds in the next chapter, follows from this one
+fact.
+\end{intbox}
+
+\section{The basic idea}
+
+An autoencoder is a network trained to copy its input to its output --- which
+sounds pointless until you force the copy to pass through a \emph{bottleneck}. It
+has two halves. The \textbf{encoder} $f$ maps the input to a low-dimensional
+\emph{code} (or \emph{latent representation}) $\zvec = f(\xvec)$, and the
+\textbf{decoder} $g$ maps that code back to a reconstruction
+$\hat{\xvec} = g(\zvec)$. Training is unsupervised --- no labels, the input is its
+own target --- and the objective is simply to make the reconstruction resemble the
+input, typically with a squared-error \textbf{reconstruction loss}
+\[
+  \loss(\params) = \norm{\xvec - g\!\big(f(\xvec)\big)}^2 ,
+\]
+averaged over the data. Because the code is much smaller than the input, the
+network cannot just pass the data through; it has to discover an efficient,
+compressed encoding that keeps whatever is needed to reconstruct. That learned
+code is the whole point.
+
+\section{The bottleneck is what makes it learn}
+
+\begin{defbox}[title={Undercomplete vs.\ overcomplete}]
+An \textbf{undercomplete} autoencoder has a code smaller than the input
+($\dim\zvec < \dim\xvec$). The dimensionality squeeze is what forces it to learn
+structure. An \textbf{overcomplete} autoencoder has a code at least as large as
+the input; without further constraints it can learn the trivial identity
+(``copy everything''), which teaches it nothing.
+\end{defbox}
+
+So the lesson is that an autoencoder learns something useful only when it is
+\emph{prevented} from learning the identity --- either by squeezing the code
+(undercomplete) or by adding a regularizer (the variants below). A perfect
+copier is a useless autoencoder.
+
+\begin{intbox}
+A neat anchor point: a \textbf{linear autoencoder} with a single hidden layer and
+a squared-error loss learns essentially the same subspace as \textbf{PCA} --- it
+projects onto the top principal components. Viewed this way, an autoencoder is
+``PCA with non-linearities'': the encoder and decoder can bend the projection
+into curved manifolds that a linear method like PCA cannot capture.
+\end{intbox}
+
+\section{Regularized autoencoders}
+
+If we want representations that are useful (and we want to use overcomplete codes
+without collapsing to the identity), we constrain \emph{what kind} of code the
+network is allowed to learn. Three classic variants:
+
+\begin{itemize}
+  \item \textbf{Denoising autoencoder (DAE).} Corrupt the input --- add noise,
+        mask out pixels --- and ask the network to reconstruct the \emph{clean}
+        original. To undo corruption it has to understand the underlying
+        structure of the data rather than copy surface detail, so it learns robust
+        features. This is also the conceptual ancestor of masked-image-modelling
+        and diffusion ideas later in the course.
+  \item \textbf{Sparse autoencoder.} Add a penalty that pushes most hidden
+        activations toward zero, so each input is explained by only a few active
+        units. The constraint here is on \emph{how many units may fire}, not on how
+        many units exist, which lets you use a large (even overcomplete) code while
+        still learning meaningful, selective features.
+  \item \textbf{Contractive autoencoder (CAE).} Penalize the norm of the encoder's
+        Jacobian, $\norm{\partial f / \partial \xvec}^2$. This makes the code
+        \emph{insensitive} to small input perturbations, so the representation
+        varies only along the directions that actually matter (the data manifold)
+        and stays flat elsewhere.
+\end{itemize}
+
+\section{Why a plain autoencoder cannot generate}
+
+It is tempting to think we can generate new data by picking a random code $\zvec$
+and decoding it. With a plain autoencoder this fails, and the reason is exactly
+the density-free nature flagged at the start: \textbf{nothing organises the latent
+space}. The encoder is free to scatter training points wherever it likes, leaving
+the code space full of ``holes'' --- regions that correspond to no real data.
+Sample a $\zvec$ from one of those holes, decode it, and you get garbage. The
+autoencoder learned to reconstruct \emph{the points it saw}, not a smooth,
+fillable distribution over codes.
+
+\begin{notebox}[title={The gap the VAE fills}]
+The fix, in the next chapter, is to make the latent space \emph{probabilistic and
+well-behaved}: a Variational Autoencoder forces the codes to follow a known prior
+(typically a standard Gaussian) so that \emph{any} sample from that prior decodes
+to something plausible. That single change --- putting a tractable density on the
+latent space --- is what turns the encoder--decoder idea from a density-free
+compressor into a real generative model.
+\end{notebox}
+
+\section{What autoencoders are good for}
+
+Even though it is not a generator, the plain autoencoder is genuinely useful:
+\begin{itemize}
+  \item \textbf{Dimensionality reduction} --- a non-linear, learnable
+        generalisation of PCA, for visualisation or as a compact feature.
+  \item \textbf{Representation learning / pre-training} --- learn features from
+        abundant unlabelled data, then fine-tune on a small labelled set.
+  \item \textbf{Denoising} --- the DAE is directly a denoiser.
+  \item \textbf{Anomaly detection} --- train only on ``normal'' data; anything the
+        autoencoder reconstructs \emph{badly} (high reconstruction error) is
+        flagged as anomalous, because it lies off the manifold the model learned.
+\end{itemize}
 
 
 % ==========================================================
@@ -965,7 +1578,144 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{Variational Autoencoders}
 
-% TODO: Fill in from lecture (24.4.)
+The previous chapter ended on a complaint: a plain autoencoder learns to
+reconstruct the points it saw, but its latent space is full of holes, so you
+cannot sample from it. The \textbf{Variational Autoencoder} (VAE, Kingma \&
+Welling, 2014) is the fix. It keeps the encoder--decoder shape but turns the whole
+thing into a proper probabilistic generative model, which lands it in the
+\emph{explicit, approximate-density} branch of the taxonomy --- right next to
+diffusion models, and notably \emph{not} in the density-free corner where the
+plain AE sits.
+
+\section{The generative story}
+
+A VAE describes how data is \emph{born}. First draw a latent code from a fixed,
+simple prior --- a standard Gaussian, $\zvec \sim p(\zvec) = \Normal(\zeros,
+\eye)$ --- then push it through a \textbf{decoder} $p_{\params}(\xvec \given
+\zvec)$ (a neural network) to produce data. Sampling is then trivial \emph{by
+construction}: draw $\zvec$ from the Gaussian, decode it, done. This is exactly
+what the plain AE could not promise, because here the prior \emph{defines} which
+codes are valid.
+
+The catch is training. The quantity we would like to maximise is the marginal
+likelihood of the data,
+\[
+  p_{\params}(\xvec) = \int p_{\params}(\xvec \given \zvec)\, p(\zvec) \dd\zvec ,
+\]
+but this integral runs over all of latent space and is intractable. Worse, the
+posterior $p_{\params}(\zvec \given \xvec)$ --- which code produced this data
+point? --- is intractable too, so we cannot train by straightforward maximum
+likelihood.
+
+\section{The encoder as approximate inference}
+
+The VAE's trick is to introduce an \textbf{encoder} $q_{\phi}(\zvec \given \xvec)$
+that \emph{approximates} the intractable posterior. In practice the encoder maps
+each input to the parameters of a Gaussian over codes,
+\[
+  q_{\phi}(\zvec \given \xvec)
+  = \Normal\!\bigl(\zvec \,;\, \boldsymbol{\mu}_{\phi}(\xvec),\,
+                   \diag(\boldsymbol{\sigma}^2_{\phi}(\xvec))\bigr),
+\]
+i.e.\ it outputs a mean $\boldsymbol{\mu}_{\phi}(\xvec)$ and a (log-)variance
+$\boldsymbol{\sigma}^2_{\phi}(\xvec)$ per input. So instead of mapping $\xvec$ to a
+single point in latent space (as a plain AE does), the VAE maps it to a little
+\emph{cloud} --- a distribution over plausible codes.
+
+\section{The ELBO}
+
+We cannot maximise $\log p_{\params}(\xvec)$ directly, so we maximise a tractable
+lower bound on it: the \textbf{Evidence Lower BOund} (ELBO).
+
+\begin{thmbox}[title={Evidence Lower Bound}]
+\[
+  \log p_{\params}(\xvec)
+  \;\ge\;
+  \underbrace{\E_{q_{\phi}(\zvec \given \xvec)}\!\bigl[\log p_{\params}(\xvec \given \zvec)\bigr]}_{\text{reconstruction}}
+  \;-\;
+  \underbrace{\KL{q_{\phi}(\zvec \given \xvec)}{p(\zvec)}}_{\text{regularizer}}
+  \;=\; \text{ELBO}.
+\]
+The gap between $\log p_{\params}(\xvec)$ and the ELBO is exactly
+$\KL{q_{\phi}(\zvec \given \xvec)}{p_{\params}(\zvec \given \xvec)}$ --- how far the
+encoder's approximation sits from the true posterior. Since a KL is never
+negative, the ELBO is a genuine lower bound, and tightening it both fits the data
+and improves the approximate posterior.
+\end{thmbox}
+
+The two terms pull in complementary directions, and reading them is the whole
+intuition of the VAE:
+\begin{itemize}
+  \item The \textbf{reconstruction term} wants codes that let the decoder rebuild
+        the input --- exactly the old autoencoder objective.
+  \item The \textbf{KL regularizer} wants every input's code-cloud to look like the
+        prior $\Normal(\zeros,\eye)$. This is the part the plain AE was missing:
+        it forces the encoder to \emph{pack all the codes into the same standard
+        Gaussian}, leaving no holes. That is precisely what makes sampling work
+        afterwards.
+\end{itemize}
+
+\begin{intbox}
+The KL term is the cure for the plain AE's broken latent space. Without it, the
+encoder scatters codes wherever it likes. With it, the codes are gently squeezed
+to overlap the prior, so a random draw from $\Normal(\zeros,\eye)$ at generation
+time lands somewhere the decoder actually understands. You pay for this with some
+reconstruction fidelity --- hence the characteristic VAE trade-off.
+\end{intbox}
+
+When the prior is $\Normal(\zeros,\eye)$ and the encoder is Gaussian, the KL term
+has a clean closed form (no sampling needed),
+\[
+  \KL{q_{\phi}(\zvec\given\xvec)}{p(\zvec)}
+  = \tfrac12 \sum_{j} \bigl(\mu_j^2 + \sigma_j^2 - 1 - \log \sigma_j^2\bigr),
+\]
+which is one reason Gaussians are chosen on both sides.
+
+\section{The reparameterization trick}
+
+There is one obstacle to training the ELBO with backpropagation: the
+reconstruction term requires \emph{sampling} $\zvec$ from $q_{\phi}(\zvec\given
+\xvec)$, and you cannot backpropagate through a random draw. The
+\textbf{reparameterization trick} moves the randomness out of the way:
+\[
+  \zvec = \boldsymbol{\mu}_{\phi}(\xvec) + \boldsymbol{\sigma}_{\phi}(\xvec)
+          \odot \boldsymbol{\epsilon}, \qquad
+  \boldsymbol{\epsilon} \sim \Normal(\zeros, \eye).
+\]
+Now the noise $\boldsymbol{\epsilon}$ is an \emph{external input}, and the path
+from the encoder parameters $\phi$ through $\boldsymbol{\mu}$ and
+$\boldsymbol{\sigma}$ to $\zvec$ is fully deterministic and differentiable.
+Gradients flow straight through, and the whole VAE trains end-to-end with ordinary
+SGD.
+
+\section{Putting it together}
+
+Training is therefore one tidy loop: the encoder produces $\boldsymbol{\mu}$ and
+$\boldsymbol{\sigma}$; we sample $\zvec$ via reparameterization; the decoder
+reconstructs $\hat{\xvec}$; and we descend on
+$-\text{ELBO} = (\text{reconstruction loss}) + (\text{KL})$. The likelihood
+$p_{\params}(\xvec\given\zvec)$ is chosen to match the data --- a Gaussian for
+real-valued pixels (giving a squared-error reconstruction loss) or a Bernoulli for
+binary data (giving cross-entropy).
+
+\begin{notebox}[title={Two things that go wrong}]
+\textbf{Blurry samples.} VAEs are famous for producing softer, blurrier images
+than GANs. A pixel-wise Gaussian likelihood rewards predicting the \emph{average}
+of all plausible reconstructions, and an average of sharp images is a blurry one.
+\\[2pt]
+\textbf{Posterior collapse.} If the decoder is powerful enough to model the data
+on its own, the optimiser can drive the KL term to zero by making
+$q_{\phi}(\zvec\given\xvec) \approx p(\zvec)$ for every input --- the latent code
+is ignored. Tricks like KL warm-up or \textbf{$\beta$-VAE} (which scales the KL by
+a factor $\beta$ to trade off reconstruction against latent structure) are used to
+manage this.
+\end{notebox}
+
+The VAE is the first true deep generative model in this course: a single
+objective (the ELBO), a single trick (reparameterization), and a latent space you
+can actually sample from. Keep the three-term reading in mind --- reconstruction
+versus a KL-to-prior regularizer --- because the diffusion models in
+\Cref{chap:dpm} are, at heart, a deep stack of exactly this idea.
 
 
 % ==========================================================
@@ -973,23 +1723,578 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{GANs and W-GANs}
 
-% TODO: Fill in from lecture (8.5.)
+VAEs and flows model the data density explicitly. \textbf{Generative Adversarial
+Networks} (GANs, Goodfellow et al., 2014) take the opposite stance: they sit in
+the \emph{implicit-density} branch, meaning they never write down $p(\xvec)$ at
+all. A GAN only knows how to \emph{produce samples} --- and it learns to produce
+good ones by being put in a competition.
+
+\section{The adversarial game}
+
+The whole idea is two networks playing against each other. The
+\textbf{generator} $G$ takes random noise $\zvec \sim p_{\zvec}$ from a latent
+space and turns it into a fake sample $G(\zvec)$. The \textbf{discriminator} $D$
+is a classifier that looks at a sample --- real or fake --- and tries to tell
+which it is. The generator's job is to fool the discriminator; the
+discriminator's job is to not be fooled.
+
+\begin{intbox}
+The classic analogy: $G$ is a counterfeiter printing fake banknotes, $D$ is the
+police trying to spot them. As the police get better, the counterfeiter is forced
+to make better fakes, which forces the police to get sharper still. At the
+equilibrium of this arms race the fakes are indistinguishable from real money ---
+i.e.\ the generator's distribution matches the data.
+\end{intbox}
+
+\section{The objective}
+
+Both networks are trained against a single value function in a \emph{minimax}
+game --- the discriminator maximises it, the generator minimises it.
+
+\begin{thmbox}[title={GAN minimax objective}]
+\[
+  \min_{G}\max_{D}\;\loss(D,G)
+  = \E_{\xvec \sim p_r}\!\bigl[\log D(\xvec)\bigr]
+  + \E_{\zvec \sim p_{\zvec}}\!\bigl[\log\bigl(1 - D(G(\zvec))\bigr)\bigr],
+\]
+where $p_r$ is the real-data distribution and $p_g$ the generator's. The
+discriminator wants $D(\xvec)\to 1$ on real data and $D(G(\zvec))\to 0$ on fakes;
+the generator wants the opposite. For a fixed $G$ the optimal discriminator is
+$D^{*}(\xvec) = \frac{p_r(\xvec)}{p_r(\xvec)+p_g(\xvec)}$, and plugging it back in
+shows the generator is then minimising the \emph{Jensen--Shannon divergence}
+between $p_r$ and $p_g$.
+\end{thmbox}
+
+In practice training alternates two gradient steps: ascend on the discriminator's
+parameters $\weights$ and descend on the generator's parameters $\params$,
+\[
+  \weights \leftarrow \weights + b\,\grad_{\weights}\tfrac1M\textstyle\sum_i
+    \bigl[\log D_{\weights}(\xvec^i) + \log(1 - D_{\weights}(G_{\params}(\zvec^i)))\bigr],
+\]
+\[
+  \params \leftarrow \params - a\,\grad_{\params}\tfrac1M\textstyle\sum_i
+    \log\bigl(1 - D_{\weights}(G_{\params}(\zvec^i))\bigr),
+\]
+on minibatches of real samples and noise. In code, the generator usually
+\emph{maximises} $\log D(G(\zvec))$ instead of minimising $\log(1-D(G(\zvec)))$ ---
+the ``non-saturating'' version --- because the original form has vanishing
+gradients exactly when the generator is losing and needs signal most.
+
+\section{Why GANs are hard to train}
+
+There is no likelihood to monotonically improve, just a moving target, and that
+makes GANs notoriously finicky:
+\begin{itemize}
+  \item \textbf{Non-convergence.} Two networks chase each other; the dynamics can
+        oscillate instead of settling.
+  \item \textbf{Mode collapse.} The generator discovers a few outputs that reliably
+        fool $D$ and produces only those, ignoring whole regions of the data
+        distribution (e.g.\ generating one kind of face over and over).
+  \item \textbf{Vanishing gradients.} If $D$ becomes too good too fast, it
+        confidently rejects every fake, $\log(1-D(G(\zvec)))$ saturates, and the
+        generator receives almost no gradient.
+\end{itemize}
+When they do work, the payoff is sharp samples: with a convolutional generator and
+discriminator (\textbf{DCGAN}) GANs produce noticeably crisper images than a VAE
+trained on the same faces, because there is no pixel-averaging likelihood blurring
+things out.
+
+\section{Wasserstein GANs}
+
+Many of the gradient problems trace back to the \emph{divergence} a vanilla GAN
+optimises. When $p_r$ and $p_g$ have little overlap --- which is the norm in high
+dimensions, where both live on thin manifolds --- the Jensen--Shannon divergence
+is essentially constant (it pins at $\log 2$). A constant has zero gradient, so
+the generator gets no useful direction to move in. This is the same
+KL/JS-divergence pathology that motivated FID over older metrics, and the fix is
+the same: switch to a \textbf{Wasserstein} distance.
+
+\begin{defbox}[title={Wasserstein-1 (Earth-Mover) distance}]
+Informally, $W(p_r, p_g)$ is the minimum ``cost'' of transporting probability mass
+to reshape $p_g$ into $p_r$, where cost is mass times distance moved. Crucially it
+stays \emph{finite and smoothly varying even when the two distributions do not
+overlap} --- so it always gives the generator a meaningful gradient pointing
+toward the data.
+\end{defbox}
+
+Computing an Earth-Mover distance directly is intractable, but the
+Kantorovich--Rubinstein duality rewrites it as
+\[
+  W(p_r, p_g) = \sup_{\norm{f}_L \le 1}\;
+    \E_{\xvec \sim p_r}[f(\xvec)] - \E_{\xvec \sim p_g}[f(\xvec)],
+\]
+a supremum over all \textbf{1-Lipschitz} functions $f$. In a WGAN we simply let a
+network --- now called a \textbf{critic} rather than a discriminator --- play the
+role of $f$. The critic outputs an unbounded real score (no sigmoid, no
+``real/fake probability''); it just scores how real something looks, and the
+generator tries to raise the critic's score on its fakes.
+
+The one new requirement is keeping the critic 1-Lipschitz:
+\begin{itemize}
+  \item The original \textbf{WGAN} enforced it crudely by \emph{weight clipping} ---
+        clamping all critic weights into $[-c, c]$.
+  \item \textbf{WGAN-GP} replaced clipping with a \emph{gradient penalty} that
+        pushes the norm of the critic's input-gradient toward $1$. This is much
+        more stable and is the standard recipe; on CelebA it reaches an
+        excellent FID of around $3$.
+\end{itemize}
+
+\begin{intbox}
+Two practical wins make WGANs worth the trouble. First, training is far more
+stable and largely free of mode collapse, because the critic always supplies a
+usable gradient. Second --- and unusually for GANs --- the critic's loss
+\emph{correlates with sample quality}, so for once the training curve is a
+meaningful progress meter rather than noise.
+\end{intbox}
 
 
 % ==========================================================
-%  CHAPTER 7 — METRICS (FID) AND NORMALIZING FLOWS
+%  CHAPTER 7 — METRICS, NORMALIZING FLOWS & DENSITY MODELS
 % ==========================================================
-\chapter{Metrics (FID) and Normalizing Flows}
+\chapter{Metrics, Normalizing Flows \& Density Models}
 
-% TODO: Fill in from lecture (15.5.)
+This chapter does two things. First it asks a question we have been dodging: now
+that we can generate images, \emph{how do we measure whether they are any good?}
+That leads to the FID metric. Second, it introduces the model family we have been
+building toward --- \textbf{normalizing flows} --- which, unlike VAEs and GANs,
+gives the data density \emph{exactly}. Along the way it rounds out the map of
+generative models with autoregressive models and energy-based models.
+
+\section{The map of generative models}
+
+It is worth pinning down the whole landscape, because every model in this part of
+the course is a point on one tree:
+
+\begin{itemize}
+  \item \textbf{Explicit density} --- the model writes down $p(\xvec)$.
+    \begin{itemize}
+      \item \emph{Exact / tractable density}: \textbf{autoregressive models} and
+            \textbf{normalizing flows} --- you can evaluate $p(\xvec)$ exactly.
+      \item \emph{Unnormalized density}: \textbf{energy-based models} --- you get
+            $p(\xvec)$ up to an intractable normalizing constant.
+      \item \emph{Approximate density}: \textbf{VAEs} and \textbf{diffusion models}
+            --- you optimise a lower bound (the ELBO) instead of the true
+            likelihood.
+    \end{itemize}
+  \item \textbf{Implicit density} --- \textbf{GANs}: no $p(\xvec)$, only a sampler.
+  \item \textbf{Density-free} --- \textbf{autoencoders}: not generative at all,
+        just compression.
+\end{itemize}
+
+That ``exact density'' column is the prize: a model you can both \emph{sample}
+from and \emph{score} (evaluate the likelihood of). Flows are the headline example
+and the heart of this chapter.
+
+\section{How do you score a generator?}
+
+GANs exposed an awkward gap: because they have only an implicit density, there is
+\emph{no likelihood to report}, so for a while the quality of generated images was
+judged by eyeballing them. The discriminator is no help as a general yardstick ---
+it is trained against one specific generator (it is ``on-policy'') and does not
+transfer. We want an automatic metric that \emph{agrees with human judgement} of
+what a realistic, varied set of images looks like. Two became standard, both built
+on a pretrained InceptionNet classifier.
+
+\subsection{Inception Score (IS)}
+
+The idea: feed each generated image through InceptionNet and look at the predicted
+label distribution $p_{\mathrm{Inc}}(y\given\xvec)$.
+
+\begin{thmbox}[title={Inception Score}]
+\[
+  \mathrm{IS}(G) = \exp\!\left(\frac1N \sum_{n=1}^{N}
+    \KL{p_{\mathrm{Inc}}(y \given \xvec_n)}{p_{\mathrm{Inc}}(y)}\right),
+  \qquad
+  p_{\mathrm{Inc}}(y) = \frac1N \sum_{n=1}^{N} p_{\mathrm{Inc}}(y\given\xvec_n),
+\]
+where $p_{\mathrm{Inc}}(y)$ is the marginal label distribution over all generated
+images. Higher is better.
+\end{thmbox}
+
+The score rewards two things at once, which is easiest to see through entropy.
+Each per-image distribution $p_{\mathrm{Inc}}(y\given\xvec_n)$ should be
+\emph{sharp} (low entropy) --- a good image clearly depicts \emph{one}
+recognizable thing. The marginal $p_{\mathrm{Inc}}(y)$ should be \emph{flat} (high
+entropy) --- across many images the generator should cover many classes, i.e.\ be
+diverse. A large KL between the two means exactly ``confident per image, diverse
+overall.''
+
+\begin{notebox}[title={Why IS is not enough}]
+IS is easy to game. It cannot see \emph{intra-class} diversity, so a generator that
+emits one perfect dog, one perfect cat, etc.\ (mode collapse within each class)
+still scores well. It rewards outright \emph{memorizing} training images. And it is
+blind to anything outside InceptionNet's classes --- generate a flawless object
+it was never trained on and IS will be low; generate a person with two heads and it
+may not be penalized at all.
+\end{notebox}
+
+\subsection{Fréchet Inception Distance (FID)}
+
+FID fixes most of this by comparing \emph{distributions of features} rather than
+labels. Run both the real and the generated images through InceptionNet, take the
+penultimate-layer activations, and fit a Gaussian to each set. FID is then the
+\emph{Wasserstein-2 distance} between those two Gaussians.
+
+\begin{thmbox}[title={Fréchet Inception Distance}]
+\[
+  \mathrm{FID} = \norm{\boldsymbol{m} - \boldsymbol{m}_r}_2^2
+  + \tr\!\Bigl(\boldsymbol{C} + \boldsymbol{C}_r
+      - 2\bigl(\boldsymbol{C}\,\boldsymbol{C}_r\bigr)^{1/2}\Bigr),
+\]
+where $(\boldsymbol{m},\boldsymbol{C})$ and $(\boldsymbol{m}_r,\boldsymbol{C}_r)$
+are the mean and covariance of the generated and real feature sets. \textbf{Lower
+is better} ($0$ = identical statistics).
+\end{thmbox}
+
+Note the recurring theme: just like WGAN traded JS divergence for a Wasserstein
+distance, FID upgrades the KL-based IS to a Wasserstein-2 distance. FID is
+meaningful even for classes InceptionNet never saw, it \emph{detects mode collapse
+and low variability} (a narrow generator gives a narrow covariance, inflating the
+distance), and it tracks human judgement well --- on CelebA, samples at FID $133$
+look rough while FID $13$ looks clean, and a WGAN-GP at FID $3$ looks essentially
+real. A close cousin, the \textbf{Kernel Inception Distance (KID)}, uses a kernel
+two-sample test on the same features. Empirically FID rises smoothly as you add
+noise, blur, or occlusion to images, whereas IS barely reacts --- another reason
+FID is the field's default.
+
+\section{Do GANs even converge?}
+
+A fair worry: with two networks influencing each other, both updated on noisy
+minibatches, is there any guarantee training settles down? Writing the updates as
+a stochastic-approximation scheme,
+\[
+  \weights_{n+1} = \weights_n + b(n)\bigl(\boldsymbol{g}(\params_n,\weights_n) + \boldsymbol{M}^{(\weights)}_n\bigr),
+  \qquad
+  \params_{n+1} = \params_n + a(n)\bigl(\boldsymbol{h}(\params_n,\weights_n) + \boldsymbol{M}^{(\params)}_n\bigr),
+\]
+(where $\boldsymbol{g},\boldsymbol{h}$ are the full gradients and
+$\boldsymbol{M}$ the noise), one can lean on the theory of
+stochastic approximation (Borkar, 1997). The key result --- the
+\textbf{Two Time-Scale Update Rule (TTUR)}, from Heusel et al.\ (2017), the same
+JKU group behind FID --- shows that with \emph{separate} learning rates $a(n)$ and
+$b(n)$ for generator and discriminator, the process \emph{does} converge to a local
+Nash equilibrium under mild assumptions.
+
+\section{Normalizing flows}
+
+Now the main event. GANs give an implicit density and VAEs only an approximate one,
+so neither lets you actually evaluate $p(\xvec)$. \textbf{Normalizing flows} do,
+exactly. The whole idea fits in one line:
+\[
+  \xvec = T(\boldsymbol{u}), \qquad \boldsymbol{u} \sim p_u(\boldsymbol{u}),
+\]
+take a simple \textbf{base distribution} $p_u$ (a standard Gaussian) and pass a
+sample through an \textbf{invertible, differentiable} transformation $T$ (a neural
+network). Generating is forward, $\xvec = T(\boldsymbol{u})$; the magic is that we
+can also compute the exact density of any $\xvec$.
+
+\subsection{Change of variables}
+
+The bridge is the change-of-variables formula from probability.
+
+\begin{thmbox}[title={Change of variables}]
+\[
+  p_x(\xvec) = p_u\!\bigl(T^{-1}(\xvec)\bigr)\,
+               \bigl|\det J_{T^{-1}}(\xvec)\bigr|.
+\]
+The Jacobian-determinant factor accounts for how $T$ locally stretches or squeezes
+volume: where the map expands space, density thins out, and vice versa.
+\end{thmbox}
+
+\begin{intbox}
+Picture a uniform blob of probability over a unit square. Apply a linear map
+$\boldsymbol{A}$ and the square becomes a parallelogram of area $|\det
+\boldsymbol{A}|$; since the \emph{total} probability must stay $1$, the density
+scales by $1/|\det \boldsymbol{A}|$. A flow does this continuously and
+non-linearly --- it ``molds'' the simple base density into the complicated shape of
+the data, like kneading dough from a round ball into an intricate form.
+\end{intbox}
+
+A single invertible step is weak, so flows \emph{compose} many: $T = T_K \circ
+\dots \circ T_1$. Composition is friendly to both operations we need --- the
+inverse reverses the order, and the log-determinant is just a sum,
+\[
+  \log\bigl|\det J_T(\boldsymbol{z})\bigr|
+  = \sum_{k} \log\bigl|\det J_{T_k}(\boldsymbol{z}_{k-1})\bigr|.
+\]
+The name ``flow'' is the trajectory of a sample as it is carried from the base
+space ($\boldsymbol{z}_0 = \boldsymbol{u}$) to data ($\boldsymbol{z}_K = \xvec$)
+through these steps. Training is plain maximum likelihood: minimising
+$\KL{p^*}{p_{\params}}$ reduces to
+\[
+  L(\params) \approx -\frac1N \sum_{n=1}^{N}
+    \Bigl[\log p_u\bigl(T^{-1}(\xvec_n)\bigr)
+          + \log\bigl|\det J_{T^{-1}}(\xvec_n)\bigr|\Bigr],
+\]
+i.e.\ make the data probable under the base distribution after pulling it back
+through $T^{-1}$, while accounting for the volume change.
+
+\subsection{The engineering constraint, and autoregressive flows}
+
+Since $T$ is a neural network, the design is dominated by one demand: it must be
+\textbf{invertible} \emph{and} have a \textbf{tractable Jacobian determinant}. A
+general $D\times D$ determinant costs $\bigO{D^3}$ --- far too much. The standard
+escape is to make the Jacobian \textbf{triangular}, because then the determinant is
+just the product of its diagonal.
+
+\textbf{Autoregressive flows} achieve this. Each output coordinate is transformed
+using only the \emph{earlier} coordinates,
+\[
+  z_i' = \tau(z_i;\, \boldsymbol{h}_i), \qquad \boldsymbol{h}_i = c_i(\boldsymbol{z}_{<i}),
+\]
+where the \textbf{transformer} $\tau$ is a strictly monotonic (hence invertible)
+function of $z_i$, and the \textbf{conditioner} $c_i$ --- which can be any network,
+since it need not be invertible --- produces its parameters from the preceding
+coordinates. Because $z_i'$ ignores $z_{j>i}$, the Jacobian is triangular and
+\[
+  \log\bigl|\det J\bigr| = \sum_{i=1}^{D} \log\Bigl|\tfrac{\partial \tau}{\partial z_i}(z_i;\boldsymbol{h}_i)\Bigr|.
+\]
+The simplest choice is the \textbf{affine} transformer $\tau(z_i;\boldsymbol{h}_i)
+= \alpha_i z_i + \beta_i$, whose log-determinant is just $\sum_i \log|\alpha_i|$.
+This template covers the famous flows --- \textbf{NICE}, \textbf{RealNVP},
+\textbf{IAF}, \textbf{MAF}, and \textbf{Glow} --- which differ mainly in how the
+conditioner is implemented (e.g.\ recurrently with an RNN/LSTM, or with a
+\emph{masked} feed-forward net that zeroes out the forbidden connections).
+
+\begin{intbox}
+There is a satisfying theoretical guarantee here: flows are \emph{universal}. Using
+the chain rule of probability and the fact that the CDF of each conditional maps it
+to a uniform variable, one can show a flow can represent \emph{any} sufficiently
+nice distribution --- even with a base as humble as a uniform on the unit cube. The
+practical art is doing it with transformations that are also cheap to invert and
+differentiate.
+\end{intbox}
+
+The standard demo is morphing a 2-D Gaussian into a two-half-moons distribution
+through a 9-layer RealNVP, and running it backwards to recover the Gaussian. The
+applications are exactly the three things an exact-density model is good for:
+\textbf{density estimation}, \textbf{generation/sampling}, and \textbf{inference}.
+
+\section{Autoregressive models}
+
+Worth a short standalone note, since autoregressive flows borrow their name. The
+idea is the chain rule of probability applied to generation:
+\[
+  p(\xvec) = \prod_{d=1}^{D} p(x_d \given \xvec_{<d}),
+\]
+generate one piece at a time, each conditioned on everything generated so far ---
+\emph{pixel-by-pixel} for images (\textbf{PixelRNN}, \textbf{PixelCNN}), or
+\emph{token-by-token} for text. Each piece is typically a discrete variable drawn
+from a softmax. This is the family that \textbf{large language models} belong to,
+and it is treated in depth in the recurrent-networks material; for images,
+pixel-by-pixel generation is exact but slow and largely superseded by GANs and
+diffusion.
+
+\section{Energy-based models}
+
+The last branch of the tree. Rather than a normalized density, an \textbf{EBM}
+learns an \emph{energy} $E_{\params}(\xvec)$ and sets
+\[
+  p_{\params}(\xvec) = \frac{\exp\!\bigl(-E_{\params}(\xvec)\bigr)}{Z_{\params}},
+  \qquad
+  Z_{\params} = \int \exp\!\bigl(-E_{\params}(\xvec)\bigr)\dd\xvec .
+\]
+Low energy = high probability. The normalizing constant $Z_{\params}$ (the
+\textbf{partition function}) is intractable, so EBMs deliberately give up on the
+exact value of $p$ and care only about the \emph{relative ordering} of densities.
+Training differentiates the negative log-likelihood into a \emph{contrastive}
+form --- a ``data gradient'' pushing energy down on real samples and a ``model
+gradient'' pushing it up on samples drawn from the model (a structure that
+resembles the WGAN objective). Those model samples come from MCMC, in practice
+\textbf{Stochastic Gradient Langevin Dynamics}:
+\[
+  \xvec^{t+1} \leftarrow \xvec^{t} + \tfrac{\alpha}{2}\grad_{\xvec}\log p_{\params}(\xvec^t) + \boldsymbol{\epsilon},
+  \qquad \boldsymbol{\epsilon}\sim\Normal(\zeros,\alpha\eye),
+\]
+where the injected noise keeps the iterate from collapsing onto a mode and instead
+gives unbiased samples from the distribution.
+
+EBMs have appealing properties --- \emph{compositionality} (add or subtract energy
+functions to combine concepts), \emph{no generator network} needed (any standard
+classifier architecture can serve as the energy), and \emph{adaptive compute} (run
+the sampler longer for finer samples). The formulation shown is not widely used
+today (though championed by LeCun); the better-known EBMs are \textbf{Restricted
+Boltzmann Machines} and \textbf{Hopfield networks} (including their modern
+continuous variants). Keep SGLD in mind --- it returns, in disguise, when we
+interpret diffusion models next.
 
 
 % ==========================================================
 %  CHAPTER 8 — DIFFUSION PROBABILISTIC MODELS
 % ==========================================================
 \chapter{Diffusion Probabilistic Models}
+\label{chap:dpm}
 
-% TODO: Fill in from lecture (22.5.)
+Diffusion probabilistic models (DPMs) are the engine behind the modern image
+generators (Stable Diffusion, DALL·E, Imagen), and conceptually they are the
+payoff of everything in this part of the course. They live in the same
+\emph{explicit, approximate-density} box as the VAE, and in fact a DPM is best read
+as a \textbf{very deep, hierarchical VAE} with a particularly clever twist: the
+encoder is not learned at all.
+
+\section{The main idea}
+
+Take a clean image and gradually destroy it by adding a little Gaussian noise over
+and over, hundreds of steps, until nothing is left but pure static. That is the
+\textbf{forward (diffusion) process} --- and it is completely fixed, no learning
+involved. Now imagine running it \emph{backwards}: starting from static and
+removing a little noise at each step until an image emerges. That
+\textbf{reverse (denoising) process} is what we train a network to do. Once it can
+denoise, generation is simple --- sample pure noise and let the network walk it
+back to a clean sample.
+
+\begin{notebox}[title={Notation}]
+The data point is $\xvec_0 = \xvec$ and we noise it over steps $t = 1,\dots,T$ to
+get a sequence $\xvec_0, \xvec_1, \dots, \xvec_T$, where $\xvec_T$ is essentially
+pure $\Normal(\zeros,\eye)$ noise. The time index is \emph{zero-based}. The
+forward step is $q(\xvec_t\given\xvec_{t-1})$ (fixed); the learned reverse step is
+$p_{\params}(\xvec_{t-1}\given\xvec_t)$.
+\end{notebox}
+
+\section{The forward process (a fixed encoder)}
+
+Each forward step adds a touch of noise while slightly shrinking the existing
+signal:
+\[
+  \xvec_t = \sqrt{\alpha_t}\,\xvec_{t-1} + \sqrt{1-\alpha_t}\,\boldsymbol{\epsilon}_t,
+  \qquad \boldsymbol{\epsilon}_t \sim \Normal(\zeros,\eye),
+\]
+which as a distribution is $q(\xvec_t\given\xvec_{t-1}) =
+\Normal(\xvec_t \,;\, \sqrt{\alpha_t}\,\xvec_{t-1},\,(1-\alpha_t)\eye)$. This is a
+fixed (un-learned) \emph{linear Gaussian} encoder, a Markov chain, whose noise
+schedule $\{\alpha_t\}$ is set so that the latent has the same dimension as the
+data and the final step is pure standard-Gaussian noise.
+
+The beautiful part is that you do not have to simulate all $t$ steps. Composing the
+Gaussians and marginalising out the intermediate states gives a \textbf{diffusion
+kernel} that jumps straight from the clean image to \emph{any} noise level in one
+shot:
+
+\begin{thmbox}[title={Diffusion kernel (jump to step $t$)}]
+With the cumulative product $\bar{\alpha}_t := \prod_{s=1}^{t}\alpha_s$ (the
+lecture writes this as $\beta_t$),
+\[
+  q(\xvec_t \given \xvec_0)
+  = \Normal\!\bigl(\xvec_t \,;\, \sqrt{\bar{\alpha}_t}\,\xvec_0,\,
+                   (1-\bar{\alpha}_t)\eye\bigr).
+\]
+So $\xvec_t = \sqrt{\bar{\alpha}_t}\,\xvec_0 + \sqrt{1-\bar{\alpha}_t}\,
+\boldsymbol{\epsilon}$ for a single $\boldsymbol{\epsilon}\sim\Normal(\zeros,\eye)$.
+\end{thmbox}
+
+This one-shot kernel is what makes training cheap: to get a training example at
+step $t$ we just sample noise once, no chain to unroll.
+
+\section{The reverse process (the learned decoder)}
+
+We want to undo a step, i.e.\ $q(\xvec_{t-1}\given\xvec_t)$. By Bayes' rule that
+needs the marginal $q(\xvec_t)$ and is \textbf{intractable}. But if we
+additionally condition on the clean image $\xvec_0$, the reverse-posterior becomes a
+tractable Gaussian,
+\[
+  q(\xvec_{t-1}\given\xvec_t,\xvec_0)
+  = \Normal\!\bigl(\xvec_{t-1}\,;\,\boldsymbol{\mu}_t(\xvec_0,\xvec_t),\,\sigma_t^2\eye\bigr),
+\]
+with mean and variance that work out in closed form from the schedule. Of course at
+generation time we do \emph{not} have $\xvec_0$, so we train a network ---
+a \textbf{U-Net} $\hat{\boldsymbol{\mu}}$, which conveniently maps an image to an
+image of the same size --- to approximate the reverse step:
+\[
+  p_{\params}(\xvec_{t-1}\given\xvec_t)
+  = \Normal\!\bigl(\xvec_{t-1}\,;\,\hat{\boldsymbol{\mu}}(\xvec_t,\params,t),\,(1-\alpha_t)\eye\bigr).
+\]
+
+\section{Training: the ELBO, then a beautifully simple objective}
+
+The marginal likelihood is intractable, so --- exactly like the VAE --- we maximise
+an ELBO. Because the chain is deep, it unrolls into three kinds of term:
+
+\begin{thmbox}[title={Diffusion ELBO}]
+\[
+\begin{aligned}
+  \log p(\xvec) \ge\;
+  & \underbrace{\E\bigl[\log p_{\params}(\xvec_0\given\xvec_1)\bigr]}_{\text{reconstruction}}
+   - \underbrace{\KL{q(\xvec_T\given\xvec_0)}{p(\xvec_T)}}_{\text{prior matching}} \\
+  & - \sum_{t=2}^{T}\underbrace{\E\bigl[\KL{q(\xvec_{t-1}\given\xvec_t,\xvec_0)}{p_{\params}(\xvec_{t-1}\given\xvec_t)}\bigr]}_{\text{denoising matching}}.
+\end{aligned}
+\]
+\end{thmbox}
+
+The workhorse is the \textbf{denoising-matching} sum: at every step, make the
+learned reverse step match the tractable (conditioned-on-$\xvec_0$) posterior. Both
+are Gaussians, so each KL has a closed form and collapses to a simple squared
+distance between their means,
+\[
+  \KL{q}{p_{\params}} = \frac{1}{2(1-\alpha_t)}\,
+    \norm{\hat{\boldsymbol{\mu}}_t - \boldsymbol{\mu}_t(\xvec_0,\xvec_t)}^2 + \text{const}.
+\]
+
+Here comes the trick that made diffusion practical (DDPM, Ho et al., 2020).
+Rather than predicting the mean, \textbf{reparameterize the network to predict the
+noise} $\hat{\boldsymbol{\epsilon}}$ that was added. Substituting, the objective
+simplifies all the way down to a plain noise-prediction regression:
+
+\begin{thmbox}[title={DDPM training objective}]
+\[
+  L(\params) = \frac1T \sum_{t=1}^{T}
+    \norm{\boldsymbol{\epsilon}_t -
+          \hat{\boldsymbol{\epsilon}}\bigl(\sqrt{\bar{\alpha}_t}\,\xvec_0
+          + \sqrt{1-\bar{\alpha}_t}\,\boldsymbol{\epsilon}_t,\; t;\,\params\bigr)}^2 .
+\]
+In words: noise an image to a random level $t$, and train the network to guess the
+noise you added.
+\end{thmbox}
+
+This gives a remarkably clean training loop and a matching sampler:
+
+\begin{exbox}[title={Training and sampling (DDPM)}]
+\textbf{Training} --- repeat until converged:
+\begin{enumerate}
+  \item Sample a data point $\xvec_0$ and a step $t\sim\mathrm{Uniform}\{1,\dots,T\}$.
+  \item Sample noise $\boldsymbol{\epsilon}\sim\Normal(\zeros,\eye)$ and form the
+        noisy input $\xvec_t = \sqrt{\bar{\alpha}_t}\,\xvec_0 + \sqrt{1-\bar{\alpha}_t}\,\boldsymbol{\epsilon}$.
+  \item Gradient step on $\norm{\boldsymbol{\epsilon} - \hat{\boldsymbol{\epsilon}}(\xvec_t,t;\params)}^2$.
+\end{enumerate}
+\textbf{Sampling} --- start from $\xvec_T\sim\Normal(\zeros,\eye)$, then for
+$t = T,\dots,1$:
+\[
+  \xvec_{t-1} = \frac{1}{\sqrt{\alpha_t}}\Bigl(\xvec_t
+    - \frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}}\,\hat{\boldsymbol{\epsilon}}(\xvec_t,t;\params)\Bigr)
+    + \sigma_t \zvec,
+\]
+with fresh $\zvec\sim\Normal(\zeros,\eye)$ for $t>1$ and $\zvec=\zeros$ at the last
+step. Each iteration nudges the image one notch toward clean.
+\end{exbox}
+
+\section{Interpretation and what comes next}
+
+DPMs can be read as learning the \textbf{gradient of the log-density} (the
+``score'') in image space. That connects them directly to two ideas from the
+previous chapter: the sampler is essentially \textbf{Stochastic Gradient Langevin
+Dynamics} --- climb the density gradient, add noise to stay unbiased --- and
+training is a form of \textbf{score matching}. The noise-prediction network is, up
+to scaling, learning where the density increases, and sampling follows that signal
+back to the data manifold.
+
+\begin{intbox}
+The relations make the whole course click into place. A DPM is a deep hierarchical
+VAE (same ELBO structure); its sampler is the EBM's Langevin dynamics; and in the
+continuous-time limit it becomes a differential equation, which links it to flows.
+The pieces you met separately --- variational bounds, score/energy gradients,
+invertible transport --- are three views of the same elephant.
+\end{intbox}
+
+Taking the number of steps $T\to\infty$ yields a \textbf{continuous-time} model
+described by a stochastic differential equation (the variance-preserving SDE of
+Song et al., 2020). A closely related, increasingly popular variant is
+\textbf{flow matching}: instead of a noising chain, define a straight-line
+interpolation $\xvec(t) = (1-t)\,\xvec + t\,\boldsymbol{\epsilon}$ between data and
+noise, and train a network $\boldsymbol{v}_{\params}$ to predict the
+\textbf{velocity field} $\boldsymbol{v}^{*} = \boldsymbol{\epsilon} - \xvec$ that
+carries one into the other. Generation is then just numerically integrating that
+ODE backwards (Euler steps) from noise to data --- often in far fewer steps than a
+classic diffusion sampler, which is why flow matching now underlies several
+state-of-the-art generators.
 
 
 % ==========================================================
@@ -997,7 +2302,198 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{Bayesian Deep Learning and Uncertainty}
 
-% TODO: Fill in from lecture recording (29.5.)
+Every model we have built so far hands back a single answer. Train a classifier,
+feed it an image, and it tells you ``cat, 92\%''. But that number is a
+\emph{calibrated-looking lie} more often than we would like: a standard network
+will confidently scream ``cat'' at a picture of pure noise, or at a road sign it
+has never seen. The question this chapter asks is: can the model tell us when it
+\emph{does not know}? That is the whole point of Bayesian deep learning ---
+turning a network from something that always answers into something that can also
+say ``I'm not sure''.
+
+\section{Why we want uncertainty at all}
+
+The motivation is trust. If a model is going to drive a car, read an X-ray, or
+flag a molecule as toxic, a wrong answer delivered with full confidence is far
+more dangerous than a wrong answer that admits doubt. A system that knows the edge
+of its own competence can defer to a human, ask for more data, or abstain. So we
+want predictions that come with an honest \emph{confidence}, and we want that
+confidence to actually rise on familiar inputs and fall on weird ones.
+
+It helps to separate the two reasons a model might be uncertain, because they
+behave completely differently.
+
+\begin{defbox}[title={Aleatoric vs.\ epistemic uncertainty}]
+\textbf{Aleatoric} uncertainty is noise \emph{in the data itself} --- genuine
+ambiguity that no amount of extra data can remove. A blurry photo that is honestly
+half-cat-half-dog should get a prediction near $0.5$, and that $0.5$ is correct.
+\\[2pt]
+\textbf{Epistemic} uncertainty is uncertainty \emph{in the model} --- it comes
+from not having seen enough data, and it \emph{shrinks as you collect more}. This
+is the uncertainty that should spike on inputs unlike anything in training.
+\end{defbox}
+
+\begin{intbox}
+The two can produce the same output probability for very different reasons.
+A clean image of an animal that is truly ambiguous gives $p\approx 0.5$ from
+\emph{aleatoric} noise. A bizarre out-of-distribution input might also average out
+to $p\approx 0.5$ --- but here it is \emph{epistemic}: the model has no idea, and
+different plausible models would disagree wildly. A single softmax number cannot
+tell these apart. Separating them is exactly what the Bayesian treatment buys us.
+\end{intbox}
+
+\section{From a point estimate to a posterior over weights}
+
+Ordinary training picks \emph{one} weight vector. Maximum likelihood maximises
+$p(\dataset\given\weights)$; adding a prior and maximising
+$p(\weights\given\dataset)\propto p(\dataset\given\weights)\,p(\weights)$ gives the
+\textbf{MAP} estimate (this is just weight-decay-style regularisation in disguise).
+Either way you collapse everything you know about the weights down to a single
+point and throw away the rest.
+
+The Bayesian move is to refuse that collapse and keep the whole \emph{posterior
+distribution} over weights:
+\[
+  p(\weights\given\dataset)
+  = \frac{p(\dataset\given\weights)\,p(\weights)}{p(\dataset)},
+  \qquad
+  p(\dataset) = \int p(\dataset\given\weights)\,p(\weights)\dd\weights .
+\]
+The numerator is easy; the trouble is the denominator. That integral --- the
+\textbf{evidence} --- runs over millions of weights and is hopelessly intractable
+for any real network. This single intractable integral is the reason the entire
+rest of the chapter exists: every practical method is a different way of dodging
+it.
+
+\section{Bayesian model averaging}
+
+Once we have a posterior, prediction is not ``run the one best network''. It is
+``ask \emph{every} plausible network, weighted by how much the posterior believes
+in it, and average their votes''.
+
+\begin{thmbox}[title={Posterior predictive (Bayesian model averaging)}]
+\[
+  p(y^\ast \given \xvec^\ast, \dataset)
+  = \int p(y^\ast \given \xvec^\ast, \weights)\;
+         p(\weights \given \dataset)\dd\weights .
+\]
+The prediction for a new input is the average of all models'
+predictions, each weighted by its posterior plausibility. A point estimate is the
+degenerate case where the posterior is a single spike.
+\end{thmbox}
+
+This averaging is also where the clean split between the two uncertainties comes
+from. If you measure total predictive uncertainty by the entropy of the averaged
+prediction, it decomposes exactly:
+\[
+  \underbrace{\Ent\!\bigl[\,\E_{p(\weights\given\dataset)}\,p(y\given\xvec,\weights)\bigr]}_{\text{total}}
+  =
+  \underbrace{\E_{p(\weights\given\dataset)}\,\Ent\!\bigl[p(y\given\xvec,\weights)\bigr]}_{\text{aleatoric (expected entropy)}}
+  +
+  \underbrace{\MI(y;\weights)}_{\text{epistemic (mutual information)}} .
+\]
+The first term is the noise each model sees on average; the second is how much the
+models \emph{disagree with each other}. Disagreement is the signature of epistemic
+uncertainty --- and it is exactly what blows up on inputs far from the training
+data, where different plausible weight settings give different answers.
+
+Of course we cannot do the integral, so in practice we draw $S$ weight samples
+$\weights^{(s)}$ from (an approximation of) the posterior and Monte-Carlo average:
+\[
+  p(y^\ast\given\xvec^\ast,\dataset)
+  \approx \frac{1}{S}\sum_{s=1}^{S} p\bigl(y^\ast\given\xvec^\ast,\weights^{(s)}\bigr).
+\]
+The practical methods below are really just four different answers to the same
+question: \emph{where do those weight samples come from?}
+
+\section{Practical methods}
+
+\subsection{Deep Ensembles}
+
+The simplest idea works embarrassingly well: train the same network several times
+from different random initialisations (and shuffles), then average their
+predictions (Lakshminarayanan et al., 2017). The different runs land in different
+parts of the loss surface, so on familiar inputs they agree and on strange inputs
+they diverge --- which is precisely the epistemic-disagreement signal we wanted.
+It is not Bayesian by construction, but it behaves like a coarse posterior sample
+and is still one of the strongest, most reliable uncertainty baselines around. The
+only real cost is training and storing $K$ networks.
+
+\subsection{Bayes by Backprop (weight uncertainty)}
+
+Instead of a fixed weight, give \emph{every weight its own little Gaussian}, and
+learn the means and variances (Blundell et al., 2015). We posit a variational
+approximation $q(\weights\given\params)=\Normal(\boldsymbol\mu,\diag(\boldsymbol\sigma^2))$
+and fit it to the true posterior by maximising the ELBO --- equivalently,
+minimising
+\[
+  \loss(\params)
+  = \KL{q(\weights\given\params)}{p(\weights)}
+    \;-\; \E_{q(\weights\given\params)}\bigl[\log p(\dataset\given\weights)\bigr].
+\]
+The KL term pulls the weight distributions toward the prior; the data term keeps
+them explaining the training set. To backprop through the sampling step we reuse
+the reparameterisation trick from the VAE chapter:
+$\weights = \boldsymbol\mu + \boldsymbol\sigma\odot\boldsymbol\epsilon$ with
+$\boldsymbol\epsilon\sim\Normal(\zeros,\eye)$, so gradients flow into
+$\boldsymbol\mu$ and $\boldsymbol\sigma$. The price is that the network now has
+\emph{twice} the parameters (a mean and a variance per weight).
+
+\subsection{MC Dropout}
+
+Here is the cheap trick that made Bayesian deep learning practical for a lot of
+people: keep \textbf{dropout switched on at test time} and run the network several
+times (Gal \& Ghahramani, 2016). Each forward pass drops a different random set of
+units, so each pass is effectively a different sub-network --- a sample. Average
+the passes for your prediction and look at their spread for your uncertainty. The
+beautiful part is that this requires \emph{no change to the architecture or
+training} if you already use dropout; Gal showed it can be interpreted as
+approximate variational inference (and connects to Gaussian processes). It is the
+default ``free'' uncertainty estimate, though its quality depends a lot on the
+dropout rate.
+
+\subsection{Laplace / Hessian-based approximation}
+
+This one starts from the MAP solution you already trained and fits a Gaussian
+\emph{around} it. Take a second-order Taylor expansion of the log-posterior at
+$\weights_{\text{MAP}}$: the linear term vanishes (we are at an optimum) and the
+quadratic term is the Hessian, which gives a Gaussian
+\[
+  q(\weights\given\dataset)=\Normal\!\bigl(\weights_{\text{MAP}},\,\mathbf{A}^{-1}\bigr),
+  \qquad
+  \mathbf{A} = \tfrac{1}{\sigma_w^2}\eye + \tfrac{1}{\sigma_\epsilon^2}\mathbf{H},
+\]
+where $\mathbf{H}$ is the Hessian of the data-fit term and the $\eye$ piece comes
+from the prior. The covariance $\mathbf{A}^{-1}$ tells you how flat the loss is in
+each direction: \emph{flat directions are uncertain directions}. The honest catch
+is that the full Hessian is a square matrix in the number of weights, so it is
+only feasible with approximations (diagonal, Kronecker-factored, last-layer only).
+
+\begin{notebox}[title={Exam trap}]
+Don't mix up \emph{where the uncertainty lives}. Bayes-by-Backprop and the Laplace
+approximation put a distribution \textbf{over the weights}. MC Dropout and Deep
+Ensembles never write down such a distribution --- they get their samples
+\emph{implicitly}, from random masks or from re-training. And remember which
+uncertainty does what: more data shrinks \textbf{epistemic} uncertainty but leaves
+\textbf{aleatoric} noise untouched.
+\end{notebox}
+
+\section{Two connections worth knowing}
+
+\textbf{Infinite-width networks are Gaussian processes.} Neal (1994) showed that a
+single-hidden-layer network with random weights, as the width goes to infinity,
+\emph{is} a Gaussian process --- a fully Bayesian, non-parametric model with
+closed-form uncertainty. This is the same infinite-width limit that reappears in
+the theory chapter as the Neural Tangent Kernel, and it is a recurring reason GPs
+keep showing up next to deep nets.
+
+\textbf{QUAM (work at JKU).} A recent line from the institute
+(Schweighofer, Hochreiter et al., 2023) attacks the integral from a different
+angle: instead of sampling weights from the posterior at random, it actively
+\emph{searches} for ``adversarial'' models --- weight settings that the posterior
+still finds plausible but that \emph{disagree} strongly with the current
+prediction. Finding such a model is strong evidence of epistemic uncertainty, and
+this targeted search can expose under-confidence that ordinary sampling misses.
 
 
 % ==========================================================
@@ -1005,7 +2501,215 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{Graph Neural Networks}
 
-% TODO: Fill in from lecture (12.6.)
+\section{Two streams in modern ML}
+
+There are, roughly, two philosophies in deep learning today. One says: \emph{use
+fewer assumptions, more data, and let the network learn any symmetry it needs
+from examples} --- this is the world of large transformers, ConvNeXt, CLIP. The
+other says: \emph{bake the symmetry directly into the architecture}, so the model
+gets it for free and needs far less data. That second philosophy is
+\textbf{geometric deep learning}, and graph neural networks are its flagship.
+
+Why bother building symmetries in? Because, as the slides put it bluntly,
+``no generalization without inductive bias''. A plain MLP fed a flattened image
+\emph{has} to learn from scratch that a digit is still the same digit when shifted
+a few pixels --- it must discover translation invariance from data. A CNN never
+has to: the convolution is shift-equivariant by construction. Geometric deep
+learning is the program of doing this systematically, for whatever symmetry your
+data actually has.
+
+\subsection{Symmetries, groups, invariance, equivariance}
+
+A \textbf{symmetry} is a transformation that leaves some property of an object
+unchanged. The set of all symmetries of an object is closed under composition,
+contains an identity, and every element has an inverse --- which is exactly the
+definition of a \emph{group}. Translations of an image form a group; permutations
+of a set form a group; 3D rotations form the group $SO(3)$.
+
+Two ways a function can respect a group $G$ matter for us, and the difference is
+the single most important distinction in this chapter.
+
+\begin{defbox}[title={Invariance vs.\ equivariance}]
+A function $g$ is \textbf{invariant} to $G$ if transforming the input does nothing
+to the output: $g(u(\xvec)) = g(\xvec)$ for every group action $u\in G$.
+\\[2pt]
+It is \textbf{equivariant} if transforming the input transforms the output
+\emph{the same way}: $g(u(\xvec)) = u(g(\xvec))$.
+\end{defbox}
+
+Pooling (max/mean/sum) is invariant --- shuffle the inputs and the pooled value is
+unchanged. A convolutional layer is \emph{equivariant} to shifts: move the object
+and its feature-map activations move with it. This gives the recurring
+\textbf{geometric DL blueprint}: stack equivariant layers (so spatial structure is
+preserved as we go deep), interleave local pooling, and only at the very end apply
+an invariant readout to collapse to a single prediction. CNNs are one instance ---
+but the same template covers many architectures.
+
+\begin{exbox}[title={The 4G/5G: one blueprint, many architectures}]
+Different domains just mean different symmetry groups plugged into the same recipe:
+\begin{center}
+\begin{tabular}{lll}
+\textbf{Architecture} & \textbf{Domain} & \textbf{Symmetry group}\\
+CNN              & grid             & translation\\
+Spherical CNN    & sphere / $SO(3)$ & rotation $SO(3)$\\
+GNN              & graph            & permutation $\Sigma_n$\\
+Deep Sets        & set              & permutation $\Sigma_n$\\
+Transformer      & complete graph   & permutation $\Sigma_n$\\
+LSTM             & 1D grid          & time warping\\
+\end{tabular}
+\end{center}
+Note the punchline: a transformer is just a GNN on a fully-connected graph. Sets,
+graphs, and transformers all share the same symmetry --- permutation.
+\end{exbox}
+
+\section{Graphs and why their symmetry is permutation}
+
+A graph is a set of \textbf{nodes} (with feature vectors $\xvec_i$) joined by
+\textbf{edges} (optionally with their own features $\mathbf{e}_{ij}$). In ML
+notation a graph is the pair $(\mathbf{X},\mathbf{A})$: a node-feature matrix
+$\mathbf{X}\in\R^{n\times d}$ and an adjacency matrix $\mathbf{A}\in\R^{n\times n}$
+recording who connects to whom.
+
+Graphs are extremely general --- images are grid-graphs (pixels are nodes,
+neighbours are edges), time series are chain-graphs, sets are fully-connected
+graphs. The one feature that makes them special, and that dictates everything
+about the architecture, is that \textbf{there is no canonical ordering of the
+nodes}. If we relabel the nodes, we have the same graph. So any sensible model
+must be \emph{permutation equivariant} at the node level (relabel inputs $\to$
+labels of outputs permute the same way) and \emph{permutation invariant} at the
+graph level (a prediction about the whole graph must not depend on the labelling).
+
+Two prediction tasks follow naturally:
+\begin{itemize}
+  \item \textbf{Node-level} --- a label per node. E.g.\ in a social network,
+        predict where each person likes to go on holiday.
+  \item \textbf{Graph-level} --- a single label per graph. E.g.\ in drug
+        discovery, predict whether a whole molecule is toxic.
+\end{itemize}
+
+\section{The message-passing framework}
+
+Almost every GNN is an instance of one simple idea: each node repeatedly
+\emph{gathers information from its neighbours and updates itself}. Do this for a
+few rounds and information propagates across the graph.
+
+\begin{thmbox}[title={Message-passing neural network (MPNN)}]
+For node $i$ with neighbours $N(i)$, one round $t\to t{+}1$ is
+\[
+  \mathbf{m}_i^{t+1}
+    = \sum_{j\in N(i)}
+      \underbrace{\phi\bigl(\hvec_i^{t},\hvec_j^{t},\mathbf{e}_{ij}\bigr)}_{\text{message } \mathbf{m}_{ij}},
+  \qquad
+  \hvec_i^{t+1} = \psi\bigl(\hvec_i^{t},\mathbf{m}_i^{t+1}\bigr).
+\]
+The \textbf{message function} $\phi$ and the \textbf{update function} $\psi$ are
+both small MLPs. The initial state is the node feature, $\hvec_i^{0}=\xvec_i$.
+\end{thmbox}
+
+Two things make this respect the graph's symmetry automatically. The neighbour sum
+$\sum_{j\in N(i)}$ is \emph{permutation invariant}, so the order in which we list a
+node's neighbours never matters; and because every node runs the \emph{same}
+$\phi$ and $\psi$, relabelling the nodes just relabels the outputs --- exactly the
+permutation equivariance we required.
+
+For a \textbf{graph-level} prediction we still have to crush $n$ node vectors into
+one. That is the \textbf{readout}, and it must be permutation invariant, so again
+it is a sum/mean/max followed by a network:
+\[
+  \hat y = R\bigl(\{\hvec_i : i\in G\}\bigr),
+  \qquad\text{e.g.}\quad
+  \hat y = \weights\T\Bigl(\tfrac{1}{|G|}\textstyle\sum_{\nu\in G}\hvec_\nu\Bigr).
+\]
+
+\subsection{The Graph Laplacian view and the link to transformers}
+
+There is a second, ``spectral'' way to write a GNN that turns out to be the same
+thing. With degree matrix $\mathbf{D}$, the normalised \textbf{graph Laplacian} is
+$\mathbf{L} = \eye - \mathbf{D}^{-1/2}\mathbf{A}\mathbf{D}^{-1/2}$. The famous
+graph convolutional network (Kipf \& Welling, 2016) folds message and update into
+a single matrix expression
+\[
+  \mathbf{H}^{l+1}
+    = \sigma\!\bigl(\tilde{\mathbf{D}}^{-1/2}\tilde{\mathbf{A}}\tilde{\mathbf{D}}^{-1/2}\,
+      \mathbf{H}^{l}\mathbf{W}^{l}\bigr),
+\]
+where $\tilde{\mathbf{A}}=\mathbf{A}+\eye$ adds self-loops. Written this way the
+connection to transformers is obvious: it has the shape
+$\mathbf{H}^{l+1}=\mathbf{A}\,(\mathbf{H}^l\mathbf{W}^l)$, and if you let the graph
+be fully connected and \emph{learn} the entries of $\mathbf{A}$ from the data, the
+``adjacency'' becomes an \textbf{attention matrix}. CNNs (fixed local weights),
+transformers (learned attention weights), and MPNNs (learned messages) are three
+points on one spectrum of how a node mixes information from its neighbours.
+
+\subsection{Building in more than permutation: EGNN}
+
+For data like molecules in 3D, each node also has \emph{coordinates}, and we want
+the network equivariant to rotations and translations too. The E($n$)-equivariant
+GNN (Satorras et al.) achieves this with a clever trick: messages depend only on
+the \emph{squared distance} $\norm{\xvec_i^{t}-\xvec_j^{t}}^2$ (which no rotation
+or translation can change), and coordinates are updated along the
+\emph{difference vectors}:
+\[
+  \xvec_i^{t+1} = \xvec_i^{t}
+    + C\sum_{j\neq i}\bigl(\xvec_i^{t}-\xvec_j^{t}\bigr)\,\phi_1(\mathbf{m}_{ij}).
+\]
+Each layer is rotation/translation equivariant and the whole network is invariant
+--- E($n$)-equivariant by construction, no data augmentation needed.
+
+\section{What goes wrong with GNNs}
+
+Message passing is elegant but has four characteristic failure modes, all worth
+recognising:
+\begin{itemize}
+  \item \textbf{Oversmoothing} --- stack too many rounds and every node's
+        representation converges to the same vector. The graph blurs into mush.
+  \item \textbf{Oversquashing} --- a node's influence on a distant node decays
+        exponentially with their shortest-path distance, because all that
+        long-range information must be squeezed through narrow bottlenecks. This is
+        the GNN version of the vanishing-gradient problem.
+  \item \textbf{Under-reaching} --- if a task needs information from a node $k$
+        hops away but you only run fewer than $k$ message-passing steps, that
+        information simply never arrives.
+  \item \textbf{Limited expressivity} --- there are genuinely different graphs that
+        a standard GNN \emph{cannot tell apart}, no matter how it is trained.
+\end{itemize}
+
+\subsection{Expressivity: the Weisfeiler--Lehman ceiling}
+
+That last point has a precise theory. The \textbf{1-WL test} (also called colour
+refinement) is a classic algorithm for telling graphs apart: hash each node's
+features into a colour, then repeatedly re-hash each node's colour together with
+the multiset of its neighbours' colours, until the colouring stabilises. Two
+graphs with different final colour histograms are definitely not isomorphic.
+
+\begin{notebox}[title={The expressivity ceiling}]
+A standard message-passing GNN is \textbf{at most as powerful as the 1-WL test}.
+If 1-WL cannot distinguish two graphs, neither can the GNN --- so e.g.\ a 6-cycle
+and two separate triangles look identical to it. More powerful variants (k-WL)
+exist but cost more. This is the fundamental expressivity limit of MPNNs.
+\end{notebox}
+
+The \textbf{choice of aggregation function} sits right at the heart of this. With
+identical neighbour features, \emph{mean} and \emph{max} both throw away how
+\emph{many} neighbours there are, so they fail to separate graphs that differ only
+in degree --- whereas \textbf{sum} keeps the count and is the most expressive
+choice. The catch is that summing over neighbours makes activations grow with
+degree and tends to explode gradients. JKU's own fix (Schneckenreiter et al.,
+2024) is \textbf{variance-preserving aggregation} (VPA), a $1/\sqrt{N}$-scaled sum
+that keeps the expressivity of the sum while behaving like the mean for signal
+propagation --- the best of both.
+
+\section{Applications}
+
+Because ``graph'' is such a general data type, GNNs show up almost everywhere:
+chemistry and drug design (molecules are graphs), protein biology (3D structures
+as point clouds, handled by SE(3)-invariant transformers), recommender systems and
+social networks, traffic forecasting, particle physics, and more. The institute's
+own recent work fits the same mould --- VN-EGNN adds virtual nodes to an
+E(3)-equivariant GNN to find protein binding sites, Universal Physics Transformers
+scale neural operators for simulation, and diffusion models on graphs tackle
+combinatorial optimisation. The common thread is always the same: identify the
+symmetry of the data, then build it in.
 
 
 % ==========================================================
@@ -1013,7 +2717,164 @@ was driven by a small set of recurring design principles:
 % ==========================================================
 \chapter{Theory}
 
-% TODO: Fill in from lecture (19.6.)
+This final chapter steps back from specific architectures and asks the harder
+questions. \emph{Why} can neural networks represent anything at all? \emph{Why}
+can we train ones that are a hundred layers deep when naively they should suffer
+hopeless gradient problems? And \emph{why}, given that the loss surface is wildly
+non-convex, does gradient descent reliably find good solutions anyway? The answers
+are partial and sometimes hand-wavy, but they are illuminating.
+
+\section{Universal approximation}
+
+The oldest theoretical result is also the most reassuring: a neural network can
+represent essentially any function you want.
+
+\begin{thmbox}[title={Universal approximation (Hornik, Funahashi, 1989)}]
+If the activation $f$ is non-constant, bounded, monotonically increasing and
+continuous, then any continuous function $h$ on a compact set $K$ can be
+approximated arbitrarily well by a \emph{single-hidden-layer} network
+$g(\xvec;\weights)$:
+\[
+  \max_{\xvec\in K}\,\bigl|g(\xvec;\weights) - h(\xvec)\bigr| < \epsilon ,
+\]
+for any $\epsilon>0$, where the number of hidden units $H$ depends on $\epsilon$
+and $h$.
+\end{thmbox}
+
+The full proofs lean on the Hahn--Banach and Riesz representation theorems, but the
+intuition is friendlier. Take a smooth target function and write it as a Fourier
+series --- a sum of cosines. Now approximate each cosine by a \emph{staircase} of
+step functions. Each step is exactly what a single hidden unit with a step-like
+activation can produce, so a wide enough layer of such units can build up the
+staircase, hence the cosine, hence the whole function.
+
+\begin{notebox}[title={What this does and doesn't say}]
+Universal approximation says one hidden layer is \emph{enough in principle}. It
+says nothing about \emph{how wide} (the unit count can blow up), nor whether SGD
+will \emph{find} that solution. Depth and good optimisation are about efficiency
+and trainability --- which is what the rest of the chapter is really about.
+\end{notebox}
+
+\section{Why deep networks are trainable: Jacobians near 1}
+
+Recall the vanishing/exploding gradient problem. Backpropagated errors obey the
+recursion
+\[
+  \boldsymbol\delta^{[l-1]\,\mathsf{T}}
+  = \boldsymbol\delta^{[l]\,\mathsf{T}}\,
+    \underbrace{\mathbf{W}^{[l]}\diag\!\bigl(f'(\mathbf{s}^{[l-1]})\bigr)}_{\mathbf{J}},
+\]
+so at every layer the error vector is multiplied by a Jacobian $\mathbf{J}$. Iterate
+this over many layers and the error norm shrinks or grows \emph{exponentially}
+unless the Jacobian's \textbf{singular values stay close to 1}. With sigmoids the
+derivative is at most $0.25$, so gradients vanish; this is precisely why training
+deep nets used to be so hard.
+
+The architectures that broke the depth barrier all share one trick: a
+\textbf{skip connection} that makes the Jacobian look like identity-plus-something.
+\[
+  \text{ResNet: } \yvec = \xvec + F(\xvec)
+  \;\Rightarrow\;
+  \mathbf{J} = \eye + \mathbf{F},
+\]
+and Highway networks and the LSTM cell-state recursion have the same $\eye+\mathbf{F}$
+form. Why does this help? The \textbf{Ky-Fan inequalities} bound the singular
+values: $s(\eye+\mathbf{F})$ is squeezed into roughly $1\pm s(\mathbf{F})$, so they
+\emph{concentrate around 1}. Gradients neither vanish nor explode, and suddenly you
+can train through a hundred layers. This is the theoretical reason residual
+connections work.
+
+\subsection{Four features good deep nets share}
+
+Generalising from that, well-behaved deep networks tend to have four properties:
+\begin{itemize}
+  \item \textbf{Near volume conservation} --- Jacobian singular values concentrated
+        around 1 (the point just made).
+  \item \textbf{Angle preservation} --- so the signal does not collapse onto a
+        single dominant neuron.
+  \item \textbf{Faster learning in the lower layers} --- observed empirically when
+        training deep CNNs.
+  \item \textbf{Avoidance of drift} --- activations should not creep ever upward
+        layer by layer; normalisation schemes like SELU keep the mean activation
+        near 0.
+\end{itemize}
+
+Two of these have clean characterisations. From an information-theoretic angle, the
+change-of-variables theorem says that mapping $Y=h(X)$ changes the entropy by
+exactly $\Ent(Y) = \Ent(X) + \E\bigl[\log|\det \mathbf{J}_h|\bigr]$, so a layer
+\textbf{conserves volume} (and information) precisely when $|\det\mathbf{J}|=1$ ---
+the same Jacobian-determinant condition that underlies normalizing flows. And a
+mapping $\xvec\mapsto\mathbf{J}\xvec$ \textbf{preserves angles} if and only if
+\emph{all singular values of $\mathbf{J}$ are equal} (then $\mathbf{J}=\lambda\mathbf{O}$
+for an orthogonal $\mathbf{O}$, which keeps all inner products). \textbf{Drift}, by
+contrast, is the failure mode: with the wrong activation the mean activation
+creeps up layer after layer (the ``bias shift'' problem), getting worse with depth
+--- which is exactly what self-normalising activations are designed to prevent.
+
+\section{Random matrix theory}
+
+How do we reason about a freshly-initialised network, whose weights --- and hence
+Jacobians --- are random matrices? With \textbf{random matrix theory}, which
+describes the distribution of eigenvalues and singular values of large random
+matrices. Two results frame the picture:
+\begin{itemize}
+  \item \textbf{Circular law} --- the eigenvalues of a large $n\times n$ matrix with
+        iid zero-mean, unit-variance entries (scaled by $1/\sqrt n$) fill the unit
+        disk uniformly as $n\to\infty$.
+  \item \textbf{Marchenko--Pastur} (quarter-circular) law --- the \emph{singular}
+        values of a random rectangular matrix follow a known density on $[0,2]$.
+\end{itemize}
+These let us predict how gradients flow through a random network before any
+training, and motivate initialisation schemes that put the singular values where
+we want them (near 1). The usual tools are the \emph{method of moments} (relate
+$\E[\tr(\mathbf{X}^{2k})]$ to the eigenvalue distribution) and the \emph{Stieltjes
+transform} of the empirical spectral density.
+
+\section{The loss surface}
+
+The loss of a deep network is non-convex with astronomically many critical points,
+so it is genuinely surprising that gradient descent works. Two complementary
+analyses explain why.
+
+The first is statistical-physics flavoured. A ReLU network, for a fixed input, is
+a \emph{polynomial} in its weight matrices (degree equal to the number of layers),
+and under some assumptions (weights on a sphere) it can be modelled as a
+\textbf{spherical spin glass}. In that model critical points correspond to energy
+levels, and crucially \emph{high-energy (bad) critical points are exponentially
+unlikely} --- most of the local minima you actually encounter are good, and sit at
+roughly the same low loss.
+
+The second result makes this exact for the linear case.
+
+\begin{thmbox}[title={Loss surface of deep linear networks (Kawaguchi, 2016)}]
+For a deep network with $L\ge 2$ layers, $\hat\yvec = \mathbf{W}^{[L]}\cdots\mathbf{W}^{[1]}\xvec$,
+the squared-error loss surface has:
+\begin{itemize}
+  \item the objective is \emph{non-convex and non-concave};
+  \item \emph{every local minimum is a global minimum};
+  \item every critical point that is not a global minimum is a \emph{saddle point};
+  \item under a rank condition on the product of upper layers, every such saddle
+        has a direction of negative curvature --- so gradient descent can escape it.
+\end{itemize}
+\end{thmbox}
+
+The takeaway is encouraging: there are no \emph{bad local minima} to get trapped
+in, only saddle points, and those have escape routes. (And finding the exact
+global minimum is not even desirable in practice --- it would mean overfitting the
+training set.)
+
+\section{Outlook}
+
+Several deeper topics were named but left for further study: \textbf{flat minima
+and the Fokker--Planck view of SGD} (treating SGD as noisy diffusion that prefers
+wide, flat basins, which tend to generalise better), the \textbf{Neural Tangent
+Kernel} (the infinite-width limit where training becomes kernel regression ---
+the same limit that turns networks into the Gaussian processes from the Bayesian
+chapter), and \textbf{neural ODEs} (treating a residual network as a continuous-time
+dynamical system). And beyond pure theory, the field keeps expanding into few- and
+zero-shot learning, meta-learning, domain adaptation, adversarial robustness,
+self-supervised and contrastive learning, energy-based models, and more --- the map
+is still being drawn.
 
 
 \end{document}

@@ -1,0 +1,640 @@
+% ==========================================================
+%  EXAM QUESTIONS — AI IN LIFE SCIENCES
+%  Article class, shared visual language with summary.tex.
+% ==========================================================
+
+\documentclass[11pt,oneside]{article}
+
+\usepackage[
+  a4paper,
+  top=2.4cm,
+  bottom=2.1cm,
+  left=2.3cm,
+  right=2.3cm,
+  headheight=15pt
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{enumitem}
+\usepackage{booktabs,array,multicol,longtable}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+
+% ── Colors ───────────────────────────────────────────────
+% Shared accent with summary.tex — do not change.
+\definecolor{accent}{HTML}{1B3A5C}
+\definecolor{q@frame}{HTML}{1A5276}
+\definecolor{q@bg}{HTML}{F6FAFD}
+\definecolor{key@frame}{HTML}{1E8449}
+\definecolor{key@bg}{HTML}{F4FBF6}
+\definecolor{note@frame}{HTML}{9A6A00}
+\definecolor{note@bg}{HTML}{FEF9E7}
+
+% ── Box global style ─────────────────────────────────────
+\tcbset{
+  enhanced,
+  breakable,
+  arc=2.5mm,
+  boxrule=0.5pt,
+  left=4.5mm,
+  right=4mm,
+  top=2.5mm,
+  bottom=2.5mm,
+  fonttitle=\bfseries\small,
+  sharp corners=west,
+  parbox=false
+}
+
+% Question box (blue) — one per exam question.
+\newtcolorbox{qbox}[1][]{
+  colback=q@bg,
+  colframe=q@frame,
+  borderline west={3.5pt}{0pt}{q@frame},
+  title={#1}
+}
+
+% Key insight box (green) — answer hints, key results.
+\newtcolorbox{keybox}[1][]{
+  colback=key@bg,
+  colframe=key@frame,
+  borderline west={3.5pt}{0pt}{key@frame},
+  title={#1}
+}
+
+% Organizational note box (amber) — structural remarks only.
+\newtcolorbox{notebox}[1][]{
+  colback=note@bg,
+  colframe=note@frame,
+  borderline west={3.5pt}{0pt}{note@frame},
+  title={#1}
+}
+
+% ── Section headings ─────────────────────────────────────
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{accent}}
+  {}{0em}{}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.2ex plus 1ex minus .2ex}{1.8ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {}{0em}{}
+\titlespacing*{\subsection}{0pt}{2.2ex plus 1ex minus .2ex}{1.0ex plus .2ex}
+
+% ── Header & footer ──────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}Old Exam Questions — \coursetitle}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Document metadata ─────────────────────────────────────
+\newcommand{\coursetitle}{AI in Life Sciences}
+
+% ── Question counter & macros ────────────────────────────
+\newcounter{question}
+\newcommand{\questiontitle}[1]{%
+  \stepcounter{question}\begin{qbox}[Question \thequestion: #1]}
+\newcommand{\closequestion}{\end{qbox}}
+
+% Mark questions that appeared on multiple exams.
+\newcommand{\repeatnote}{\textit{\color{gray!70}Asked multiple times.}}
+
+% Multiple-choice checkbox bullet.
+\newcommand{\choice}{\item[$\square$] }
+
+% Fill-in answer line. Usage: \answerline{3cm}
+\newcommand{\answerline}[1]{\makebox[#1]{\hrulefill}}
+
+% Blank working area — dashed-border box for student calculations.
+\newcommand{\workingspace}[1]{%
+  \par\vspace{2pt}%
+  \begin{tcolorbox}[
+    enhanced,
+    breakable=false,
+    colback=white,
+    colframe=gray!40,
+    boxrule=0.45pt,
+    arc=0pt,
+    sharp corners,
+    height=#1,
+    left=3mm, right=3mm, top=3mm, bottom=3mm,
+    frame style={dashed}
+  ]%
+  \end{tcolorbox}%
+  \vspace{2pt}%
+}
+
+% ── Math macros (minimal subset for exam questions) ──────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1\,\|\,#2\right)}
+\newcommand{\dd}{\,\mathrm{d}}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+% ── Title page ───────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.4cm}
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}\par
+  \vspace{0.65cm}
+  {\fontsize{26}{32}\selectfont\bfseries\color{accent}Old Exam Questions\\[2pt] \coursetitle\par}
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}\par
+  \vspace{0.55cm}
+  {\large Stefan Eder\par}
+  \vspace{0.15cm}
+  {\small\color{gray!70}\today\par}
+\end{center}
+
+\vspace{0.9cm}
+\begin{notebox}[How this file is organized]
+Questions are collected from the \textbf{SS24} exam (25 June 2024). All items are
+\emph{multiple-select} --- the phrasing ``which of the following is/are true''
+means \textbf{one or more} options can be correct, and the answer key lists every
+correct option. Questions are grouped by topic rather than in their original
+random exam order; the wording was lightly normalised where the export was messy,
+but the statements and answer choices are kept intact. The full answer key is at
+the end --- the question boxes themselves are intentionally left blank so the file
+doubles as a practice set.
+\end{notebox}
+
+\tableofcontents
+\newpage
+
+
+% ==========================================================
+%  SECTION 1 — Drug Discovery, Molecules & Representations
+% ==========================================================
+\section{Drug Discovery, Molecules \& Representations}
+
+\questiontitle{SMILES strings}
+Which of the following statements about SMILES is/are correct?
+\begin{itemize}[leftmargin=1.8em]
+  \choice SMILES stands for \emph{Simplified Molecular Input Line Entry System}.
+  \choice SMILES strings represent molecules in a linear sequence of characters.
+  \choice SMILES cannot be converted into a molecular graph.
+  \choice SMILES is always unique for each molecule, ensuring no two different molecules share the same SMILES.
+\end{itemize}
+\closequestion
+
+\questiontitle{Reading a SMILES string}
+Given the molecule \emph{pyruvic acid} (2-oxopropanoic acid), whose condensed
+structure is a methyl group, then a ketone carbonyl, then a carboxylic acid
+($\text{CH}_3\text{--C}(\text{=O})\text{--C}(\text{=O})\text{--OH}$). Which of the
+following SMILES strings encode this molecule?
+\begin{itemize}[leftmargin=1.8em]
+  \choice \texttt{O=C(C(=O)O)C}
+  \choice \texttt{CC(=O)C(=O)O}
+  \choice \texttt{CCCOOO}
+  \choice \texttt{OCCOO}
+\end{itemize}
+\closequestion
+
+\questiontitle{Molecular fingerprints}
+Which of the following statements about molecular fingerprints is/are correct?
+\begin{itemize}[leftmargin=1.8em]
+  \choice A unique molecular graph can be constructed from them.
+  \choice They are binary or numerical representations of molecular structures.
+  \choice They are used for similarity searching and machine learning tasks.
+  \choice They provide a 3D representation of molecules.
+\end{itemize}
+\closequestion
+
+\questiontitle{Bioassays}
+Which of the following statements about bioassays is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice They can be used to measure the biological response or function elicited by a substance.
+  \choice They typically test the substance at various concentrations.
+  \choice They are wet-lab procedures to acquire knowledge of a compound in a biological context.
+  \choice They are typically tested \emph{in vitro}, i.e.\ in a living organism.
+\end{itemize}
+\closequestion
+
+\questiontitle{ADME properties}
+Which of the following statements about ADME (Absorption, Distribution,
+Metabolism, and Excretion) properties is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Lipinski's rule of five can be used as a proxy for ADME properties.
+  \choice Good ADME properties guarantee that a compound will be an effective drug.
+  \choice ADME properties such as clearance are often difficult to model.
+  \choice ADME properties are critical in determining the pharmacokinetics of a drug.
+\end{itemize}
+\closequestion
+
+\questiontitle{Characteristics of QSAR / bioactivity data}
+Which of the following statements regarding the characteristics of QSAR /
+bioactivity data is/are accurate?
+\begin{itemize}[leftmargin=1.8em]
+  \choice QSAR datasets usually have data points in the order of thousands or millions.
+  \choice QSAR datasets typically have a balanced distribution of active and inactive compounds.
+  \choice QSAR datasets often contain series of structurally related compounds.
+  \choice QSAR data often includes noise due to biological variability and experimental inconsistencies.
+\end{itemize}
+\closequestion
+
+\questiontitle{Applications of QSAR modeling}
+Which of the following applications is/are relevant for QSAR modeling?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Creating 3D protein structure models.
+  \choice Identifying potential drug candidates.
+  \choice Predicting the toxicity of new chemical compounds.
+  \choice Mapping the genome sequences of organisms.
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 2 — Virtual Screening & QSAR Modeling
+% ==========================================================
+\section{Virtual Screening \& QSAR Modeling}
+
+\questiontitle{Ligand-based virtual screening}
+Which of the following statements about ligand-based virtual screening is/are correct?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Molecular fingerprints are commonly used in ligand-based virtual screening.
+  \choice Ligand-based virtual screening is not suitable for predicting the bioactivity of unknown compounds.
+  \choice Ligand-based virtual screening requires a 3D structure of the target protein.
+  \choice Ligand-based virtual screening typically only considers bioactivity predictions to select compounds.
+\end{itemize}
+\closequestion
+
+\questiontitle{Data splits in QSAR model evaluation}
+Which of the following statements about data splits in QSAR model evaluation is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Temporal splits help evaluate the model's performance on future, unseen data by simulating real-world data acquisition over time.
+  \choice Generally, a random split is the best method for evaluating QSAR models as it eliminates biases.
+  \choice Cross-validation is rarely used in the evaluation of QSAR due to computational cost.
+  \choice Cluster splits group similar compounds together, ensuring that structurally similar compounds are not both in the training and test sets.
+\end{itemize}
+\closequestion
+
+\questiontitle{Early-recognition metrics in virtual screening}
+In virtual screening, the quality of the top-ranked predictions is crucial for
+efficient drug discovery. Which of the following methods are specifically adapted
+to prioritise high-quality early hits in the screening process?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Precision-Recall Curve.
+  \choice BEDROC (Boltzmann-Enhanced Discrimination of ROC).
+  \choice Average Precision (AP).
+  \choice Enrichment Factor (EF).
+\end{itemize}
+\closequestion
+
+\questiontitle{Target identification / deconvolution}
+Which of the following statements about target identification / deconvolution is/are correct?
+\begin{itemize}[leftmargin=1.8em]
+  \choice For a given molecule, it consists of identifying to which protein it will most likely bind if multiple are present simultaneously.
+  \choice Multi-class classification can be used for it.
+  \choice Multi-task classification can be used for it.
+  \choice For a given molecule, it consists of identifying all the proteins it will bind if multiple are present simultaneously.
+\end{itemize}
+\closequestion
+
+\questiontitle{Drug synergy and antagonism}
+Which of the following statements about synergy / antagonism is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Drug synergy occurs when the combined effect of two or more drugs is greater than the sum of their individual effects.
+  \choice The Loewe additivity model is commonly used to assess drug synergy.
+  \choice Antagonistic effects occur when the combined effect of two or more drugs is greater than the sum of their individual effects.
+  \choice Drug synergy / antagonism evaluation is only applicable to chemically similar drugs.
+\end{itemize}
+\closequestion
+
+\questiontitle{Random Forests vs.\ Graph Neural Networks}
+Which of the following statements about the use of Random Forest (RF) and Graph
+Neural Networks (GNNs) is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice GNNs are inherently better for QSAR modeling because they naturally capture the graph-like structure of molecules, leading to more accurate predictions in all cases.
+  \choice RF models are less prone to overfitting compared to GNNs, making them a more reliable choice for datasets with a large number of features but limited samples.
+  \choice RF models are typically more interpretable than GNNs, making it easier to understand the contribution of individual molecular features to the model's predictions.
+  \choice GNNs are less sensitive to the quality and variability of the input data compared to RFs, making them more consistent in performance across different datasets.
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 3 — Graph Neural Networks & Advanced Methods
+% ==========================================================
+\section{Graph Neural Networks \& Advanced Methods}
+
+\questiontitle{Molecular graphs and graph neural networks}
+Which of the following statements about molecular graphs and graph neural networks is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice A molecular graph can be represented by two matrices: one storing the node features and another storing the edges between the nodes.
+  \choice Node features can include atomic number, hybridization state, and formal charge.
+  \choice In a GNN only the node features are used to make the final predictions.
+  \choice The information about the bond type (e.g.\ single bond, double bond) cannot be included in a GNN.
+\end{itemize}
+\closequestion
+
+\questiontitle{Limitations of GNNs in molecular modeling}
+Which of the following statements about the limitations of GNNs in the context of
+molecular modeling is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice GNNs are incapable of predicting any molecular properties accurately.
+  \choice GNNs can have difficulty capturing long-range interactions between atoms.
+  \choice GNNs may struggle with very large and complex molecular graphs.
+  \choice GNNs require a significant amount of computational resources for training.
+\end{itemize}
+\closequestion
+
+\questiontitle{Multi-modal contrastive learning}
+Which of the following statements about multi-modal contrastive learning models is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Multi-modal contrastive learning encodes multiple modalities (e.g.\ molecules and proteins) into a shared latent space.
+  \choice Multi-modal contrastive learning is a self-supervised learning technique.
+  \choice Multi-modal contrastive learning concentrates (latent) representations from multiple modalities (e.g.\ molecules and proteins) to make predictions.
+  \choice Multi-modal contrastive learning is an unsupervised learning technique.
+\end{itemize}
+\closequestion
+
+\questiontitle{Multiple instance learning (MIL)}
+Which of the following statements about multiple instance learning (MIL) is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice MIL involves training on sets or bags of instances where each instance is individually labelled.
+  \choice MIL requires the set/bag size to be fixed.
+  \choice MIL involves training on sets or bags of instances that have a single label.
+  \choice MIL models should be invariant to the permutation of instances.
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 4 — Generative Models & Chemical Synthesis
+% ==========================================================
+\section{Generative Models \& Chemical Synthesis}
+
+\questiontitle{Generative models for small molecules}
+Which of the following statements about generative models for small molecules is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice As the syntax of SMILES strings is complicated and with long dependencies, generators of SMILES representations will produce less than 10\% valid SMILES strings.
+  \choice Generative models are used to explore the known chemical space of synthesized molecules.
+  \choice Generative adversarial networks cannot be used to generate small molecules.
+  \choice Autoregressive models can be used to generate SMILES representations of small molecules.
+\end{itemize}
+\closequestion
+
+\questiontitle{Goal-directed molecule generation}
+Which of the following statements about goal-directed molecule generation is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Goal-directed generation focuses only on replicating existing molecular structures with desired properties.
+  \choice Goal-directed generation aims to create molecules with similar properties to the training set.
+  \choice Reinforcement learning can be used to optimize goal-directed molecule generation.
+  \choice Goal-directed generation aims to create molecules with specific desired properties.
+\end{itemize}
+\closequestion
+
+\questiontitle{Fr\'echet ChemNet Distance (FCD)}
+Which of the following statements about Fr\'echet ChemNet Distance (FCD) and its
+calculation is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice FCD measures the distance between individual atoms of molecules.
+  \choice FCD is calculated by comparing the means and covariances of the latent representations of molecules.
+  \choice FCD is calculated directly on the raw molecular structures without any transformations.
+  \choice FCD is a metric used to compare the distribution of generated molecules to that of real molecules.
+\end{itemize}
+\closequestion
+
+\questiontitle{AI for chemical reactions}
+Which of the following statements about AI for chemical reactions is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Some methods rely on so-called reaction templates, which are transformation rules for molecules.
+  \choice Deep learning methods that predict outcomes of chemical reactions can be trained on databases containing known chemical reactions.
+  \choice Transformer architectures have been used to predict outcomes of chemical reactions.
+  \choice Predicting chemical reactions with machine learning requires data from quantum mechanical calculations due to bond changes and electron movements.
+\end{itemize}
+\closequestion
+
+\questiontitle{Synthesis planning}
+Which of the following statements about synthesis planning is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Synthesis planning involves designing a sequence of chemical reactions to produce a target compound.
+  \choice Retrosynthetic analysis is a key technique used in synthesis planning to break down complex molecules into simpler starting materials.
+  \choice Synthesis planning has been made trivial by modern deep learning methods.
+  \choice Synthesis planning involves only selecting the reactants.
+\end{itemize}
+\closequestion
+
+\questiontitle{Retrosynthesis as a reinforcement-learning game}
+Multi-step retrosynthesis can be formulated as a game that can be played with
+reinforcement learning. Which of the following statements about the
+``retrosynthesis game'' is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The actions in the retrosynthesis ``game'' involve selecting reactants for the reactions.
+  \choice The state in the retrosynthesis ``game'' refers to the set of available building blocks.
+  \choice The environment in the retrosynthesis ``game'' performs the reaction and returns new molecules.
+  \choice The reward in the retrosynthesis ``game'' is obtained when the product is successfully synthesized from the building blocks.
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 5 — Medical Data & Imaging
+% ==========================================================
+\section{Medical Data \& Imaging}
+
+\questiontitle{Tabular medical data: types and missing values}
+Assume we are given a table of patient medical records with three columns:
+``smoking status'' (one of three string values: non-smoker, former smoker,
+current smoker), ``cholesterol level'' (floating-point measurements in mg/dL), and
+``diabetes risk score'' (integer values in $[0,10]$ indicating the likelihood of
+developing diabetes). Which statements are correct?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Missing values in ``cholesterol level'' can be replaced by the column's median value to handle skewness.
+  \choice Column ``smoking status'' is continuous, as it captures the various smoking habits of patients.
+  \choice ``cholesterol level'' is ordinal since cholesterol measurements can be arranged in increasing order.
+  \choice Missing values in ``smoker status'' can be replaced by the column's mean value to handle skewness.
+\end{itemize}
+\closequestion
+
+\questiontitle{Batch effects in medical data}
+Which of the following statements about batch effects in medical data is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Ignoring batch effects can lead to models that distinguish between batches rather than the actual biological conditions.
+  \choice Batch effects can be eliminated by simply increasing the sample size.
+  \choice Batch effects can create artificial differences in data due to variations in experimental conditions.
+  \choice Batch effects are usually beneficial as they introduce necessary variability into the data.
+\end{itemize}
+\closequestion
+
+\questiontitle{Domain shifts in medical and healthcare data}
+Data from the medical and healthcare sectors is often affected by domain shifts.
+Using the lecture notation ($y$ = disease status, e.g.\ ``healthy''/``diseased'';
+$x$ = patient features, e.g.\ age, blood parameters, heart rate), which of the
+following statements about domain shifts are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice If a machine learning model has a high predictive quality on a randomly drawn validation set, this means it will automatically adjust to domain shifts and maintain predictive quality over time.
+  \choice The distribution of the patient features $x$ with distribution $p(x)$ is never affected by domain shifts.
+  \choice During disease waves of infectious diseases (such as COVID-19), the prevalence of a disease and thus the probability of observing this phenotype $p(y)$ changes.
+  \choice Assume that the diagnostic process to determine the disease status $y$ is changed, e.g.\ an antigen test is replaced by a PCR test. This represents a concept shift $p(y\mid x)$.
+\end{itemize}
+\closequestion
+
+\questiontitle{Medical imaging modalities}
+Which of the following statements about medical imaging modalities is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Computed Tomography (CT) scans use ultrasound images to generate images of the body.
+  \choice X-rays are used to differentiate between tissues of varying densities, such as bone and soft tissue.
+  \choice Magnetic Resonance Imaging (MRI) provides detailed images of internal structures by using strong magnetic fields and radio waves.
+  \choice Optical coherence tomography imaging uses multiple X-rays to create images of organs and tissues.
+\end{itemize}
+\closequestion
+
+\questiontitle{Most common task in medical imaging}
+Which of the following is the most common task in medical imaging compared to
+typical vision tasks?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Image generation.
+  \choice Classification.
+  \choice Segmentation.
+  \choice Object detection.
+\end{itemize}
+\closequestion
+
+\questiontitle{The U-Net architecture}
+Which of the following statements about the U-Net architecture are correct?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The U-Net was the first vision model where the encoder is based on self-attention instead of convolutions.
+  \choice The U-Net architecture uses a symmetrical encoder and decoder.
+  \choice The U-Net has been specifically developed for the object detection task.
+  \choice To aid the decoding process, feature maps from the encoder are concatenated with feature maps of the corresponding up-sampling level of the decoder.
+\end{itemize}
+\closequestion
+
+\questiontitle{The ``Clever Hans'' effect}
+What is the ``Clever Hans'' effect in the context of AI and medical imaging?
+\begin{itemize}[leftmargin=1.8em]
+  \choice A bias occurring when enhancing the resolution of low-quality medical images.
+  \choice The situation where an AI model appears to perform well but is actually relying on irrelevant features or artifacts in the data.
+  \choice The phenomenon where an AI system incorrectly predicts outcomes based on biased training data.
+  \choice The phenomenon where data augmentation is used to improve the robustness of AI models in medical imaging.
+\end{itemize}
+\closequestion
+
+\questiontitle{Explainable AI and interpretability in medical imaging}
+Which of the following statements about explainable AI and interpretability in
+medical imaging is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Gradient integration utilizes the propagation of a relevance value back to the input layers, layer by layer, to estimate the relevance of each input feature.
+  \choice Explainable AI techniques, such as Grad-CAM, help visualize which parts of a medical image are most important for a model's prediction.
+  \choice Occlusion analysis involves removing patches of the training data images to improve the model's interpretability.
+  \choice Counterfactual explanations in medical imaging involve generating alternative images to show what changes would have been needed for a different diagnosis.
+\end{itemize}
+\closequestion
+
+\questiontitle{AlphaFold 2}
+Which of the following statements about AlphaFold 2 are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice AlphaFold 2 incorporates quantum mechanical calculations to improve the accuracy of its predictions.
+  \choice AlphaFold 2 incorporates multiple sequence alignments and homologous protein structures to improve the accuracy of its predictions.
+  \choice AlphaFold 2 is a deep learning model designed to predict the three-dimensional structure of proteins from their amino acid sequences.
+  \choice AlphaFold 2 uses a convolutional neural network architecture.
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  SECTION 6 — Biological Sequences
+% ==========================================================
+\section{Biological Sequences}
+
+\questiontitle{Composition of biological sequences}
+Which of the following statements about the composition of biological sequences is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Protein sequences are composed of chains of amino acids linked by peptide bonds.
+  \choice DNA sequences are composed of nucleic acids.
+  \choice Biological sequences do not follow any specific patterns or rules in their composition.
+  \choice RNA sequences are composed of lipids.
+\end{itemize}
+\closequestion
+
+\questiontitle{Deep learning for biological sequences}
+Which of the following statements about deep learning techniques used for analyzing
+biological sequences is/are true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Feature extraction from biological sequences can be used to identify motifs, which are recurring patterns or elements within the sequences.
+  \choice One-hot encoding is commonly used to prepare biological sequences as input for deep learning models.
+  \choice Deep learning techniques can be applied to tasks such as classification, segmentation, and generative modeling of biological sequences.
+  \choice 1D-Convolutions, Recurrent Neural Networks (RNNs), Long Short-Term Memory networks (LSTMs), and Transformers are all used to analyze biological sequences.
+\end{itemize}
+\closequestion
+
+
+% ==========================================================
+%  ANSWER KEY
+% ==========================================================
+\newpage
+\section*{Answer Key}
+\addcontentsline{toc}{section}{Answer Key}
+
+\begin{keybox}[Note on multiple-select scoring]
+Every question is multiple-select: each listed letter below is a correct option,
+and any option \emph{not} listed is incorrect. On the original Moodle exam, each
+correct tick added points and each incorrect tick subtracted them.
+\end{keybox}
+
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=4pt]
+  % --- Section 1 ---
+  \item \textbf{A, B} --- SMILES is the \emph{Simplified Molecular Input Line Entry System} and is a linear character sequence. It \emph{can} be converted to a graph, and is \emph{not} unique (one molecule has many valid SMILES).
+  \item \textbf{A, B} --- both \texttt{O=C(C(=O)O)C} and \texttt{CC(=O)C(=O)O} encode CH\textsubscript{3}--CO--COOH. \texttt{CCCOOO} and \texttt{OCCOO} do not.
+  \item \textbf{B, C} --- fingerprints are binary/numerical descriptors used for similarity search and ML. They are lossy (no unique graph reconstruction) and carry no 3D information.
+  \item \textbf{A, B, C} --- bioassays measure a biological response, test at various concentrations (dose--response), and are wet-lab procedures. ``\emph{in vitro} = in a living organism'' is false (\emph{in vivo} is the living organism).
+  \item \textbf{A, C, D} --- Lipinski's Ro5 is an ADME proxy, clearance is hard to model, and ADME is central to pharmacokinetics. Good ADME does \emph{not} guarantee an effective drug.
+  \item \textbf{C, D} --- QSAR data often comes in structurally related series and is noisy. It is usually \emph{small} (not thousands/millions) and \emph{imbalanced} (not balanced).
+  \item \textbf{B, C} --- QSAR predicts drug candidates and toxicity. 3D protein modeling and genome mapping are different problems.
+  % --- Section 2 ---
+  \item \textbf{A} --- fingerprints are standard in ligand-based VS. It \emph{is} suitable for unknown compounds, does \emph{not} need the protein structure, and considers more than bioactivity (ADME, filters).
+  \item \textbf{A, D} --- temporal splits simulate real-world acquisition; cluster splits keep structurally similar compounds out of both sets. Random splits do \emph{not} eliminate bias, and CV \emph{is} used.
+  \item \textbf{B, D} --- BEDROC and the Enrichment Factor reward early recognition. Precision-Recall curve and Average Precision are general metrics, not early-recognition-specific.
+  \item \textbf{A, B} --- target identification finds the \emph{most likely} target via multi-class classification. ``All proteins'' and ``multi-task'' describe target \emph{prediction}, not identification.
+  \item \textbf{A, B} --- synergy is ``greater than the sum''; the Loewe additivity model assesses it. Antagonism is \emph{less} than the sum, and synergy applies to any drug pair (not only similar ones).
+  \item \textbf{B, C} --- RF overfits less and is more interpretable than GNNs. GNNs are \emph{not} universally better and are \emph{not} less sensitive to data quality.
+  % --- Section 3 ---
+  \item \textbf{A, B} --- a molecular graph is a node-feature matrix plus an edge/adjacency matrix; node features include atomic number, hybridization, charge. GNNs \emph{do} use edge information, and bond type \emph{can} be encoded.
+  \item \textbf{B, C, D} --- GNNs struggle with long-range interactions, very large graphs, and are compute-heavy. They are \emph{not} ``incapable of predicting any property accurately''.
+  \item \textbf{A, B} --- multi-modal contrastive learning maps modalities into a shared latent space and is \emph{self-supervised}. It does not ``concentrate representations to make predictions'', and is \emph{not} unsupervised.
+  \item \textbf{C, D} --- a MIL bag has a \emph{single} label and the model must be permutation-invariant. Instances are \emph{not} individually labelled, and bag size need \emph{not} be fixed.
+  % --- Section 4 ---
+  \item \textbf{D} --- autoregressive models can generate SMILES. Modern generators produce mostly valid SMILES, generative models explore \emph{novel} space, and GANs \emph{can} generate molecules.
+  \item \textbf{C, D} --- goal-directed generation targets \emph{specific} desired properties and can be optimised with RL. Replicating existing structures / matching the training distribution describes \emph{distribution learning}.
+  \item \textbf{B, D} --- FCD compares means and covariances of \emph{latent} (ChemNet) representations and measures distance between \emph{distributions} of generated vs.\ real molecules --- not individual atoms, not raw structures.
+  \item \textbf{A, B, C} --- reaction templates, training on known-reaction databases, and transformer architectures are all used. QM data is \emph{not} required.
+  \item \textbf{A, B} --- synthesis planning designs a reaction sequence and uses retrosynthetic analysis. It is \emph{not} trivial, and involves more than just picking reactants.
+  \item \textbf{A, C, D} --- per the lecture's framing the \emph{action} is selecting reactants, the \emph{environment} applies the reaction and returns new molecules, and the \emph{reward} comes when the current set are all available building blocks. Only the \emph{state} option is wrong: the state is the \emph{current set of molecules} to be made, not the set of available building blocks.
+  % --- Section 5 ---
+  \item \textbf{A} --- cholesterol is numeric, so the \emph{median} handles skewed missing values. Smoking status is categorical (not continuous/mean-imputable), and cholesterol is continuous, not merely ordinal.
+  \item \textbf{A, C} --- ignored batch effects make models separate batches instead of biology, and they create artificial differences. They are \emph{not} removed by more samples and are \emph{not} beneficial.
+  \item \textbf{C, D} --- changing prevalence is a label/prior shift $p(y)$; changing the diagnostic procedure is a concept shift $p(y\mid x)$. Good validation accuracy does \emph{not} auto-adapt, and $p(x)$ \emph{can} shift.
+  \item \textbf{B, C} --- X-rays distinguish tissue densities; MRI uses magnetic fields and radio waves. CT uses X-rays (not ultrasound), and OCT uses light (not X-rays).
+  \item \textbf{B, C} --- classification and segmentation are the dominant medical-imaging tasks (segmentation especially, vs.\ typical vision tasks).
+  \item \textbf{B, D} --- U-Net has a symmetric encoder/decoder with skip connections (encoder feature maps concatenated into the decoder). It is convolutional (not attention-based) and was built for \emph{segmentation}, not detection.
+  \item \textbf{B} --- the Clever Hans effect is a model that \emph{looks} good but relies on irrelevant features/artifacts (shortcut learning).
+  \item \textbf{B, D} --- Grad-CAM highlights important image regions; counterfactuals show what change would flip the diagnosis. The first option mislabels LRP as ``gradient integration'', and occlusion perturbs \emph{input}, not training data.
+  \item \textbf{B, C} --- AlphaFold~2 uses multiple sequence alignments + homologous structures to predict 3D structure from sequence. It uses an attention-based (Evoformer) architecture, \emph{not} a CNN, and no QM calculations.
+  % --- Section 6 ---
+  \item \textbf{A, B} --- proteins = amino acids via peptide bonds; DNA = nucleic acids. Sequences \emph{do} follow rules, and RNA is nucleic acid, not lipid.
+  \item \textbf{A, B, C, D} --- all true: motif/feature extraction, one-hot input encoding, classification/segmentation/generation tasks, and 1D-CNN / RNN / LSTM / Transformer architectures.
+\end{enumerate}
+
+
+\end{document}

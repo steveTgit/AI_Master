@@ -27,7 +27,7 @@ The summaries are written in a consistent visual style: one accent color, typed 
 | [AI in Life Sciences](courses/ai-in-life-sciences/) | [PDF](courses/ai-in-life-sciences/summary.pdf) | — | draft |
 | [Computer Vision](courses/computer-vision/) | [PDF](courses/computer-vision/summary.pdf) | [PDF](courses/computer-vision/exams.pdf) | reviewed |
 | [Deep Reinforcement Learning](courses/deep-reinforcement-learning/) | [PDF](courses/deep-reinforcement-learning/summary.pdf) | — | draft |
-| [DL Architectures & Generative Techniques](courses/dl-architectures-generative-techniques/) | [PDF](courses/dl-architectures-generative-techniques/summary.pdf) | — | draft |
+| [DL Architectures & Generative Techniques](courses/dl-architectures-generative-techniques/) | [PDF](courses/dl-architectures-generative-techniques/summary.pdf) | [PDF](courses/dl-architectures-generative-techniques/exams.pdf) | draft |
 | [Genome Analysis & Transcriptomics](courses/genome-analysis-transcriptomics/) | [PDF](courses/genome-analysis-transcriptomics/summary.pdf) | — | draft |
 | [ML Supervised Techniques](courses/ml-supervised-techniques/) | [PDF](courses/ml-supervised-techniques/summary.pdf) | [PDF](courses/ml-supervised-techniques/exams.pdf) | draft |
 | [ML Unsupervised Techniques](courses/ml-unsupervised-techniques/) | [PDF](courses/ml-unsupervised-techniques/summary.pdf) | [PDF](courses/ml-unsupervised-techniques/exams.pdf) | usable |
