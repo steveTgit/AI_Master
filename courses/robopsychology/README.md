@@ -1,15 +1,15 @@
 # Robopsychology
 
-Covers the intersection of robotics and psychology: human-robot interaction, social robots, trust, and related topics.
+Covers the intersection of robotics and psychology: user needs and technology acceptance, AI literacy, anthropomorphism and social AI, trust in AI and automation, and research-methods essentials.
 
-**Status:** draft — summary in early stages
-**Missing:** most content; no exam question collection
+**Status:** reviewed
+**Note:** old exam questions are included as the final chapter of the summary, so there is no separate `exams.tex`.
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `summary.pdf` | Lecture summary (early draft, compiled) |
+| `summary.pdf` | Complete lecture summary (7 chapters, incl. an Old Exam Questions chapter) |
 | `summary.tex` | LaTeX source |
 | `figures/` | Figure directory |
 

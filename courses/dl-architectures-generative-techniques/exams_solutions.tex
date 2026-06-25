@@ -1,0 +1,1003 @@
+% ==========================================================
+%  OLD EXAM QUESTIONS — DL Architectures & Generative Techniques
+%  (WORKED SOLUTIONS)
+%  Companion to exams.tex: every question is followed
+%  immediately by a green answer box. For multiple-choice,
+%  correct options are marked with a green check, incorrect
+%  ones with a red cross, each with a short justification
+%  (incl. why tricky near-miss options are wrong). For
+%  calculations the working is shown; wild distractors that
+%  only exist to catch guessers get no explanation.
+%
+%  NOTE: exams.tex stays the blank practice set. This file is
+%  the solutions variant — do not merge the two.
+% ==========================================================
+
+\documentclass[11pt,oneside]{article}
+
+\usepackage[
+  a4paper,
+  top=2.4cm,
+  bottom=2.1cm,
+  left=2.3cm,
+  right=2.3cm,
+  headheight=15pt
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{enumitem}
+\usepackage{booktabs,array,multicol,longtable}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\arraycolsep}{2.5pt}   % tighten matrices in answer options
+\setlist[itemize]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
+
+% ── Colors ───────────────────────────────────────────────
+% Shared accent with summary.tex — do not change.
+\definecolor{accent}{HTML}{1B3A5C}
+\definecolor{q@frame}{HTML}{1A5276}
+\definecolor{q@bg}{HTML}{F6FAFD}
+\definecolor{key@frame}{HTML}{1E8449}
+\definecolor{key@bg}{HTML}{F4FBF6}
+\definecolor{note@frame}{HTML}{9A6A00}
+\definecolor{note@bg}{HTML}{FEF9E7}
+\definecolor{ok}{HTML}{1E8449}    % green check — correct option
+\definecolor{bad}{HTML}{B03A2E}   % red cross  — incorrect option
+
+% ── Box global style ─────────────────────────────────────
+\tcbset{
+  enhanced,
+  breakable,
+  arc=2.5mm,
+  boxrule=0.5pt,
+  left=4.5mm,
+  right=4mm,
+  top=2.5mm,
+  bottom=2.5mm,
+  fonttitle=\bfseries\small,
+  sharp corners=west,
+  parbox=false
+}
+
+% Question box (blue) — one per exam question.
+\newtcolorbox{qbox}[1][]{
+  colback=q@bg,
+  colframe=q@frame,
+  borderline west={3.5pt}{0pt}{q@frame},
+  title={#1}
+}
+
+% Key insight box (green) — answer hints, key results.
+\newtcolorbox{keybox}[1][]{
+  colback=key@bg,
+  colframe=key@frame,
+  borderline west={3.5pt}{0pt}{key@frame},
+  title={#1}
+}
+
+% Organizational note box (amber) — structural remarks only.
+\newtcolorbox{notebox}[1][]{
+  colback=note@bg,
+  colframe=note@frame,
+  borderline west={3.5pt}{0pt}{note@frame},
+  title={#1}
+}
+
+% ── Section headings ─────────────────────────────────────
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{accent}}
+  {}{0em}{}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.2ex plus 1ex minus .2ex}{1.8ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {}{0em}{}
+\titlespacing*{\subsection}{0pt}{2.2ex plus 1ex minus .2ex}{1.0ex plus .2ex}
+
+% ── Header & footer ──────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}Old Exam Questions (Solutions) — \coursetitle}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Document metadata ─────────────────────────────────────
+\newcommand{\coursetitle}{DL Architectures \& Generative Techniques}
+
+% ── Question counter & macros ────────────────────────────
+\newcounter{question}
+\newcommand{\questiontitle}[1]{%
+  \stepcounter{question}\begin{qbox}[Question \thequestion: #1]}
+\newcommand{\closequestion}{\end{qbox}}
+
+% Mark questions that appeared on multiple exams.
+\newcommand{\repeatnote}{\textit{\color{gray!70}Asked multiple times.}}
+
+% Multiple-choice checkbox bullet.
+\newcommand{\choice}{\item[$\square$] }
+
+% ── Inline answer macros (solutions variant) ─────────────
+% Green answer box placed directly under each question.
+% Multiple-choice usage:
+%   \begin{answer}{A, B}
+%     \yes{A} reason why correct ...
+%     \no{C}  reason why wrong (esp. for tricky near-misses) ...
+%   \end{answer}
+\newenvironment{answer}[1]{%
+  \begin{keybox}[Answer: \textbf{#1}]%
+  \begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]}%
+  {\end{itemize}\end{keybox}}
+\newcommand{\yes}[1]{\item[\textcolor{ok}{\ensuremath{\checkmark}}]\textbf{#1.}\ }
+\newcommand{\no}[1]{\item[\textcolor{bad}{\ensuremath{\bm\times}}]\textbf{#1.}\ }
+
+% Prose answer box — for calculations and labelling questions.
+% Usage:  \begin{answerprose}{result}  working / explanation  \end{answerprose}
+\newenvironment{answerprose}[1]{%
+  \begin{keybox}[Answer: \textbf{#1}]}%
+  {\end{keybox}}
+
+% ── Math macros ──────────────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1\,\|\,#2\right)}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\given}{\,\vert\,}
+\newcommand{\T}{^{\mathsf{T}}}
+\DeclareMathOperator{\softmax}{softmax}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+% ── Title page ───────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.4cm}
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}\par
+  \vspace{0.65cm}
+  {\fontsize{26}{32}\selectfont\bfseries\color{accent}Old Exam Questions\\[2pt] \coursetitle\par}
+  \vspace{0.25cm}
+  {\Large\color{key@frame}\bfseries Worked Solutions\par}
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}\par
+  \vspace{0.55cm}
+  {\large Stefan Eder\par}
+  \vspace{0.15cm}
+  {\small\color{gray!70}\today\par}
+\end{center}
+
+\vspace{0.9cm}
+\begin{notebox}[How this file is organized]
+This is the \textbf{solutions companion} to \texttt{exams.tex}, collected from the main exam
+(28.06.2024) and the 2022 / 2024 retry exams. Every question is followed \emph{immediately} by a
+green \textbf{answer box}. For \textbf{multiple-choice} questions (``select one or more'') each
+option is marked \textcolor{ok}{\ensuremath{\checkmark}} (correct) or
+\textcolor{bad}{\ensuremath{\bm\times}} (incorrect), with a short justification --- \emph{why} the
+correct options are correct and, for the tricky / near-miss distractors, \emph{why} they are wrong.
+For \textbf{calculations} the working is shown; distractor options that exist only to catch a guess
+get no explanation. If you want a clean practice set with blank answers, use \texttt{exams.tex}.
+\end{notebox}
+
+\tableofcontents
+\newpage
+
+
+% ==========================================================
+\section{Image Classification \& CNN Architectures}
+% ==========================================================
+
+\questiontitle{AlexNet}
+Which of the following statements about AlexNet (Krizhevsky et al., 2012) are correct?
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice AlexNet does not have fully-connected layers.
+  \choice AlexNet uses strided convolutions instead of max-pooling for down-sampling.
+  \choice AlexNet is a deep convolutional network with more than 1 hidden layer.
+  \choice One of the most important components of AlexNet is BatchNorm.
+  \choice AlexNet uses input images with a resolution of $224\times224$ pixels and three channels.
+\end{itemize}
+\closequestion
+\begin{answer}{C, E}
+  \no{A} AlexNet ends in three large \emph{fully-connected} layers --- it definitely has them.
+  \no{B} It down-samples with \emph{max-pooling} (alongside convolutions); it does not replace pooling with strided convs.
+  \yes{C} It is a deep CNN --- 5 convolutional + 3 fully-connected layers.
+  \no{D} BatchNorm did not exist yet (2015). AlexNet's key novelties were ReLU, dropout and local response normalization --- not BatchNorm.
+  \yes{E} Input is $224\times224\times3$ RGB.
+\end{answer}
+
+\questiontitle{VGGNet}
+Which of the following statements about VGGNet are correct? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice It predominantly uses $3\times3$ convolutions.
+  \choice It is a single-stage approach (a single $5\times5$ layer rather than stacked $3\times3$ layers).
+  \choice It has a symmetric encoder--decoder structure.
+  \choice The majority of the network's weights are located in the fully-connected layers.
+  \choice It cannot be used for image classification.
+\end{itemize}
+\closequestion
+\begin{answer}{A, D}
+  \yes{A} VGG's signature is deep stacks of small $3\times3$ convolutions.
+  \no{B} The opposite: VGG \emph{stacks} two $3\times3$ layers to match one $5\times5$'s receptive field with fewer parameters and an extra non-linearity.
+  \no{C} It is a plain feed-forward classifier, \emph{not} an encoder--decoder.
+  \yes{D} The huge FC layers (especially the first) hold the bulk of the $\sim$138M parameters.
+  \no{E} Nonsense --- VGG is an ImageNet classifier.
+\end{answer}
+
+\questiontitle{Normalization in Image Classifiers}
+Which of the following statements about normalization in image-classification networks are correct?
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Batch Normalization has been used since AlexNet.
+  \choice Since Xception, most image classifiers started to use Layer Normalization.
+  \choice Batch Normalization was used in InceptionNet to speed up training.
+  \choice Batch Normalization is part of most deep networks for image classification (e.g.\ ResNet).
+\end{itemize}
+\closequestion
+\begin{answer}{C, D}
+  \no{A} AlexNet used \emph{Local Response Normalization}; BatchNorm only appeared in 2015.
+  \no{B} LayerNorm is mainly a transformer / sequence-model thing --- CNN classifiers still use BatchNorm.
+  \yes{C} Inception / GoogLeNet introduced BatchNorm precisely to accelerate training.
+  \yes{D} BatchNorm is a standard component of deep CNN classifiers such as ResNet.
+\end{answer}
+
+\questiontitle{Residual Networks}
+Which of the following statements about Residual Networks (ResNets) are correct? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Residual networks use skip-connections that add the representation $\mathbf{h}^{l}$ of a
+        former layer $l$ to a later layer $l+1$, i.e.\ $\mathbf{h}^{l+1}=\mathbf{h}^{l}+F(\mathbf{h}^{l})$,
+        where $F$ can be any transformation with appropriate dimensions (e.g.\ a fully-connected layer).
+  \choice Because of skip-connections, very deep ResNets can be trained even without normalization techniques.
+  \choice Pre-trained ResNets cannot be used for transfer learning because the learned features are usually
+        overly specified to the task on which they were trained.
+  \choice Residual networks are always convolutional and cannot be used in purely fully-connected networks.
+  \choice Leaky ReLUs cannot be used in Residual Networks.
+\end{itemize}
+\closequestion
+\begin{answer}{A}
+  \yes{A} That is exactly the residual formulation; $F$ can be any dimension-matching transform (conv, FC, $\dots$).
+  \no{B} Normalization is still central to training very deep ResNets --- skip-connections alone don't remove that need.
+  \no{C} Pre-trained ResNets are one of the most common transfer-learning backbones; their features are general, not over-specialised.
+  \no{D} Residual connections work in fully-connected nets too --- they are not convolution-only.
+  \no{E} Any activation, leaky ReLU included, can be used inside a residual block.
+\end{answer}
+
+\questiontitle{$1\times1$ Convolution Output Size}
+You add a $1\times1$ convolutional layer with 16 kernels, padding 0, stride 1, to an input of
+shape $[128,128,64]$. Which statement is correct?
+\begin{itemize}[leftmargin=1.8em]
+  \choice It is not possible to apply this convolution layer.
+  \choice The resulting dimension is $[128,128,16]$.
+  \choice A $1\times1$ convolution does not exist.
+  \choice Better: replace the $1\times1$ layer with $2\times2$ max-pooling --- an equivalent but more efficient operation.
+  \choice Better: use $1\times1$ with stride 2 --- equivalent but more efficient.
+\end{itemize}
+\closequestion
+\begin{answer}{B}
+  \no{A} It is perfectly valid.
+  \yes{B} A $1\times1$ conv keeps the spatial size ($128\times128$) and sets the channel depth to the number of kernels (16): $[128,128,16]$.
+  \no{C} Nonsense --- $1\times1$ convolutions are standard (channel mixing / bottlenecks).
+  \no{D} $2\times2$ max-pooling halves the spatial resolution --- not equivalent.
+  \no{E} Stride 2 would down-sample to $64\times64$ --- not equivalent.
+\end{answer}
+
+\questiontitle{Receptive Field of the Last Layer}
+You are given a CNN with a fixed architecture. You may only change the parameters of the
+\emph{last} convolutional layer, and you want to strongly increase the receptive field (RF)
+of each neuron in that last layer. For each change, decide whether it produces
+\textbf{no increase}, a \textbf{small increase}, or a \textbf{strong increase} of the RF.
+\begin{itemize}[leftmargin=1.8em]
+  \item Increase the stride of the convolution
+  \item Switch to dilated convolutions
+  \item Increase the number of kernels
+  \item Increase the kernel size
+\end{itemize}
+\closequestion
+\begin{answerprose}{no / strong / no / small}
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item[\textcolor{ok}{$\to$}] \textbf{Increase the stride:} \emph{no increase.} Stride in the \emph{last} layer only sub-samples its output; it does not enlarge the input region each of those neurons already sees.
+  \item[\textcolor{ok}{$\to$}] \textbf{Dilated convolutions:} \emph{strong increase.} Dilation spreads the kernel taps far apart, sharply enlarging the RF.
+  \item[\textcolor{ok}{$\to$}] \textbf{Number of kernels:} \emph{no increase.} More channels means more features, identical spatial RF.
+  \item[\textcolor{ok}{$\to$}] \textbf{Kernel size:} \emph{small increase.} A larger kernel adds a few pixels of RF, but only in this one layer.
+\end{itemize}
+\end{answerprose}
+
+\questiontitle{Zero Initialization --- Forward Pass}
+You design a standard 2-layer fully-connected network with sigmoid activations and SGD.
+You initialize all weights and biases to zero and forward-propagate an input $\mathbf{x}$.
+What is the output $\hat y$?
+\begin{itemize}[leftmargin=1.8em]
+  \choice $0$
+  \choice $e^{x}$
+  \choice $0.5$
+  \choice $-1$
+  \choice $1$
+\end{itemize}
+\closequestion
+\begin{answer}{C}
+  \no{A} Not $\sigma(0)$.
+  \no{B} Nonsense.
+  \yes{C} With all weights and biases zero, every pre-activation is $0$, and $\sigma(0)=0.5$ at every layer --- so $\hat y = 0.5$.
+  \no{D} Out of range for a sigmoid.
+  \no{E} Not $\sigma(0)$.
+\end{answer}
+
+\questiontitle{Zero Initialization --- Weight Update}
+Consider the same all-zero-initialized network. You forward-propagate a batch, backpropagate,
+and update the parameters once. $\mathbf{W}^{(2)}$ denotes the weight matrix of the second layer.
+Which statement is then true?
+\begin{itemize}[leftmargin=1.8em]
+  \choice The entries of $\mathbf{W}^{(2)}$ are all positive.
+  \choice The entries of $\mathbf{W}^{(2)}$ may be positive or negative.
+  \choice The entries of $\mathbf{W}^{(2)}$ are all negative.
+  \choice The entries of $\mathbf{W}^{(2)}$ are all zero.
+\end{itemize}
+\closequestion
+\begin{answer}{B}
+  \no{A} The sign is not forced positive.
+  \yes{B} The hidden activations are all the same positive value ($0.5$), but the update sign is set by the per-output error $(\hat y - y)$, which can be positive or negative.
+  \no{C} The sign is not forced negative.
+  \no{D} The near-miss: the second-layer weights \emph{do} get a non-zero gradient because their input ($0.5$) is non-zero --- so they don't stay at zero. (The \emph{first}-layer weights would still be stuck.)
+\end{answer}
+
+
+% ==========================================================
+\section{Semantic Segmentation}
+% ==========================================================
+
+\questiontitle{Self-Driving Scene Labelling}
+A camera in a self-driving car provides road-scene images, and you train a network that
+outputs an image in which every pixel is annotated as car, road, pedestrian, etc.
+Which statements are true in this context? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice To train such a network, labels for each pixel of the training images are required.
+  \choice This represents an object-detection task in computer vision.
+  \choice Generative adversarial networks are the most appropriate type of network for this task.
+  \choice Deep networks cannot be used because there is no appropriate loss function.
+  \choice The intersection over union (IoU) would not be an appropriate metric to assess such a model.
+\end{itemize}
+\closequestion
+\begin{answer}{A}
+  \yes{A} Per-pixel labels are needed --- this is \emph{semantic segmentation}.
+  \no{B} It assigns a class to every pixel, not bounding boxes --- not object detection.
+  \no{C} A CNN (e.g.\ U-Net / FCN) with a per-pixel cross-entropy loss is the natural choice, not a GAN.
+  \no{D} There is a perfectly good loss (per-pixel cross-entropy) --- nonsense.
+  \no{E} IoU / mIoU is \emph{the} standard segmentation metric, so it is appropriate.
+\end{answer}
+
+\questiontitle{IoU Computation}
+A ground-truth object covers a set of pixels and a model predicts another set of pixels for that
+object, on a grid of pixels. The ground-truth region covers $10$ pixels, the predicted region
+covers $8$ pixels, and they overlap in $5$ pixels. Compute the IoU metric, rounded to three
+decimals.
+\closequestion
+\begin{answerprose}{$5/13 \approx 0.385$}
+$\mathrm{IoU}=\dfrac{|\text{intersection}|}{|\text{union}|}=\dfrac{5}{10+8-5}=\dfrac{5}{13}\approx 0.385$.
+The union subtracts the double-counted overlap.
+\end{answerprose}
+
+
+% ==========================================================
+\section{Object Detection \& Localization}
+% ==========================================================
+
+\questiontitle{Object-Detection Methods}
+Which of the following statements about deep-learning-based object-detection methods are correct?
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Faster R-CNN uses a region proposal network rather than the selective-search algorithm used in R-CNN.
+  \choice The operations RoI-pooling and RoI-align operate on feature maps and not on the input image.
+  \choice R-CNN uses AlexNet to extract features for Regions of Interest.
+  \choice Object detection can be formulated as a regression task in a multi-task setting.
+  \choice Fast R-CNN has two output layers (heads): one for regression and one for classification.
+\end{itemize}
+\closequestion
+\begin{answer}{A, B, D, E}
+  \yes{A} Faster R-CNN's contribution is the learned \emph{Region Proposal Network}, replacing selective search.
+  \yes{B} Both RoI-pooling and RoI-align pool from the convolutional \emph{feature maps}, not the raw image.
+  \no{C} R-CNN does run a CNN on each warped proposal, but it is not characterised as ``AlexNet'' in the lecture --- treated as false here.
+  \yes{D} Detection is a multi-task problem: box-coordinate \emph{regression} + class prediction.
+  \yes{E} Fast R-CNN has a bounding-box regression head and a classification head.
+\end{answer}
+
+\questiontitle{One-Stage vs.\ Two-Stage Detectors}
+For each architecture, state whether it is a \textbf{one-stage} or \textbf{two-stage} detector.
+\begin{itemize}[leftmargin=1.8em]
+  \item Faster R-CNN
+  \item YOLO
+  \item Mask R-CNN
+  \item Fast R-CNN
+  \item R-CNN
+  \item SSD
+\end{itemize}
+\closequestion
+\begin{answerprose}{the R-CNN family is two-stage; YOLO and SSD are one-stage}
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item[\textcolor{ok}{$\to$}] Faster R-CNN --- \textbf{two}-stage \quad (propose regions, then classify/refine)
+  \item[\textcolor{ok}{$\to$}] YOLO --- \textbf{one}-stage
+  \item[\textcolor{ok}{$\to$}] Mask R-CNN --- \textbf{two}-stage
+  \item[\textcolor{ok}{$\to$}] Fast R-CNN --- \textbf{two}-stage
+  \item[\textcolor{ok}{$\to$}] R-CNN --- \textbf{two}-stage
+  \item[\textcolor{ok}{$\to$}] SSD --- \textbf{one}-stage
+\end{itemize}
+Rule of thumb: anything in the R-CNN family has a separate proposal stage (two-stage); YOLO/SSD predict boxes and classes in a single pass (one-stage).
+\end{answerprose}
+
+\questiontitle{Transpose Convolution (stride 1)}
+You are given an input $\mathbf{x}=\begin{pmatrix}0&1\\2&3\end{pmatrix}$ and a kernel
+$\mathbf{w}=\begin{pmatrix}0&1\\2&3\end{pmatrix}$. What is the result of the transpose
+convolution $\mathbf{w}\ast^{T}\mathbf{x}$ (stride 1)?
+{\footnotesize
+\begin{itemize}[leftmargin=1.8em]
+  \choice $(42)$
+  \choice $(14)$
+  \choice $\begin{pmatrix}1&1&1&1\\2&2&2&2\\3&3&3&3\\4&4&4&4\end{pmatrix}$
+  \choice $\begin{pmatrix}13&13&13\\13&13&13\\13&13&13\end{pmatrix}$
+  \choice $\begin{pmatrix}0&2&1\\6&14&6\\2&3&0\end{pmatrix}$
+  \choice $\begin{pmatrix}3&2\\1&0\end{pmatrix}$
+  \choice $\begin{pmatrix}0&0&0&1\\0&0&2&3\\0&2&0&3\\4&6&6&9\end{pmatrix}$
+  \choice $\begin{pmatrix}0&0&1\\0&4&6\\4&12&9\end{pmatrix}$
+\end{itemize}}
+\closequestion
+\begin{answerprose}{H, $\begin{psmallmatrix}0&0&1\\0&4&6\\4&12&9\end{psmallmatrix}$}
+A stride-1 transpose convolution scatters a copy of the kernel, scaled by each input entry, and
+overlap-adds them. Output size $(2-1)\cdot 1 + 2 = 3$, i.e.\ $3\times3$:
+\[
+1\!\cdot\!\begin{psmallmatrix}0&1\\2&3\end{psmallmatrix}\!\text{ at }(0,1)
+\;+\;2\!\cdot\!\begin{psmallmatrix}0&1\\2&3\end{psmallmatrix}\!\text{ at }(1,0)
+\;+\;3\!\cdot\!\begin{psmallmatrix}0&1\\2&3\end{psmallmatrix}\!\text{ at }(1,1)
+=\begin{psmallmatrix}0&0&1\\0&4&6\\4&12&9\end{psmallmatrix}.
+\]
+The other options are wrong shapes / values that only test whether you actually carried out the overlap-add.
+\end{answerprose}
+
+\questiontitle{Transpose Convolution (stride 2)}
+You are given an input $\mathbf{x}=\begin{pmatrix}1&-2\\-1&2\end{pmatrix}$ and a kernel
+$\mathbf{w}=\begin{pmatrix}0&1\\2&3\end{pmatrix}$. What is the result of the transpose
+convolution $\mathbf{w}\ast^{T}\mathbf{x}$ with \textbf{stride 2}?
+{\footnotesize
+\begin{itemize}[leftmargin=1.8em]
+  \choice $\begin{pmatrix}0&1&-1\\2&-1&-1\\-4&-2&6\end{pmatrix}$
+  \choice $\begin{pmatrix}3&2\\1&0\end{pmatrix}$
+  \choice $\begin{pmatrix}0&1&0&-2\\2&3&-4&-6\\0&-1&0&2\\-2&-3&4&6\end{pmatrix}$
+  \choice $\begin{pmatrix}0&2&1\\6&-14&6\\2&3&0\end{pmatrix}$
+  \choice $(3)$
+  \choice $(42)$
+\end{itemize}}
+\closequestion
+\begin{answerprose}{C, $\begin{psmallmatrix}0&1&0&-2\\2&3&-4&-6\\0&-1&0&2\\-2&-3&4&6\end{psmallmatrix}$}
+With stride 2, the (size-2) kernel copies are placed two apart, so they \emph{don't overlap}; output size
+$(2-1)\cdot 2 + 2 = 4$, i.e.\ $4\times4$. Each block is $x_{ij}\cdot\mathbf{w}$ at offset $(2i,2j)$:
+\[
+\begin{array}{c|c}
+1\!\cdot\!\begin{psmallmatrix}0&1\\2&3\end{psmallmatrix} & -2\!\cdot\!\begin{psmallmatrix}0&1\\2&3\end{psmallmatrix}\\[6pt]\hline
+-1\!\cdot\!\begin{psmallmatrix}0&1\\2&3\end{psmallmatrix} & 2\!\cdot\!\begin{psmallmatrix}0&1\\2&3\end{psmallmatrix}
+\end{array}
+=\begin{psmallmatrix}0&1&0&-2\\2&3&-4&-6\\0&-1&0&2\\-2&-3&4&6\end{psmallmatrix}.
+\]
+The remaining options are wrong sizes / values to catch a guess.
+\end{answerprose}
+
+
+% ==========================================================
+\section{Autoencoders}
+% ==========================================================
+
+\questiontitle{Annotating the Generative-Model Taxonomy}
+A figure shows three categories of generative models. Each row is a network with grey input/output
+boxes and a latent variable $\mathbf{z}$ in the middle. Annotate the building blocks with
+\emph{Generator}, \emph{Discriminator}, \emph{Encoder}, \emph{Decoder}, \emph{Flow}, \emph{Inverse Flow},
+given that a rectangular block keeps the dimension constant while a trapezoidal block decreases or
+increases it.
+\begin{itemize}[leftmargin=1.8em]
+  \item Top row: input $\to$ trapezoid $\to 0/1 \to \mathbf{z} \to$ trapezoid $\to$ output
+  \item Middle row: input $\to$ trapezoid (down) $\to \mathbf{z} \to$ trapezoid (up) $\to$ output
+  \item Bottom row: input $\to$ rectangle $\to \mathbf{z} \to$ rectangle $\to$ output
+\end{itemize}
+\closequestion
+\begin{answerprose}{GAN / (V)AE / Flow}
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item[\textcolor{ok}{$\to$}] \textbf{Top row = GAN.} The block ending in a $0/1$ decision is the \textbf{Discriminator}; the block going from $\mathbf{z}$ to the output is the \textbf{Generator}.
+  \item[\textcolor{ok}{$\to$}] \textbf{Middle row = (V)AE.} The down-sizing trapezoid is the \textbf{Encoder} $q(\mathbf{z}\given\mathbf{x})$; the up-sizing one is the \textbf{Decoder} $p(\mathbf{x}\given\mathbf{z})$.
+  \item[\textcolor{ok}{$\to$}] \textbf{Bottom row = normalizing flow.} Dimensions are preserved (rectangles): the first block is the \textbf{Flow}, the second its \textbf{Inverse Flow}.
+\end{itemize}
+\end{answerprose}
+
+\questiontitle{Autoencoders (excluding VAEs)}
+Which of the following statements about autoencoders (\textbf{not} including variational autoencoders)
+are correct? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice The input--output Jacobian of an autoencoder is always a lower-triangular matrix.
+  \choice Autoencoders do not map a single input to a single point in latent space, but to a distribution
+        in latent space.
+  \choice Autoencoders are always fully-connected networks.
+  \choice All autoencoders use fewer neurons in the hidden layers than in the input layer.
+  \choice Autoencoders consist of an encoder and a decoder, which are parametrized neural networks.
+\end{itemize}
+\closequestion
+\begin{answer}{E}
+  \no{A} There is no such constraint --- the Jacobian is generally not triangular.
+  \no{B} Mapping an input to a \emph{distribution} is the VAE; a plain AE maps it to a single latent \emph{point}.
+  \no{C} They can be convolutional, recurrent, etc.\ --- not necessarily fully-connected.
+  \no{D} Undercomplete is common but not required: overcomplete / sparse AEs have $\ge$ input-size hidden layers.
+  \yes{E} The only always-true statement: an AE is an encoder + decoder, both parametrized networks.
+\end{answer}
+
+\questiontitle{Sparse and Denoising Autoencoders}
+Which of the following statements about sparse / denoising autoencoders are correct?
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Sparse AEs enforce sparsity on the representation via a regularization term.
+  \choice Sparse AEs enforce hidden units to be inactive (i.e.\ activation $=0$) for most inputs.
+  \choice A sparse AE can be trained on a copy task, where the input equals the target.
+  \choice Sparse AEs force the \emph{input} units to be inactive (activation $=0$).
+  \choice Sparse AEs enforce sparsity via early stopping.
+  \choice A sparse AE cannot be trained on a denoising task (input noisy, target clean).
+\end{itemize}
+\closequestion
+\begin{answer}{A, B, C}
+  \yes{A} Sparsity is added as a regularization term (e.g.\ a KL penalty on mean activation, or $L_1$).
+  \yes{B} The effect is that most \emph{hidden} units are (near-)zero for any given input.
+  \yes{C} It can be trained on the ordinary copy / reconstruction task (input $=$ target).
+  \no{D} It silences \emph{hidden} units, not input units --- the input is the data.
+  \no{E} Sparsity comes from the penalty term, not from early stopping.
+  \no{F} Nothing stops combining a sparsity penalty with a denoising objective.
+\end{answer}
+
+\questiontitle{Autoencoder Reconstruction Loss}
+An autoencoder uses ReLU activations with encoder
+$u=\mathrm{ReLU}\!\left(\begin{bmatrix}1&0&-1\\0&1&0\end{bmatrix}\mathbf{x}\right)$ and decoder
+$\hat{\mathbf{x}}=\mathrm{ReLU}\!\left(\begin{bmatrix}1&0\\0&0\\1&0\end{bmatrix}u\right)$.
+Compute the reconstruction loss $\loss(\mathbf{x},\hat{\mathbf{x}})=\sum_i (x_i-\hat x_i)^2$
+for the input $\mathbf{x}=(1,1,2)\T$.
+\closequestion
+\begin{answerprose}{$6$}
+Encoder: $\begin{bmatrix}1&0&-1\\0&1&0\end{bmatrix}(1,1,2)\T=(1-2,\,1)=(-1,1)$, so
+$u=\mathrm{ReLU}(-1,1)=(0,1)$.\\
+Decoder: $\begin{bmatrix}1&0\\0&0\\1&0\end{bmatrix}(0,1)\T=(0,0,0)$, so $\hat{\mathbf{x}}=\mathrm{ReLU}(0,0,0)=(0,0,0)$.\\
+Loss $=(1-0)^2+(1-0)^2+(2-0)^2=1+1+4=6$. \quad (If a $\tfrac1n$ MSE were used instead of the sum, the value would be $2.0$.)
+\end{answerprose}
+
+
+% ==========================================================
+\section{Variational Autoencoders}
+% ==========================================================
+
+\questiontitle{Variational Autoencoders}
+Which of the following statements about variational autoencoders (VAEs) are true? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice VAEs have an encoder--decoder structure, where encoder and decoder must be symmetric.
+  \choice The prior distribution of the latent variables $\mathbf{z}$ must be a discrete distribution.
+  \choice VAEs maximize a lower bound on the likelihood of the data.
+  \choice VAEs automatically provide the marginal likelihood $p(\mathbf{x})$ at low computational cost.
+  \choice VAEs cannot be used to generate images.
+\end{itemize}
+\closequestion
+\begin{answer}{C}
+  \no{A} Encoder and decoder need not be symmetric.
+  \no{B} The prior is typically \emph{continuous} (a standard Gaussian), not discrete.
+  \yes{C} VAEs maximize the ELBO, a lower bound on the data log-likelihood.
+  \no{D} They do \emph{not} give $p(\mathbf{x})$ cheaply --- the marginal stays intractable; the ELBO is only a bound.
+  \no{E} Nonsense --- generating images is a primary use of VAEs.
+\end{answer}
+
+\questiontitle{VAE Objective Function}
+Using the notation from the lecture, which of the following is the correct formulation of the
+standard Variational Autoencoder (VAE) objective?
+\begin{itemize}[leftmargin=1.8em]
+  \choice $\loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log D(\mathbf{x})]+\E_{\mathbf{z}\sim p_z}[\log(1-D(G(\mathbf{z})))]$
+  \choice $\loss_{\theta,\phi}(\mathbf{x})=\E_{q_\phi(\mathbf{z}\given\mathbf{x})}\log p_\theta(\mathbf{x}\given\mathbf{z})-\KL{p_\theta(\mathbf{x})}{p_\theta(\mathbf{z})}$
+  \choice $\loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log D(\mathbf{x})]+\E_{\mathbf{z}\sim p_z}[D(G(\mathbf{z}))]$
+  \choice $\loss_{\theta,\phi}(\mathbf{x})=\E_{q_\phi(\mathbf{z}\given\mathbf{x})}\log p_\theta(\mathbf{x}\given\mathbf{z})-\KL{q_\phi(\mathbf{z}\given\mathbf{x})}{p_\theta(\mathbf{z})}$
+  \choice $\loss_\theta(\mathbf{x})=\KL{p_{\mathrm{data}}(\mathbf{x};\theta)}{p^{*}(\mathbf{x})}$
+\end{itemize}
+\closequestion
+\begin{answer}{D}
+  \no{A} This is the GAN min--max value function, not the VAE objective.
+  \no{B} Right shape, \emph{wrong KL arguments}: the KL must be between $q_\phi(\mathbf{z}\given\mathbf{x})$ and the prior $p_\theta(\mathbf{z})$, not between $p_\theta(\mathbf{x})$ and $p_\theta(\mathbf{z})$.
+  \no{C} Another GAN-style objective (and missing the $\log$ on the second term).
+  \yes{D} The ELBO: reconstruction term $\E_{q_\phi(\mathbf{z}\given\mathbf{x})}\log p_\theta(\mathbf{x}\given\mathbf{z})$ minus $\KL{q_\phi(\mathbf{z}\given\mathbf{x})}{p_\theta(\mathbf{z})}$.
+  \no{E} Nonsense --- not the VAE objective.
+\end{answer}
+
+\questiontitle{Best Gaussian Approximation via KL}
+\repeatnote\\
+You have a fixed, multi-dimensional, non-Gaussian distribution $p(\mathbf{x})$ that you want to
+approximate with a Gaussian $q(\mathbf{x})=\Normal(\boldsymbol\mu,\boldsymbol\Sigma)$, by minimizing
+$\KL{p}{q}$ with respect to $\boldsymbol\mu$ and $\boldsymbol\Sigma$. Which expressions minimize the
+KL-divergence? ($\E$ is expectation, $\Cov$ the covariance, $\mathbf{I}$ the identity matrix.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice $\boldsymbol\mu=\E(\mathbf{x})$ and $\boldsymbol\Sigma=\Cov(\mathbf{x})$
+  \choice $\boldsymbol\mu=\E(\mathbf{x})$ and $\boldsymbol\Sigma=\mathbf{I}$
+  \choice $\boldsymbol\mu=\E(\mathbf{x}\T\mathbf{x})$ and $\boldsymbol\Sigma=\E(\mathbf{x}\T)$
+  \choice $\boldsymbol\mu=\E(\mathbf{x}\T\mathbf{x})$ and $\boldsymbol\Sigma=\mathbf{I}$
+  \choice $\boldsymbol\mu=\E(\mathbf{x})$ and $\boldsymbol\Sigma=\E(\mathbf{x}\mathbf{x}\T)$
+\end{itemize}
+\closequestion
+\begin{answer}{A}
+  \yes{A} Minimizing $\KL{p}{q}$ over a Gaussian \emph{matches the first two moments}: $\boldsymbol\mu=\E(\mathbf{x})$, $\boldsymbol\Sigma=\Cov(\mathbf{x})$.
+  \no{B} Forcing $\boldsymbol\Sigma=\mathbf{I}$ throws away the true covariance.
+  \no{C} $\boldsymbol\mu=\E(\mathbf{x}\T\mathbf{x})$ is a scalar --- dimensionally nonsense.
+  \no{D} Same dimensional nonsense for $\boldsymbol\mu$.
+  \no{E} Near-miss: $\E(\mathbf{x}\mathbf{x}\T)$ is the \emph{second moment}, which over-estimates the covariance because it omits the $-\E(\mathbf{x})\E(\mathbf{x})\T$ correction.
+\end{answer}
+
+
+% ==========================================================
+\section{GANs and Wasserstein GANs}
+% ==========================================================
+
+\questiontitle{GAN Objective Function}
+Using the lecture notation, which of the following is the correct formulation of the standard
+objective of Generative Adversarial Networks (GANs)?
+\begin{itemize}[leftmargin=1.8em]
+  \choice $\min_G\max_D \loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log D(\mathbf{x})]+\E_{\mathbf{z}\sim p_z}[\log(1-D(\mathbf{z}))]$
+  \choice $\min_G\max_D \loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log D(\mathbf{x})]+\E_{\mathbf{x}\sim p_r}[\log(1-D(G(\mathbf{x})))]$
+  \choice $\min_G\max_D \loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log G(\mathbf{x})]+\E_{\mathbf{z}\sim p_z}[\log(1-G(D(\mathbf{z})))]$
+  \choice $\min_G\max_D \loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log D(\mathbf{x})]+\E_{\mathbf{z}\sim p_z}[\log(1-D(G(\mathbf{z})))]$
+  \choice $\min_G\max_D \loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log D(\mathbf{x})]+\E_{\mathbf{z}\sim p_z}[D(G(\mathbf{z}))]$
+  \choice $\min_G\max_D \loss(D,G)=\E_{\mathbf{x}\sim p_r}[\log D(\mathbf{x})]+\E_{\mathbf{z}\sim p_z}[\log(D(G(\mathbf{z})))]$
+\end{itemize}
+\closequestion
+\begin{answer}{D}
+  \no{A} The fake term must pass through $G$: $D(G(\mathbf{z}))$, not $D(\mathbf{z})$.
+  \no{B} The second expectation must be over $\mathbf{z}\sim p_z$, not over real data $\mathbf{x}\sim p_r$.
+  \no{C} Roles of $D$ and $G$ are swapped and the wrong functions are logged --- nonsense.
+  \yes{D} Correct value function: $\E_{p_r}[\log D(\mathbf{x})]+\E_{p_z}[\log(1-D(G(\mathbf{z})))]$.
+  \no{E} Missing the $\log(1-\cdot)$ on the fake term.
+  \no{F} Wrong form: should be $\log(1-D(G(\mathbf{z})))$, not $\log(D(G(\mathbf{z})))$.
+\end{answer}
+
+\questiontitle{Properties of a Trained GAN}
+Consider a GAN that successfully produces images of apples. Which statements are correct?
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice The discriminator can be used to classify images as apple vs.\ non-apple.
+  \choice The generator aims to learn the distribution of apple images.
+  \choice The generator can produce unseen images of apples.
+  \choice After training the GAN, the discriminator loss eventually reaches a constant value.
+\end{itemize}
+\closequestion
+\begin{answer}{B, C}
+  \no{A} The discriminator only learns \emph{real-vs-fake} apples, not apple-vs-non-apple.
+  \yes{B} The generator's goal is exactly to model the distribution of apple images.
+  \yes{C} A good generator generalizes and produces novel, unseen apples.
+  \no{D} Not guaranteed: at the ideal equilibrium $D=0.5$ the loss would be constant, but in general GAN training need not converge there.
+\end{answer}
+
+\questiontitle{Divergences and Distances}
+Which of the following statements about divergences and distances are correct? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice JS and KL divergences show problems for distributions with disjoint supports --- the Wasserstein
+        distance overcomes this.
+  \choice A map $D:\mathcal{S}\times\mathcal{S}\to\R$ is a divergence iff it is non-negative and symmetric.
+  \choice The Wasserstein-1 distance with Euclidean cost is a distance, not a divergence.
+  \choice The Wasserstein distance is defined as a minimization over joint distributions (couplings),
+        but this is infeasible in practice.
+  \choice The Kantorovich--Rubinstein theorem lets us write the Wasserstein distance as a maximization
+        over Lipschitz functions, which makes it tractable.
+\end{itemize}
+\closequestion
+\begin{answer}{A, C, D, E}
+  \yes{A} KL / JS blow up or stay constant for disjoint supports; Wasserstein still gives a finite, smooth value.
+  \no{B} A divergence need \emph{not} be symmetric --- non-negative $+$ symmetric (with the triangle inequality) describes a \emph{distance/metric}, not a divergence.
+  \yes{C} $W_1$ with Euclidean cost satisfies the metric axioms (symmetry, triangle inequality), so it is a genuine distance.
+  \yes{D} It is an infimum over couplings (joint distributions) --- intractable to compute directly.
+  \yes{E} Kantorovich--Rubinstein duality rewrites it as a supremum over $1$-Lipschitz functions --- exactly what WGAN exploits.
+\end{answer}
+
+\questiontitle{KL, JSD and Wasserstein vs.\ Separation}
+Let $p_1=\Normal(0,1)$ and $p_2=\Normal(x,1)$. As $x$ increases, you plot the
+KL-divergence $\KL{p_1}{p_2}$, the Jensen--Shannon divergence $\mathrm{JSD}(p_1\|p_2)$, and the
+Wasserstein-2 distance $\mathrm{WD}(p_1\|p_2)$ against $x$. One curve grows quadratically without
+bound, one grows linearly, and one saturates at a finite value. Match each measure to its qualitative
+behaviour.
+\begin{itemize}[leftmargin=1.8em]
+  \item KL-divergence
+  \item Wasserstein-2 distance
+  \item Jensen--Shannon divergence
+\end{itemize}
+\closequestion
+\begin{answerprose}{KL quadratic, $W_2$ linear, JSD saturates}
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item[\textcolor{ok}{$\to$}] \textbf{KL-divergence:} grows \emph{quadratically} without bound --- for equal-variance Gaussians $\KL{p_1}{p_2}=x^2/2$.
+  \item[\textcolor{ok}{$\to$}] \textbf{Wasserstein-2:} grows \emph{linearly} --- $\mathrm{WD}_2=|x|$.
+  \item[\textcolor{ok}{$\to$}] \textbf{Jensen--Shannon:} \emph{saturates} at a finite value (bounded by $\log 2$) once the supports barely overlap.
+\end{itemize}
+This is why JS/KL give vanishing gradients for far-apart distributions while Wasserstein stays informative.
+\end{answerprose}
+
+
+% ==========================================================
+\section{Metrics, Normalizing Flows \& Density Models}
+% ==========================================================
+
+\questiontitle{Inception Score and FID}
+Tick the correct statements about the Inception Score (IS) and the Fréchet Inception Distance (FID).
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice FID can detect mode collapse, because mode collapse influences the covariance matrix of the
+        generated data.
+  \choice IS and FID are metrics that assess the quality of GAN-generated images.
+  \choice Both IS and FID rely on features of the input images produced by AlexNet.
+  \choice IS and FID can be used as GAN objectives that lead to faster training.
+  \choice The computation of the FID is based on an explicit formula for the Wasserstein-2 distance
+        between two Gaussian distributions.
+\end{itemize}
+\closequestion
+\begin{answer}{A, B, E}
+  \yes{A} FID compares means \emph{and covariances}; mode collapse shrinks the covariance, so FID picks it up.
+  \yes{B} Both are standard metrics for the quality of GAN-generated images.
+  \no{C} They use \emph{Inception} (v3) features, not AlexNet.
+  \no{D} They are \emph{evaluation} metrics, not training objectives.
+  \yes{E} FID is exactly the closed-form Wasserstein-2 (Fréchet) distance between two Gaussians fitted to the features.
+\end{answer}
+
+\questiontitle{Normalizing Flows}
+Which of the following statements about normalizing flows are correct? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice It is impossible to integrate a multi-layer perceptron as a transformation in a normalizing
+        flow because MLPs are not invertible.
+  \choice All multi-layer perceptrons with the same input and output dimension can be considered a
+        normalizing flow.
+  \choice Normalizing flows cannot contain functions with a lower-triangular Jacobian because they are
+        not invertible.
+  \choice Some normalizing flows use functions with a lower-triangular Jacobian to facilitate the
+        computation of the determinant.
+\end{itemize}
+\closequestion
+\begin{answer}{D}
+  \no{A} ``Impossible'' is too strong --- one \emph{can} design invertible MLP-based transforms; ordinary MLPs simply aren't invertible by default.
+  \no{B} Matching input/output dimensions does not make a network invertible / a valid flow.
+  \no{C} Lower-triangular-Jacobian maps can absolutely be invertible --- that is the whole point of autoregressive flows.
+  \yes{D} A triangular Jacobian makes the determinant the product of its diagonal --- cheap to compute.
+\end{answer}
+
+\questiontitle{Flow-Based Models}
+Which of the following statements about flow-based models are correct? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice Theoretically, flow-based models can represent any distribution $p_x(\mathbf{x})$ if one starts
+        from a sufficiently complex distribution; a simple base distribution $p_u(\mathbf{u})$ such as the
+        uniform on the cube $(0,1)^D$ would not be sufficient.
+  \choice Fitting flow-based models is often done with the KL-divergence.
+  \choice Computing the Jacobi determinant of a neural network with $D$ inputs and $D$ outputs is in
+        general of $\mathcal{O}(D^3)$.
+  \choice For autoregressive flows the transformation $g_\phi$ is constructed so that its Jacobi
+        determinant always has value 1.
+\end{itemize}
+\closequestion
+\begin{answer}{B, C}
+  \no{A} A \emph{simple} base (even uniform on $(0,1)^D$ or a standard Gaussian) is sufficient --- the flexible transform does the work.
+  \yes{B} Flows are fit by maximum likelihood, i.e.\ minimizing a KL-divergence to the data.
+  \yes{C} A general dense Jacobian determinant costs $\mathcal{O}(D^3)$.
+  \no{D} An autoregressive flow's Jacobian is triangular, but its determinant (product of the diagonal) is \emph{not} fixed at $1$.
+\end{answer}
+
+\questiontitle{Density under a Linear Transform}
+\repeatnote\\
+Assume a two-dimensional vector $\mathbf{u}\sim p_u(\mathbf{u})$. Let
+$T=\begin{pmatrix}2&0\\0&\tfrac12\end{pmatrix}$ and $\mathbf{x}=T\cdot\mathbf{u}$. Mark the correct
+formula for the distribution $p_x(\mathbf{x})$.
+{\footnotesize
+\begin{itemize}[leftmargin=1.8em]
+  \choice $p_u\!\left(\begin{pmatrix}\tfrac12&0\\0&2\end{pmatrix}\mathbf{x}\right)\cdot\tfrac12$
+  \choice $p_u\!\left(\begin{pmatrix}\tfrac12&0\\0&2\end{pmatrix}\mathbf{x}\right)$
+  \choice $p_u\!\left(\begin{pmatrix}\tfrac12&0\\0&1\end{pmatrix}\mathbf{x}\right)\cdot\tfrac12$
+  \choice $p_u\!\left(\begin{pmatrix}\tfrac12&0\\0&1\end{pmatrix}\mathbf{x}\right)$
+  \choice $p_u\!\left(\begin{pmatrix}2&0\\0&1\end{pmatrix}\mathbf{x}\right)\cdot 2$
+  \choice $p_u\!\left(\begin{pmatrix}2&0\\0&1\end{pmatrix}\mathbf{x}\right)\cdot\tfrac12$
+\end{itemize}}
+\closequestion
+\begin{answer}{B}
+  \yes{B} Change of variables: $p_x(\mathbf{x})=\frac{1}{|\det T|}\,p_u(T^{-1}\mathbf{x})$ with $T^{-1}=\begin{psmallmatrix}\tfrac12&0\\0&2\end{psmallmatrix}$ and $\det T=2\cdot\tfrac12=1$, so the prefactor is $1$.
+  \no{A} Correct $T^{-1}$ but a spurious $\tfrac12$ factor ($\det T=1$, not $2$).
+  \no{C--F} Wrong inverse matrix and/or wrong determinant prefactor --- guess-catchers.
+\end{answer}
+
+\questiontitle{Autoregressive Sequence Probability}
+An autoregressive model $p_w(\mathbf{x})$ models sequences $(x_1,x_2,x_3)$ where each element is
+$A$, $B$, or $C$:
+\[
+  p_w(x_1)=\tfrac13,\qquad
+  p_w(x_2\given x_1)=\begin{cases}\tfrac12 & x_2=x_1\\[2pt]\tfrac14 & x_2\neq x_1\end{cases},\qquad
+  p_w(x_3\given x_2,x_1)=\begin{cases}\tfrac12 & x_3=x_2\\[2pt]\tfrac14 & x_3\neq x_2\end{cases}.
+\]
+Compute $p_w(\mathbf{x})$ for $\mathbf{x}=(A,A,C)$, rounded to three decimals.
+\closequestion
+\begin{answerprose}{$1/24 \approx 0.042$}
+$p_w(A,A,C)=\underbrace{p_w(x_1{=}A)}_{1/3}\cdot\underbrace{p_w(x_2{=}A\mid A)}_{1/2\ (x_2=x_1)}\cdot\underbrace{p_w(x_3{=}C\mid A)}_{1/4\ (x_3\neq x_2)}=\tfrac13\cdot\tfrac12\cdot\tfrac14=\tfrac{1}{24}\approx 0.042.$
+\end{answerprose}
+
+
+% ==========================================================
+\section{Bayesian Deep Learning}
+% ==========================================================
+
+\questiontitle{Deep Ensembles and Marginalization}
+The main difference between the frequentist and Bayesian approach is the marginalization over
+parameters when defining the probability of a class label given input $\mathbf{x}$ and dataset
+$\mathcal{D}$:
+\[
+  p(\mathbf{y}^{\mathrm{test}}\given\mathbf{x}^{\mathrm{test}},\mathcal{D})
+  = \E_{\mathbf{w}\sim p(\mathbf{w}\given\mathcal{D})}\!\left[p(\mathbf{y}^{\mathrm{test}}\given\mathbf{w},\mathbf{x}^{\mathrm{test}})\right].
+\]
+Deep Ensembles approximate this full expectation with (weighted) averages. Which of the following
+are valid approximations? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice $\tfrac1M\sum_{m=1}^{M} p(\mathbf{y}^{\mathrm{test}}\given\mathbf{w}_m,\mathbf{x}^{\mathrm{test}})$,
+        where $\mathbf{w}_m$ are the weights of the $m$-th network of the ensemble.
+  \choice $p(\mathbf{y}^{\mathrm{test}}\given\mathbf{w},\mathbf{x}^{\mathrm{test}})$ for a single trained network.
+  \choice $\tfrac1M\sum_{m=1}^{M}\alpha_m\, p(\mathbf{y}^{\mathrm{test}}\given\mathbf{w}_m,\mathbf{x}^{\mathrm{test}})$
+        with $\alpha_m=\softmax(\mathbf{z})_m$ for some random vector $\mathbf{z}$.
+  \choice $\tfrac1M\sum_{m=1}^{M} p(\mathbf{y}^{\mathrm{test}}_m\given\mathbf{w},\mathbf{x}^{\mathrm{test}}_m)$,
+        where $m$ denotes the $m$-th equally-sized fraction of the test data.
+\end{itemize}
+\closequestion
+\begin{answer}{A, C}
+  \yes{A} A uniform average over the $M$ ensemble members approximates the posterior expectation.
+  \no{B} A single network is just one sample --- no marginalization over the posterior.
+  \yes{C} A \emph{weighted} average (weights from a softmax, summing to $1$) is also a valid approximation of the expectation.
+  \no{D} This splits the \emph{test data} into fractions --- that is not averaging over parameters at all.
+\end{answer}
+
+
+% ==========================================================
+\section{Graph Neural Networks}
+% ==========================================================
+
+\questiontitle{Distinguishing Two Small Graphs}
+Consider two graphs: $\mathcal{G}_1$ is a path of three nodes (a coloured centre node joined to two
+leaves), and $\mathcal{G}_2$ is a star with a centre node joined to three leaves. Mark the correct
+statements. (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice $\mathcal{G}_1$ and $\mathcal{G}_2$ can be distinguished by the Weisfeiler--Lehman
+        (colour refinement) test.
+  \choice All message-passing neural networks (MPNNs) can distinguish $\mathcal{G}_1$ and $\mathcal{G}_2$.
+  \choice $\mathcal{G}_1$ and $\mathcal{G}_2$ are isomorphic graphs.
+\end{itemize}
+\closequestion
+\begin{answer}{A}
+  \yes{A} They have different structure (different node counts / degree sequences), so colour refinement separates them.
+  \no{B} ``All MPNNs'' is too strong --- expressivity depends on the aggregation; a weak MPNN need not distinguish arbitrary non-isomorphic graphs.
+  \no{C} They are not isomorphic (different structure).
+\end{answer}
+
+\questiontitle{Weisfeiler--Lehman Necessary Condition}
+Two graphs $A$ and $B$ are given. Do they fulfil the necessary condition for graph isomorphism
+given by the Weisfeiler--Lehman test (i.e.\ do they produce the same stable colour histogram)?
+\begin{itemize}[leftmargin=1.8em]
+  \choice True
+  \choice False
+\end{itemize}
+\closequestion
+\begin{answer}{True}
+  \yes{True} The two graphs produce the same stable WL colour histogram, so the \emph{necessary} condition for isomorphism is satisfied. (Necessary, not sufficient --- equal histograms don't prove isomorphism.)
+  \no{False} ---
+\end{answer}
+
+\questiontitle{Matching Graphs to Adjacency Matrices}
+Four graphs on six nodes are shown: $A$ is a plain $6$-cycle (hexagon), $B$ is two triangles,
+$C$ is another $6$-cycle drawn differently, and $D$ is a $6$-cycle with one extra chord.
+For each adjacency matrix, name the matching graph ($A$, $B$, $C$, $D$, or none).
+\begin{itemize}[leftmargin=1.8em]
+  \item All six row-sums equal $2$ and the edges form a single closed cycle.
+  \item Two row-sums equal $1$ and the rest equal $2$ (an open path, not a cycle).
+  \item All six row-sums equal $2$ but the edges split into two separate $3$-cycles.
+  \item Four row-sums equal $2$ and two equal $3$ (a cycle plus one chord).
+\end{itemize}
+\closequestion
+\begin{answerprose}{$A/C$ \ / \ none \ / \ $B$ \ / \ $D$}
+Read off each matrix by its row-sums (node degrees) and connectivity:
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item[\textcolor{ok}{$\to$}] All degrees $2$, one closed cycle $\Rightarrow$ a $6$-cycle: \textbf{$A$} (and the differently-drawn cycle is \textbf{$C$}).
+  \item[\textcolor{ok}{$\to$}] Two degree-$1$ nodes (open path) $\Rightarrow$ \textbf{none of the above} (no shown graph is an open path).
+  \item[\textcolor{ok}{$\to$}] All degrees $2$ but split into two $3$-cycles $\Rightarrow$ \textbf{$B$} (two triangles).
+  \item[\textcolor{ok}{$\to$}] Two degree-$3$ nodes (cycle $+$ chord) $\Rightarrow$ \textbf{$D$}.
+\end{itemize}
+\end{answerprose}
+
+\questiontitle{Group Action in Graph NNs}
+Which of the following is a common group action used in graph neural networks?
+\begin{itemize}[leftmargin=1.8em]
+  \choice Rotation
+  \choice Scaling
+  \choice Translation (permutation / relabelling of nodes)
+  \choice Cropping
+  \choice Clustering
+\end{itemize}
+\closequestion
+\begin{answer}{C}
+  \no{A} Image augmentation, not the GNN symmetry.
+  \no{B} Image augmentation, not relevant here.
+  \yes{C} GNNs are built to be invariant / equivariant to \emph{permutations} (relabelling) of the nodes.
+  \no{D} Image augmentation.
+  \no{E} A downstream task, not a group action.
+\end{answer}
+
+\questiontitle{Equivariance of an Attention-Pooling Layer}
+A layer implements $\mathbf{h}^{(l+1)}=M\,\underbrace{\softmax(\beta\,M\T\mathbf{h}^{(l)})}_{=:\,\mathbf{p}}$,
+where $\mathbf{h}^{(l)}\in\R^{d}$, $\beta>0$ is a hyperparameter, and $M\in\R^{d\times J}$ holds $J$
+pattern columns. Which statements about this layer are true? (Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice $\mathbf{h}^{(l+1)}$ is equivariant to permutations of the columns of $M$.
+  \choice $\mathbf{p}$ is invariant to permutations of the columns of $M$.
+  \choice $\mathbf{p}$ is equivariant to permutations of the columns of $M$.
+  \choice $\mathbf{h}^{(l+1)}$ is invariant to permutations of the columns of $M$.
+  \choice $\mathbf{p}$ is equivariant to permutations of the rows of $M$.
+  \choice This layer cannot be used in deep learning because the gradient
+        $\partial\mathbf{h}^{(l+1)}/\partial\mathbf{h}^{(l)}$ cannot be backpropagated.
+\end{itemize}
+\closequestion
+\begin{answer}{C, D}
+  \no{A} $\mathbf{h}^{(l+1)}$ is \emph{invariant}, not equivariant, to column permutations of $M$.
+  \no{B} $\mathbf{p}$'s entries permute under column permutations of $M$, so it is not invariant.
+  \yes{C} Permuting the columns of $M$ permutes the rows of $M\T$, hence permutes the entries of $\mathbf{p}$ --- $\mathbf{p}$ is \emph{equivariant}.
+  \yes{D} $\mathbf{h}^{(l+1)}=M\mathbf{p}$ is unchanged: the column reorder of $M$ cancels the row reorder of $\mathbf{p}$ --- so it is \emph{invariant}.
+  \no{E} Row permutations act on the feature dimension $d$, not on the $J$ pattern entries of $\mathbf{p}$ --- this does not give equivariance of $\mathbf{p}$.
+  \no{F} The layer (softmax $+$ matrix products) is differentiable --- gradients backpropagate fine.
+\end{answer}
+
+
+% ==========================================================
+\section{Theory \& Foundations}
+% ==========================================================
+
+\questiontitle{Universal Approximator Theorem}
+Mark the correct statements about the Universal Approximator Theorem (UAT) for neural networks.
+(Select one or more.)
+\begin{itemize}[leftmargin=1.8em]
+  \choice For a real-valued, continuous function $h$ on $[-\pi,\pi]^2$, the existence of an approximating
+        network can be derived with the help of Fourier series.
+  \choice The UAT is a theoretical statement about the expressive power of neural networks.
+  \choice The UAT gives a useful algorithm to compute the optimal weights of a network that should
+        approximate a given continuous function.
+  \choice The algorithm related to the UAT is easy to understand and implement, but very costly and
+        therefore hardly used in practice.
+  \choice The UAT shows that any function can be approximated by any given network with arbitrary
+        precision; there are no restrictions on the function or on the network structure.
+\end{itemize}
+\closequestion
+\begin{answer}{A, B}
+  \yes{A} One proof route builds the approximation from Fourier series on the compact domain.
+  \yes{B} The UAT is purely an existence / expressivity statement.
+  \no{C} It is \emph{non-constructive} --- it does not tell you how to find the weights.
+  \no{D} There is no practical ``UAT algorithm'' in use --- nonsense.
+  \no{E} There are conditions: the target must be continuous on a compact set and the network needs at least one (sufficiently wide) hidden layer --- ``any function, no restrictions'' is false.
+\end{answer}
+
+\questiontitle{Newton's Method vs.\ Gradient Direction}
+On a quadratic error surface (elliptical level curves), two arrows are drawn from a point: one points
+straight at the minimum at the centre of the ellipses, the other points perpendicular to the local
+level curve. Label each arrow as \emph{Gradient} or \emph{Newton's Method}.
+\begin{itemize}[leftmargin=1.8em]
+  \item Arrow pointing directly to the centre (minimum)
+  \item Arrow perpendicular to the level curve (steepest descent)
+\end{itemize}
+\closequestion
+\begin{answerprose}{centre $=$ Newton, perpendicular $=$ Gradient}
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item[\textcolor{ok}{$\to$}] \textbf{Arrow to the centre $=$ Newton's Method.} It pre-multiplies the gradient by the inverse Hessian, so on a quadratic it points straight at the minimum in one step.
+  \item[\textcolor{ok}{$\to$}] \textbf{Arrow perpendicular to the level curve $=$ Gradient.} Steepest descent is orthogonal to the contour, which generally does \emph{not} aim at the minimum on elongated ellipses.
+\end{itemize}
+\end{answerprose}
+
+
+\end{document}

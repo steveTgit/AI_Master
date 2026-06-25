@@ -1,6 +1,13 @@
 % ==========================================================
-%  EXAM QUESTIONS — AI IN LIFE SCIENCES
-%  Article class, shared visual language with summary.tex.
+%  EXAM QUESTIONS — AI IN LIFE SCIENCES  (WORKED SOLUTIONS)
+%  Companion to exams.tex: every question is followed
+%  immediately by a green answer box. Correct options are
+%  marked with a green check, incorrect ones with a red cross,
+%  each with a short justification (incl. why tricky near-miss
+%  options are wrong).
+%
+%  NOTE: exams.tex stays the blank practice set. This file is
+%  the solutions variant — do not merge the two.
 % ==========================================================
 
 \documentclass[11pt,oneside]{article}
@@ -42,6 +49,8 @@
 \definecolor{key@bg}{HTML}{F4FBF6}
 \definecolor{note@frame}{HTML}{9A6A00}
 \definecolor{note@bg}{HTML}{FEF9E7}
+\definecolor{ok}{HTML}{1E8449}    % green check — correct option
+\definecolor{bad}{HTML}{B03A2E}   % red cross  — incorrect option
 
 % ── Box global style ─────────────────────────────────────
 \tcbset{
@@ -97,7 +106,7 @@
 % ── Header & footer ──────────────────────────────────────
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\color{gray!70}Old Exam Questions — \coursetitle}
+\fancyhead[L]{\small\color{gray!70}Old Exam Questions (Solutions) — \coursetitle}
 \fancyhead[R]{\small\color{gray!70}\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -116,27 +125,21 @@
 % Multiple-choice checkbox bullet.
 \newcommand{\choice}{\item[$\square$] }
 
-% Fill-in answer line. Usage: \answerline{3cm}
-\newcommand{\answerline}[1]{\makebox[#1]{\hrulefill}}
-
-% Blank working area — dashed-border box for student calculations.
-\newcommand{\workingspace}[1]{%
-  \par\vspace{2pt}%
-  \begin{tcolorbox}[
-    enhanced,
-    breakable=false,
-    colback=white,
-    colframe=gray!40,
-    boxrule=0.45pt,
-    arc=0pt,
-    sharp corners,
-    height=#1,
-    left=3mm, right=3mm, top=3mm, bottom=3mm,
-    frame style={dashed}
-  ]%
-  \end{tcolorbox}%
-  \vspace{2pt}%
-}
+% ── Inline answer macros (solutions variant) ─────────────
+% Green answer box placed directly under each question. The argument records the
+% correct letters (kept for reference / grep), but the header only shows "Answers"
+% so the key is not spoiled at a glance.
+% Usage:
+%   \begin{answer}{A, B}
+%     \yes{A} reason why correct ...
+%     \no{C}  reason why wrong (esp. for tricky near-misses) ...
+%   \end{answer}
+\newenvironment{answer}[1]{%
+  \begin{keybox}[Answers]%
+  \begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]}%
+  {\end{itemize}\end{keybox}}
+\newcommand{\yes}[1]{\item[\textcolor{ok}{\ensuremath{\checkmark}}]\textbf{#1.}\ }
+\newcommand{\no}[1]{\item[\textcolor{bad}{\ensuremath{\bm\times}}]\textbf{#1.}\ }
 
 % ── Math macros (minimal subset for exam questions) ──────
 \newcommand{\R}{\mathbb{R}}
@@ -158,6 +161,8 @@
   {\color{accent}\rule{\linewidth}{1.8pt}}\par
   \vspace{0.65cm}
   {\fontsize{26}{32}\selectfont\bfseries\color{accent}Old Exam Questions\\[2pt] \coursetitle\par}
+  \vspace{0.25cm}
+  {\Large\color{key@frame}\bfseries Worked Solutions\par}
   \vspace{0.55cm}
   {\color{accent!35}\rule{\linewidth}{0.5pt}}\par
   \vspace{0.55cm}
@@ -168,16 +173,17 @@
 
 \vspace{0.9cm}
 \begin{notebox}[How this file is organized]
-Questions come from two sittings: the \textbf{2024} exam (25 June 2024,
-Sections~1--6) and the \textbf{2026} exam (25 June 2026, Sections~7--10). The 2024
-items are \emph{multiple-select} (``which of the following is/are true'' means
-\textbf{one or more} of the four options are correct). The 2026 items are
-\emph{single-best-answer} (exactly \textbf{one} of the three options is correct).
-To avoid reproducing the originals verbatim, the question wording has been
-paraphrased while the answer options are kept intact. Questions are grouped by
-topic rather than in their original random order. The full answer key is at the
-end --- the question boxes themselves are intentionally left blank so the file
-doubles as a practice set.
+This is the \textbf{solutions companion} to \texttt{exams.tex}. Every question is
+followed \emph{immediately} by a green \textbf{answer box}. Inside it, each option is
+marked \textcolor{ok}{\ensuremath{\checkmark}} (correct) or
+\textcolor{bad}{\ensuremath{\bm\times}} (incorrect), with a short justification ---
+\emph{why} the correct options are correct and, for the tricky / near-miss
+distractors, \emph{why} they are wrong. Questions come from two sittings: the
+\textbf{2024} exam (25 June 2024, Sections~1--6, \emph{multiple-select} --- one
+\emph{or more} options correct) and the \textbf{2026} exam (25 June 2026,
+Sections~7--10, \emph{single-best-answer} --- exactly one option correct). Wording
+has been paraphrased; the answer options are kept intact. For a clean practice set
+with blank answers, use \texttt{exams.tex}.
 \end{notebox}
 
 \tableofcontents
@@ -198,6 +204,12 @@ Regarding the SMILES notation for molecules, which of the following statements h
   \choice SMILES is always unique for each molecule, ensuring no two different molecules share the same SMILES.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} It is exactly the \emph{Simplified Molecular Input Line Entry System}.
+  \yes{B} A molecule is encoded as a 1D string of characters (atoms, bonds, ring/branch tokens).
+  \no{C} SMILES \emph{can} be parsed into a molecular graph --- that round-trip is one of its main uses.
+  \no{D} Not unique: a single molecule has \emph{many} valid SMILES. Only a \emph{canonical} SMILES (a fixed algorithm) gives one representative string --- the plain format is not inherently unique.
+\end{answer}
 
 \questiontitle{Reading a SMILES string}
 Consider the molecule \emph{pyruvic acid} (2-oxopropanoic acid), i.e.\ a methyl
@@ -211,6 +223,12 @@ SMILES strings below correctly encode this molecule?
   \choice \texttt{OCCOO}
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} \texttt{O=C(C(=O)O)C}: a carbonyl carbon bearing a \texttt{C(=O)O} (carboxyl) and a \texttt{C} (methyl) --- exactly CH\textsubscript{3}--CO--COOH, just written starting from the ketone.
+  \yes{B} \texttt{CC(=O)C(=O)O}: methyl, ketone carbonyl, carboxyl read left-to-right --- the same molecule.
+  \no{C} \texttt{CCCOOO} is a chain of three carbons then three oxygens (no double bonds, no carboxyl) --- not pyruvic acid, and chemically nonsensical.
+  \no{D} \texttt{OCCOO} encodes a short O/C chain with the wrong connectivity and no ketone/carboxyl --- not the target.
+\end{answer}
 
 \questiontitle{Molecular fingerprints}
 Which of the following statements about molecular fingerprints are accurate?
@@ -221,6 +239,12 @@ Which of the following statements about molecular fingerprints are accurate?
   \choice They provide a 3D representation of molecules.
 \end{itemize}
 \closequestion
+\begin{answer}{B, C}
+  \no{A} They are \emph{lossy} and often hashed (bit collisions), so you cannot reconstruct a \emph{unique} molecular graph from them.
+  \yes{B} Fingerprints are fixed-length \emph{binary} (or count/numerical) vectors encoding the presence of substructures.
+  \yes{C} Their classic uses are Tanimoto \emph{similarity search} and as ML features.
+  \no{D} They encode 2D substructure/topology, \emph{not} 3D geometry.
+\end{answer}
 
 \questiontitle{Bioassays}
 Select the correct statements about bioassays.
@@ -231,6 +255,12 @@ Select the correct statements about bioassays.
   \choice They are typically tested \emph{in vitro}, i.e.\ in a living organism.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, C}
+  \yes{A} The whole point of an assay is to quantify a biological response/function.
+  \yes{B} They are run over a concentration range (dose--response), giving e.g.\ IC\textsubscript{50}.
+  \yes{C} They are physical wet-lab experiments that generate the bioactivity labels we later model.
+  \no{D} The trap is the definition: \emph{in vitro} means ``in glass'' (test tube / cell culture), \emph{not} in a living organism. ``In a living organism'' is \emph{in vivo}.
+\end{answer}
 
 \questiontitle{ADME properties}
 Which statements about ADME (Absorption, Distribution, Metabolism, and Excretion)
@@ -242,6 +272,12 @@ properties are correct?
   \choice ADME properties are critical in determining the pharmacokinetics of a drug.
 \end{itemize}
 \closequestion
+\begin{answer}{A, C, D}
+  \yes{A} Lipinski's Rule of Five is a cheap drug-likeness heuristic used as an ADME/oral-bioavailability proxy.
+  \no{B} Necessary but \emph{not sufficient}: good ADME means the drug reaches its target intact, but efficacy still needs actual target binding and the right pharmacodynamics.
+  \yes{C} Properties like clearance depend on complex metabolism and are notoriously hard to predict.
+  \yes{D} ADME \emph{is} pharmacokinetics --- what the body does to the drug over time.
+\end{answer}
 
 \questiontitle{Characteristics of QSAR / bioactivity data}
 Which of the following correctly characterise typical QSAR / bioactivity datasets?
@@ -252,6 +288,12 @@ Which of the following correctly characterise typical QSAR / bioactivity dataset
   \choice QSAR data often includes noise due to biological variability and experimental inconsistencies.
 \end{itemize}
 \closequestion
+\begin{answer}{C, D}
+  \no{A} Bioactivity data is usually \emph{small/limited} (hundreds to a few thousand per target), not millions.
+  \no{B} It is typically strongly \emph{imbalanced} --- far more inactives than actives.
+  \yes{C} Medicinal-chemistry projects explore \emph{analog series} (one scaffold, small variations), so related compounds cluster heavily.
+  \yes{D} Assays vary between labs/days and have measurement error, so labels are noisy.
+\end{answer}
 
 \questiontitle{Applications of QSAR modeling}
 For which of the following applications is QSAR modeling relevant?
@@ -262,6 +304,12 @@ For which of the following applications is QSAR modeling relevant?
   \choice Mapping the genome sequences of organisms.
 \end{itemize}
 \closequestion
+\begin{answer}{B, C}
+  \no{A} 3D protein structure is \emph{structure prediction} (e.g.\ AlphaFold), a different problem --- QSAR maps molecule $\to$ property.
+  \yes{B} QSAR ranks/scores compounds by predicted activity --- i.e.\ finds candidates.
+  \yes{C} Predicting properties like toxicity (QSPR) is a core QSAR application.
+  \no{D} Genome sequencing/mapping is genomics, unrelated to QSAR.
+\end{answer}
 
 
 % ==========================================================
@@ -278,6 +326,12 @@ Which statements about ligand-based virtual screening are correct?
   \choice Ligand-based virtual screening typically only considers bioactivity predictions to select compounds.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} Fingerprint similarity to known actives is the workhorse of ligand-based VS.
+  \no{B} It is precisely \emph{used} to predict activity of unknown/untested compounds by analogy to known actives.
+  \no{C} Needing the protein's 3D structure is \emph{structure-based} VS. ``Ligand-based'' means you only use known ligands, no target structure.
+  \no{D} Selection also weighs ADME, drug-likeness and structural-alert filters --- not bioactivity alone.
+\end{answer}
 
 \questiontitle{Data splits in QSAR model evaluation}
 When evaluating QSAR models, which of the following statements about
@@ -289,6 +343,12 @@ data-splitting strategies hold?
   \choice Cluster splits group similar compounds together, ensuring that structurally similar compounds are not both in the training and test sets.
 \end{itemize}
 \closequestion
+\begin{answer}{A, D}
+  \yes{A} Splitting by time mimics how data really arrives and tests genuine prospective generalisation.
+  \no{B} A \emph{random} split is the classic trap: structurally similar compounds leak into both sets (compound-series bias), so it \emph{over-estimates} performance rather than eliminating bias.
+  \no{C} Cross-validation \emph{is} routinely used in QSAR; cost is not a reason to avoid it here.
+  \yes{D} Scaffold/cluster splits keep an entire analog series on one side, so the test set is not just memorised neighbours.
+\end{answer}
 
 \questiontitle{Early-recognition metrics in virtual screening}
 Because only the top of a virtual-screening ranking is followed up experimentally,
@@ -301,6 +361,12 @@ specifically designed to reward strong early recognition?
   \choice Enrichment Factor (EF).
 \end{itemize}
 \closequestion
+\begin{answer}{B, D}
+  \no{A} A Precision--Recall curve summarises the \emph{whole} ranking, not specifically the top.
+  \yes{B} BEDROC applies an exponential weight that emphasises actives found \emph{early} in the ranking.
+  \no{C} Average Precision is a general ranking metric and is not early-recognition-weighted.
+  \yes{D} The Enrichment Factor measures how many actives appear in the top $x\%$ --- a pure early-recognition metric.
+\end{answer}
 
 \questiontitle{Target identification / deconvolution}
 Which statements about target identification / deconvolution are correct?
@@ -311,6 +377,12 @@ Which statements about target identification / deconvolution are correct?
   \choice For a given molecule, it consists of identifying all the proteins it will bind if multiple are present simultaneously.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} Deconvolution asks: of the candidate proteins, which is the \emph{most likely} target of this molecule.
+  \yes{B} Picking one target out of several is naturally a \emph{multi-class} (one-of-$K$) problem.
+  \no{C} \emph{Multi-task} classification predicts activity against \emph{many} targets independently --- that is target \emph{prediction}, not deconvolution.
+  \no{D} Identifying \emph{all} binding proteins is again target prediction (many yes/no labels), not the ``single most likely'' framing of deconvolution.
+\end{answer}
 
 \questiontitle{Drug synergy and antagonism}
 Which of the following statements about drug synergy and antagonism are correct?
@@ -321,6 +393,12 @@ Which of the following statements about drug synergy and antagonism are correct?
   \choice Drug synergy / antagonism evaluation is only applicable to chemically similar drugs.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} Synergy = the combination does \emph{more} than the sum of the parts (super-additive).
+  \yes{B} Loewe additivity is the standard reference model for ``no interaction'', against which synergy is measured.
+  \no{C} This is the inverted definition: \emph{antagonism} is when the combined effect is \emph{less} than the sum. The sentence describes synergy but labels it antagonism.
+  \no{D} Combinations are studied for \emph{any} drug pair (often deliberately different mechanisms) --- chemical similarity is irrelevant.
+\end{answer}
 
 \questiontitle{Random Forests vs.\ Graph Neural Networks}
 Comparing Random Forests (RF) and Graph Neural Networks (GNNs) for molecular
@@ -332,6 +410,12 @@ modeling, which statements are correct?
   \choice GNNs are less sensitive to the quality and variability of the input data compared to RFs, making them more consistent in performance across different datasets.
 \end{itemize}
 \closequestion
+\begin{answer}{B, C}
+  \no{A} ``Better in \emph{all} cases'' is the giveaway --- on limited/noisy data RF often matches or beats GNNs (no free lunch).
+  \yes{B} On small, high-dimensional QSAR datasets RF (bagging) is robust and overfits less than a data-hungry GNN.
+  \yes{C} RF gives feature-importance scores over interpretable descriptors; GNN representations are opaque.
+  \no{D} The opposite is true: GNNs are typically \emph{more} sensitive to data quantity/quality, not less.
+\end{answer}
 
 
 % ==========================================================
@@ -348,6 +432,12 @@ Which statements about molecular graphs and graph neural networks are correct?
   \choice The information about the bond type (e.g.\ single bond, double bond) cannot be included in a GNN.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} Standard encoding: a node-feature matrix plus an adjacency/edge matrix.
+  \yes{B} Typical atom features are exactly atomic number, hybridisation, formal charge (one-hot/numeric).
+  \no{C} Message passing also uses \emph{edge} information and the graph topology, not node features alone.
+  \no{D} Bond type \emph{can} be encoded as edge features --- single/double/aromatic bonds are routinely included.
+\end{answer}
 
 \questiontitle{Limitations of GNNs in molecular modeling}
 Which of the following are genuine limitations of GNNs in the context of
@@ -359,6 +449,12 @@ molecular modeling?
   \choice GNNs require a significant amount of computational resources for training.
 \end{itemize}
 \closequestion
+\begin{answer}{B, C, D}
+  \no{A} Far too strong --- GNNs predict many molecular properties very well; the statement is an obvious overstatement.
+  \yes{B} A fixed number of message-passing hops limits how far information travels (over-smoothing / under-reaching).
+  \yes{C} Large, complex graphs strain both expressivity and memory.
+  \yes{D} Training GNNs is compute- and memory-intensive relative to e.g.\ RF.
+\end{answer}
 
 \questiontitle{Multi-modal contrastive learning}
 Which statements about multi-modal contrastive learning are correct?
@@ -369,6 +465,12 @@ Which statements about multi-modal contrastive learning are correct?
   \choice Multi-modal contrastive learning is an unsupervised learning technique.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} The defining idea: map both modalities into one \emph{shared} embedding space (à la CLIP).
+  \yes{B} It is \emph{self-supervised} --- supervision comes from matched/mismatched pairs, not human labels.
+  \no{C} It \emph{aligns} matched pairs (pull together / push apart); ``concentrates representations to make predictions'' mischaracterises the objective.
+  \no{D} The subtle distinction: it is self-supervised, \emph{not} unsupervised --- the pairing provides the training signal.
+\end{answer}
 
 \questiontitle{Multiple instance learning (MIL)}
 Which of the following statements about multiple instance learning (MIL) hold?
@@ -379,6 +481,12 @@ Which of the following statements about multiple instance learning (MIL) hold?
   \choice MIL models should be invariant to the permutation of instances.
 \end{itemize}
 \closequestion
+\begin{answer}{C, D}
+  \no{A} Exactly what MIL is \emph{not}: instances are \emph{not} individually labelled (that would be ordinary supervised learning).
+  \no{B} Bags can have varying sizes; the aggregation (e.g.\ attention pooling) handles any number of instances.
+  \yes{C} The hallmark of MIL: a label is attached to the \emph{bag}, not to each instance.
+  \yes{D} A bag is a set, so the model output must be \emph{permutation-invariant}.
+\end{answer}
 
 
 % ==========================================================
@@ -395,6 +503,12 @@ Which statements about generative models for small molecules are correct?
   \choice Autoregressive models can be used to generate SMILES representations of small molecules.
 \end{itemize}
 \closequestion
+\begin{answer}{D}
+  \no{A} Empirically false: an LSTM reaches $\sim$98\% valid SMILES, and SELFIES gives 100\% by construction --- nowhere near ``$<$10\%''.
+  \no{B} Generative models explore \emph{novel} chemical space, not just the already-synthesised \emph{known} set.
+  \no{C} GANs \emph{can} generate molecules (as can VAEs, normalizing flows, diffusion).
+  \yes{D} Autoregressive (next-token) models generate SMILES one character at a time and work well.
+\end{answer}
 
 \questiontitle{Goal-directed molecule generation}
 Which of the following correctly describe goal-directed molecule generation?
@@ -405,6 +519,12 @@ Which of the following correctly describe goal-directed molecule generation?
   \choice Goal-directed generation aims to create molecules with specific desired properties.
 \end{itemize}
 \closequestion
+\begin{answer}{C, D}
+  \no{A} ``Replicating existing structures'' describes \emph{distribution learning}, not goal-directed design.
+  \no{B} ``Similar to the training set'' is again \emph{distribution learning} --- goal-directed deliberately pushes \emph{beyond} the training distribution.
+  \yes{C} A scoring function + RL loop (generate, score, reward, update) is a standard goal-directed recipe (e.g.\ REINVENT).
+  \yes{D} The aim is molecules with \emph{specific desired} properties, optimised toward an objective.
+\end{answer}
 
 \questiontitle{Fr\'echet ChemNet Distance (FCD)}
 Which statements about the Fr\'echet ChemNet Distance (FCD) and how it is computed
@@ -416,6 +536,12 @@ are correct?
   \choice FCD is a metric used to compare the distribution of generated molecules to that of real molecules.
 \end{itemize}
 \closequestion
+\begin{answer}{B, D}
+  \no{A} It works on whole-molecule embeddings, not distances between individual atoms.
+  \yes{B} FCD fits Gaussians to ChemNet's last-hidden-layer embeddings and compares their \emph{means and covariances}.
+  \no{C} It is computed in a \emph{learned latent space} (ChemNet), not on raw structures --- there is a transformation step.
+  \yes{D} It is a \emph{distributional} metric: how close is the generated set to the real set overall.
+\end{answer}
 
 \questiontitle{AI for chemical reactions}
 Which of the following statements about machine learning for chemical reactions are
@@ -427,6 +553,12 @@ correct?
   \choice Predicting chemical reactions with machine learning requires data from quantum mechanical calculations due to bond changes and electron movements.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, C}
+  \yes{A} Template-based (neural-symbolic) methods select a reaction template = a transformation rule.
+  \yes{B} Models are trained on reaction databases like USPTO (mined from patents).
+  \yes{C} The ``Molecular Transformer'' treats reaction prediction as seq-to-seq translation.
+  \no{D} No QM data needed --- predictions come from \emph{reaction databases}, not quantum-mechanical calculations.
+\end{answer}
 
 \questiontitle{Synthesis planning}
 Which statements about synthesis planning are correct?
@@ -437,6 +569,12 @@ Which statements about synthesis planning are correct?
   \choice Synthesis planning involves only selecting the reactants.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} It designs a whole \emph{sequence} of reactions from purchasable materials to the target.
+  \yes{B} Retrosynthesis recursively breaks the target into simpler precursors --- the core technique.
+  \no{C} Far from trivial: $\sim$50\% solve rates, and whether routes actually run under real conditions remains uncertain.
+  \no{D} It is much more than ``selecting reactants'' --- it is multi-step route design with scoring and search.
+\end{answer}
 
 \questiontitle{Retrosynthesis as a reinforcement-learning game}
 Multi-step retrosynthesis can be cast as a game solvable by reinforcement learning.
@@ -448,6 +586,12 @@ Which of the following statements about this ``retrosynthesis game'' are correct
   \choice The reward in the retrosynthesis ``game'' is obtained when the product is successfully synthesized from the building blocks.
 \end{itemize}
 \closequestion
+\begin{answer}{A, C, D}
+  \yes{A} An \emph{action} is choosing a disconnection / set of reactants (a reverse reaction).
+  \no{B} The classic trap: the \emph{state} is the current set of molecules \emph{still to be made}, \emph{not} the set of available building blocks (those are the goal you are trying to reach).
+  \yes{C} The \emph{environment} applies the chosen reaction and returns the new set of molecules.
+  \yes{D} The \emph{reward} comes when every remaining molecule is an available building block (the game is won).
+\end{answer}
 
 
 % ==========================================================
@@ -468,6 +612,12 @@ developing diabetes). Which of the following statements are correct?
   \choice Missing values in ``smoker status'' can be replaced by the column's mean value to handle skewness.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} Cholesterol is numeric; the \emph{median} is the robust choice for imputing a skewed continuous column.
+  \no{B} Smoking status is \emph{categorical} (three discrete labels), not continuous.
+  \no{C} Being orderable is not enough: cholesterol is a true \emph{continuous} (interval/ratio) measurement with meaningful differences, not merely ordinal.
+  \no{D} You cannot take a \emph{mean} of a categorical column --- a missing smoking status would be imputed with the \emph{mode}, not the mean.
+\end{answer}
 
 \questiontitle{Batch effects in medical data}
 Which statements about batch effects in medical data are correct?
@@ -478,6 +628,12 @@ Which statements about batch effects in medical data are correct?
   \choice Batch effects are usually beneficial as they introduce necessary variability into the data.
 \end{itemize}
 \closequestion
+\begin{answer}{A, C}
+  \yes{A} If batches correlate with the label, the model takes the shortcut and separates \emph{batches} instead of biology.
+  \no{B} More samples from the \emph{same} biased batches does not remove the systematic offset --- you need design/correction (randomisation, ComBat, etc.).
+  \yes{C} They are exactly artificial, non-biological differences from instruments/reagents/handling.
+  \no{D} They are a confounder, not a benefit --- this is the opposite of correct.
+\end{answer}
 
 \questiontitle{Domain shifts in medical and healthcare data}
 Medical and healthcare data are frequently subject to domain shifts. Using the
@@ -491,6 +647,12 @@ following statements about domain shifts are correct?
   \choice Assume that the diagnostic process to determine the disease status $y$ is changed, e.g.\ an antigen test is replaced by a PCR test. This represents a concept shift $p(y\mid x)$.
 \end{itemize}
 \closequestion
+\begin{answer}{C, D}
+  \no{A} A good \emph{random} validation score says nothing about future shifts; models do \emph{not} auto-adapt over time.
+  \no{B} ``Never'' is wrong --- $p(x)$ \emph{does} shift (covariate shift), e.g.\ a different patient population.
+  \yes{C} A disease wave changes the prevalence $p(y)$ --- a prior/label shift.
+  \yes{D} Redefining how the label is measured changes the $x\to y$ relationship: a concept shift $p(y\mid x)$.
+\end{answer}
 
 \questiontitle{Medical imaging modalities}
 Which statements about medical imaging modalities are correct?
@@ -501,6 +663,12 @@ Which statements about medical imaging modalities are correct?
   \choice Optical coherence tomography imaging uses multiple X-rays to create images of organs and tissues.
 \end{itemize}
 \closequestion
+\begin{answer}{B, C}
+  \no{A} CT is built from many \emph{X-ray} projections, not ultrasound.
+  \yes{B} X-ray contrast comes from differential absorption by tissue density (bone vs.\ soft tissue).
+  \yes{C} MRI uses strong magnetic fields + radio-frequency pulses (no ionising radiation).
+  \no{D} OCT uses \emph{light} (near-infrared interferometry), not X-rays.
+\end{answer}
 
 \questiontitle{Most common task in medical imaging}
 Compared with typical computer-vision tasks, which task is especially prominent in
@@ -512,6 +680,12 @@ medical imaging?
   \choice Object detection.
 \end{itemize}
 \closequestion
+\begin{answer}{B, C}
+  \no{A} Image generation is a niche/auxiliary use, not the dominant clinical task.
+  \yes{B} Classification (e.g.\ disease present/absent, grading) is also very common.
+  \yes{C} \emph{Segmentation} (delineating organs/lesions pixel-by-pixel) is the signature, disproportionately common medical-imaging task --- hence the U-Net.
+  \no{D} Object detection is comparatively rare in medical imaging versus segmentation and classification.
+\end{answer}
 
 \questiontitle{The U-Net architecture}
 Which of the following correctly describe the U-Net architecture?
@@ -522,6 +696,12 @@ Which of the following correctly describe the U-Net architecture?
   \choice To aid the decoding process, feature maps from the encoder are concatenated with feature maps of the corresponding up-sampling level of the decoder.
 \end{itemize}
 \closequestion
+\begin{answer}{B, D}
+  \no{A} U-Net is fully \emph{convolutional}; it predates and does not use self-attention encoders.
+  \yes{B} The ``U'' is a symmetric contracting encoder + expanding decoder.
+  \no{C} It was designed for \emph{segmentation} (biomedical), not object detection.
+  \yes{D} Skip connections concatenate encoder feature maps into the matching decoder level --- the key idea that preserves spatial detail.
+\end{answer}
 
 \questiontitle{The ``Clever Hans'' effect}
 In the context of AI for medical imaging, what does the ``Clever Hans'' effect
@@ -533,6 +713,12 @@ refer to?
   \choice The phenomenon where data augmentation is used to improve the robustness of AI models in medical imaging.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Unrelated to super-resolution bias.
+  \yes{B} Exactly shortcut learning: the model \emph{looks} accurate but is exploiting an irrelevant artifact (e.g.\ a hospital tag/ruler), not the pathology.
+  \no{C} Tempting, but too generic: ``biased training data'' describes \emph{any} bias. Clever Hans specifically means relying on \emph{spurious shortcut features} while appearing to perform well.
+  \no{D} Data augmentation is a mitigation technique, not the Clever Hans effect.
+\end{answer}
 
 \questiontitle{Explainable AI and interpretability in medical imaging}
 Which statements about explainable AI and interpretability in medical imaging are
@@ -544,6 +730,12 @@ correct?
   \choice Counterfactual explanations in medical imaging involve generating alternative images to show what changes would have been needed for a different diagnosis.
 \end{itemize}
 \closequestion
+\begin{answer}{B, D}
+  \no{A} The layer-by-layer back-propagation of a \emph{relevance} value is Layer-wise Relevance Propagation (LRP); ``gradient integration'' is the wrong name for it.
+  \yes{B} Grad-CAM produces a heatmap of the image regions most responsible for the prediction.
+  \no{C} Occlusion perturbs the \emph{input} image at inference (mask a patch, see the score drop) --- it does \emph{not} remove training data, and it explains rather than ``improves interpretability''.
+  \yes{D} Counterfactuals show the minimal image change that would flip the diagnosis --- a what-if explanation.
+\end{answer}
 
 \questiontitle{AlphaFold 2}
 Which of the following statements about AlphaFold 2 are correct?
@@ -554,6 +746,12 @@ Which of the following statements about AlphaFold 2 are correct?
   \choice AlphaFold 2 uses a convolutional neural network architecture.
 \end{itemize}
 \closequestion
+\begin{answer}{B, C}
+  \no{A} No quantum-mechanical calculations are used --- it is a learned model.
+  \yes{B} It relies heavily on multiple sequence alignments (co-evolution signal) and template structures.
+  \yes{C} Its job is exactly sequence $\to$ 3D structure prediction.
+  \no{D} The architecture is \emph{attention}-based (the Evoformer + structure module), not a CNN.
+\end{answer}
 
 
 % ==========================================================
@@ -570,6 +768,12 @@ Which statements about the composition of biological sequences are correct?
   \choice RNA sequences are composed of lipids.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B}
+  \yes{A} Proteins are amino-acid chains joined by peptide bonds.
+  \yes{B} DNA is a chain of nucleotides (nucleic acid).
+  \no{C} Sequences are highly structured (motifs, codons, grammar) --- ``no rules'' is false and is what makes them learnable.
+  \no{D} RNA is a \emph{nucleic acid}, not a lipid.
+\end{answer}
 
 \questiontitle{Deep learning for biological sequences}
 Which of the following statements about deep learning methods for biological
@@ -581,15 +785,21 @@ sequences are correct?
   \choice 1D-Convolutions, Recurrent Neural Networks (RNNs), Long Short-Term Memory networks (LSTMs), and Transformers are all used to analyze biological sequences.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, C, D}
+  \yes{A} Learned filters detect recurring \emph{motifs} (e.g.\ binding sites).
+  \yes{B} One-hot encoding of the alphabet (A/C/G/T or 20 amino acids) is the standard input format.
+  \yes{C} Classification, segmentation (per-position labels) and generation are all applied to sequences.
+  \yes{D} 1D-CNNs, RNNs, LSTMs and Transformers are all standard sequence architectures here --- every option is correct.
+\end{answer}
 
 
 % ==========================================================
 %  2026 EXAM (single-best-answer) — Sections 7–10
 % ==========================================================
 \begin{notebox}[2026 exam --- single-best-answer]
-The remaining sections are from the \textbf{2026} exam (25 June 2026). Each of these
-questions has \textbf{exactly one} correct option among the three listed. Wording
-has been paraphrased; the answer options are kept intact.
+The remaining sections are from the \textbf{2026} exam (25 June 2026). Each question
+has \textbf{exactly one} correct option among the three listed; the answer box marks
+it \textcolor{ok}{\ensuremath{\checkmark}} and explains why the other two are wrong.
 \end{notebox}
 
 
@@ -607,6 +817,11 @@ molecular graphs and molecular fingerprints?
   \choice A molecular graph can always be reconstructed exactly from a fingerprint.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} A fingerprint is \emph{computed from} the graph (substructure enumeration/hashing), but the mapping is lossy and many-to-one, so the exact graph cannot be recovered.
+  \no{B} A fingerprint is a compressed bit/count summary that discards information, so it does \emph{not} carry the same structural information as the graph.
+  \no{C} Exact reconstruction is impossible in general --- different molecules can even hash to the same bits.
+\end{answer}
 
 \questiontitle{Converting between SMILES and fingerprints}
 Which statement about converting between SMILES strings and molecular fingerprints
@@ -617,6 +832,11 @@ is correct?
   \choice Only a molecular fingerprint can be converted into a SMILES using cheminformatics tools.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} The round-trip does not exist: you cannot go fingerprint $\to$ SMILES.
+  \yes{B} SMILES $\to$ molecular graph $\to$ fingerprint is a standard cheminformatics pipeline.
+  \no{C} Backwards --- fingerprints are lossy, so fingerprint $\to$ SMILES is not possible.
+\end{answer}
 
 \questiontitle{Tanimoto coefficient}
 How does the Tanimoto coefficient quantify the similarity of two molecular
@@ -627,6 +847,11 @@ fingerprints?
   \choice It measures the overlap between the core scaffolds and assigns a score of one whenever the scaffolds match.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} Tanimoto $= |A\cap B| / |A\cup B|$: shared on-bits divided by the union of on-bits.
+  \no{B} Averaging 3D pharmacophore-point distances is a different (3D alignment) similarity, not Tanimoto.
+  \no{C} Tanimoto does not test scaffold identity; it counts shared fingerprint features.
+\end{answer}
 
 \questiontitle{Aspirin SMILES}
 Which of the following SMILES strings represents aspirin (acetylsalicylic acid)?
@@ -636,6 +861,11 @@ Which of the following SMILES strings represents aspirin (acetylsalicylic acid)?
   \choice \texttt{O=C[C]Oc1ccccc1C[=O]O}
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} \texttt{O=C(C)Oc1ccccc1C(=O)O}: an acetyl ester (\texttt{O=C(C)O}) on an aromatic ring (\texttt{c1ccccc1}) bearing a carboxylic acid (\texttt{C(=O)O}) --- acetylsalicylic acid.
+  \no{B} Lowercase \texttt{c} marks \emph{aromatic} atoms, so writing the carbonyl carbons as aromatic (\texttt{cc(=O)}) is chemically and syntactically wrong.
+  \no{C} \texttt{[C]} and \texttt{[=O]} are malformed SMILES atom tokens --- the string does not parse.
+\end{answer}
 
 \questiontitle{Bioactivity datasets}
 Which description of typical bioactivity datasets is the most accurate?
@@ -645,6 +875,11 @@ Which description of typical bioactivity datasets is the most accurate?
   \choice They are inexpensive to generate and can therefore cover most combinations of compounds and assays.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} The opposite of reality --- bioactivity data is rarely large, balanced, or clean.
+  \yes{B} It is typically limited, imbalanced (far more inactives than actives), and noisy.
+  \no{C} Assays are expensive, so coverage of compound$\times$assay combinations is very sparse.
+\end{answer}
 
 \questiontitle{The Design--Make--Test--Analyse cycle}
 Which statement correctly describes the Design--Make--Test--Analyse (DMTA) cycle in
@@ -655,6 +890,11 @@ drug discovery?
   \choice Compounds are designed, synthesized, experimentally tested, and the results are analysed to guide the next design cycle.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} Designing comes before testing --- you cannot test a compound you have not yet designed and made.
+  \no{B} It is an iterative \emph{cycle}; one round of testing does not remove the need for further design.
+  \yes{C} Design $\to$ Make $\to$ Test $\to$ Analyse, and the analysis feeds the next design iteration.
+\end{answer}
 
 
 % ==========================================================
@@ -671,6 +911,11 @@ ligand-based drug design (LBDD)?
   \choice SBDD uses the 3D structure of the target, whereas LBDD can use information from known ligands without requiring that target structure.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} Swapped: SBDD needs the target structure, LBDD needs known ligands.
+  \no{B} LBDD specifically does \emph{not} require the target's 3D structure.
+  \yes{C} SBDD uses the target's 3D structure; LBDD relies on known ligands without it.
+\end{answer}
 
 \questiontitle{Similarity search vs.\ model-based search}
 Which statement correctly distinguishes similarity search from model-based search?
@@ -680,6 +925,11 @@ Which statement correctly distinguishes similarity search from model-based searc
   \choice Similarity search learns a decision function from labelled active and inactive compounds, whereas model-based search ranks compounds by proximity to a query molecule.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Model-based search does \emph{not} necessarily need the target's 3D structure --- it can be a ligand-based supervised model.
+  \yes{B} Similarity search retrieves neighbours of a query molecule; model-based search predicts activity with a model trained on labels.
+  \no{C} The two definitions are reversed.
+\end{answer}
 
 \questiontitle{Early-recognition metrics (odd one out)}
 Which metric is \emph{not} specifically designed to emphasise early recognition of
@@ -690,6 +940,11 @@ active compounds near the top of a ranked virtual-screening list?
   \choice Enrichment factor.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} BEDROC is built specifically to reward early recognition.
+  \yes{B} AUC-ROC weights all ranking positions equally, so it is \emph{not} an early-recognition metric --- the odd one out.
+  \no{C} The enrichment factor measures actives in the top $x\%$ --- an early-recognition metric.
+\end{answer}
 
 \questiontitle{Evaluating a virtual-screening model}
 A virtual-screening model ranks one million compounds, but only the top 1\% can be
@@ -701,6 +956,11 @@ the model?
   \choice Prioritize an early-recognition metric such as enrichment factor near the 1\% cutoff or BEDROC, because performance at the top of the ranking determines experimental utility.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} A 0.5-threshold accuracy ignores how well the very top of the ranking is ordered --- which is all that matters here.
+  \no{B} Global AUC-ROC does \emph{not} guarantee good enrichment inside the top 1\%.
+  \yes{C} Use an early-recognition metric --- enrichment factor near the 1\% cutoff, or BEDROC.
+\end{answer}
 
 \questiontitle{Defensible generalization estimates in QSAR}
 Which workflow gives the most defensible estimate of generalization performance in
@@ -711,6 +971,11 @@ a QSAR pipeline?
   \choice Select features on the complete dataset, then split the reduced data and tune hyperparameters using only the training subset.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} Split first, do all feature/hyperparameter selection on the training data, and touch the test set only once for the final estimate.
+  \no{B} Tuning on the test set leaks it into model selection --- the reported number is optimistic.
+  \no{C} Selecting features on the full dataset before splitting also leaks test information.
+\end{answer}
 
 \questiontitle{Compound-series bias}
 What is compound-series bias, and why is it problematic in QSAR modelling?
@@ -720,6 +985,11 @@ What is compound-series bias, and why is it problematic in QSAR modelling?
   \choice The active class is much smaller than the inactive class, so performance is dominated by the majority class even when chemical series are diverse.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} Close analogues land in both train and test under a random split, so the test set is partly memorised and generalization error is underestimated.
+  \no{B} That describes generic information leakage in feature/hyperparameter selection, not compound-series bias.
+  \no{C} That describes class imbalance, a different problem.
+\end{answer}
 
 \questiontitle{Drug synergy and model symmetry}
 Which statement correctly describes drug synergy together with an appropriate
@@ -730,6 +1000,11 @@ property of a synergy-prediction model?
   \choice The combined effect is smaller than the additive expectation, and the prediction should be invariant to the order of the compounds.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} Synergy is super-additive (combined $>$ additive), and a sensible model is symmetric --- swapping the two compounds must not change the prediction.
+  \no{B} ``Equals the additive expectation'' is \emph{no} interaction, and order-dependence is an undesirable property.
+  \no{C} ``Smaller than additive'' is \emph{antagonism}, not synergy (the symmetry property is right, but the definition is wrong).
+\end{answer}
 
 \questiontitle{Proteochemometric modelling}
 What distinguishes proteochemometric modelling from classical single-target QSAR?
@@ -739,6 +1014,11 @@ What distinguishes proteochemometric modelling from classical single-target QSAR
   \choice It uses molecular representations with a separate prediction head for each protein target.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} Proteochemometrics jointly encodes the \emph{molecule and the protein target}, so one model spans many targets.
+  \no{B} A softmax over targets from the molecule alone has no target representation --- not the proteochemometric idea.
+  \no{C} A separate head per target (multi-task) still uses only molecular inputs --- not a joint molecule+protein representation.
+\end{answer}
 
 \questiontitle{Target deconvolution / target fishing}
 What is target deconvolution, also known as target fishing?
@@ -748,6 +1028,11 @@ What is target deconvolution, also known as target fishing?
   \choice Given a molecule, independently predict binding to every candidate protein so that any number of targets may be assigned simultaneously.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Ranking a whole library against \emph{one} protein is virtual screening --- the inverse problem.
+  \yes{B} Target fishing: given a molecule and several candidate proteins, identify the \emph{most likely} target.
+  \no{C} Predicting binding to \emph{every} target independently is multi-task target prediction, not deconvolution's ``single most likely target'' framing.
+\end{answer}
 
 
 % ==========================================================
@@ -764,6 +1049,11 @@ connectivity. How should a graph neural network behave?
   \choice Node representations should be reordered in the same way, while a graph-level prediction should remain unchanged.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} A pure relabelling must \emph{not} change the graph-level prediction --- it is the same graph, just reindexed.
+  \no{B} Node representations should follow the permutation, not stay in fixed positions.
+  \yes{C} Correct symmetry: node features are \emph{equivariant} (they permute with the atoms) while the graph-level readout is \emph{invariant}.
+\end{answer}
 
 \questiontitle{Steps of an MPNN layer}
 Which option correctly lists the typical steps performed in one Message Passing
@@ -774,6 +1064,11 @@ Neural Network (MPNN) layer?
   \choice Graph convolution, message generation, update.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} One MPNN layer: generate messages, aggregate them at each node, then update the node state.
+  \no{B} ``Graph convolution'' is not a separate sub-step here, and aggregation is not the final step.
+  \no{C} Wrong order and wrong steps --- the update must come last.
+\end{answer}
 
 \questiontitle{Oversmoothing in GNNs}
 After stacking many message-passing layers, the node representations in a molecular
@@ -784,6 +1079,11 @@ graph become almost indistinguishable. Why is this problematic?
   \choice Important information fails to reach distant nodes because too few message-passing steps were used.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Distant signals failing through bottlenecks is \emph{over-squashing}, a different pathology.
+  \yes{B} Oversmoothing: after many layers the node embeddings converge, so the model can no longer tell local atom environments apart.
+  \no{C} ``Too few steps'' (under-reaching) is the opposite of the ``many layers'' premise.
+\end{answer}
 
 \questiontitle{Contrastive learning}
 How does contrastive learning construct a shared molecule--target representation
@@ -794,6 +1094,11 @@ space?
   \choice It concatenates molecule and target representations and fits a supervised activity regressor without comparing pairs in a shared space.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Clustering each modality separately and matching by cluster index is not contrastive learning.
+  \yes{B} Contrastive learning pulls associated molecule--target pairs together and pushes mismatched pairs apart in a shared space.
+  \no{C} Concatenating and fitting a supervised regressor never builds a shared comparison space.
+\end{answer}
 
 \questiontitle{Multiple Instance Learning}
 In what way does Multiple Instance Learning differ from standard supervised
@@ -805,6 +1110,11 @@ $(\boldsymbol{x}, y)$, \ldots
   \choice \ldots we have feature vectors labelled with a bag of values $(\boldsymbol{x}, \{y_1, \ldots, y_M\})$.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} MIL replaces $(\boldsymbol{x}, y)$ with a \emph{bag} of vectors sharing one label, $(\{\boldsymbol{x}_1,\ldots,\boldsymbol{x}_N\}, y)$.
+  \no{B} A bag labelled with a \emph{bag} of values is not MIL (that would be a multi-output/multi-label setup).
+  \no{C} A single vector with multiple labels is ordinary multi-label learning, not MIL.
+\end{answer}
 
 
 % ==========================================================
@@ -822,6 +1132,11 @@ the most likely explanation?
   \choice The generator produced too few structurally distinct molecules, reducing diversity among candidates.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Delayed (sparse) reward does not explain why \emph{predicted} activity is high while \emph{real} activity is low.
+  \yes{B} Classic reward hacking: the generator found inputs that fool the proxy QSAR model instead of being genuinely active.
+  \no{C} Low diversity would not systematically inflate predicted activity above true activity.
+\end{answer}
 
 \questiontitle{Combating analogue rediscovery (odd one out)}
 A goal-directed generator repeatedly rediscovers close analogues of earlier
@@ -833,6 +1148,11 @@ behaviour?
   \choice Increase exploitation by always selecting the molecule with the highest predicted score as the next training example.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} Mixing in a fixed exploratory generator adds diversity --- a genuine remedy, so not the answer.
+  \no{B} Penalising similarity to a memory of past hits also promotes diversity --- a genuine remedy.
+  \yes{C} This is the answer: always taking the single highest-scoring molecule \emph{increases} exploitation and worsens rediscovery, so it is \emph{not} a remedy.
+\end{answer}
 
 \questiontitle{Autoregressive molecular reinforcement learning}
 In autoregressive molecular generation framed as reinforcement learning, which
@@ -843,6 +1163,11 @@ mapping of RL concepts is correct?
   \choice The partial molecule is the state, the next construction step is the action, the generator is the policy, and the completed molecule receives a reward.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} The \emph{generator} is the policy, not the scoring function, and the generator does not ``supply the reward''.
+  \no{B} The completed molecule is not the state, and partial molecules do not each get an independent final reward.
+  \yes{C} Partial molecule $=$ state, next construction step $=$ action, generator $=$ policy, completed molecule earns the reward.
+\end{answer}
 
 \questiontitle{Diffusion vs.\ one-shot latent decoding}
 What distinguishes diffusion-based molecular generation from one-shot latent
@@ -853,6 +1178,11 @@ decoding?
   \choice It generates a molecule step by step by predicting the next token or graph action from the partial molecule.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Mapping one latent vector to a full molecule in a single pass is exactly one-shot decoding.
+  \yes{B} Diffusion starts from noise and \emph{iteratively} denoises toward a molecule.
+  \no{C} Step-by-step next-token / graph-action generation is autoregressive, not diffusion.
+\end{answer}
 
 \questiontitle{Conditional generation}
 A generator receives a desired logP value as an input and produces molecules in one
@@ -864,6 +1194,11 @@ function during generation. Which paradigm does this describe?
   \choice Distribution learning followed by unconditional sampling.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} The property is given as a \emph{condition}, the model maps it to molecules in one pass, and no scoring function is queried --- conditional generation.
+  \no{B} Goal-directed generation optimises against a scoring function during generation, which is explicitly excluded here.
+  \no{C} Unconditional sampling would ignore the desired logP input.
+\end{answer}
 
 \questiontitle{Distribution learning}
 Which statement best describes distribution learning in molecular generation?
@@ -873,6 +1208,11 @@ Which statement best describes distribution learning in molecular generation?
   \choice Distribution learning focuses on generating molecules that are optimized for specific biological or physicochemical properties.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Conditioning on auxiliary information is \emph{conditional} generation.
+  \yes{B} Distribution learning models the training distribution and samples molecules resembling it.
+  \no{C} Optimising for specific properties is \emph{goal-directed} generation.
+\end{answer}
 
 \questiontitle{Mode collapse}
 Which statement best describes mode collapse in generative molecule models?
@@ -882,6 +1222,11 @@ Which statement best describes mode collapse in generative molecule models?
   \choice The model generates almost exclusively molecules that already occur in the training dataset.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Good validity/novelty but poor distribution match is a different failure mode, not mode collapse.
+  \yes{B} Mode collapse: the generator keeps producing the same or very similar molecules (it covers only a few ``modes'').
+  \no{C} Re-emitting training molecules is memorisation, not mode collapse.
+\end{answer}
 
 \questiontitle{Reaction prediction and retrosynthesis}
 Which mapping between task and input/output is correct?
@@ -891,6 +1236,11 @@ Which mapping between task and input/output is correct?
   \choice Forward reaction prediction maps products to reactants, while single-step retrosynthesis predicts the major product from known reactants.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} Neither task takes only conditions and predicts yield.
+  \yes{B} Forward prediction: reactants $\to$ products; single-step retrosynthesis: product $\to$ precursors.
+  \no{C} The two directions are swapped.
+\end{answer}
 
 \questiontitle{Reaction templates}
 What is the purpose of a reaction template?
@@ -900,6 +1250,11 @@ What is the purpose of a reaction template?
   \choice To assign a reaction class label that groups similar reactions, without specifying how atoms or bonds are transformed.
 \end{itemize}
 \closequestion
+\begin{answer}{A}
+  \yes{A} A reaction template is a generalised symbolic rule: required substructures plus how reactants become products.
+  \no{B} Encoding solvent/temperature conditions is not what a template captures.
+  \no{C} Assigning a reaction \emph{class} without the atom/bond transformation is classification, not a template.
+\end{answer}
 
 \questiontitle{Easiest reaction task}
 Which of these tasks is generally the easiest?
@@ -909,6 +1264,11 @@ Which of these tasks is generally the easiest?
   \choice Forward reaction prediction.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} Single-step retrosynthesis is one-to-many (many valid precursor sets), so it is harder.
+  \no{B} Multi-step planning searches over many steps --- the hardest of the three.
+  \yes{C} Forward reaction prediction is the most constrained (reactants $\to$ major product) and generally the easiest.
+\end{answer}
 
 \questiontitle{Template-free translation methods}
 How do template-free translation methods frame reaction prediction or
@@ -919,6 +1279,11 @@ retrosynthesis?
   \choice As direct sequence-to-sequence translation between molecular reaction strings.
 \end{itemize}
 \closequestion
+\begin{answer}{C}
+  \no{A} Retrieving stored patterns from memory is a template/retrieval approach.
+  \no{B} Classifying into a learned reaction class then transforming is template-based.
+  \yes{C} Template-free methods translate reaction strings directly, as sequence-to-sequence (e.g.\ the Molecular Transformer).
+\end{answer}
 
 \questiontitle{Deep networks inside MCTS for retrosynthesis}
 Why are deep neural networks useful inside Monte Carlo Tree Search for
@@ -929,6 +1294,11 @@ retrosynthesis?
   \choice They mainly balance chemical equations at each node, while the search itself decides value and policy without learned guidance.
 \end{itemize}
 \closequestion
+\begin{answer}{B}
+  \no{A} They do not collapse the search to a single greedy first disconnection.
+  \yes{B} Learned networks estimate the value of unvisited states and propose promising actions, guiding the search where exhaustive enumeration is infeasible.
+  \no{C} They provide the value/policy guidance --- the search is not left unguided.
+\end{answer}
 
 \questiontitle{Pocket-conditioned 3D ligand generation}
 Which statement best describes pocket-conditioned 3D ligand generation?
@@ -938,102 +1308,11 @@ Which statement best describes pocket-conditioned 3D ligand generation?
   \choice A fixed ligand graph is provided and only alternative conformations of that same molecule are sampled without using protein information.
 \end{itemize}
 \closequestion
-
-
-% ==========================================================
-%  ANSWER KEY
-% ==========================================================
-\newpage
-\section*{Answer Key}
-\addcontentsline{toc}{section}{Answer Key}
-
-\begin{keybox}[Note on scoring]
-Questions 1--34 (the 2024 exam) are multiple-select: each listed letter is a
-correct option, and any option \emph{not} listed is incorrect. On the original
-Moodle exam, each correct tick added points and each incorrect tick subtracted
-them. Questions 35--67 (the 2026 exam) are single-best-answer: exactly one letter
-is correct.
-\end{keybox}
-
-\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=3em, itemsep=4pt]
-  % --- Section 1 ---
-  \item \textbf{A, B} --- SMILES is the \emph{Simplified Molecular Input Line Entry System} and is a linear character sequence. It \emph{can} be converted to a graph, and is \emph{not} unique (one molecule has many valid SMILES).
-  \item \textbf{A, B} --- both \texttt{O=C(C(=O)O)C} and \texttt{CC(=O)C(=O)O} encode CH\textsubscript{3}--CO--COOH. \texttt{CCCOOO} and \texttt{OCCOO} do not.
-  \item \textbf{B, C} --- fingerprints are binary/numerical descriptors used for similarity search and ML. They are lossy (no unique graph reconstruction) and carry no 3D information.
-  \item \textbf{A, B, C} --- bioassays measure a biological response, test at various concentrations (dose--response), and are wet-lab procedures. ``\emph{in vitro} = in a living organism'' is false (\emph{in vivo} is the living organism).
-  \item \textbf{A, C, D} --- Lipinski's Ro5 is an ADME proxy, clearance is hard to model, and ADME is central to pharmacokinetics. Good ADME does \emph{not} guarantee an effective drug.
-  \item \textbf{C, D} --- QSAR data often comes in structurally related series and is noisy. It is usually \emph{small} (not thousands/millions) and \emph{imbalanced} (not balanced).
-  \item \textbf{B, C} --- QSAR predicts drug candidates and toxicity. 3D protein modeling and genome mapping are different problems.
-  % --- Section 2 ---
-  \item \textbf{A} --- fingerprints are standard in ligand-based VS. It \emph{is} suitable for unknown compounds, does \emph{not} need the protein structure, and considers more than bioactivity (ADME, filters).
-  \item \textbf{A, D} --- temporal splits simulate real-world acquisition; cluster splits keep structurally similar compounds out of both sets. Random splits do \emph{not} eliminate bias, and CV \emph{is} used.
-  \item \textbf{B, D} --- BEDROC and the Enrichment Factor reward early recognition. Precision-Recall curve and Average Precision are general metrics, not early-recognition-specific.
-  \item \textbf{A, B} --- target identification finds the \emph{most likely} target via multi-class classification. ``All proteins'' and ``multi-task'' describe target \emph{prediction}, not identification.
-  \item \textbf{A, B} --- synergy is ``greater than the sum''; the Loewe additivity model assesses it. Antagonism is \emph{less} than the sum, and synergy applies to any drug pair (not only similar ones).
-  \item \textbf{B, C} --- RF overfits less and is more interpretable than GNNs. GNNs are \emph{not} universally better and are \emph{not} less sensitive to data quality.
-  % --- Section 3 ---
-  \item \textbf{A, B} --- a molecular graph is a node-feature matrix plus an edge/adjacency matrix; node features include atomic number, hybridization, charge. GNNs \emph{do} use edge information, and bond type \emph{can} be encoded.
-  \item \textbf{B, C, D} --- GNNs struggle with long-range interactions, very large graphs, and are compute-heavy. They are \emph{not} ``incapable of predicting any property accurately''.
-  \item \textbf{A, B} --- multi-modal contrastive learning maps modalities into a shared latent space and is \emph{self-supervised}. It does not ``concentrate representations to make predictions'', and is \emph{not} unsupervised.
-  \item \textbf{C, D} --- a MIL bag has a \emph{single} label and the model must be permutation-invariant. Instances are \emph{not} individually labelled, and bag size need \emph{not} be fixed.
-  % --- Section 4 ---
-  \item \textbf{D} --- autoregressive models can generate SMILES. Modern generators produce mostly valid SMILES, generative models explore \emph{novel} space, and GANs \emph{can} generate molecules.
-  \item \textbf{C, D} --- goal-directed generation targets \emph{specific} desired properties and can be optimised with RL. Replicating existing structures / matching the training distribution describes \emph{distribution learning}.
-  \item \textbf{B, D} --- FCD compares means and covariances of \emph{latent} (ChemNet) representations and measures distance between \emph{distributions} of generated vs.\ real molecules --- not individual atoms, not raw structures.
-  \item \textbf{A, B, C} --- reaction templates, training on known-reaction databases, and transformer architectures are all used. QM data is \emph{not} required.
-  \item \textbf{A, B} --- synthesis planning designs a reaction sequence and uses retrosynthetic analysis. It is \emph{not} trivial, and involves more than just picking reactants.
-  \item \textbf{A, C, D} --- per the lecture's framing the \emph{action} is selecting reactants, the \emph{environment} applies the reaction and returns new molecules, and the \emph{reward} comes when the current set are all available building blocks. Only the \emph{state} option is wrong: the state is the \emph{current set of molecules} to be made, not the set of available building blocks.
-  % --- Section 5 ---
-  \item \textbf{A} --- cholesterol is numeric, so the \emph{median} handles skewed missing values. Smoking status is categorical (not continuous/mean-imputable), and cholesterol is continuous, not merely ordinal.
-  \item \textbf{A, C} --- ignored batch effects make models separate batches instead of biology, and they create artificial differences. They are \emph{not} removed by more samples and are \emph{not} beneficial.
-  \item \textbf{C, D} --- changing prevalence is a label/prior shift $p(y)$; changing the diagnostic procedure is a concept shift $p(y\mid x)$. Good validation accuracy does \emph{not} auto-adapt, and $p(x)$ \emph{can} shift.
-  \item \textbf{B, C} --- X-rays distinguish tissue densities; MRI uses magnetic fields and radio waves. CT uses X-rays (not ultrasound), and OCT uses light (not X-rays).
-  \item \textbf{B, C} --- classification and segmentation are the dominant medical-imaging tasks (segmentation especially, vs.\ typical vision tasks).
-  \item \textbf{B, D} --- U-Net has a symmetric encoder/decoder with skip connections (encoder feature maps concatenated into the decoder). It is convolutional (not attention-based) and was built for \emph{segmentation}, not detection.
-  \item \textbf{B} --- the Clever Hans effect is a model that \emph{looks} good but relies on irrelevant features/artifacts (shortcut learning).
-  \item \textbf{B, D} --- Grad-CAM highlights important image regions; counterfactuals show what change would flip the diagnosis. The first option mislabels LRP as ``gradient integration'', and occlusion perturbs \emph{input}, not training data.
-  \item \textbf{B, C} --- AlphaFold~2 uses multiple sequence alignments + homologous structures to predict 3D structure from sequence. It uses an attention-based (Evoformer) architecture, \emph{not} a CNN, and no QM calculations.
-  % --- Section 6 ---
-  \item \textbf{A, B} --- proteins = amino acids via peptide bonds; DNA = nucleic acids. Sequences \emph{do} follow rules, and RNA is nucleic acid, not lipid.
-  \item \textbf{A, B, C, D} --- all true: motif/feature extraction, one-hot input encoding, classification/segmentation/generation tasks, and 1D-CNN / RNN / LSTM / Transformer architectures.
-  % --- Section 7 (2026) ---
-  \item \textbf{A} --- a fingerprint is computed from the graph but is lossy/hashed, so the graph cannot be recovered; ``same information'' (B) and ``exact reconstruction'' (C) are false.
-  \item \textbf{B} --- SMILES $\to$ fingerprint is standard; fingerprints are lossy, so fingerprint $\to$ SMILES is impossible.
-  \item \textbf{A} --- Tanimoto $=$ shared bits divided by the union of bits (intersection over union). B is 3D pharmacophore alignment; C is scaffold matching.
-  \item \textbf{A} --- \texttt{O=C(C)Oc1ccccc1C(=O)O} is valid acetylsalicylic acid; B misuses lowercase (aromatic) atoms for the carbonyls; C misuses square brackets.
-  \item \textbf{B} --- bioactivity data is limited, imbalanced, and noisy, with far more inactives than actives.
-  \item \textbf{C} --- design, make (synthesize), test, analyse, then iterate to the next design.
-  % --- Section 8 (2026) ---
-  \item \textbf{C} --- SBDD uses the target's 3D structure; LBDD uses known ligands without it.
-  \item \textbf{B} --- similarity search retrieves neighbours of a query; model-based search uses a supervised model learned from labels.
-  \item \textbf{B} --- AUC-ROC weights the whole ranking equally; BEDROC and the enrichment factor are early-recognition metrics.
-  \item \textbf{C} --- use an early-recognition metric (enrichment factor near the 1\% cutoff, or BEDROC).
-  \item \textbf{A} --- split first, select features/hyperparameters on training data only, then evaluate on the held-out test set exactly once.
-  \item \textbf{A} --- structurally related analogues split across train and test under a random split, giving an over-optimistic estimate.
-  \item \textbf{A} --- synergy is super-additive, and a synergy-prediction model should be order-invariant (symmetric in the two compounds).
-  \item \textbf{A} --- it jointly represents molecules \emph{and} protein targets (single-target QSAR uses the molecule alone).
-  \item \textbf{B} --- given a molecule and several candidate proteins, predict the most likely target.
-  % --- Section 9 (2026) ---
-  \item \textbf{C} --- node representations permute with the relabelling (equivariance), while the graph-level prediction is unchanged (invariance).
-  \item \textbf{A} --- message generation, aggregation, update.
-  \item \textbf{B} --- oversmoothing: node embeddings become too similar, so local atom-environment information is lost (A is over-squashing; C is too few layers).
-  \item \textbf{B} --- pull associated molecule--target pairs together and push mismatched pairs apart.
-  \item \textbf{A} --- a bag of feature vectors carrying a single shared label.
-  % --- Section 10 (2026) ---
-  \item \textbf{B} --- reward hacking: the generator exploited weaknesses of the proxy score rather than improving true activity.
-  \item \textbf{C} --- always picking the single highest-scoring molecule increases exploitation and worsens rediscovery, so it is \emph{not} a remedy (A and B both add diversity).
-  \item \textbf{C} --- partial molecule $=$ state, next step $=$ action, generator $=$ policy, completed molecule $=$ reward.
-  \item \textbf{B} --- diffusion starts from noise and iteratively denoises (A is one-shot decoding; C is autoregressive).
-  \item \textbf{A} --- conditional generation: conditioned on the target property, one pass, no scoring function queried.
-  \item \textbf{B} --- distribution learning models the training distribution and generates molecules resembling it.
-  \item \textbf{B} --- mode collapse: the model repeatedly produces the same or very similar molecules.
-  \item \textbf{B} --- forward prediction maps reactants $\to$ products; single-step retrosynthesis maps product $\to$ precursors.
-  \item \textbf{A} --- a reaction template is a generalized symbolic rule giving required substructures and the reactant $\to$ product transformation.
-  \item \textbf{C} --- forward reaction prediction is generally the easiest (single-step retro is one-to-many; multi-step planning is hardest).
-  \item \textbf{C} --- template-free methods frame the task as direct sequence-to-sequence translation between reaction strings.
-  \item \textbf{B} --- deep networks estimate the value of unvisited states and suggest promising actions when exhaustive search is infeasible.
-  \item \textbf{B} --- the binding pocket provides geometric context to generate/denoise the ligand, usually followed by validity/docking/property/synthesis checks.
-\end{enumerate}
+\begin{answer}{B}
+  \no{A} Generating without protein context and only docking afterwards is \emph{not} pocket-conditioned --- the pocket never conditions the generator.
+  \yes{B} The binding pocket gives geometric context to generate/denoise the ligand, typically followed by validity, docking, property, and synthesis checks.
+  \no{C} Sampling conformers of a fixed ligand without protein information is not pocket-conditioned generation.
+\end{answer}
 
 
 \end{document}

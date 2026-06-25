@@ -4,21 +4,34 @@ Technical notes for whoever maintains this repo.
 
 ---
 
-## Slide PDFs
+## What gets committed (whitelist)
 
-Lecture slide PDFs live in `courses/**/slides/` and are excluded from git via `.gitignore`. If slide PDFs were committed before this policy was established, remove them from tracking without deleting local copies:
+`.gitignore` uses a **whitelist** for course folders: everything inside
+`courses/<slug>/` is ignored by default, and only these paths are tracked:
+
+- `README.md`
+- `summary.tex` / `summary.pdf`
+- `exams.tex` / `exams.pdf`
+- `exams_solutions.tex` / `exams_solutions.pdf`
+- `figures/` (images used by the summary)
+- `courses/deep-reinforcement-learning/cheatsheet.{tex,pdf}` (course-specific exception)
+
+Everything else stays local and never gets committed: lecture slides
+(`slides/`), raw exam scans, exercise notebooks, quiz/real-exam dumps,
+cheat-sheet underlays, `.claude/`, and LaTeX build artifacts. This lets you
+keep source/study material in the course folder without it entering git.
+
+To publish a **new** document type, add an explicit `!` rule to the courses
+block in `.gitignore`.
+
+If a file was committed under an older policy and should now be ignored,
+untrack it without deleting the local copy (`git rm --cached` only removes it
+from the index):
 
 ```bash
-git rm --cached courses/<course-slug>/slides/<file>.pdf
-git commit -m "Stop tracking lecture slide PDF"
+git rm --cached courses/<course-slug>/<file>
+git commit -m "Stop tracking <file>"
 ```
-
-Keep the local file — `git rm --cached` only removes it from the index.
-
-Currently the following slide files have been moved to `slides/` and are already untracked (no `git rm --cached` needed):
-- `courses/ml-unsupervised-techniques/slides/` — ML_unsupervised.pdf, Slides1.pdf, Slides2.pdf, Slides3.pptx
-- `courses/deep-reinforcement-learning/slides/` — 01_Intro_Slides.pdf
-- `courses/dl-architectures-generative-techniques/slides/` — Deep_Learning_and_Neural_Networks_SS25.pdf
 
 ---
 

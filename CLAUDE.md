@@ -19,7 +19,14 @@ AI_Master/
 ```
 
 Course folders use lowercase kebab-case slugs (`reinforcement-learning`, `computer-vision`).
-Lecture slide PDFs live in `courses/<slug>/slides/` and are NOT tracked by git.
+
+**What gets committed:** `.gitignore` whitelists course folders — only
+`README.md`, `summary.{tex,pdf}`, `exams.{tex,pdf}`, `exams_solutions.{tex,pdf}`,
+and `figures/` are tracked (plus the Deep RL `cheatsheet.{tex,pdf}` exception).
+Everything else stays local: lecture slides (`slides/`), raw exam scans,
+exercise notebooks, quiz/real-exam dumps, `.claude/`, build artifacts. To
+publish a new document type, add an explicit `!` rule to the courses block
+in `.gitignore`.
 
 ---
 
@@ -53,8 +60,17 @@ the signalling value of all boxes.
   a counter.
 - **Exact duplicates are removed.** When the same question appeared on
   multiple exams, keep one instance and add `\repeatnote` at the top.
-- **Mathematical content is kept verbatim.** Only normalize wording where
-  scans were messy; never change answer choices or numbers.
+- **Question wording is paraphrased, never copied verbatim.** Reword every
+  question stem so it is not a literal copy of the original exam, while
+  preserving the exact meaning and difficulty. Example: *"Which statement
+  about molecular graphs and molecular fingerprints is correct?"* →
+  *"Which of the following statements accurately describes the relationship
+  between molecular graphs and molecular fingerprints?"* This is rephrasing
+  for legal safety, not a content change.
+- **Answer choices, numbers, and math are kept as-is.** Do not alter answer
+  options, numeric values, or mathematical expressions when paraphrasing the
+  stem; only fix wording where a scan was messy. The same applies to
+  `exams_solutions.tex`, which shares the questions.
 
 ### Box types (exams.tex)
 
@@ -103,6 +119,23 @@ Every `exams.tex` file ends with an answer key:
 - The list is numbered manually and must match the auto-incremented question counter order.
 - Keep answers concise: letter for MCQ, expression for fill-in, key steps/formula for derivations, bullet points for open questions.
 - **Never** put answer content inside `\questiontitle` / `\closequestion` blocks — the question boxes must stay blank.
+
+### exams_solutions.tex (worked solutions, optional)
+
+`exams_solutions.tex` is the *solutions variant* of `exams.tex`: the same
+questions in the same order, but instead of leaving the question boxes blank
+and collecting answers in an Answer Key at the end, each question is followed
+immediately by a green answer box.
+
+- **Multiple choice:** mark correct options with a green check and incorrect
+  ones with a red cross, each with a one-line justification (including why
+  tricky near-miss distractors are wrong). Wild distractors that only exist
+  to catch guessers need no explanation.
+- **Calculation / derivation:** show the working.
+- Keep `exams.tex` as the blank practice set with its Answer Key — do **not**
+  merge the two files.
+- Derived from `exams.tex` (no separate template). When `exams.tex` changes,
+  update `exams_solutions.tex` to match.
 
 ### Math macros included in exams.tex
 
@@ -157,4 +190,5 @@ Always commit both `.tex` and `.pdf`.
   solutions belong only in the `\section*{Answer Key}` section at the end.
 - Do not change accent colors or box color definitions per-document.
 - Do not add a chapter level to `exams.tex` — it is article class.
-- Do not commit lecture slide PDFs — they live in `courses/<slug>/slides/` which is gitignored.
+- Do not copy exam-question wording verbatim — paraphrase every question stem (keeping the answer options, numbers, and meaning intact).
+- Do not try to commit local study material (lecture slides, raw exam scans, exercise notebooks, quiz/real-exam dumps, cheat-sheet underlays). The `.gitignore` whitelist tracks only `summary`, `exams`, `exams_solutions`, `figures/`, and `README.md` per course (plus the Deep RL `cheatsheet`).

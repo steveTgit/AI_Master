@@ -86,13 +86,22 @@ Short description of what the course covers.
 ```
 courses/<course-slug>/
 ├── README.md
-├── summary.tex        ← compiled from summary_template.tex
-├── summary.pdf        ← commit this too
-├── exams.tex          ← compiled from exams_template.tex (optional)
-├── exams.pdf          ← commit this too (optional)
-├── figures/           ← images used in either .tex file
-└── slides/            ← lecture PDFs (NOT tracked by git)
+├── summary.tex            ← compiled from summary_template.tex
+├── summary.pdf            ← commit this too
+├── exams.tex              ← compiled from exams_template.tex (when past exams exist)
+├── exams.pdf              ← commit this too
+├── exams_solutions.tex    ← optional: same questions with inline worked solutions
+├── exams_solutions.pdf    ← commit this too if you add the .tex
+├── figures/               ← images used in either .tex file
+└── slides/                ← lecture PDFs and other local material (NOT tracked)
 ```
+
+`.gitignore` whitelists course folders: only `README.md`, `summary`, `exams`,
+`exams_solutions`, and `figures/` are tracked. Anything else you drop in a
+course folder — slides, raw exam scans, notebooks, scratch files — stays local
+automatically, so you can keep source material next to the document without
+committing it. To publish a genuinely new document type, add an explicit `!`
+rule to the courses block in `.gitignore`.
 
 ---
 

@@ -87,11 +87,30 @@ _tikz*/
 # Overleaf / LaTeX Workshop (VS Code) – keep .latexmkrc if present
 .texpadtmp/
 
-# ── Lecture slides (large, change every semester, not tracked) ──
-courses/**/slides/*.pdf
-courses/**/slides/*.pptx
-
-# ── Allow compiled output PDFs ────────────────────────────
-!courses/**/summary.pdf
-!courses/**/exams.pdf
+# ── Templates: keep compiled template PDFs ────────────────
 !templates/*.pdf
+
+# ── Courses: whitelist only the documents we publish ──────
+# Everything inside a course folder is ignored by default —
+# lecture slides, raw exam scans, exercise notebooks, quiz
+# dumps, cheat-sheet underlays, .claude/, build artifacts, etc.
+# Only the canonical documents listed below are tracked, so
+# local study material can sit in the course folder without
+# ever being committed.
+#
+# Tracked per course: README, summary, exams, exams_solutions,
+# and images under figures/. To publish a new document type,
+# add an explicit "!" rule here.
+courses/*/*
+!courses/*/README.md
+!courses/*/summary.tex
+!courses/*/summary.pdf
+!courses/*/exams.tex
+!courses/*/exams.pdf
+!courses/*/exams_solutions.tex
+!courses/*/exams_solutions.pdf
+!courses/*/figures/
+
+# Course-specific exception: Deep Reinforcement Learning cheat sheet
+!courses/deep-reinforcement-learning/cheatsheet.tex
+!courses/deep-reinforcement-learning/cheatsheet.pdf

@@ -349,6 +349,33 @@
 \newcommand{\eqq}{\overset{?}{=}}
 
 
+% ══════════════════════════════════════════════════════════
+%  ARCHITECTURE FIGURE HELPER
+%  \archfig[width]{figures/file.png}{caption}
+%  Includes the image if the file exists; otherwise renders a
+%  labelled placeholder so the document still compiles. Save a
+%  fitting diagram under the named path in figures/ and it is
+%  picked up automatically on the next build — no other edits.
+% ══════════════════════════════════════════════════════════
+\newcommand{\figmissing}[1]{%
+  \begin{tcolorbox}[
+    enhanced, sharp corners, width=0.8\linewidth,
+    colback=accent!4, colframe=accent!55, boxrule=0.7pt,
+    frame style={dashed}, halign=center, valign=center, height=3.6cm
+  ]
+    {\ttfamily\small\bfseries\color{accent}[ figure placeholder ]}\\[4pt]
+    {\ttfamily\footnotesize\color{gray!80!black}#1}\\[6pt]
+    {\itshape\footnotesize\color{gray!70}find a fitting diagram and save it to this path}
+  \end{tcolorbox}}
+
+\newcommand{\archfig}[3][0.8\linewidth]{%
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{#2}{\includegraphics[width=#1]{#2}}{\figmissing{#2}}%
+    \caption{#3}
+  \end{figure}}
+
+
 % ==========================================================
 %  BEGIN DOCUMENT
 % ==========================================================
@@ -479,6 +506,11 @@ Training ran for 5–6 days on two GTX~580 3\,GB GPUs; GPU memory was the bindin
 \end{itemize}
 \end{defbox}
 
+\archfig{figures/alexnet-architecture.png}{AlexNet: five convolutional layers
+(with ReLU, overlapping max-pooling and LRN) feeding three fully-connected layers
+into a 1000-way softmax. The original split across two GPUs is what gives the
+diagram its characteristic two-stream layout.}
+
 Four innovations drove AlexNet's success.
 \textbf{ReLU activations} replaced tanh, providing substantial speed-up in training.
 \textbf{Dropout} in the fully-connected layers acted as a strong regularizer against overfitting.
@@ -533,6 +565,12 @@ $7\times7\times512$ feature map and maps it to 4096 units
 $> 100 \times 10^6$ parameters — more than 80\% of the entire network.
 This makes VGGNet prone to overfitting and expensive to deploy.
 
+\archfig{figures/vggnet-architecture.png}{VGG-16: a uniform stack of $3\times3$
+convolution blocks (each followed by $2\times2$ max-pooling) that progressively
+halves the spatial resolution while doubling the channel count, ending in three
+large fully-connected layers. The width labels ($224\times224\times64$ down to
+$7\times7\times512$) make the down-sampling schedule explicit.}
+
 \section{Network in Network (2014)}
 
 Network in Network (NiN; Lin et al., 2014) did not enter ILSVRC but introduced two ideas
@@ -578,6 +616,11 @@ The building block is the \emph{Inception module}, which processes the input
 in parallel through $1\times1$, $3\times3$, and $5\times5$ convolutions
 as well as a max-pooling branch, then concatenates all outputs along the channel dimension.
 This lets the network choose its own filter sizes rather than committing to one scale.
+
+\archfig[0.7\linewidth]{figures/inception-module.png}{The Inception module: parallel
+$1\times1$, $3\times3$, $5\times5$ convolution branches and a pooling branch, with
+$1\times1$ convolutions used as cheap dimensionality reductions before the larger
+kernels. The branch outputs are concatenated along the channel dimension.}
 
 The naive version has two problems:
 (i) the channel dimension grows at every module since pooling cannot reduce channels, and
@@ -672,6 +715,11 @@ zero than to learn an identity from scratch through a stack of non-linear layers
 Gradients can also flow directly through the shortcut to lower layers,
 mitigating vanishing gradients.
 \end{intbox}
+
+\archfig[0.55\linewidth]{figures/resnet-residual-block.png}{A residual block: the
+input $\xvec$ is added back to the output of a small stack of weight layers via an
+identity skip connection, so the block learns the residual $\mathcal{F}(\xvec)$
+rather than the full mapping $\mathcal{F}(\xvec)+\xvec$.}
 
 \subsection{Bottleneck Blocks}
 
@@ -1123,6 +1171,11 @@ convolutions --- and the paper introduced a \textbf{weighted loss} that
 up-weights the thin separating membranes between touching cells, where mistakes
 matter most.
 
+\archfig{figures/unet-architecture.png}{U-Net: a symmetric contracting encoder and
+expanding decoder in a ``U'' shape. Skip connections (horizontal arrows)
+concatenate each encoder feature map onto the matching decoder level, handing the
+decoder both the high-level ``what'' and the high-resolution ``where''.}
+
 \subsection{Context aggregation by dilated convolutions (Yu \& Koltun, 2016)}
 
 This is dilated convolution put to work as a dedicated \textbf{context module}
@@ -1276,6 +1329,12 @@ the specific models:
 The history of two-stage detectors is essentially the history of making steps
 1--3 cheaper and more shared. Watch what migrates from the slow per-region path
 into the cheap run-once-per-image path.
+
+\archfig{figures/faster-rcnn.png}{Faster R-CNN, the canonical two-stage detector: a
+shared backbone produces a feature map, a Region Proposal Network suggests
+candidate boxes, and RoI pooling feeds each proposal to classification and
+box-regression heads. The proposal step has migrated into the run-once-per-image
+path.}
 
 \subsection{Overfeat (2013)}
 
@@ -1490,6 +1549,11 @@ network cannot just pass the data through; it has to discover an efficient,
 compressed encoding that keeps whatever is needed to reconstruct. That learned
 code is the whole point.
 
+\archfig[0.72\linewidth]{figures/autoencoder-schematic.png}{Autoencoder: an encoder
+$f$ compresses the input $\xvec$ to a low-dimensional code $\zvec$ at the
+bottleneck, and a decoder $g$ reconstructs $\hat{\xvec}$. Training minimises the
+reconstruction error between $\xvec$ and $\hat{\xvec}$.}
+
 \section{The bottleneck is what makes it learn}
 
 \begin{defbox}[title={Undercomplete vs.\ overcomplete}]
@@ -1698,6 +1762,13 @@ $p_{\params}(\xvec\given\zvec)$ is chosen to match the data --- a Gaussian for
 real-valued pixels (giving a squared-error reconstruction loss) or a Bernoulli for
 binary data (giving cross-entropy).
 
+\archfig[0.78\linewidth]{figures/vae-architecture.png}{VAE: the encoder
+$q_\phi(\zvec\given\xvec)$ outputs a mean $\boldsymbol\mu$ and variance
+$\boldsymbol\sigma^2$; a latent $\zvec$ is drawn by the reparameterization trick
+$\zvec=\boldsymbol\mu+\boldsymbol\sigma\odot\boldsymbol\epsilon$; and the decoder
+$p_\theta(\xvec\given\zvec)$ reconstructs the input. The loss is reconstruction
+plus a KL term pulling $q_\phi$ toward the prior.}
+
 \begin{notebox}[title={Two things that go wrong}]
 \textbf{Blurry samples.} VAEs are famous for producing softer, blurrier images
 than GANs. A pixel-wise Gaussian likelihood rewards predicting the \emph{average}
@@ -1745,6 +1816,11 @@ to make better fakes, which forces the police to get sharper still. At the
 equilibrium of this arms race the fakes are indistinguishable from real money ---
 i.e.\ the generator's distribution matches the data.
 \end{intbox}
+
+\archfig[0.78\linewidth]{figures/gan-architecture.png}{GAN: the generator $G$ maps
+a noise vector $\zvec\sim p_{\zvec}$ to a fake sample $G(\zvec)$; the discriminator
+$D$ receives either a real sample or a fake one and outputs the probability that it
+is real. The two networks are trained against each other.}
 
 \section{The objective}
 
@@ -1988,6 +2064,12 @@ sample through an \textbf{invertible, differentiable} transformation $T$ (a neur
 network). Generating is forward, $\xvec = T(\boldsymbol{u})$; the magic is that we
 can also compute the exact density of any $\xvec$.
 
+\archfig{figures/normalizing-flow.png}{A normalizing flow gradually transforms a
+simple base density $p_u$ (e.g.\ a standard Gaussian) into a complex data density
+$p_x$ through a chain of invertible maps. Sampling runs forward
+($\xvec=T(\boldsymbol{u})$); density evaluation runs backward through $T^{-1}$ with
+the Jacobian-determinant correction.}
+
 \subsection{Change of variables}
 
 The bridge is the change-of-variables formula from probability.
@@ -2142,6 +2224,11 @@ removing a little noise at each step until an image emerges. That
 \textbf{reverse (denoising) process} is what we train a network to do. Once it can
 denoise, generation is simple --- sample pure noise and let the network walk it
 back to a clean sample.
+
+\archfig{figures/diffusion-process.png}{The two Markov chains of a diffusion model:
+the fixed forward process $q(\xvec_t\given\xvec_{t-1})$ gradually adds Gaussian
+noise until $\xvec_T$ is pure static, and the learned reverse process
+$p_\theta(\xvec_{t-1}\given\xvec_t)$ denoises step by step to generate a sample.}
 
 \begin{notebox}[title={Notation}]
 The data point is $\xvec_0 = \xvec$ and we noise it over steps $t = 1,\dots,T$ to
@@ -2605,6 +2692,11 @@ For node $i$ with neighbours $N(i)$, one round $t\to t{+}1$ is
 The \textbf{message function} $\phi$ and the \textbf{update function} $\psi$ are
 both small MLPs. The initial state is the node feature, $\hvec_i^{0}=\xvec_i$.
 \end{thmbox}
+
+\archfig[0.62\linewidth]{figures/message-passing.png}{One round of message passing:
+a node aggregates messages $\mathbf{m}_{ij}$ from its neighbours (a
+permutation-invariant sum) and updates its own state. Stacking a few rounds
+propagates information across the graph.}
 
 Two things make this respect the graph's symmetry automatically. The neighbour sum
 $\sum_{j\in N(i)}$ is \emph{permutation invariant}, so the order in which we list a

@@ -47,12 +47,35 @@ Adjust `\workingspace` heights to match the expected answer length.
 
 ---
 
+## exams.tex — wording
+
+Question stems are **paraphrased, not copied verbatim** from the original
+exams. Reword each stem so it is not a literal copy while preserving the exact
+meaning and difficulty — e.g. *"Which statement about molecular graphs and
+molecular fingerprints is correct?"* → *"Which of the following statements
+accurately describes the relationship between molecular graphs and molecular
+fingerprints?"* Keep answer options, numbers, and mathematical expressions
+unchanged. The same applies to `exams_solutions.tex`, which shares the questions.
+
+---
+
 ## exams.tex — answer key
 
 - Every `exams.tex` ends with `\section*{Answer Key}`.
 - Answers are in a manually numbered `enumerate` with `label=\textbf{Q\arabic*.}`.
 - **Never** put answers inside `\questiontitle` / `\closequestion` blocks — question boxes stay blank.
 - Answers: letter for MCQ, expression for fill-in, key steps for derivations.
+
+---
+
+## exams_solutions.tex (optional)
+
+`exams_solutions.tex` is the worked-solutions variant of `exams.tex`: the same
+questions in the same order, but instead of blank question boxes plus an Answer
+Key at the end, each question is followed immediately by a green answer box. For
+multiple choice, mark correct options with a green check and incorrect ones with
+a red cross, each with a short justification; for calculations, show the working.
+Keep `exams.tex` itself blank — the two files are never merged.
 
 ---
 

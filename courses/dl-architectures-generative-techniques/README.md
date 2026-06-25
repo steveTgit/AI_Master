@@ -2,18 +2,19 @@
 
 Covers deep learning architectures and generative models: transformers, diffusion models, GANs, VAEs, and related topics.
 
-**Status:** draft — summary covers all 11 chapters; exam collection added
+**Status:** reviewed — summary covers all 11 chapters; exam collection with worked solutions added
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `summary.pdf` | Lecture summary (all chapters, compiled) |
+| `summary.pdf` | Complete lecture summary (11 chapters, compiled) |
 | `summary.tex` | LaTeX source |
-| `exams.pdf` | Old exam questions with answer key (compiled) |
+| `exams.pdf` | Curated old exam questions (blank practice set, answer key at the end) |
 | `exams.tex` | LaTeX source |
+| `exams_solutions.pdf` | Same questions with worked solutions (correct/incorrect options marked + justifications) |
+| `exams_solutions.tex` | LaTeX source |
 | `figures/` | Figure directory |
-| `slides/` | Lecture slide PDFs (not tracked by git) |
 
 ## How to help
 
