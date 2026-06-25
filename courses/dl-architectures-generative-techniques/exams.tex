@@ -24,6 +24,7 @@
 \usepackage{enumitem}
 \usepackage{booktabs,array,multicol,longtable}
 \usepackage{xcolor}
+\usepackage{graphicx}
 \usepackage[most]{tcolorbox}
 \usepackage{titlesec}
 \usepackage{fancyhdr}
@@ -130,6 +131,12 @@
   \vspace{2pt}%
 }
 
+\newcommand{\examfigure}[2][width=0.82\linewidth]{%
+  \begin{center}
+    \includegraphics[#1]{#2}
+  \end{center}
+}
+
 % ── Math macros ──────────────────────────────────────────
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\E}{\mathbb{E}}
@@ -170,8 +177,8 @@ Collected from the main exam (28.06.2024) and the 2022 / 2024 retry exams. Quest
 grouped by topic so that the sections line up with the chapters of the course summary.
 Exact duplicates were removed; when essentially the same question recurred across exams it is
 marked with \repeatnote\ inside the box. Several originals were figure-based (drag-and-drop
-annotations, hand-drawn graphs, plots) --- these are reproduced in words. The mathematical
-content and answer choices are kept intact; the answer key is at the end.
+annotations, hand-drawn graphs, plots); where screenshots are available, they are included
+directly. The mathematical content and answer choices are kept intact; the answer key is at the end.
 \end{notebox}
 
 \tableofcontents
@@ -288,6 +295,8 @@ Which statement is then true?
 \questiontitle{Self-Driving Scene Labelling}
 A camera in a self-driving car provides road-scene images, and you train a network that
 outputs an image in which every pixel is annotated as car, road, pedestrian, etc.
+The figure shows examples of the input images and the corresponding pixel-wise labels.
+\examfigure[width=0.88\linewidth]{figures/exam-semantic-segmentation-road-scene.png}
 Which statements are true in this context? (Select one or more.)
 \begin{itemize}[leftmargin=1.8em]
   \choice To train such a network, labels for each pixel of the training images are required.
@@ -299,10 +308,11 @@ Which statements are true in this context? (Select one or more.)
 \closequestion
 
 \questiontitle{IoU Computation}
-A ground-truth object covers a set of pixels and a model predicts another set of pixels for that
-object, on a grid of pixels. The ground-truth region covers $10$ pixels, the predicted region
-covers $8$ pixels, and they overlap in $5$ pixels. Compute the IoU metric, rounded to three
-decimals.
+The figure shows a ground-truth object region (solid brown outline) and a predicted object region
+(dashed green outline) on a grid of pixels. The ground-truth region covers $10$ pixels, the
+predicted region covers $8$ pixels, and they overlap in $5$ pixels. Compute the IoU metric,
+rounded to three decimals.
+\examfigure[width=0.58\linewidth]{figures/exam-iou-pixel-regions.png}
 
 Answer: \answerline{3cm}
 \closequestion
@@ -379,6 +389,7 @@ boxes and a latent variable $\mathbf{z}$ in the middle. Annotate the building bl
 \emph{Generator}, \emph{Discriminator}, \emph{Encoder}, \emph{Decoder}, \emph{Flow}, \emph{Inverse Flow},
 given that a rectangular block keeps the dimension constant while a trapezoidal block decreases or
 increases it.
+\examfigure[width=0.9\linewidth]{figures/exam-generative-model-taxonomy.png}
 \begin{itemize}[leftmargin=1.8em]
   \item Top row: input $\to$ trapezoid $\to 0/1 \to \mathbf{z} \to$ trapezoid $\to$ output \\ \answerline{5cm}
   \item Middle row: input $\to$ trapezoid (down) $\to \mathbf{z} \to$ trapezoid (up) $\to$ output \\ \answerline{5cm}
@@ -514,6 +525,7 @@ KL-divergence $\KL{p_1}{p_2}$, the Jensen--Shannon divergence $\mathrm{JSD}(p_1\
 Wasserstein-2 distance $\mathrm{WD}(p_1\|p_2)$ against $x$. One curve grows quadratically without
 bound, one grows linearly, and one saturates at a finite value. Match each measure to its qualitative
 behaviour.
+\examfigure[width=0.86\linewidth]{figures/exam-kl-jsd-wasserstein-separation.png}
 \begin{itemize}[leftmargin=1.8em]
   \item KL-divergence \answerline{5cm}
   \item Wasserstein-2 distance \answerline{5cm}
@@ -640,6 +652,7 @@ are valid approximations? (Select one or more.)
 Consider two graphs: $\mathcal{G}_1$ is a path of three nodes (a coloured centre node joined to two
 leaves), and $\mathcal{G}_2$ is a star with a centre node joined to three leaves. Mark the correct
 statements. (Select one or more.)
+\examfigure[width=0.62\linewidth]{figures/exam-gnn-small-graphs.png}
 \begin{itemize}[leftmargin=1.8em]
   \choice $\mathcal{G}_1$ and $\mathcal{G}_2$ can be distinguished by the Weisfeiler--Lehman
         (colour refinement) test.
@@ -661,6 +674,7 @@ given by the Weisfeiler--Lehman test (i.e.\ do they produce the same stable colo
 Four graphs on six nodes are shown: $A$ is a plain $6$-cycle (hexagon), $B$ is two triangles,
 $C$ is another $6$-cycle drawn differently, and $D$ is a $6$-cycle with one extra chord.
 For each adjacency matrix, name the matching graph ($A$, $B$, $C$, $D$, or none).
+\examfigure[width=0.94\linewidth]{figures/exam-gnn-candidate-graphs.png}
 \begin{itemize}[leftmargin=1.8em]
   \item All six row-sums equal $2$ and the edges form a single closed cycle. \hfill\answerline{3cm}
   \item Two row-sums equal $1$ and the rest equal $2$ (an open path, not a cycle). \hfill\answerline{3cm}
@@ -720,6 +734,7 @@ Mark the correct statements about the Universal Approximator Theorem (UAT) for n
 On a quadratic error surface (elliptical level curves), two arrows are drawn from a point: one points
 straight at the minimum at the centre of the ellipses, the other points perpendicular to the local
 level curve. Label each arrow as \emph{Gradient} or \emph{Newton's Method}.
+\examfigure[width=0.9\linewidth]{figures/exam-newton-gradient-directions.png}
 \begin{itemize}[leftmargin=1.8em]
   \item Arrow pointing directly to the centre (minimum) \\ \answerline{4cm}
   \item Arrow perpendicular to the level curve (steepest descent) \\ \answerline{4cm}

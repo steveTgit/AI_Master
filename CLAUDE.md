@@ -166,7 +166,10 @@ cp templates/summary_template.tex courses/<slug>/summary.tex
 cp templates/exams_template.tex courses/<slug>/exams.tex
 ```
 
-Set `\coursetitle` and `\basedon` near the top of each file. Figure paths are relative: `figures/my-fig.png`.
+Set `\coursetitle` in every document. Set `\basedon` in `summary.tex` when the
+summary template provides it. Figure paths are relative: `figures/my-fig.png`.
+For exam screenshots or figure-based questions, prefer `\examfigure{figures/...}`
+over replacing the figure with a long prose description.
 
 ---
 
@@ -186,8 +189,8 @@ Always commit both `.tex` and `.pdf`.
 ## What NOT to do
 
 - Do not edit `templates/summary_template.tex` or `templates/exams_template.tex` in-place — copy first.
-- Do not add answers inside `\questiontitle` / `\closequestion` blocks —
-  solutions belong only in the `\section*{Answer Key}` section at the end.
+- In `exams.tex`, do not add answers inside `\questiontitle` / `\closequestion`
+  blocks — solutions belong only in the `\section*{Answer Key}` section at the end.
 - Do not change accent colors or box color definitions per-document.
 - Do not add a chapter level to `exams.tex` — it is article class.
 - Do not copy exam-question wording verbatim — paraphrase every question stem (keeping the answer options, numbers, and meaning intact).

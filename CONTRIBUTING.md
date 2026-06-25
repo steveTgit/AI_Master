@@ -51,7 +51,8 @@ git push origin fix/rl-td-lambda-derivation
 
 2. Name the course folder using **lowercase kebab-case**: `ml-supervised-techniques`, `computer-vision`, etc.
 
-3. Set the `\coursetitle` and `\basedon` commands near the top of the `.tex` files.
+3. Set `\coursetitle` near the top of each `.tex` file. Set `\basedon` in
+   `summary.tex` when the summary template provides it.
 
 4. Add a `README.md` inside the course folder using the template below.
 
@@ -74,9 +75,13 @@ Short description of what the course covers.
 **Missing:** [list what is not yet written]
 
 ## How to help
-- [ ] Complete chapter X
-- [ ] Add exam questions for topic Y
-- [ ] Compile and commit the PDF
+Contributions are welcome even when there is no specific task listed. Good places to help:
+- Update the notes if lecture material changes.
+- Fix errors, typos, broken formulas, or unclear explanations.
+- Add examples, derivations, figures, or exam questions where they make a topic easier to study.
+- Recompile and commit the PDF after changing a `.tex` file, if you can.
+
+Open an issue if you are unsure; open a pull request directly for small fixes.
 ```
 
 ---

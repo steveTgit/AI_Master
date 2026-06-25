@@ -81,7 +81,9 @@ Keep `exams.tex` itself blank — the two files are never merged.
 
 ## Math macros (selection)
 
-These are defined in both templates. Use them consistently.
+These are defined in the summary template; the exam template includes a smaller
+core subset. Add macros from `templates/summary_template.tex` to an exam file
+when a course needs them, and use them consistently once added.
 
 | Macro | Output |
 |-------|--------|
@@ -105,6 +107,9 @@ Full list is in `templates/summary_template.tex`.
 - Reference as `figures/my-figure.png` (relative path from the `.tex` file).
 - Use descriptive filenames: `bellman-backup.png`, not `fig1.png`.
 - Prefer PNG for diagrams, JPEG for photos.
+- For exam-question screenshots or source figures, use descriptive names such as
+  `exam-iou-pixel-regions.png`, and include them directly rather than replacing
+  the visual content with a long prose description.
 
 ---
 

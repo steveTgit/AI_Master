@@ -13,7 +13,7 @@ Technical notes for whoever maintains this repo.
 - `summary.tex` / `summary.pdf`
 - `exams.tex` / `exams.pdf`
 - `exams_solutions.tex` / `exams_solutions.pdf`
-- `figures/` (images used by the summary)
+- `figures/` (images used by summaries and exam files)
 - `courses/deep-reinforcement-learning/cheatsheet.{tex,pdf}` (course-specific exception)
 
 Everything else stays local and never gets committed: lecture slides

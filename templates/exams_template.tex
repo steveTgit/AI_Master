@@ -32,6 +32,7 @@
 \usepackage{enumitem}
 \usepackage{booktabs,array,multicol,longtable}
 \usepackage{xcolor}
+\usepackage{graphicx}
 \usepackage[most]{tcolorbox}
 \usepackage{titlesec}
 \usepackage{fancyhdr}
@@ -149,6 +150,14 @@
   \vspace{2pt}%
 }
 
+% Exam figure helper. Usage:
+%   \examfigure[width=0.75\linewidth]{figures/my-question-figure.png}
+\newcommand{\examfigure}[2][width=0.82\linewidth]{%
+  \begin{center}
+    \includegraphics[#1]{#2}
+  \end{center}
+}
+
 % ── Math macros (minimal subset for exam questions) ──────
 % Add from template.tex as needed.
 \newcommand{\R}{\mathbb{R}}
@@ -184,7 +193,8 @@ This file is separate from the course summary and is meant as a clean practice s
 Exact duplicates were removed. When essentially the same question appeared in multiple old exams,
 that is marked with \repeatnote\ inside the question box.
 The wording was lightly normalized where the scans were messy, but the mathematical content
-and answer choices were kept intact.
+and answer choices were kept intact. If a question depends on a source figure or screenshot,
+include the image from \texttt{figures/} instead of replacing it with a long prose description.
 \end{notebox}
 
 \tableofcontents
