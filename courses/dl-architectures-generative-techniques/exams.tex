@@ -584,6 +584,14 @@ formula for the distribution $p_x(\mathbf{x})$.
 \end{itemize}}
 \closequestion
 
+\questiontitle{Density under a Linear Transform (Non-Diagonal)}
+Let $\mathbf{u}\sim p_u(\mathbf{u})$ be a two-dimensional random vector and define
+$\mathbf{x}=T\mathbf{u}$ with the non-diagonal matrix
+$T=\begin{pmatrix}2&-2\\0&1\end{pmatrix}$. Derive the density $p_x(\mathbf{x})$ in terms of $p_u$,
+stating $\det T$, $T^{-1}$, and the final formula.
+\workingspace{4cm}
+\closequestion
+
 \questiontitle{Autoregressive Sequence Probability}
 An autoregressive model $p_w(\mathbf{x})$ models sequences $(x_1,x_2,x_3)$ where each element is
 $A$, $B$, or $C$:
@@ -807,6 +815,8 @@ level curve. Label each arrow as \emph{Gradient} or \emph{Newton's Method}.
         an autoregressive flow's Jacobian is triangular but its determinant is \emph{not} always $1$ (d wrong).
   \item \textbf{b.} $p_x(\mathbf{x})=\dfrac{1}{|\det T|}\,p_u(T^{-1}\mathbf{x})$ with
         $T^{-1}=\begin{pmatrix}\tfrac12&0\\0&2\end{pmatrix}$ and $\det T=2\cdot\tfrac12=1$, so the prefactor is $1$.
+  \item $\det T=2\cdot1-(-2)\cdot0=2$, so $T^{-1}=\tfrac12\begin{pmatrix}1&2\\0&2\end{pmatrix}=\begin{pmatrix}\tfrac12&1\\0&1\end{pmatrix}$, giving
+        $p_x(\mathbf{x})=\dfrac{1}{|\det T|}\,p_u(T^{-1}\mathbf{x})=\tfrac12\,p_u\!\left(\begin{pmatrix}\tfrac12&1\\0&1\end{pmatrix}\mathbf{x}\right)$.
   \item $p_w(A,A,C)=\tfrac13\cdot\tfrac12\cdot\tfrac14=\tfrac{1}{24}\approx\mathbf{0.042}$
         ($x_2=A=x_1\Rightarrow\tfrac12$; $x_3=C\neq A=x_2\Rightarrow\tfrac14$).
   \item \textbf{a, c.} A uniform average over the ensemble members (a) and a weighted average (c) both

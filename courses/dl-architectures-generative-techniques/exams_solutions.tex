@@ -812,6 +812,21 @@ formula for the distribution $p_x(\mathbf{x})$.
   \no{C--F} Wrong inverse matrix and/or wrong determinant prefactor --- guess-catchers.
 \end{answer}
 
+\questiontitle{Density under a Linear Transform (Non-Diagonal)}
+Let $\mathbf{u}\sim p_u(\mathbf{u})$ be a two-dimensional random vector and define
+$\mathbf{x}=T\mathbf{u}$ with the non-diagonal matrix
+$T=\begin{pmatrix}2&-2\\0&1\end{pmatrix}$. Derive the density $p_x(\mathbf{x})$ in terms of $p_u$,
+stating $\det T$, $T^{-1}$, and the final formula.
+\closequestion
+\begin{answerprose}{$p_x(\mathbf{x})=\tfrac12\,p_u(T^{-1}\mathbf{x})$, $\det T=2$}
+$\det T = 2\cdot1-(-2)\cdot0 = 2$, hence
+$T^{-1}=\tfrac12\begin{pmatrix}1&2\\0&2\end{pmatrix}=\begin{pmatrix}\tfrac12&1\\0&1\end{pmatrix}$.
+Change of variables gives
+$p_x(\mathbf{x})=\frac{1}{|\det T|}\,p_u(T^{-1}\mathbf{x})=\tfrac12\,p_u\!\left(\begin{pmatrix}\tfrac12&1\\0&1\end{pmatrix}\mathbf{x}\right)$.
+Unlike the diagonal case, $T$ is triangular but \emph{not} diagonal, so $T^{-1}$ carries an
+off-diagonal entry and the prefactor is $\tfrac12$ (not $1$).
+\end{answerprose}
+
 \questiontitle{Autoregressive Sequence Probability}
 An autoregressive model $p_w(\mathbf{x})$ models sequences $(x_1,x_2,x_3)$ where each element is
 $A$, $B$, or $C$:
