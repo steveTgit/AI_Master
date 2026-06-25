@@ -173,9 +173,10 @@ Sections~1--6) and the \textbf{2026} exam (25 June 2026, Sections~7--10). The 20
 items are \emph{multiple-select} (``which of the following is/are true'' means
 \textbf{one or more} of the four options are correct). The 2026 items are
 \emph{single-best-answer} (exactly \textbf{one} of the three options is correct).
-To avoid reproducing the originals verbatim, the question wording has been
-paraphrased while the answer options are kept intact. Questions are grouped by
-topic rather than in their original random order. The full answer key is at the
+To avoid reproducing the originals verbatim, both the question wording and the
+answer options have been paraphrased (the meaning and the correct answers are
+preserved). Questions are grouped by topic rather than in their original random
+order. The full answer key is at the
 end --- the question boxes themselves are intentionally left blank so the file
 doubles as a practice set.
 \end{notebox}
@@ -192,10 +193,10 @@ doubles as a practice set.
 \questiontitle{SMILES strings}
 Regarding the SMILES notation for molecules, which of the following statements hold?
 \begin{itemize}[leftmargin=1.8em]
-  \choice SMILES stands for \emph{Simplified Molecular Input Line Entry System}.
-  \choice SMILES strings represent molecules in a linear sequence of characters.
-  \choice SMILES cannot be converted into a molecular graph.
-  \choice SMILES is always unique for each molecule, ensuring no two different molecules share the same SMILES.
+  \choice SMILES is short for the \emph{Simplified Molecular Input Line Entry System}.
+  \choice A SMILES encodes a molecule as a one-dimensional sequence of characters.
+  \choice A SMILES string cannot be turned into a molecular graph.
+  \choice Each molecule has exactly one SMILES, so no two distinct molecules can share a string.
 \end{itemize}
 \closequestion
 
@@ -215,20 +216,20 @@ SMILES strings below correctly encode this molecule?
 \questiontitle{Molecular fingerprints}
 Which of the following statements about molecular fingerprints are accurate?
 \begin{itemize}[leftmargin=1.8em]
-  \choice A unique molecular graph can be constructed from them.
-  \choice They are binary or numerical representations of molecular structures.
-  \choice They are used for similarity searching and machine learning tasks.
-  \choice They provide a 3D representation of molecules.
+  \choice A unique molecular graph can be reconstructed from them.
+  \choice They are binary or numeric encodings of molecular structure.
+  \choice They serve similarity searches and machine-learning tasks.
+  \choice They give a 3D representation of the molecule.
 \end{itemize}
 \closequestion
 
 \questiontitle{Bioassays}
 Select the correct statements about bioassays.
 \begin{itemize}[leftmargin=1.8em]
-  \choice They can be used to measure the biological response or function elicited by a substance.
-  \choice They typically test the substance at various concentrations.
-  \choice They are wet-lab procedures to acquire knowledge of a compound in a biological context.
-  \choice They are typically tested \emph{in vitro}, i.e.\ in a living organism.
+  \choice They quantify the biological response or function that a substance triggers.
+  \choice They usually probe the substance across a range of concentrations.
+  \choice They are wet-lab procedures for characterising a compound in a biological setting.
+  \choice They are usually carried out \emph{in vitro}, i.e.\ inside a living organism.
 \end{itemize}
 \closequestion
 
@@ -236,29 +237,29 @@ Select the correct statements about bioassays.
 Which statements about ADME (Absorption, Distribution, Metabolism, and Excretion)
 properties are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Lipinski's rule of five can be used as a proxy for ADME properties.
-  \choice Good ADME properties guarantee that a compound will be an effective drug.
-  \choice ADME properties such as clearance are often difficult to model.
-  \choice ADME properties are critical in determining the pharmacokinetics of a drug.
+  \choice Lipinski's rule of five can serve as a proxy for ADME behaviour.
+  \choice Favourable ADME properties guarantee that a compound becomes an effective drug.
+  \choice Certain ADME properties, such as clearance, are hard to model.
+  \choice ADME properties are decisive for a drug's pharmacokinetics.
 \end{itemize}
 \closequestion
 
 \questiontitle{Characteristics of QSAR / bioactivity data}
 Which of the following correctly characterise typical QSAR / bioactivity datasets?
 \begin{itemize}[leftmargin=1.8em]
-  \choice QSAR datasets usually have data points in the order of thousands or millions.
-  \choice QSAR datasets typically have a balanced distribution of active and inactive compounds.
-  \choice QSAR datasets often contain series of structurally related compounds.
-  \choice QSAR data often includes noise due to biological variability and experimental inconsistencies.
+  \choice QSAR datasets typically contain on the order of thousands to millions of data points.
+  \choice QSAR datasets usually show a balanced mix of active and inactive compounds.
+  \choice QSAR datasets frequently include groups of structurally related compounds.
+  \choice QSAR labels are often noisy because of biological variability and experimental inconsistency.
 \end{itemize}
 \closequestion
 
 \questiontitle{Applications of QSAR modeling}
 For which of the following applications is QSAR modeling relevant?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Creating 3D protein structure models.
-  \choice Identifying potential drug candidates.
-  \choice Predicting the toxicity of new chemical compounds.
+  \choice Building 3D models of protein structures.
+  \choice Finding promising drug candidates.
+  \choice Estimating the toxicity of novel chemical compounds.
   \choice Mapping the genome sequences of organisms.
 \end{itemize}
 \closequestion
@@ -272,10 +273,10 @@ For which of the following applications is QSAR modeling relevant?
 \questiontitle{Ligand-based virtual screening}
 Which statements about ligand-based virtual screening are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Molecular fingerprints are commonly used in ligand-based virtual screening.
-  \choice Ligand-based virtual screening is not suitable for predicting the bioactivity of unknown compounds.
-  \choice Ligand-based virtual screening requires a 3D structure of the target protein.
-  \choice Ligand-based virtual screening typically only considers bioactivity predictions to select compounds.
+  \choice Molecular fingerprints are a common ingredient of ligand-based virtual screening.
+  \choice Ligand-based virtual screening cannot predict the bioactivity of untested compounds.
+  \choice Ligand-based virtual screening needs the 3D structure of the target protein.
+  \choice Ligand-based virtual screening selects compounds using bioactivity predictions alone.
 \end{itemize}
 \closequestion
 
@@ -283,10 +284,10 @@ Which statements about ligand-based virtual screening are correct?
 When evaluating QSAR models, which of the following statements about
 data-splitting strategies hold?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Temporal splits help evaluate the model's performance on future, unseen data by simulating real-world data acquisition over time.
-  \choice Generally, a random split is the best method for evaluating QSAR models as it eliminates biases.
-  \choice Cross-validation is rarely used in the evaluation of QSAR due to computational cost.
-  \choice Cluster splits group similar compounds together, ensuring that structurally similar compounds are not both in the training and test sets.
+  \choice Temporal splits gauge performance on future, unseen data by mimicking how data accrue over time.
+  \choice A random split is generally the best evaluation scheme because it removes all bias.
+  \choice Cross-validation is seldom applied to QSAR because of its computational cost.
+  \choice Cluster splits keep similar compounds together so that structurally similar ones do not span the training and test sets.
 \end{itemize}
 \closequestion
 
@@ -305,20 +306,20 @@ specifically designed to reward strong early recognition?
 \questiontitle{Target identification / deconvolution}
 Which statements about target identification / deconvolution are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice For a given molecule, it consists of identifying to which protein it will most likely bind if multiple are present simultaneously.
-  \choice Multi-class classification can be used for it.
-  \choice Multi-task classification can be used for it.
-  \choice For a given molecule, it consists of identifying all the proteins it will bind if multiple are present simultaneously.
+  \choice For a given molecule, it determines which of several simultaneously present proteins it is most likely to bind.
+  \choice It can be approached with multi-class classification.
+  \choice It can be approached with multi-task classification.
+  \choice For a given molecule, it determines every protein it would bind when several are present at once.
 \end{itemize}
 \closequestion
 
 \questiontitle{Drug synergy and antagonism}
 Which of the following statements about drug synergy and antagonism are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Drug synergy occurs when the combined effect of two or more drugs is greater than the sum of their individual effects.
-  \choice The Loewe additivity model is commonly used to assess drug synergy.
-  \choice Antagonistic effects occur when the combined effect of two or more drugs is greater than the sum of their individual effects.
-  \choice Drug synergy / antagonism evaluation is only applicable to chemically similar drugs.
+  \choice Synergy means the combined effect of two or more drugs exceeds the sum of their individual effects.
+  \choice The Loewe additivity model is a standard tool for assessing synergy.
+  \choice Antagonism means the combined effect of two or more drugs exceeds the sum of their individual effects.
+  \choice Synergy/antagonism analysis applies only to chemically similar drugs.
 \end{itemize}
 \closequestion
 
@@ -326,10 +327,10 @@ Which of the following statements about drug synergy and antagonism are correct?
 Comparing Random Forests (RF) and Graph Neural Networks (GNNs) for molecular
 modeling, which statements are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice GNNs are inherently better for QSAR modeling because they naturally capture the graph-like structure of molecules, leading to more accurate predictions in all cases.
-  \choice RF models are less prone to overfitting compared to GNNs, making them a more reliable choice for datasets with a large number of features but limited samples.
-  \choice RF models are typically more interpretable than GNNs, making it easier to understand the contribution of individual molecular features to the model's predictions.
-  \choice GNNs are less sensitive to the quality and variability of the input data compared to RFs, making them more consistent in performance across different datasets.
+  \choice GNNs are inherently superior for QSAR because they capture the graph structure of molecules, giving more accurate predictions in every case.
+  \choice RF models overfit less than GNNs, which makes them more reliable on datasets with many features but few samples.
+  \choice RF models are usually more interpretable than GNNs, so the contribution of individual molecular features is easier to read off.
+  \choice GNNs are less sensitive to input-data quality and variability than RFs, making them more consistent across different datasets.
 \end{itemize}
 \closequestion
 
@@ -342,10 +343,10 @@ modeling, which statements are correct?
 \questiontitle{Molecular graphs and graph neural networks}
 Which statements about molecular graphs and graph neural networks are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice A molecular graph can be represented by two matrices: one storing the node features and another storing the edges between the nodes.
-  \choice Node features can include atomic number, hybridization state, and formal charge.
-  \choice In a GNN only the node features are used to make the final predictions.
-  \choice The information about the bond type (e.g.\ single bond, double bond) cannot be included in a GNN.
+  \choice A molecular graph can be stored as two matrices: one for the node features and one for the edges between nodes.
+  \choice Node features may include the atomic number, hybridization state, and formal charge.
+  \choice A GNN uses only the node features to form its final prediction.
+  \choice Bond-type information (e.g.\ single vs.\ double bond) cannot be represented in a GNN.
 \end{itemize}
 \closequestion
 
@@ -353,30 +354,30 @@ Which statements about molecular graphs and graph neural networks are correct?
 Which of the following are genuine limitations of GNNs in the context of
 molecular modeling?
 \begin{itemize}[leftmargin=1.8em]
-  \choice GNNs are incapable of predicting any molecular properties accurately.
-  \choice GNNs can have difficulty capturing long-range interactions between atoms.
-  \choice GNNs may struggle with very large and complex molecular graphs.
-  \choice GNNs require a significant amount of computational resources for training.
+  \choice GNNs cannot predict any molecular property with accuracy.
+  \choice GNNs may struggle to capture long-range interactions between atoms.
+  \choice GNNs can have trouble with very large, complex molecular graphs.
+  \choice GNNs need considerable computational resources to train.
 \end{itemize}
 \closequestion
 
 \questiontitle{Multi-modal contrastive learning}
 Which statements about multi-modal contrastive learning are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Multi-modal contrastive learning encodes multiple modalities (e.g.\ molecules and proteins) into a shared latent space.
-  \choice Multi-modal contrastive learning is a self-supervised learning technique.
-  \choice Multi-modal contrastive learning concentrates (latent) representations from multiple modalities (e.g.\ molecules and proteins) to make predictions.
-  \choice Multi-modal contrastive learning is an unsupervised learning technique.
+  \choice Multi-modal contrastive learning embeds several modalities (e.g.\ molecules and proteins) into one shared latent space.
+  \choice Multi-modal contrastive learning is a self-supervised method.
+  \choice Multi-modal contrastive learning concentrates the (latent) representations of several modalities (e.g.\ molecules and proteins) to make predictions.
+  \choice Multi-modal contrastive learning is an unsupervised method.
 \end{itemize}
 \closequestion
 
 \questiontitle{Multiple instance learning (MIL)}
 Which of the following statements about multiple instance learning (MIL) hold?
 \begin{itemize}[leftmargin=1.8em]
-  \choice MIL involves training on sets or bags of instances where each instance is individually labelled.
-  \choice MIL requires the set/bag size to be fixed.
-  \choice MIL involves training on sets or bags of instances that have a single label.
-  \choice MIL models should be invariant to the permutation of instances.
+  \choice MIL trains on sets (bags) of instances in which each instance carries its own label.
+  \choice MIL needs the bag size to be fixed.
+  \choice MIL trains on sets (bags) of instances that share a single label.
+  \choice A MIL model should be invariant to the ordering of the instances.
 \end{itemize}
 \closequestion
 
@@ -389,20 +390,20 @@ Which of the following statements about multiple instance learning (MIL) hold?
 \questiontitle{Generative models for small molecules}
 Which statements about generative models for small molecules are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice As the syntax of SMILES strings is complicated and with long dependencies, generators of SMILES representations will produce less than 10\% valid SMILES strings.
-  \choice Generative models are used to explore the known chemical space of synthesized molecules.
-  \choice Generative adversarial networks cannot be used to generate small molecules.
-  \choice Autoregressive models can be used to generate SMILES representations of small molecules.
+  \choice Because SMILES syntax is intricate with long-range dependencies, SMILES generators yield fewer than 10\% valid strings.
+  \choice Generative models are used to explore the already-synthesised, known chemical space.
+  \choice Generative adversarial networks cannot generate small molecules.
+  \choice Autoregressive models can generate SMILES representations of small molecules.
 \end{itemize}
 \closequestion
 
 \questiontitle{Goal-directed molecule generation}
 Which of the following correctly describe goal-directed molecule generation?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Goal-directed generation focuses only on replicating existing molecular structures with desired properties.
-  \choice Goal-directed generation aims to create molecules with similar properties to the training set.
-  \choice Reinforcement learning can be used to optimize goal-directed molecule generation.
-  \choice Goal-directed generation aims to create molecules with specific desired properties.
+  \choice Goal-directed generation is concerned only with reproducing existing structures that already have the desired properties.
+  \choice Goal-directed generation aims to produce molecules whose properties resemble those of the training set.
+  \choice Reinforcement learning can be used to drive goal-directed molecule generation.
+  \choice Goal-directed generation aims to produce molecules with particular, pre-specified properties.
 \end{itemize}
 \closequestion
 
@@ -410,10 +411,10 @@ Which of the following correctly describe goal-directed molecule generation?
 Which statements about the Fr\'echet ChemNet Distance (FCD) and how it is computed
 are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice FCD measures the distance between individual atoms of molecules.
-  \choice FCD is calculated by comparing the means and covariances of the latent representations of molecules.
-  \choice FCD is calculated directly on the raw molecular structures without any transformations.
-  \choice FCD is a metric used to compare the distribution of generated molecules to that of real molecules.
+  \choice FCD measures the distance between the individual atoms of molecules.
+  \choice FCD compares the means and covariances of the molecules' latent representations.
+  \choice FCD is computed straight from the raw molecular structures with no transformation.
+  \choice FCD is a metric comparing the distribution of generated molecules with that of real ones.
 \end{itemize}
 \closequestion
 
@@ -421,20 +422,20 @@ are correct?
 Which of the following statements about machine learning for chemical reactions are
 correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Some methods rely on so-called reaction templates, which are transformation rules for molecules.
-  \choice Deep learning methods that predict outcomes of chemical reactions can be trained on databases containing known chemical reactions.
-  \choice Transformer architectures have been used to predict outcomes of chemical reactions.
-  \choice Predicting chemical reactions with machine learning requires data from quantum mechanical calculations due to bond changes and electron movements.
+  \choice Some approaches use so-called reaction templates, i.e.\ transformation rules for molecules.
+  \choice Deep-learning reaction-outcome predictors can be trained on databases of known reactions.
+  \choice Transformer architectures have been applied to predicting reaction outcomes.
+  \choice Predicting reactions with machine learning requires quantum-mechanical data because of bond changes and electron movement.
 \end{itemize}
 \closequestion
 
 \questiontitle{Synthesis planning}
 Which statements about synthesis planning are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Synthesis planning involves designing a sequence of chemical reactions to produce a target compound.
-  \choice Retrosynthetic analysis is a key technique used in synthesis planning to break down complex molecules into simpler starting materials.
-  \choice Synthesis planning has been made trivial by modern deep learning methods.
-  \choice Synthesis planning involves only selecting the reactants.
+  \choice Synthesis planning designs a sequence of chemical reactions that yields a target compound.
+  \choice Retrosynthetic analysis is central to it, decomposing complex molecules into simpler starting materials.
+  \choice Modern deep-learning methods have made synthesis planning trivial.
+  \choice Synthesis planning amounts to nothing more than choosing the reactants.
 \end{itemize}
 \closequestion
 
@@ -442,10 +443,10 @@ Which statements about synthesis planning are correct?
 Multi-step retrosynthesis can be cast as a game solvable by reinforcement learning.
 Which of the following statements about this ``retrosynthesis game'' are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice The actions in the retrosynthesis ``game'' involve selecting reactants for the reactions.
-  \choice The state in the retrosynthesis ``game'' refers to the set of available building blocks.
-  \choice The environment in the retrosynthesis ``game'' performs the reaction and returns new molecules.
-  \choice The reward in the retrosynthesis ``game'' is obtained when the product is successfully synthesized from the building blocks.
+  \choice In the ``game'', an action consists of choosing reactants for a reaction.
+  \choice In the ``game'', the state is the set of available building blocks.
+  \choice In the ``game'', the environment carries out the reaction and returns the new molecules.
+  \choice In the ``game'', the reward is granted once the product has been synthesised from the building blocks.
 \end{itemize}
 \closequestion
 
@@ -462,20 +463,20 @@ current smoker), ``cholesterol level'' (floating-point measurements in mg/dL), a
 ``diabetes risk score'' (integer values in $[0,10]$ indicating the likelihood of
 developing diabetes). Which of the following statements are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Missing values in ``cholesterol level'' can be replaced by the column's median value to handle skewness.
-  \choice Column ``smoking status'' is continuous, as it captures the various smoking habits of patients.
-  \choice ``cholesterol level'' is ordinal since cholesterol measurements can be arranged in increasing order.
-  \choice Missing values in ``smoker status'' can be replaced by the column's mean value to handle skewness.
+  \choice Missing ``cholesterol level'' entries can be filled with the column's median to cope with skew.
+  \choice The ``smoking status'' column is continuous, since it reflects patients' various smoking habits.
+  \choice ``cholesterol level'' is ordinal, because the measurements can be placed in increasing order.
+  \choice Missing ``smoking status'' entries can be filled with the column's mean to cope with skew.
 \end{itemize}
 \closequestion
 
 \questiontitle{Batch effects in medical data}
 Which statements about batch effects in medical data are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Ignoring batch effects can lead to models that distinguish between batches rather than the actual biological conditions.
-  \choice Batch effects can be eliminated by simply increasing the sample size.
-  \choice Batch effects can create artificial differences in data due to variations in experimental conditions.
-  \choice Batch effects are usually beneficial as they introduce necessary variability into the data.
+  \choice Overlooking batch effects can yield models that separate batches instead of the true biological conditions.
+  \choice Batch effects vanish simply by collecting more samples.
+  \choice Batch effects introduce artificial differences that stem from varying experimental conditions.
+  \choice Batch effects are generally helpful, supplying needed variability to the data.
 \end{itemize}
 \closequestion
 
@@ -485,20 +486,20 @@ lecture notation ($y$ = disease status, e.g.\ ``healthy''/``diseased'';
 $x$ = patient features, e.g.\ age, blood parameters, heart rate), which of the
 following statements about domain shifts are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice If a machine learning model has a high predictive quality on a randomly drawn validation set, this means it will automatically adjust to domain shifts and maintain predictive quality over time.
-  \choice The distribution of the patient features $x$ with distribution $p(x)$ is never affected by domain shifts.
-  \choice During disease waves of infectious diseases (such as COVID-19), the prevalence of a disease and thus the probability of observing this phenotype $p(y)$ changes.
-  \choice Assume that the diagnostic process to determine the disease status $y$ is changed, e.g.\ an antigen test is replaced by a PCR test. This represents a concept shift $p(y\mid x)$.
+  \choice A model with high predictive quality on a randomly drawn validation set will, by that fact alone, adapt to domain shifts and keep its quality over time.
+  \choice The patient-feature distribution $p(x)$ is never touched by domain shifts.
+  \choice During waves of an infectious disease (such as COVID-19), the prevalence---and thus the probability $p(y)$ of observing the phenotype---changes.
+  \choice If the way the status $y$ is diagnosed changes, e.g.\ an antigen test is replaced by a PCR test, this is a concept shift $p(y\mid x)$.
 \end{itemize}
 \closequestion
 
 \questiontitle{Medical imaging modalities}
 Which statements about medical imaging modalities are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Computed Tomography (CT) scans use ultrasound images to generate images of the body.
-  \choice X-rays are used to differentiate between tissues of varying densities, such as bone and soft tissue.
-  \choice Magnetic Resonance Imaging (MRI) provides detailed images of internal structures by using strong magnetic fields and radio waves.
-  \choice Optical coherence tomography imaging uses multiple X-rays to create images of organs and tissues.
+  \choice Computed Tomography (CT) builds its body images from ultrasound.
+  \choice X-rays distinguish tissues of differing density, such as bone versus soft tissue.
+  \choice Magnetic Resonance Imaging (MRI) yields detailed images of internal structures using strong magnetic fields and radio waves.
+  \choice Optical coherence tomography forms images of organs and tissues using multiple X-rays.
 \end{itemize}
 \closequestion
 
@@ -516,10 +517,10 @@ medical imaging?
 \questiontitle{The U-Net architecture}
 Which of the following correctly describe the U-Net architecture?
 \begin{itemize}[leftmargin=1.8em]
-  \choice The U-Net was the first vision model where the encoder is based on self-attention instead of convolutions.
-  \choice The U-Net architecture uses a symmetrical encoder and decoder.
-  \choice The U-Net has been specifically developed for the object detection task.
-  \choice To aid the decoding process, feature maps from the encoder are concatenated with feature maps of the corresponding up-sampling level of the decoder.
+  \choice U-Net was the first vision model whose encoder relied on self-attention rather than convolutions.
+  \choice The U-Net architecture has a symmetric encoder and decoder.
+  \choice U-Net was created specifically for the object-detection task.
+  \choice To help decoding, encoder feature maps are concatenated with those of the matching up-sampling level of the decoder.
 \end{itemize}
 \closequestion
 
@@ -527,10 +528,10 @@ Which of the following correctly describe the U-Net architecture?
 In the context of AI for medical imaging, what does the ``Clever Hans'' effect
 refer to?
 \begin{itemize}[leftmargin=1.8em]
-  \choice A bias occurring when enhancing the resolution of low-quality medical images.
-  \choice The situation where an AI model appears to perform well but is actually relying on irrelevant features or artifacts in the data.
-  \choice The phenomenon where an AI system incorrectly predicts outcomes based on biased training data.
-  \choice The phenomenon where data augmentation is used to improve the robustness of AI models in medical imaging.
+  \choice A bias that arises when up-scaling the resolution of low-quality medical images.
+  \choice A case where a model looks like it performs well but is actually leaning on irrelevant features or artifacts in the data.
+  \choice A case where an AI predicts outcomes incorrectly because its training data were biased.
+  \choice The use of data augmentation to make medical-imaging models more robust.
 \end{itemize}
 \closequestion
 
@@ -538,20 +539,20 @@ refer to?
 Which statements about explainable AI and interpretability in medical imaging are
 correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Gradient integration utilizes the propagation of a relevance value back to the input layers, layer by layer, to estimate the relevance of each input feature.
-  \choice Explainable AI techniques, such as Grad-CAM, help visualize which parts of a medical image are most important for a model's prediction.
-  \choice Occlusion analysis involves removing patches of the training data images to improve the model's interpretability.
-  \choice Counterfactual explanations in medical imaging involve generating alternative images to show what changes would have been needed for a different diagnosis.
+  \choice Gradient integration propagates a relevance value backwards through the layers to the input, estimating each input feature's relevance.
+  \choice Explainable-AI methods such as Grad-CAM help visualise which parts of a medical image matter most for a prediction.
+  \choice Occlusion analysis deletes patches from the training images to make the model more interpretable.
+  \choice Counterfactual explanations generate alternative images showing what would have had to change for a different diagnosis.
 \end{itemize}
 \closequestion
 
 \questiontitle{AlphaFold 2}
 Which of the following statements about AlphaFold 2 are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice AlphaFold 2 incorporates quantum mechanical calculations to improve the accuracy of its predictions.
-  \choice AlphaFold 2 incorporates multiple sequence alignments and homologous protein structures to improve the accuracy of its predictions.
-  \choice AlphaFold 2 is a deep learning model designed to predict the three-dimensional structure of proteins from their amino acid sequences.
-  \choice AlphaFold 2 uses a convolutional neural network architecture.
+  \choice AlphaFold 2 relies on quantum-mechanical calculations to sharpen its predictions.
+  \choice AlphaFold 2 draws on multiple sequence alignments and homologous protein structures to improve its accuracy.
+  \choice AlphaFold 2 is a deep-learning model that predicts a protein's three-dimensional structure from its amino-acid sequence.
+  \choice AlphaFold 2 is built on a convolutional neural network architecture.
 \end{itemize}
 \closequestion
 
@@ -564,10 +565,10 @@ Which of the following statements about AlphaFold 2 are correct?
 \questiontitle{Composition of biological sequences}
 Which statements about the composition of biological sequences are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Protein sequences are composed of chains of amino acids linked by peptide bonds.
-  \choice DNA sequences are composed of nucleic acids.
-  \choice Biological sequences do not follow any specific patterns or rules in their composition.
-  \choice RNA sequences are composed of lipids.
+  \choice Protein sequences are chains of amino acids joined by peptide bonds.
+  \choice DNA sequences are built from nucleic acids.
+  \choice Biological sequences obey no particular patterns or rules in their make-up.
+  \choice RNA sequences are built from lipids.
 \end{itemize}
 \closequestion
 
@@ -575,10 +576,10 @@ Which statements about the composition of biological sequences are correct?
 Which of the following statements about deep learning methods for biological
 sequences are correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Feature extraction from biological sequences can be used to identify motifs, which are recurring patterns or elements within the sequences.
-  \choice One-hot encoding is commonly used to prepare biological sequences as input for deep learning models.
-  \choice Deep learning techniques can be applied to tasks such as classification, segmentation, and generative modeling of biological sequences.
-  \choice 1D-Convolutions, Recurrent Neural Networks (RNNs), Long Short-Term Memory networks (LSTMs), and Transformers are all used to analyze biological sequences.
+  \choice Feature extraction from biological sequences can reveal motifs, i.e.\ recurring patterns or elements within them.
+  \choice One-hot encoding is a common way to prepare biological sequences as input for deep models.
+  \choice Deep-learning techniques apply to tasks such as classification, segmentation, and generative modelling of biological sequences.
+  \choice 1D convolutions, Recurrent Neural Networks (RNNs), Long Short-Term Memory networks (LSTMs), and Transformers are all used to analyse biological sequences.
 \end{itemize}
 \closequestion
 
@@ -588,8 +589,9 @@ sequences are correct?
 % ==========================================================
 \begin{notebox}[2026 exam --- single-best-answer]
 The remaining sections are from the \textbf{2026} exam (25 June 2026). Each of these
-questions has \textbf{exactly one} correct option among the three listed. Wording
-has been paraphrased; the answer options are kept intact.
+questions has \textbf{exactly one} correct option among the three listed. Both the
+question and the options have been paraphrased; the meaning and correct answers are
+preserved.
 \end{notebox}
 
 
@@ -602,29 +604,29 @@ has been paraphrased; the answer options are kept intact.
 Which of the following statements accurately describes the relationship between
 molecular graphs and molecular fingerprints?
 \begin{itemize}[leftmargin=1.8em]
-  \choice A fingerprint can be derived from a molecular graph, but the exact graph generally cannot be reconstructed from the fingerprint.
-  \choice Fingerprints and molecular graphs necessarily contain the same structural information.
-  \choice A molecular graph can always be reconstructed exactly from a fingerprint.
+  \choice A fingerprint can be computed from a molecular graph, yet the exact graph usually cannot be recovered from the fingerprint.
+  \choice Fingerprints and molecular graphs must hold the same structural information.
+  \choice A molecular graph can always be reconstructed exactly from its fingerprint.
 \end{itemize}
 \closequestion
 
 \questiontitle{Converting between SMILES and fingerprints}
-Which statement about converting between SMILES strings and molecular fingerprints
-is correct?
+Using standard cheminformatics tools, in which direction is conversion between a
+SMILES string and a molecular fingerprint actually possible?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Both SMILES and molecular fingerprints can be converted into each other using cheminformatics tools.
-  \choice Only a SMILES can be converted into a molecular fingerprint using cheminformatics tools.
-  \choice Only a molecular fingerprint can be converted into a SMILES using cheminformatics tools.
+  \choice Cheminformatics tools can convert SMILES and fingerprints into one another in both directions.
+  \choice Cheminformatics tools can turn a SMILES into a fingerprint, but not the other way round.
+  \choice Cheminformatics tools can turn a fingerprint into a SMILES, but not the other way round.
 \end{itemize}
 \closequestion
 
 \questiontitle{Tanimoto coefficient}
-How does the Tanimoto coefficient quantify the similarity of two molecular
-fingerprints?
+On what quantity is the Tanimoto coefficient based when it scores how similar two
+molecular fingerprints are?
 \begin{itemize}[leftmargin=1.8em]
-  \choice It divides the number of shared features by the total number of features present in either molecule.
-  \choice It aligns three-dimensional pharmacophore points and calculates their average spatial distance.
-  \choice It measures the overlap between the core scaffolds and assigns a score of one whenever the scaffolds match.
+  \choice It takes the count of shared features over the total number of features present in either molecule.
+  \choice It superimposes three-dimensional pharmacophore points and averages their spatial distances.
+  \choice It compares the core scaffolds, scoring one whenever the scaffolds coincide.
 \end{itemize}
 \closequestion
 
@@ -638,21 +640,21 @@ Which of the following SMILES strings represents aspirin (acetylsalicylic acid)?
 \closequestion
 
 \questiontitle{Bioactivity datasets}
-Which description of typical bioactivity datasets is the most accurate?
+Which of the following best captures what bioactivity datasets usually look like in practice?
 \begin{itemize}[leftmargin=1.8em]
-  \choice They are generally large, balanced, and nearly free of measurement noise.
-  \choice They are often limited, imbalanced, and noisy, with many more inactive than active compounds.
-  \choice They are inexpensive to generate and can therefore cover most combinations of compounds and assays.
+  \choice They are usually large, balanced, and almost free of measurement noise.
+  \choice They are frequently small, imbalanced, and noisy, with far more inactive than active compounds.
+  \choice They are cheap to produce and therefore cover most compound--assay combinations.
 \end{itemize}
 \closequestion
 
 \questiontitle{The Design--Make--Test--Analyse cycle}
-Which statement correctly describes the Design--Make--Test--Analyse (DMTA) cycle in
-drug discovery?
+In drug discovery, which option correctly captures how the Design--Make--Test--Analyse
+(DMTA) cycle proceeds?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Compounds are tested before they are designed, and only active compounds are subsequently synthesized.
-  \choice Compounds are designed and synthesized once, after which testing replaces any need for further design.
-  \choice Compounds are designed, synthesized, experimentally tested, and the results are analysed to guide the next design cycle.
+  \choice Compounds are tested before being designed, and only the active ones are afterwards synthesized.
+  \choice Compounds are designed and made just once, after which testing removes any need for further design.
+  \choice Compounds are designed, made, and tested experimentally, and the analysis steers the next design round.
 \end{itemize}
 \closequestion
 
@@ -663,27 +665,27 @@ drug discovery?
 \section{Virtual Screening, QSAR \& Targets (2026)}
 
 \questiontitle{Structure-based vs.\ ligand-based drug design}
-Which statement correctly distinguishes structure-based drug design (SBDD) from
+What is the essential difference between structure-based drug design (SBDD) and
 ligand-based drug design (LBDD)?
 \begin{itemize}[leftmargin=1.8em]
-  \choice SBDD requires known active ligands, whereas LBDD requires the 3D structure of the target.
-  \choice SBDD and LBDD both require a high-resolution 3D structure of the target.
-  \choice SBDD uses the 3D structure of the target, whereas LBDD can use information from known ligands without requiring that target structure.
+  \choice SBDD needs known active ligands, whereas LBDD needs the target's 3D structure.
+  \choice Both SBDD and LBDD need a high-resolution 3D structure of the target.
+  \choice SBDD relies on the target's 3D structure, whereas LBDD can work from known ligands without that structure.
 \end{itemize}
 \closequestion
 
 \questiontitle{Similarity search vs.\ model-based search}
-Which statement correctly distinguishes similarity search from model-based search?
+In what way do similarity search and model-based search differ from each other?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Similarity search is ligand-based, whereas model-based search necessarily requires the three-dimensional structure of the target binding site.
-  \choice Similarity search retrieves compounds similar to a query molecule, whereas model-based search uses a supervised model learned from labelled examples to predict activity.
-  \choice Similarity search learns a decision function from labelled active and inactive compounds, whereas model-based search ranks compounds by proximity to a query molecule.
+  \choice Similarity search is ligand-based, whereas model-based search must have the 3D structure of the target's binding site.
+  \choice Similarity search retrieves molecules resembling a query, whereas model-based search predicts activity with a model trained on labelled data.
+  \choice Similarity search learns a decision function from labelled actives and inactives, whereas model-based search ranks compounds by closeness to a query.
 \end{itemize}
 \closequestion
 
 \questiontitle{Early-recognition metrics (odd one out)}
-Which metric is \emph{not} specifically designed to emphasise early recognition of
-active compounds near the top of a ranked virtual-screening list?
+Of the metrics below, which one is \emph{not} built to reward finding actives early,
+i.e.\ near the top of a ranked virtual-screening list?
 \begin{itemize}[leftmargin=1.8em]
   \choice BEDROC.
   \choice AUC-ROC.
@@ -692,60 +694,59 @@ active compounds near the top of a ranked virtual-screening list?
 \closequestion
 
 \questiontitle{Evaluating a virtual-screening model}
-A virtual-screening model ranks one million compounds, but only the top 1\% can be
-tested experimentally. Which evaluation strategy is most appropriate for selecting
-the model?
+A virtual-screening model orders a million compounds, yet your budget only permits
+assaying the top 1\%. Which model-selection strategy best fits this situation?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Select the model with the highest accuracy after applying a 0.5 probability threshold, because ranking quality above that threshold is irrelevant once compounds are classified.
-  \choice Select the model with the highest global AUC-ROC, because equal weighting of all ranking positions guarantees the best enrichment within the top 1\%.
-  \choice Prioritize an early-recognition metric such as enrichment factor near the 1\% cutoff or BEDROC, because performance at the top of the ranking determines experimental utility.
+  \choice Pick the model with the best accuracy at a 0.5 probability threshold, since ranking above that threshold no longer matters once compounds are classified.
+  \choice Pick the model with the highest overall AUC-ROC, since weighting all ranking positions equally guarantees the best enrichment in the top 1\%.
+  \choice Favour an early-recognition metric such as the enrichment factor near the 1\% cutoff or BEDROC, since the top of the ranking decides experimental usefulness.
 \end{itemize}
 \closequestion
 
 \questiontitle{Defensible generalization estimates in QSAR}
-Which workflow gives the most defensible estimate of generalization performance in
-a QSAR pipeline?
+In a QSAR pipeline, which procedure yields the most trustworthy estimate of how well
+the model generalises?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Define the data split first, perform feature and hyperparameter selection using training data, and use the held-out test set only for final evaluation.
-  \choice Split the data first, compare model and hyperparameter choices on the test set, and report the best test-set result.
-  \choice Select features on the complete dataset, then split the reduced data and tune hyperparameters using only the training subset.
+  \choice Fix the split first, carry out feature and hyperparameter selection on the training data, and reserve the held-out test set for the final evaluation only.
+  \choice Split first, then compare models and hyperparameters on the test set and report the best test-set score.
+  \choice Select features on the whole dataset, then split the reduced data and tune hyperparameters on the training part only.
 \end{itemize}
 \closequestion
 
 \questiontitle{Compound-series bias}
-What is compound-series bias, and why is it problematic in QSAR modelling?
+What does compound-series bias refer to, and why does it undermine QSAR model evaluation?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Many compounds are highly structurally related, so a random split can place close analogues in training and test sets and underestimate generalization error.
-  \choice Information from test compounds is used during feature or hyperparameter selection, so the reported performance is biased even when compounds are structurally unrelated.
-  \choice The active class is much smaller than the inactive class, so performance is dominated by the majority class even when chemical series are diverse.
+  \choice Because many compounds are closely related, a random split can put near-analogues in both training and test, underestimating the generalization error.
+  \choice Test-compound information leaks into feature or hyperparameter selection, biasing the reported score even when compounds are structurally unrelated.
+  \choice The active class is far smaller than the inactive one, so the majority class dominates performance even when the chemical series are diverse.
 \end{itemize}
 \closequestion
 
 \questiontitle{Drug synergy and model symmetry}
-Which statement correctly describes drug synergy together with an appropriate
-property of a synergy-prediction model?
+Which option combines a correct definition of drug synergy with a sensible property
+that a model predicting it should have?
 \begin{itemize}[leftmargin=1.8em]
-  \choice The combined effect exceeds the additive effect of the separate compounds, and the prediction should not change when the order of the compounds is swapped.
-  \choice The combined effect equals the additive expectation, and the prediction may change when the same pair is supplied in reverse order.
-  \choice The combined effect is smaller than the additive expectation, and the prediction should be invariant to the order of the compounds.
+  \choice The combined effect is larger than the additive one, and the prediction should stay the same when the two compounds are swapped.
+  \choice The combined effect equals the additive expectation, and the prediction may differ when the pair is supplied in reverse order.
+  \choice The combined effect is below the additive expectation, and the prediction should be unaffected by the order of the compounds.
 \end{itemize}
 \closequestion
 
 \questiontitle{Proteochemometric modelling}
-What distinguishes proteochemometric modelling from classical single-target QSAR?
+In what respect does proteochemometric modelling go beyond classical single-target QSAR?
 \begin{itemize}[leftmargin=1.8em]
-  \choice It jointly uses representations of molecules and protein targets.
-  \choice It uses molecular representations with a softmax output over candidate protein targets.
-  \choice It uses molecular representations with a separate prediction head for each protein target.
+  \choice It uses representations of both the molecule and the protein target together.
+  \choice It uses molecular representations with a softmax over the candidate protein targets.
+  \choice It uses molecular representations with one separate prediction head per protein target.
 \end{itemize}
 \closequestion
 
 \questiontitle{Target deconvolution / target fishing}
-What is target deconvolution, also known as target fishing?
+How is the task known as target deconvolution (or target fishing) defined?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Given a protein and a molecular library, rank all molecules by predicted affinity to that one protein.
-  \choice Given a molecule and multiple candidate proteins, predict which protein the molecule is most likely to bind.
-  \choice Given a molecule, independently predict binding to every candidate protein so that any number of targets may be assigned simultaneously.
+  \choice Given one protein and a compound library, rank every molecule by predicted affinity to that protein.
+  \choice Given one molecule and several candidate proteins, predict which protein it is most likely to bind.
+  \choice Given one molecule, predict binding to each candidate protein independently, so any number of targets may be assigned at once.
 \end{itemize}
 \closequestion
 
@@ -756,53 +757,52 @@ What is target deconvolution, also known as target fishing?
 \section{Graph Neural Networks (2026)}
 
 \questiontitle{Reordering atoms in a molecular graph}
-The atoms of a molecular graph are relabelled (reordered) without altering its
-connectivity. How should a graph neural network behave?
+Suppose the atoms of a molecular graph are given new indices while the bonds between
+them are left unchanged. What behaviour do we expect from a graph neural network?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Node representations should be reordered in the same way, but the graph-level prediction may change because the adjacency matrix has been reordered.
-  \choice Both node representations and the graph-level prediction should remain in exactly the same tensor positions.
-  \choice Node representations should be reordered in the same way, while a graph-level prediction should remain unchanged.
+  \choice The node representations are permuted accordingly, but the graph-level prediction may change because the adjacency matrix was reordered.
+  \choice Both the node representations and the graph-level prediction stay in exactly the same tensor positions.
+  \choice The node representations are permuted accordingly, while the graph-level prediction stays unchanged.
 \end{itemize}
 \closequestion
 
 \questiontitle{Steps of an MPNN layer}
-Which option correctly lists the typical steps performed in one Message Passing
+What is the usual order of operations carried out inside a single Message Passing
 Neural Network (MPNN) layer?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Message generation, aggregation, update.
-  \choice Message generation, graph convolution, aggregation.
-  \choice Graph convolution, message generation, update.
+  \choice Generate messages, aggregate them, then update.
+  \choice Generate messages, apply graph convolution, then aggregate.
+  \choice Apply graph convolution, generate messages, then update.
 \end{itemize}
 \closequestion
 
 \questiontitle{Oversmoothing in GNNs}
-After stacking many message-passing layers, the node representations in a molecular
-graph become almost indistinguishable. Why is this problematic?
+Once a large number of message-passing layers are stacked, the node embeddings across
+a molecular graph end up nearly identical. Why does this cause trouble?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Long-range information is compressed through narrow graph bottlenecks, so distant signals cannot be transmitted effectively.
-  \choice The model may lose the ability to distinguish local atom environments because node embeddings become too similar.
-  \choice Important information fails to reach distant nodes because too few message-passing steps were used.
+  \choice Long-range information is squeezed through narrow graph bottlenecks, so distant signals cannot travel effectively.
+  \choice The model may no longer tell local atom environments apart because the node embeddings grow too similar.
+  \choice Important information never reaches distant nodes because too few message-passing steps were taken.
 \end{itemize}
 \closequestion
 
 \questiontitle{Contrastive learning}
-How does contrastive learning construct a shared molecule--target representation
+By what mechanism does contrastive learning build a joint molecule--target embedding
 space?
 \begin{itemize}[leftmargin=1.8em]
-  \choice It clusters molecules and targets separately and assumes clusters with the same index correspond to binding pairs.
-  \choice It increases similarity for associated molecule-target pairs and decreases similarity for mismatched pairs.
+  \choice It clusters molecules and targets separately and assumes equal-index clusters are binding pairs.
+  \choice It pulls associated molecule-target pairs closer together and pushes mismatched pairs apart.
   \choice It concatenates molecule and target representations and fits a supervised activity regressor without comparing pairs in a shared space.
 \end{itemize}
 \closequestion
 
 \questiontitle{Multiple Instance Learning}
-In what way does Multiple Instance Learning differ from standard supervised
-learning? Instead of feature vectors each labelled with a single value
-$(\boldsymbol{x}, y)$, \ldots
+How does Multiple Instance Learning depart from ordinary supervised learning, in
+which every feature vector carries a single label $(\boldsymbol{x}, y)$?
 \begin{itemize}[leftmargin=1.8em]
-  \choice \ldots we have a bag of feature vectors labelled with a single value $(\{\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N\}, y)$.
-  \choice \ldots we have a bag of feature vectors labelled with a bag of values $(\{\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N\}, \{y_1, \ldots, y_M\})$.
-  \choice \ldots we have feature vectors labelled with a bag of values $(\boldsymbol{x}, \{y_1, \ldots, y_M\})$.
+  \choice \ldots we are given a bag of feature vectors that share a single label $(\{\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N\}, y)$.
+  \choice \ldots we are given a bag of feature vectors paired with a bag of labels $(\{\boldsymbol{x}_1, \ldots, \boldsymbol{x}_N\}, \{y_1, \ldots, y_M\})$.
+  \choice \ldots we are given single feature vectors paired with a bag of labels $(\boldsymbol{x}, \{y_1, \ldots, y_M\})$.
 \end{itemize}
 \closequestion
 
@@ -813,51 +813,51 @@ $(\boldsymbol{x}, y)$, \ldots
 \section{Generative Models \& Synthesis Planning (2026)}
 
 \questiontitle{Reward hacking a QSAR proxy}
-A generator is optimized against a QSAR-based activity score. It produces molecules
-with very high predicted activity, but follow-up assays show poor activity. What is
-the most likely explanation?
+A generator is trained to maximise a QSAR-based activity score and learns to output
+molecules the score rates as highly active, yet later wet-lab assays find them
+inactive. What most plausibly went wrong?
 \begin{itemize}[leftmargin=1.8em]
-  \choice The generator received the activity score only after completing each molecule, making the reward delayed.
-  \choice The generator exploited weaknesses of the proxy scoring model rather than improving true experimental activity.
-  \choice The generator produced too few structurally distinct molecules, reducing diversity among candidates.
+  \choice The activity score was supplied only after each molecule was finished, so the reward was delayed.
+  \choice The generator gamed weaknesses in the proxy scoring model instead of raising genuine experimental activity.
+  \choice The generator made too few structurally distinct molecules, lowering the diversity of candidates.
 \end{itemize}
 \closequestion
 
 \questiontitle{Combating analogue rediscovery (odd one out)}
-A goal-directed generator repeatedly rediscovers close analogues of earlier
-high-scoring molecules. Which intervention is \emph{not} an approach to combat this
-behaviour?
+A goal-directed generator keeps producing close analogues of molecules it has already
+scored highly. Which of the following would \emph{not} help to counteract this
+tendency?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Mix samples from a fixed exploratory generator with samples from the trainable generator during SMILES generation.
-  \choice Penalize the reward for molecules that are similar to previously generated high-scoring molecules stored in a memory buffer.
-  \choice Increase exploitation by always selecting the molecule with the highest predicted score as the next training example.
+  \choice Blend samples from a fixed exploratory generator with those of the trainable generator while generating SMILES.
+  \choice Penalise the reward of molecules resembling earlier high-scoring ones kept in a memory buffer.
+  \choice Push exploitation harder by always taking the highest-scoring molecule as the next training example.
 \end{itemize}
 \closequestion
 
 \questiontitle{Autoregressive molecular reinforcement learning}
-In autoregressive molecular generation framed as reinforcement learning, which
-mapping of RL concepts is correct?
+When molecule construction is performed autoregressively and treated as a
+reinforcement-learning problem, which assignment of the RL roles is correct?
 \begin{itemize}[leftmargin=1.8em]
-  \choice The partial molecule is the state and the next construction step is the action, but the scoring function is the policy and the generator supplies the reward.
-  \choice The completed molecule is the state, the scoring function is the action, and each partial molecule receives an independent final reward.
-  \choice The partial molecule is the state, the next construction step is the action, the generator is the policy, and the completed molecule receives a reward.
+  \choice The partial molecule is the state and the next building step is the action, but the scoring function is the policy and the generator gives the reward.
+  \choice The finished molecule is the state, the scoring function is the action, and each partial molecule gets its own final reward.
+  \choice The partial molecule is the state, the next building step is the action, the generator is the policy, and the finished molecule earns the reward.
 \end{itemize}
 \closequestion
 
 \questiontitle{Diffusion vs.\ one-shot latent decoding}
-What distinguishes diffusion-based molecular generation from one-shot latent
-decoding?
+What sets diffusion-based molecular generation apart from decoding a molecule from a
+single latent vector in one pass?
 \begin{itemize}[leftmargin=1.8em]
-  \choice It maps a single latent vector directly to a complete molecule in one decoder pass.
-  \choice It starts from noise and iteratively applies a learned denoising process.
-  \choice It generates a molecule step by step by predicting the next token or graph action from the partial molecule.
+  \choice It maps a single latent vector straight to a finished molecule in one decoder pass.
+  \choice It begins from noise and repeatedly applies a learned denoising process.
+  \choice It builds the molecule step by step, predicting the next token or graph action from the partial molecule.
 \end{itemize}
 \closequestion
 
 \questiontitle{Conditional generation}
-A generator receives a desired logP value as an input and produces molecules in one
-pass. It was trained on molecule--logP pairs and does not evaluate a logP scoring
-function during generation. Which paradigm does this describe?
+Trained on molecule--logP pairs, a model takes a target logP value as input and emits
+molecules in a single forward pass, never querying a logP scoring function during
+generation. Which generative paradigm is this?
 \begin{itemize}[leftmargin=1.8em]
   \choice Conditional generation.
   \choice Goal-directed generation.
@@ -866,43 +866,43 @@ function during generation. Which paradigm does this describe?
 \closequestion
 
 \questiontitle{Distribution learning}
-Which statement best describes distribution learning in molecular generation?
+In molecular generation, which option most accurately captures what distribution learning is?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Distribution learning generates molecules conditioned on auxiliary information such as protein targets or desired property values.
-  \choice Distribution learning aims to generate molecules that resemble those in the training dataset by learning their underlying distribution.
-  \choice Distribution learning focuses on generating molecules that are optimized for specific biological or physicochemical properties.
+  \choice Distribution learning produces molecules conditioned on side information such as protein targets or desired property values.
+  \choice Distribution learning seeks to produce molecules resembling the training set by learning its underlying distribution.
+  \choice Distribution learning concentrates on producing molecules optimised for specific biological or physicochemical properties.
 \end{itemize}
 \closequestion
 
 \questiontitle{Mode collapse}
-Which statement best describes mode collapse in generative molecule models?
+In a generative model for molecules, what does the term mode collapse refer to?
 \begin{itemize}[leftmargin=1.8em]
-  \choice The model generates molecules with high validity and novelty but poor agreement with the training-set property distribution.
-  \choice The model repeatedly generates the same or very similar molecules.
-  \choice The model generates almost exclusively molecules that already occur in the training dataset.
+  \choice The model produces molecules that are valid and novel but match the training-set property distribution poorly.
+  \choice The model keeps emitting the same or nearly the same molecules.
+  \choice The model emits almost only molecules that already appear in the training set.
 \end{itemize}
 \closequestion
 
 \questiontitle{Reaction prediction and retrosynthesis}
-Which mapping between task and input/output is correct?
+Which of the options correctly pairs each task with its corresponding inputs and outputs?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Both forward reaction prediction and single-step retrosynthesis take only reaction conditions as input and predict reaction yield.
-  \choice Forward reaction prediction maps reactants to products, while single-step retrosynthesis maps a target product to possible precursors.
-  \choice Forward reaction prediction maps products to reactants, while single-step retrosynthesis predicts the major product from known reactants.
+  \choice Both forward prediction and single-step retrosynthesis take only the reaction conditions and predict the yield.
+  \choice Forward prediction maps reactants to products, while single-step retrosynthesis maps a target product to candidate precursors.
+  \choice Forward prediction maps products to reactants, while single-step retrosynthesis predicts the major product from given reactants.
 \end{itemize}
 \closequestion
 
 \questiontitle{Reaction templates}
-What is the purpose of a reaction template?
+What role is a reaction template intended to serve?
 \begin{itemize}[leftmargin=1.8em]
-  \choice To provide a generalized symbolic rule describing required substructures and how reactants are transformed into products.
-  \choice To encode reaction conditions such as solvent and temperature, while leaving the structural transformation to a neural model.
-  \choice To assign a reaction class label that groups similar reactions, without specifying how atoms or bonds are transformed.
+  \choice To give a general symbolic rule stating the required substructures and how reactants turn into products.
+  \choice To capture reaction conditions such as solvent and temperature, leaving the structural change to a neural model.
+  \choice To attach a reaction-class label grouping similar reactions, without saying how atoms or bonds change.
 \end{itemize}
 \closequestion
 
 \questiontitle{Easiest reaction task}
-Which of these tasks is generally the easiest?
+Among the tasks listed below, which one is typically the least difficult?
 \begin{itemize}[leftmargin=1.8em]
   \choice Single-step retrosynthesis.
   \choice Multi-step retrosynthesis planning.
@@ -911,31 +911,31 @@ Which of these tasks is generally the easiest?
 \closequestion
 
 \questiontitle{Template-free translation methods}
-How do template-free translation methods frame reaction prediction or
+In what terms do template-free translation methods formulate reaction prediction or
 retrosynthesis?
 \begin{itemize}[leftmargin=1.8em]
-  \choice As retrieval of the most compatible stored reaction pattern from associative memory.
-  \choice As classification of the input into a learned reaction category followed by symbolic transformation.
-  \choice As direct sequence-to-sequence translation between molecular reaction strings.
+  \choice As looking up the most compatible stored reaction pattern in an associative memory.
+  \choice As sorting the input into a learned reaction category and then applying a symbolic transformation.
+  \choice As a direct sequence-to-sequence translation between molecular reaction strings.
 \end{itemize}
 \closequestion
 
 \questiontitle{Deep networks inside MCTS for retrosynthesis}
-Why are deep neural networks useful inside Monte Carlo Tree Search for
-retrosynthesis?
+What makes deep neural networks helpful when they are embedded within Monte Carlo
+Tree Search for retrosynthesis?
 \begin{itemize}[leftmargin=1.8em]
-  \choice They replace tree search by evaluating only the first retrosynthetic disconnection and then executing that route greedily.
-  \choice They can estimate the value of unvisited states and suggest promising actions when exhaustive search is infeasible.
-  \choice They mainly balance chemical equations at each node, while the search itself decides value and policy without learned guidance.
+  \choice They take over the search by scoring only the first disconnection and then running that route greedily.
+  \choice They can estimate the value of unvisited states and propose promising actions when exhaustive search is impractical.
+  \choice They mostly balance chemical equations at each node, while the search alone fixes value and policy without learned guidance.
 \end{itemize}
 \closequestion
 
 \questiontitle{Pocket-conditioned 3D ligand generation}
-Which statement best describes pocket-conditioned 3D ligand generation?
+Which option most accurately describes pocket-conditioned 3D ligand generation?
 \begin{itemize}[leftmargin=1.8em]
-  \choice Ligands are generated without protein context and docked into the pocket only after generation; the docking score does not condition the generator.
-  \choice The protein binding pocket provides geometric context for generating or denoising a ligand, often followed by validity, docking, property, and synthesis checks.
-  \choice A fixed ligand graph is provided and only alternative conformations of that same molecule are sampled without using protein information.
+  \choice Ligands are built without protein context and only docked afterwards; the docking score does not steer the generator.
+  \choice The protein pocket supplies geometric context for building or denoising a ligand, usually followed by validity, docking, property, and synthesis checks.
+  \choice A fixed ligand graph is supplied and only different conformations of that same molecule are sampled, ignoring the protein.
 \end{itemize}
 \closequestion
 
