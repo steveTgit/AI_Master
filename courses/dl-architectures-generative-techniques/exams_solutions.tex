@@ -144,7 +144,7 @@
 %     \no{C}  reason why wrong (esp. for tricky near-misses) ...
 %   \end{answer}
 \newenvironment{answer}[1]{%
-  \begin{keybox}[Answer: \textbf{#1}]%
+  \begin{keybox}[Answer]%
   \begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]}%
   {\end{itemize}\end{keybox}}
 \newcommand{\yes}[1]{\item[\textcolor{ok}{\ensuremath{\checkmark}}]\textbf{#1.}\ }
@@ -153,7 +153,7 @@
 % Prose answer box — for calculations and labelling questions.
 % Usage:  \begin{answerprose}{result}  working / explanation  \end{answerprose}
 \newenvironment{answerprose}[1]{%
-  \begin{keybox}[Answer: \textbf{#1}]}%
+  \begin{keybox}[Answer]}%
   {\end{keybox}}
 
 % ── Math macros ──────────────────────────────────────────
@@ -923,23 +923,23 @@ given by the Weisfeiler--Lehman test (i.e.\ do they produce the same stable colo
 
 \questiontitle{Matching Graphs to Adjacency Matrices}
 Four graphs on six nodes are shown: $A$ is a plain $6$-cycle (hexagon), $B$ is two triangles,
-$C$ is another $6$-cycle drawn differently, and $D$ is a $6$-cycle with one extra chord.
+$C$ is another $6$-cycle drawn differently, and $D$ is a triangle with a three-edge tail attached.
 For each adjacency matrix, name the matching graph ($A$, $B$, $C$, $D$, or none).
 \examfigure[width=0.94\linewidth]{figures/exam-gnn-candidate-graphs.png}
 \begin{itemize}[leftmargin=1.8em]
   \item All six row-sums equal $2$ and the edges form a single closed cycle.
-  \item Two row-sums equal $1$ and the rest equal $2$ (an open path, not a cycle).
+  \item Two row-sums equal $1$ and the rest equal $2$ (a single open path with two endpoints).
   \item All six row-sums equal $2$ but the edges split into two separate $3$-cycles.
   \item Four row-sums equal $2$ and two equal $3$ (a cycle plus one chord).
 \end{itemize}
 \closequestion
-\begin{answerprose}{$A/C$ \ / \ none \ / \ $B$ \ / \ $D$}
+\begin{answerprose}{$A/C$ \ / \ none \ / \ $B$ \ / \ none}
 Read off each matrix by its row-sums (node degrees) and connectivity:
 \begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
   \item[\textcolor{ok}{$\to$}] All degrees $2$, one closed cycle $\Rightarrow$ a $6$-cycle: \textbf{$A$} (and the differently-drawn cycle is \textbf{$C$}).
-  \item[\textcolor{ok}{$\to$}] Two degree-$1$ nodes (open path) $\Rightarrow$ \textbf{none of the above} (no shown graph is an open path).
+  \item[\textcolor{ok}{$\to$}] Two degree-$1$ endpoints (single open path) $\Rightarrow$ \textbf{none of the above}. This is not \textbf{$B$}: $B$ has two separate $3$-cycles, so every node in $B$ has degree $2$.
   \item[\textcolor{ok}{$\to$}] All degrees $2$ but split into two $3$-cycles $\Rightarrow$ \textbf{$B$} (two triangles).
-  \item[\textcolor{ok}{$\to$}] Two degree-$3$ nodes (cycle $+$ chord) $\Rightarrow$ \textbf{$D$}.
+  \item[\textcolor{ok}{$\to$}] Two degree-$3$ nodes (cycle $+$ chord) $\Rightarrow$ \textbf{none of the above}. The shown \textbf{$D$} has one degree-$1$ endpoint and one degree-$3$ attachment node, so it is a triangle with a tail rather than a chorded $6$-cycle.
 \end{itemize}
 \end{answerprose}
 

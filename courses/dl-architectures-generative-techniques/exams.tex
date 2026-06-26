@@ -672,12 +672,12 @@ given by the Weisfeiler--Lehman test (i.e.\ do they produce the same stable colo
 
 \questiontitle{Matching Graphs to Adjacency Matrices}
 Four graphs on six nodes are shown: $A$ is a plain $6$-cycle (hexagon), $B$ is two triangles,
-$C$ is another $6$-cycle drawn differently, and $D$ is a $6$-cycle with one extra chord.
+$C$ is another $6$-cycle drawn differently, and $D$ is a triangle with a three-edge tail attached.
 For each adjacency matrix, name the matching graph ($A$, $B$, $C$, $D$, or none).
 \examfigure[width=0.94\linewidth]{figures/exam-gnn-candidate-graphs.png}
 \begin{itemize}[leftmargin=1.8em]
   \item All six row-sums equal $2$ and the edges form a single closed cycle. \hfill\answerline{3cm}
-  \item Two row-sums equal $1$ and the rest equal $2$ (an open path, not a cycle). \hfill\answerline{3cm}
+  \item Two row-sums equal $1$ and the rest equal $2$ (a single open path with two endpoints). \hfill\answerline{3cm}
   \item All six row-sums equal $2$ but the edges split into two separate $3$-cycles. \hfill\answerline{3cm}
   \item Four row-sums equal $2$ and two equal $3$ (a cycle plus one chord). \hfill\answerline{3cm}
 \end{itemize}
@@ -843,9 +843,10 @@ level curve. Label each arrow as \emph{Gradient} or \emph{Newton's Method}.
   \item \textbf{True.} The two graphs produce the same stable WL colour histogram, so the necessary
         condition for isomorphism is fulfilled.
   \item Single $6$-cycle (all degrees $2$, one cycle) $\to$ $A$ (and the differently-drawn cycle $\to C$);
-        open path (two degree-$1$ nodes) $\to$ \emph{none of the above}; two separate $3$-cycles $\to$ $B$;
-        cycle with one chord (two degree-$3$ nodes) $\to$ $D$. Match each matrix by its row-sums (node degrees)
-        and whether the edges form one cycle, two triangles, or a cycle-plus-chord.
+        open path (two degree-$1$ endpoints, so not $B$) $\to$ \emph{none of the above}; two separate $3$-cycles $\to$ $B$;
+        cycle with one chord (two degree-$3$ nodes) $\to$ \emph{none of the above}. The shown $D$ instead has
+        one degree-$1$ endpoint and one degree-$3$ attachment node. Match each matrix by its row-sums
+        (node degrees) and whether the edges form one cycle, two triangles, or a cycle-plus-chord.
   \item \textbf{c} (Translation / permutation). GNNs are permutation invariant/equivariant; rotation, scaling,
         cropping, and clustering are not the defining group action here.
   \item \textbf{c, d.} Permuting the columns of $M$ permutes the rows of $M\T$ and hence the entries of
