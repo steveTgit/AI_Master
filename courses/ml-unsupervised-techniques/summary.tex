@@ -453,17 +453,18 @@ Methods fall into two broad families:
 \label{sec:gen-vs-desc}
 
 \begin{defbox}[title={Descriptive (Recoding) Model}]
-A \textbf{descriptive model} provides an alternative representation or description of the
-data. It maps observations to a new space with desired properties (e.g.\ orthogonality,
-independence). Examples: PCA, ICA.
+A \textbf{descriptive model} doesn't try to explain where the data \emph{came from} ---
+it just re-describes it in a more useful form. It maps each observation into a new space
+with some desired property baked in: uncorrelated axes (PCA) or statistically independent
+ones (ICA).
 \end{defbox}
 
 \begin{defbox}[title={Generative Model}]
-A \textbf{generative model} explicitly models the data generation process.
-It should produce the same distribution as the observed data: random source components
-$\uvec$ are drawn from a prior $p_{\uvec}$, passed through a model
-$g(\uvec;\wvec)$, and the resulting distribution $p(\xvec;\wvec)$ should match the
-empirical distribution $p(\xvec)$.
+A \textbf{generative model} goes the other way: it models \emph{how the data was made}.
+The story is that hidden source components $\uvec$ are drawn from a prior $p_{\uvec}$,
+pushed through a model $g(\uvec;\wvec)$, and out comes the data. Training then tunes
+$\wvec$ so that the model's distribution $p(\xvec;\wvec)$ matches what we actually
+observe, $p(\xvec)$.
 Examples: factor analysis, latent variable models, Boltzmann machines, HMMs.
 \end{defbox}
 
@@ -813,6 +814,14 @@ The Lagrange multipliers $\lambda_k$ are determined by the constraint equations:
 % ==========================================================
 
 \section{The Method}
+
+PCA answers a simple question: if the data really lives in fewer dimensions than we
+measured, which few directions capture most of what is going on? It rotates the data
+onto a new set of orthogonal axes --- the \emph{principal directions} --- ordered so that
+the first captures the most variance, the second the most of what is left, and so on.
+Keep the top few and you have a faithful low-dimensional picture of the data; the rest is
+mostly noise or redundancy you can throw away. Everything below is just the linear algebra
+that makes this precise.
 
 Let the data matrix be $\bm{X} \in \R^{n \times m}$, where $n$ is the number of samples
 and $m$ is the number of features (the rows $\bm{x}_i \in \R^m$ are centered so that
@@ -2231,6 +2240,15 @@ stretched at the boundary, reflecting the input distribution.
 \chapter{Clustering}
 % ==========================================================
 
+Clustering is the unsupervised task of splitting samples into groups so that members
+of the same group are more alike than members of different groups. This chapter walks
+through the main families and how they relate: \emph{mixture models} give the
+probabilistic, soft-assignment view; \emph{$k$-means} is the hard-assignment special
+case that falls out when you simplify a Gaussian mixture; \emph{hierarchical} clustering
+builds a whole tree of nested groupings instead of committing to one number of clusters;
+and \emph{similarity-based} methods need only pairwise similarities, not feature vectors
+at all.
+
 \section{Mixture Models}
 
 \subsection{The Method}
@@ -3059,6 +3077,7 @@ marker gene.
 % ==========================================================
 
 \section{Hidden Markov Models in Bioinformatics}
+\label{sec:hmm-bioinformatics}
 
 Hidden Markov models are the most prominent \emph{generative model} in bioinformatics.
 The generative perspective means that the model defines a probability distribution over
@@ -3132,31 +3151,303 @@ provides an efficient dynamic-programming solution.
 
 \section{Expectation Maximization for HMM: Baum-Welch Algorithm}
 
-% TODO
+Training an HMM means choosing the start, transition, and emission probabilities
+so that the training sequences come out likely. We could do this by gradient
+ascent, but the model has an annoying feature for gradients: every probability
+table has to sum to one, and the hidden state is never observed. Expectation
+Maximization handles both cleanly. The HMM-specific version is the
+\emph{Baum-Welch algorithm}, and it needs no learning rate — each iteration
+gives a closed-form parameter update that is guaranteed not to decrease the
+likelihood.
+
+The idea is the same soft-counting story as EM everywhere: if we \emph{knew} the
+hidden path for each sequence, training would be trivial bookkeeping — count how
+often we started in each state, how often each state emitted each symbol, how
+often each transition was taken, and normalise. We don't know the path, so in
+the E-step we compute the posterior distribution over hidden states given the
+data and use \emph{expected} (soft) counts instead. The M-step then normalises
+those counts. Two dynamic-programming sweeps make the E-step efficient: a
+forward pass and a backward pass.
+
+\subsection*{Computing the likelihood: the forward pass}
+
+The likelihood of an observed sequence is the sum over all hidden paths,
+\[
+  p(x^T) = \sum_{u^T} p(x^T, u^T),
+\]
+and there are $S^T$ such paths — hopelessly many to enumerate. The Markov
+property rescues us. Define the \emph{forward variable}
+\[
+  \alpha_t(a) \;\eqdef\; p(x^t, u_t = a),
+\]
+the probability of having emitted the first $t$ symbols \emph{and} sitting in
+state $a$ right now. It obeys a one-step recursion:
+\begin{align*}
+  \alpha_1(a) &= p_S(a)\, p_E(x_1 \mid a), \\
+  \alpha_t(a) &= p_E(x_t \mid a) \sum_{b=1}^{S} p(u_t = a \mid u_{t-1} = b)\,
+                 \alpha_{t-1}(b).
+\end{align*}
+At the end, summing out the last state gives the likelihood,
+$p(x^T) = \sum_{a} \alpha_T(a)$. Each step costs a sum over $S$ predecessor
+states, repeated for $S$ current states and $T$ time steps, so the whole pass is
+$O(T S^2)$ instead of $O(S^T)$.
+
+\begin{intbox}
+Why does summing over $S^T$ paths collapse to $O(T S^2)$? Because the future
+only cares \emph{which} state you are in now, not \emph{how} you got there. So
+every path that arrives at state $a$ at time $t$ can be merged into a single
+running number $\alpha_t(a)$ and carried forward together. That merging is the
+Markov assumption cashing out — and it is exactly the same trick dynamic
+programming uses to align sequences.
+\end{intbox}
+
+\subsection*{The backward pass}
+
+The forward variable looks at the past. For the E-step we also need the future.
+Define the \emph{backward variable}
+\[
+  \beta_t(a) \;\eqdef\; p(x_{t+1\leftarrow T} \mid u_t = a),
+\]
+the probability of emitting the \emph{remaining} symbols
+$x_{t+1}, \ldots, x_T$ given that we are in state $a$ at time $t$. It runs from
+the end backwards:
+\begin{align*}
+  \beta_T(a) &= 1, \\
+  \beta_t(a) &= \sum_{b=1}^{S} p_E(x_{t+1} \mid b)\,
+                p(u_{t+1} = b \mid u_t = a)\, \beta_{t+1}(b).
+\end{align*}
+
+\subsection*{E-step: posterior state and transition probabilities}
+
+With both sweeps in hand, the posteriors fall out by multiplying ``evidence from
+the past'' by ``evidence from the future'' and renormalising. The probability of
+being in state $a$ at time $t$ is
+\[
+  \gamma_t(a) \;\eqdef\; p(u_t = a \mid x^T)
+   = \frac{\alpha_t(a)\,\beta_t(a)}{p(x^T)},
+\]
+and the probability of taking the transition $b \to a$ at time $t$ is
+\[
+  \xi_t(a,b) \;\eqdef\; p(u_t = a, u_{t-1} = b \mid x^T)
+   = \frac{\alpha_{t-1}(b)\, p(u_t = a \mid u_{t-1} = b)\,
+           p_E(x_t \mid a)\, \beta_t(a)}{p(x^T)}.
+\]
+These are consistent: summing a transition over its source gives the state
+posterior, $\gamma_t(a) = \sum_b \xi_t(a,b)$.
+
+\subsection*{M-step: re-estimate the parameters}
+
+The M-step is just ``normalise the expected counts''. Maximising the expected
+complete-data log-likelihood under the sum-to-one constraints (a one-line
+Lagrange multiplier argument) gives the rule $w_a = \big(\sum_t c_{ta}\big) /
+\big(\sum_{a'}\sum_t c_{ta'}\big)$ for every probability table — i.e.\ each
+parameter becomes its share of the soft counts:
+
+\begin{thmbox}[title={Baum-Welch re-estimation (M-step)}]
+\[
+  p_S(a) = \gamma_1(a), \qquad
+  p_E(x \mid a) = \frac{\sum_{t=1}^{T} \ind\{x_t = x\}\,\gamma_t(a)}
+                       {\sum_{t=1}^{T} \gamma_t(a)}, \qquad
+  p(a \mid b) = \frac{\sum_{t=2}^{T} \xi_t(a,b)}
+                     {\sum_{t=2}^{T} \gamma_{t-1}(b)}.
+\]
+In words: the new start probability is how often we expect to start in $a$; the
+new emission probability is the fraction of $a$'s ``time'' spent emitting $x$;
+the new transition probability is the share of departures from $b$ that go to
+$a$.
+\end{thmbox}
+
+\begin{intbox}
+The whole algorithm is ``counting, but soft''. If the hidden path were known you
+would tally integer counts and divide. Because it is hidden, you tally
+\emph{expected} counts $\gamma$ and $\xi$ — fractional visits and fractional
+transitions — and divide those instead. Alternate E and M and the likelihood
+climbs monotonically to a local maximum.
+\end{intbox}
+
+\begin{notebox}[title={Several sequences, and what the likelihood means}]
+With a whole training set $\{x^T_i\}$, run the forward and backward passes per
+sequence and \emph{accumulate} the numerators and denominators across all
+sequences \emph{before} normalising once at the end of the M-step. Also note
+that for discrete HMMs the likelihood and the probability $p(x^T)$ are the same
+object — there is no density-vs-probability subtlety here.
+\end{notebox}
 
 \section{Viterbi Algorithm}
 
-% TODO
+The forward pass answers ``how probable is this observation?'' by summing over
+\emph{all} hidden paths. Often we want a different answer: the single
+\emph{most likely} hidden path that explains the observation,
+\[
+  (u^T)^\ast = \argmax_{u^T} p(u^T \mid x^T) = \argmax_{u^T} p(u^T, x^T).
+\]
+This matters whenever the hidden states carry meaning — labelling a genomic
+region as exon or intron, or aligning a new sequence against a profile stored in
+an HMM. The best path \emph{is} that alignment, which is why, like alignment, it
+is found by dynamic programming.
+
+The Viterbi algorithm is the forward pass with two changes: replace the sum by a
+maximum, and remember where each maximum came from. Let $V_{t,a}$ be the
+probability of the best path of length $t$ that ends in state $a$:
+\begin{align*}
+  V_{1,a} &= p_S(a)\, p_E(x_1 \mid a), \\
+  V_{t,a} &= p_E(x_t \mid a)\, \max_{b}\; p(u_t = a \mid u_{t-1} = b)\, V_{t-1,b},
+\end{align*}
+with the best total probability $\max_{u^T} p(u^T, x^T) = \max_a V_{T,a}$. To
+recover the path itself, store at each cell the predecessor that achieved the
+maximum,
+\[
+  b(t,a) = \argmax_{b}\; p(u_t = a \mid u_{t-1} = b)\, V_{t-1,b},
+\]
+then back-trace from $\argmax_a V_{T,a}$ to the start. Like the forward pass, the
+cost is $O(T S^2)$.
+
+\begin{intbox}
+Forward and Viterbi share one grid; only the operator differs. Sum over
+predecessors $\Rightarrow$ ``how probable overall'' (marginal likelihood). Max
+over predecessors $\Rightarrow$ ``what is the single best story'' (most likely
+path). Swap $\sum$ for $\max$, keep a back-pointer, and the forward algorithm
+becomes Viterbi.
+\end{intbox}
+
+Viterbi also gives a cheap way to refine a multiple alignment: (1) initialise the
+HMM, (2) align every sequence to it with Viterbi, (3) make per-column frequency
+counts and re-estimate the transition and emission probabilities, (4) repeat
+until convergence. This ``Viterbi training'' is a hard-assignment cousin of
+Baum-Welch.
 
 \section{Input Output Hidden Markov Models}
 
-% TODO
+An \emph{input output HMM} (IOHMM) generates an output sequence $x^T$ while
+\emph{conditioned} on an input sequence $y^T$ of the same length. Concretely,
+every probability now also depends on the current input: the start probability
+is $p_S(u_1 \mid y_1)$, the transitions are $p(u_t \mid y_t, u_{t-1})$, and the
+emissions are $p_E(x_t \mid y_t, u_t)$. Learning is unchanged — maximise the
+likelihood with EM — just with every table conditioned on the input.
+
+The payoff is that IOHMMs can finally use \emph{negative examples}, one of the
+things a plain HMM cannot do. Feed the class label through the input (e.g.\ set
+$y_T = +1$ for the positive class and $y_T = -1$ for the negative class, with the
+other inputs set to a fixed or don't-care value); the model can then learn to
+discriminate, or at least to separate the slice of the negative class that sits
+closest to the positives. The cost is that the number of parameters grows with
+the size of the input alphabet, so with limited data the probabilities become
+harder to estimate reliably.
 
 \section{Factorial Hidden Markov Models}
 
-% TODO
+A single state variable taking $S$ values is a clumsy way to represent a process
+that is really several things happening at once — you would need one state per
+\emph{combination} of factors. A \emph{factorial HMM} instead splits the hidden
+state into several parallel chains $u^1, u^2, \ldots, u^h$ (three in the standard
+picture). The transition of chain $u^i$ is conditioned on the chains $u^k$ with
+$k \le i$, and the emission depends jointly on \emph{all} chains. A natural
+reading is multi-timescale dynamics: $u^1$ evolves slowly, the higher chains
+faster, with slow chains influencing fast ones but not the reverse.
+
+The price is combinatorial. With $h$ chains of $S$ values each, the joint
+emission distribution has $P\,S^{h}$ entries, so exact learning is expensive.
+This is why factorial HMMs are trained with approximate (e.g.\ variational)
+inference rather than plain Baum-Welch.
 
 \section{Memory Input Output Factorial Hidden Markov Models}
 
-% TODO
+Recall Sean Eddy's complaint from \cref{sec:hmm-bioinformatics} — an HMM's state
+path ``has no way of remembering what a distant state generated''. Long-range
+dependencies are the standard HMM's blind spot, and it is worth seeing exactly
+why.
+
+The \emph{only} way a plain HMM can carry information forward in time is to enter
+a state and refuse to leave it: a non-escaping (absorbing) state with
+\[
+  p(u_t = a \mid u_{t-1} = a) = 1.
+\]
+Once the chain takes value $a$ it stays there, so the fact ``we once saw the
+event that pushed us into $a$'' is preserved. In principle the model could
+\emph{learn} to do this, but the likelihood of successfully maintaining the
+memory shrinks exponentially with the storage duration. That vanishing signal is
+swamped by the ordinary local minima coming from input/output statistics, so
+learning to store over long lags is effectively impossible. The practical fix is
+to \emph{hardwire} the memory: fix $p(a \mid a) = 1$ and never update it. But
+then the unit is frozen — after storing, it can neither track new dynamics nor
+record a second event.
+
+The \emph{Memory-based Input-Output Factorial HMM} (MIOFHMM, Hochreiter \&
+Mozer, 2001) resolves this by combining the two previous extensions: use a
+factorial HMM so that \emph{some} chains are dedicated absorbing memory units
+while others keep modelling the system's dynamics, and wrap it in the
+input/output architecture so that inputs can \emph{trigger} the memory. All
+chains start ``uncommitted''; an input event flips a memory chain into an
+absorbing value that thereafter flags ``this event occurred''. The experiment in
+the lecture (number of weight updates needed to learn to remember an input until
+the end of the sequence, as a function of sequence length $T$) shows the
+ordinary IOHMM blowing up with $T$, the factorial IOFHMM doing better, and the
+MIOFHMM staying low and nearly flat.
+
+\begin{intbox}
+This is the long-term-memory problem in probabilistic clothing: the signal for
+\emph{keeping} a memory decays exponentially with the lag — the same exponential
+decay that plagues gradients in plain recurrent networks and that LSTM was built
+to defeat. The remedy here is identical in spirit to the LSTM memory cell: stop
+hoping the model learns to hold on, and build in a unit that simply cannot
+forget.
+\end{intbox}
 
 \section{Tricks of the Trade}
 
-% TODO
+A handful of practical adjustments make HMMs behave on real bioinformatics data:
+
+\begin{itemize}
+  \item \textbf{Non-emitting (delete) states.} Bioinformatics models often
+        include states that consume no symbol. The forward pass has to be
+        adjusted to skip over them rather than advancing the sequence position.
+  \item \textbf{Comparing variable-length sequences.} Likelihood shrinks
+        exponentially with sequence length (and there are simply more long
+        sequences than short ones), so raw likelihoods are not comparable across
+        lengths. Normalise, or compare against a length-matched random model.
+  \item \textbf{Work in log-space.} Products of many small probabilities
+        underflow; computing everything as sums of logs keeps the numbers sane.
+  \item \textbf{Floor the probabilities.} Keep every probability above a small
+        threshold $\epsilon$. Hard zeros make some regions of parameter space
+        permanently unreachable.
+  \item \textbf{Zero out afterwards, not during.} EM can never quite reach an
+        exact zero. As post-processing, snap all probabilities $\le \epsilon$ to
+        zero; this often improves generalisation from short training sequences to
+        much longer test sequences.
+  \item \textbf{Beware local minima.} HMMs (especially when built from unaligned
+        sequences) are riddled with them. Global strategies such as
+        deterministic annealing help escape.
+\end{itemize}
 
 \section{Profile Hidden Markov Models}
 
-% TODO
+A \emph{profile HMM} encodes a multiple sequence alignment as a
+position-specific scoring model that you can run against a database to find
+remote homologues. It is the workhorse behind tools like HMMER and SAM and the
+Pfam protein-family database. The architecture (HMMER's) uses three kinds of
+state per alignment column:
+
+\begin{itemize}
+  \item \textbf{Match states} $M_x$ — the consensus columns of the alignment,
+        each with its own emission distribution over the alphabet.
+  \item \textbf{Insert states} $I_x$ — emit extra residues inserted
+        \emph{between} consensus columns.
+  \item \textbf{Delete states} $D_x$ — non-emitting states that let a sequence
+        \emph{skip} a consensus column.
+\end{itemize}
+
+Begin and end states ($B$, $E$) bracket the pattern. A new sequence is scored by
+its likelihood; HMMER actually reports a log-odds score against a random model,
+which makes the score's significance easy to read.
+
+Building a profile from \emph{unaligned} positive examples runs straight into the
+local-minimum problem, so one either pays for global optimisation (deterministic
+annealing) or — as is now standard — \emph{initialises} the HMM from a multiple
+alignment of the positives and only fine-tunes from there. Profile HMMs are
+pervasive: Pfam is built entirely on them, with roughly 67\% of proteins
+containing at least one Pfam profile and about 45\% of all residues covered. The
+same machinery, outside the profile setting, is also used for tasks like
+splice-site detection.
 
 
 % ==========================================================
@@ -3165,15 +3456,186 @@ provides an efficient dynamic-programming solution.
 
 \section{The Boltzmann Machine}
 
-% TODO
+A Boltzmann machine is a stochastic recurrent neural network, introduced by
+Geoffrey Hinton and Terry Sejnowski in 1985. Think of it as a probabilistic
+cousin of the Hopfield network: a collection of binary units that flip on and
+off at random, biased so that ``good'' configurations show up more often. The
+name comes from the Boltzmann distribution in statistical mechanics, which
+supplies both the probability of a state and the recipe for sampling. In its
+fully connected form it never became practical, but its restricted variant (the
+RBM, \cref{sec:rbm}) later turned out to be very useful for deep learning.
+
+Each unit $i$ has a binary state $s_i \in \{0,1\}$, and the network assigns an
+\emph{energy} to a complete configuration of all units:
+\[
+  E = -\left( \sum_{i<j} w_{ij}\, s_i s_j + \sum_i \theta_i\, s_i \right),
+\]
+where $w_{ij}$ is the connection strength between units $i$ and $j$ and
+$\theta_i$ is unit $i$'s bias (its activation threshold). The connections are
+constrained to be symmetric with no self-loops,
+\[
+  w_{ii} = 0 \quad\forall i, \qquad w_{ij} = w_{ji} \quad\forall i,j,
+\]
+so the weight matrix $\bm{W}$ is symmetric with a zero diagonal (and in general
+indefinite).
+
+How does a unit decide its state? Flipping unit $i$ from off to on changes the
+energy by
+\[
+  \Delta E_i = \sum_j w_{ij}\, s_j + \theta_i .
+\]
+Under the Boltzmann distribution the energy of a state is proportional to its
+negative log probability, so the log-odds of the unit being on are exactly
+$\Delta E_i / T$:
+\[
+  \frac{\Delta E_i}{T} = \ln p_{i=\text{on}} - \ln p_{i=\text{off}}
+   = \ln\!\frac{p_{i=\text{on}}}{1 - p_{i=\text{on}}} .
+\]
+Solving for the probability gives the logistic (sigmoid) activation,
+\[
+  p_{i=\text{on}} = \frac{1}{1 + \exp(-\Delta E_i / T)} ,
+\]
+where $T$ is the temperature. The logistic function is therefore not an arbitrary
+modelling choice — it drops straight out of the Boltzmann distribution.
+
+The network runs by repeatedly picking a unit and resampling its state from this
+probability (Gibbs sampling). Once it reaches \emph{thermal equilibrium} the
+distribution over global states has settled and no longer changes. In practice
+one starts hot — a high $T$ makes flips nearly random, which lets the system jump
+out of poor local minima — and then gradually cools, so the energy settles near
+a global minimum while still fluctuating a little around it. This is simulated
+annealing.
+
+\begin{intbox}
+Picture an energy landscape over all $2^n$ configurations. Low-energy
+configurations are the high-probability ones the machine ``likes''. Temperature
+controls how freely it explores: hot means it wanders and ignores small energy
+bumps; cold means it greedily rolls downhill. Annealing is ``shake hard, then let
+it settle'' — shake to escape bad valleys, settle to lock in a good one.
+\end{intbox}
 
 \section{Learning in the Boltzmann Machine}
 
-% TODO
+The units split into \emph{visible} units $V$, which receive input from the
+environment (the training data is a set of binary vectors over $V$), and
+\emph{hidden} units $H$, which act as latent features. Write $P^+(V)$ for the
+distribution of the training data and $P^-(V)$ for the machine's own marginal
+distribution over the visibles once it has reached equilibrium (the hidden units
+summed out). Learning means making the model's $P^-(V)$ look like the data's
+$P^+(V)$, which we measure with the Kullback-Leibler divergence
+\[
+  \KL{P^+}{P^-} = \sum_{v} P^+(v)\, \ln \frac{P^+(v)}{P^-(v)} .
+\]
+This is a function of the weights, so we minimise it by gradient descent.
+
+Just like EM, training alternates two phases:
+\begin{itemize}
+  \item \textbf{Positive (clamped) phase:} pin the visible units to a training
+        vector, let the hidden units settle, and measure the correlation
+        $p^+_{ij}$ — the probability that units $i$ and $j$ are both on at
+        equilibrium.
+  \item \textbf{Negative (free) phase:} let the whole network run freely, with no
+        data clamped, and measure the corresponding correlation $p^-_{ij}$.
+\end{itemize}
+The gradient of the divergence with respect to a weight turns out to be
+beautifully simple — just the difference of these two correlations:
+\[
+  \pd{D}{w_{ij}} = -\frac{1}{\eta}\left( p^+_{ij} - p^-_{ij} \right),
+  \qquad
+  \pd{D}{\theta_i} = -\frac{1}{\eta}\left( p^+_{i} - p^-_{i} \right),
+\]
+where $\eta$ is the learning rate.
+
+\begin{intbox}
+The rule reads as ``fit the correlations''. Raise the weight between two units
+that fire together \emph{when clamped to the data}; lower it between two units
+that fire together \emph{when the model dreams freely}. When the data-driven and
+model-driven correlations match, the gradient is zero and learning stops. Note
+that each update uses only the joint activity of the two units it connects — a
+\emph{local} learning rule, which is part of why the Boltzmann machine is often
+called biologically plausible.
+\end{intbox}
+
+The catch is the negative phase. Two problems make the unrestricted Boltzmann
+machine impractical:
+\begin{itemize}
+  \item the time needed to collect equilibrium statistics grows
+        \emph{exponentially} with the size of the machine and the magnitude of
+        the weights;
+  \item connections are most plastic when their units have activation
+        probabilities midway between $0$ and $1$, causing a \emph{variance trap}:
+        noise makes the weights random-walk until activities finally saturate.
+\end{itemize}
 
 \section{The Restricted Boltzmann Machine}
+\label{sec:rbm}
 
-% TODO
+The \emph{restricted} Boltzmann machine (RBM) removes the intralayer
+connections: units form a bipartite graph with a visible layer and a hidden
+layer, and connections run only \emph{between} the layers, never within one. This
+single restriction is what makes inference tractable. Writing $a_i$ for visible
+biases, $b_j$ for hidden biases, and $w_{ij}$ for the visible-to-hidden weight,
+the energy is
+\[
+  E(\bm{v},\bm{h}) = -\sum_i a_i v_i - \sum_j b_j h_j - \sum_{i,j} h_j v_i w_{ij}
+   = -\bm{a}\T\bm{v} - \bm{b}\T\bm{h} - \bm{h}\T\bm{W}\bm{v},
+\]
+and the joint and marginal distributions are
+\[
+  p(\bm{v},\bm{h}) = \frac{1}{Z}\, e^{-E(\bm{v},\bm{h})}, \qquad
+  p(\bm{v}) = \frac{1}{Z} \sum_{\bm{h}} e^{-E(\bm{v},\bm{h})},
+\]
+where the partition function $Z = \sum_{\bm{v},\bm{h}} e^{-E(\bm{v},\bm{h})}$
+normalises over \emph{all} configurations — the expensive term that makes exact
+learning hard.
+
+The bipartite structure buys a crucial simplification: given the visible layer
+the hidden units are mutually independent, and vice versa,
+\[
+  p(\bm{h}\mid\bm{v}) = \prod_j p(h_j \mid \bm{v}), \qquad
+  p(\bm{v}\mid\bm{h}) = \prod_i p(v_i \mid \bm{h}),
+\]
+with each conditional given by a sigmoid,
+\[
+  p(h_j = 1 \mid \bm{v}) = \sigma\!\Big(b_j + \sum_i w_{ij} v_i\Big), \qquad
+  p(v_i = 1 \mid \bm{h}) = \sigma\!\Big(a_i + \sum_j w_{ij} h_j\Big).
+\]
+So a whole layer can be sampled in one parallel shot, conditioned on the other.
+
+\subsection*{Contrastive divergence}
+
+Training maximises the likelihood of the data, $\arg\max_{\bm{W}} \prod_{v\in V}
+p(v)$, equivalently the expected log-likelihood. The gradient again needs the
+model's free-running statistics, which depend on the intractable $Z$. The
+standard workaround is \emph{contrastive divergence} (CD), which replaces the
+full free phase with a single short Gibbs step started from the data. One step
+(CD-1) for a training sample is:
+\begin{enumerate}
+  \item Take a training vector $\bm{v}$ and sample the hidden activations
+        $\bm{h} \sim p(\bm{h}\mid\bm{v})$. The outer product $\bm{v}\bm{h}\T$ is
+        the \emph{positive gradient}.
+  \item Sample a reconstruction $\bm{v}' \sim p(\bm{v}\mid\bm{h})$, then resample
+        $\bm{h}' \sim p(\bm{h}\mid\bm{v}')$.
+  \item The outer product ${\bm{v}'}{\bm{h}'}\T$ is the \emph{negative gradient}.
+  \item Update $\Delta w_{ij} = \eta\,(\,$positive $-$ negative$\,)
+        = \eta\,(\langle v_i h_j\rangle_{\text{data}}
+        - \langle v'_i h'_j\rangle_{\text{recon}})$.
+\end{enumerate}
+
+\begin{intbox}
+Contrastive divergence sidesteps exactly the problem that sank the full
+Boltzmann machine: instead of running the free phase to equilibrium, it takes a
+single reconstruction step away from the data and asks ``which way did the model
+drift?'' — then nudges the weights to undo that drift. Cheap, and it works
+remarkably well in practice.
+\end{intbox}
+
+Finally, RBMs \emph{stack}. After training one RBM, its hidden activations are a
+learned representation of the input, so they can serve as the visible layer of a
+second, higher-level RBM. Stacking RBMs and training them greedily one layer at a
+time builds a deep network of features without any labels — a classic
+unsupervised pretraining strategy, and a large part of why RBMs mattered for the
+early deep-learning revival.
 
 
 \end{document}
