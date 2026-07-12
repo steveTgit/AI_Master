@@ -1,3 +1,18 @@
+% ==========================================================
+%  OLD EXAM QUESTIONS — Unsupervised Machine Learning
+%  (WORKED SOLUTIONS)
+%  Companion to exams.tex: every question is followed
+%  immediately by a green answer box. For multiple-choice,
+%  correct options are marked with a green check, incorrect
+%  ones with a red cross, each with a short justification
+%  (incl. why tricky near-miss options are wrong). For
+%  calculations the working is shown; wild distractors that
+%  only exist to catch guessers get no explanation.
+%
+%  NOTE: exams.tex stays the blank practice set. This file is
+%  the solutions variant — do not merge the two.
+% ==========================================================
+
 \documentclass[11pt,oneside]{article}
 
 \usepackage[
@@ -28,6 +43,8 @@
 \setlist[itemize]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
 \setlist[enumerate]{topsep=3pt,itemsep=2pt,leftmargin=2.2em}
 
+% ── Colors ───────────────────────────────────────────────
+% Shared accent with summary.tex — do not change.
 \definecolor{accent}{HTML}{1B3A5C}
 \definecolor{q@frame}{HTML}{1A5276}
 \definecolor{q@bg}{HTML}{F6FAFD}
@@ -35,7 +52,10 @@
 \definecolor{key@bg}{HTML}{F4FBF6}
 \definecolor{note@frame}{HTML}{9A6A00}
 \definecolor{note@bg}{HTML}{FEF9E7}
+\definecolor{ok}{HTML}{1E8449}    % green check — correct option
+\definecolor{bad}{HTML}{B03A2E}   % red cross  — incorrect option
 
+% ── Box global style ─────────────────────────────────────
 \tcbset{
   enhanced,
   breakable,
@@ -71,6 +91,7 @@
   title={#1}
 }
 
+% ── Section headings ─────────────────────────────────────
 \titleformat{\section}
   {\normalfont\Large\bfseries\color{accent}}
   {}{0em}{}
@@ -82,34 +103,68 @@
   {}{0em}{}
 \titlespacing*{\subsection}{0pt}{2.2ex plus 1ex minus .2ex}{1.0ex plus .2ex}
 
+% ── Header & footer ──────────────────────────────────────
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\color{gray!70}Old Exam Questions --- \coursetitle}
+\fancyhead[L]{\small\color{gray!70}Old Exam Questions (Solutions) --- \coursetitle}
 \fancyhead[R]{\small\color{gray!70}\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
+% ── Document metadata ─────────────────────────────────────
 \newcommand{\coursetitle}{Unsupervised Machine Learning}
 
+% ── Question counter & macros ────────────────────────────
 \newcounter{question}
-\newcommand{\questiontitle}[1]{\stepcounter{question}\begin{qbox}[Question \thequestion: #1]}
+\newcommand{\questiontitle}[1]{%
+  \stepcounter{question}\begin{qbox}[Question \thequestion: #1]}
 \newcommand{\closequestion}{\end{qbox}}
 \newcommand{\repeatnote}{\textit{\color{gray!70}Asked multiple times.}}
 \newcommand{\choice}{\item[$\square$] }
 \newcommand{\answerline}[1]{\makebox[#1]{\hrulefill}}
+
+% ── Inline answer macros (solutions variant) ─────────────
+% Green answer box placed directly under each question.
+% Multiple-choice usage:
+%   \begin{answer}{A, B}
+%     \yes{A} reason why correct ...
+%     \no{C}  reason why wrong (esp. for tricky near-misses) ...
+%   \end{answer}
+\newenvironment{answer}[1]{%
+  \begin{keybox}[Answer]%
+  \begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]}%
+  {\end{itemize}\end{keybox}}
+\newcommand{\yes}[1]{\item[\textcolor{ok}{\ensuremath{\checkmark}}]\textbf{#1.}\ }
+\newcommand{\no}[1]{\item[\textcolor{bad}{\ensuremath{\bm\times}}]\textbf{#1.}\ }
+
+% Prose answer box — for calculations and labelling questions.
+% Usage:  \begin{answerprose}{result}  working / explanation  \end{answerprose}
+\newenvironment{answerprose}[1]{%
+  \begin{keybox}[Answer]}%
+  {\end{keybox}}
+
+% ── Math macros ──────────────────────────────────────────
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Prob}{\mathbb{P}}
 \newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1\,\|\,#2\right)}
 \newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\Var}{\mathrm{Var}}
 
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
 \begin{document}
 
+% ── Title page ───────────────────────────────────────────
 \thispagestyle{empty}
 \vspace*{1.4cm}
 \begin{center}
   {\color{accent}\rule{\linewidth}{1.8pt}}\par
   \vspace{0.65cm}
   {\fontsize{26}{32}\selectfont\bfseries\color{accent}Old Exam Questions\\[2pt] \coursetitle\par}
+  \vspace{0.25cm}
+  {\Large\color{key@frame}\bfseries Worked Solutions\par}
   \vspace{0.55cm}
   {\color{accent!35}\rule{\linewidth}{0.5pt}}\par
   \vspace{0.55cm}
@@ -120,10 +175,14 @@
 
 \vspace{0.9cm}
 \begin{notebox}[How this file is organized]
-This file is separate from the course summary and is meant as a clean practice set.
-Exact duplicates were removed. When essentially the same question appeared in multiple old exams,
-that is marked with \repeatnote\ inside the question box.
-The wording was lightly normalized where the scans were messy, but the mathematical content and answer choices were kept intact.
+This is the \textbf{solutions companion} to \texttt{exams.tex}. Every question is followed
+\emph{immediately} by a green \textbf{answer box}. For \textbf{multiple-choice} questions each
+option is marked \textcolor{ok}{\ensuremath{\checkmark}} (correct) or
+\textcolor{bad}{\ensuremath{\bm\times}} (incorrect), with a short justification --- \emph{why} the
+correct options are correct and, for the tricky / near-miss distractors, \emph{why} they are wrong.
+For \textbf{calculations} the working is shown. Options are referred to by position (A = first
+option, B = second, \dots). If you want a clean practice set with blank answers, use
+\texttt{exams.tex}.
 \end{notebox}
 
 \tableofcontents
@@ -142,12 +201,24 @@ Use the hint
 for centered $X$.
 
 \begin{itemize}
-  \item $\kappa_4(X)=\answerline{3.0cm}$
-  \item $\kappa_4(2X)=\answerline{3.0cm}$
-  \item $\kappa_4(X+Y)=\answerline{3.0cm}$
-  \item $X$ is sub-Gaussian / super-Gaussian: \answerline{4.0cm}
+  \item $\kappa_4(X)$
+  \item $\kappa_4(2X)$
+  \item $\kappa_4(X+Y)$
+  \item $X$ is sub-Gaussian / super-Gaussian
 \end{itemize}
 \closequestion
+\begin{answerprose}{-0.13 / -2.13 / -0.27 / sub-Gaussian}
+For $X\sim U[-1,1]$: $\E(X^2)=\tfrac13$ and $\E(X^4)=\tfrac15$ (in general $\E(X^{2k})=\tfrac{1}{2k+1}$).
+\[
+\kappa_4(X)=\tfrac15-3\bigl(\tfrac13\bigr)^2=\tfrac15-\tfrac13=-\tfrac{2}{15}\approx\mathbf{-0.13}.
+\]
+Cumulants are homogeneous of degree $n$: $\kappa_4(cX)=c^4\kappa_4(X)$, so
+$\kappa_4(2X)=16\cdot(-\tfrac{2}{15})=-\tfrac{32}{15}\approx\mathbf{-2.13}$.
+Cumulants are additive for independent variables:
+$\kappa_4(X+Y)=\kappa_4(X)+\kappa_4(Y)=-\tfrac{4}{15}\approx\mathbf{-0.27}$.
+Since $\kappa_4(X)<0$ (negative excess kurtosis), $X$ is \textbf{sub-Gaussian}
+--- the uniform distribution has lighter tails than a Gaussian.
+\end{answerprose}
 
 \questiontitle{Cumulants for symmetric Bernoulli variables}
 Assume you have two independent, discrete random variables $X$ and $Y$, both following independent symmetric Bernoulli distributions taking only the values $+1$ and $-1$, each with probability $1/2$.
@@ -160,12 +231,24 @@ Use the hint
 for centered $X$.
 
 \begin{itemize}
-  \item $\kappa_3(X)=\answerline{3.0cm}$
-  \item $\kappa_4(X)=\answerline{3.0cm}$
-  \item $\kappa_4(3X)/\kappa_4(X)=\answerline{3.0cm}$
-  \item $\kappa_4(X+Y)/\kappa_4(X)=\answerline{3.0cm}$
+  \item $\kappa_3(X)$
+  \item $\kappa_4(X)$
+  \item $\kappa_4(3X)/\kappa_4(X)$
+  \item $\kappa_4(X+Y)/\kappa_4(X)$
 \end{itemize}
 \closequestion
+\begin{answerprose}{0 / -2 / 81 / 2}
+$X^2=X^4=1$ always, and $X^3=X$, so
+\[
+\kappa_3(X)=\E(X^3)=\E(X)=\mathbf{0}
+\qquad\text{(the distribution is symmetric),}
+\]
+\[
+\kappa_4(X)=\E(X^4)-3\bigl(\E(X^2)\bigr)^2=1-3=\mathbf{-2}.
+\]
+Homogeneity: $\kappa_4(3X)/\kappa_4(X)=3^4=\mathbf{81}$.
+Additivity under independence: $\kappa_4(X+Y)=2\,\kappa_4(X)$, so the ratio is $\mathbf{2}$.
+\end{answerprose}
 
 \questiontitle{Eigenvectors, covariance matrix, and a scalar expression}
 You are given a dataset with $n$ samples and three features.
@@ -175,11 +258,18 @@ Compute
 \[
 A=(2v_1^\top+v_2^\top+3v_3^\top)\,C\,(3v_2+v_3).
 \]
-Enter the final scalar value:
-\[
-A=\answerline{3.0cm}
-\]
 \closequestion
+\begin{answerprose}{12}
+Use $Cv_i=\lambda_i v_i$ and orthonormality of the eigenvectors ($v_i^\top v_j=\delta_{ij}$):
+\[
+C(3v_2+v_3)=3\lambda_2 v_2+\lambda_3 v_3=9v_2+v_3.
+\]
+Multiplying from the left kills every mixed term:
+\[
+A=(2v_1^\top+v_2^\top+3v_3^\top)(9v_2+v_3)
+=9\,(v_2^\top v_2)+3\,(v_3^\top v_3)=9+3=\mathbf{12}.
+\]
+\end{answerprose}
 
 \questiontitle{KL divergence for continuous uniform distributions}
 \repeatnote
@@ -201,10 +291,18 @@ For $\theta_Y=e^5$ and $\theta_Z=e^{10}$, compute
 D_{\mathrm{KL}}(p_Y\|p_Z)=\int_{-\infty}^{\infty} p_Y(x)\log\!\left(\frac{p_Y(x)}{p_Z(x)}\right)\dd x.
 \]
 Use the natural logarithm and round to two decimal places.
-\[
-D_{\mathrm{KL}}(p_Y\|p_Z)=\answerline{3.0cm}
-\]
 \closequestion
+\begin{answerprose}{5.00}
+The integrand is nonzero only on $[0,\theta_Y]$ (where $p_Y>0$), and there the ratio is constant:
+\[
+D_{\mathrm{KL}}(p_Y\|p_Z)
+=\int_0^{\theta_Y}\frac{1}{\theta_Y}\ln\!\frac{1/\theta_Y}{1/\theta_Z}\dd x
+=\ln\frac{\theta_Z}{\theta_Y}
+=\ln\frac{e^{10}}{e^{5}}=10-5=\mathbf{5.00}.
+\]
+(This works because the support of $p_Y$ is contained in the support of $p_Z$; the reverse
+divergence would be infinite.)
+\end{answerprose}
 
 \questiontitle{Outer product matrix}
 Given two vectors
@@ -213,15 +311,14 @@ x=\begin{pmatrix}1\\2\\3\end{pmatrix},
 \qquad
 y=\begin{pmatrix}4\\5\\6\end{pmatrix},
 \]
-compute the outer product matrix
-\[
-A=xy^\top.
-\]
-Enter the integer values of the third row of $A$:
-\[
-A_{31}=\answerline{2.0cm}\,\qquad A_{32}=\answerline{2.0cm}\,\qquad A_{33}=\answerline{2.0cm}.
-\]
+compute the outer product matrix $A=xy^\top$ and give the third row of $A$.
 \closequestion
+\begin{answerprose}{(12, 15, 18)}
+$(xy^\top)_{ij}=x_i y_j$, so row $i$ of $A$ is $x_i\cdot y^\top$. The third row is
+\[
+3\cdot(4,5,6)=(\mathbf{12},\,\mathbf{15},\,\mathbf{18}).
+\]
+\end{answerprose}
 
 \questiontitle{Marginal probabilities, entropies, and mutual information --- variant 1}
 \repeatnote
@@ -235,17 +332,26 @@ X=0 & 0.25 & 0.125\\
 X=1 & 0.25 & 0.375
 \end{array}
 \]
-This means, for example, that $P(X=0,Y=0)=0.25$.
-Compute the quantities below using the natural logarithm.
+Compute $P(X=1)$, $P(Y=1)$, $H(X)$, $H(Y)$, $I(X;Y)$ using the natural logarithm.
 Round the final values to two decimal places.
-\begin{itemize}
-  \item $P(X=1)=\answerline{2.5cm}$
-  \item $P(Y=1)=\answerline{2.5cm}$
-  \item $H(X)=\answerline{2.5cm}$
-  \item $H(Y)=\answerline{2.5cm}$
-  \item $I(X;Y)=\answerline{2.5cm}$
-\end{itemize}
 \closequestion
+\begin{answerprose}{0.63 / 0.50 / 0.66 / 0.69 / 0.03}
+Marginals (row/column sums):
+\[
+P(X=1)=0.25+0.375=\mathbf{0.63},\qquad
+P(Y=1)=0.125+0.375=\mathbf{0.50}.
+\]
+Entropies:
+\[
+H(X)=-(0.375\ln 0.375+0.625\ln 0.625)\approx\mathbf{0.66},\qquad
+H(Y)=\ln 2\approx\mathbf{0.69}.
+\]
+Joint entropy:
+$H(X,Y)=-(0.25\ln 0.25+0.125\ln 0.125+0.25\ln 0.25+0.375\ln 0.375)\approx 1.32$.
+\[
+I(X;Y)=H(X)+H(Y)-H(X,Y)\approx 0.662+0.693-1.321=\mathbf{0.03}.
+\]
+\end{answerprose}
 
 \questiontitle{Marginal probabilities, entropies, and mutual information --- variant 2}
 \repeatnote
@@ -259,16 +365,19 @@ X=0 & \tfrac13 & \tfrac13\\
 X=1 & 0 & \tfrac13
 \end{array}
 \]
-This means, for example, that $P(X=0,Y=0)=\tfrac13$.
-Compute the quantities below using the natural logarithm.
+Compute $P(Y=0)$, $H(X)$, $H(Y)$, $I(X;Y)$ using the natural logarithm.
 Round the final values to two decimal places.
-\begin{itemize}
-  \item $P(Y=0)=\answerline{2.5cm}$
-  \item $H(X)=\answerline{2.5cm}$
-  \item $H(Y)=\answerline{2.5cm}$
-  \item $I(X;Y)=\answerline{2.5cm}$
-\end{itemize}
 \closequestion
+\begin{answerprose}{0.33 / 0.64 / 0.64 / 0.17}
+Marginals: $P(Y=0)=\tfrac13\approx\mathbf{0.33}$, $P(X=0)=\tfrac23$, $P(Y=1)=\tfrac23$.
+\[
+H(X)=H(Y)=-\bigl(\tfrac23\ln\tfrac23+\tfrac13\ln\tfrac13\bigr)\approx\mathbf{0.64}.
+\]
+The joint distribution has three equally likely cells, so $H(X,Y)=\ln 3\approx 1.10$.
+\[
+I(X;Y)=H(X)+H(Y)-H(X,Y)\approx 0.637+0.637-1.099=\mathbf{0.17}.
+\]
+\end{answerprose}
 
 \questiontitle{Marginal probabilities, entropies, and mutual information --- variant 3}
 \repeatnote
@@ -282,17 +391,26 @@ X=0 & \tfrac{3}{10} & \tfrac{4}{10}\\
 X=1 & \tfrac{2}{10} & \tfrac{1}{10}
 \end{array}
 \]
-Compute the following quantities using the natural logarithm.
+Compute $P(X=0)$, $P(Y=0)$, $H(X)$, $H(Y)$, $I(X;Y)$ using the natural logarithm.
 Round the final values to two decimal places.
-\begin{itemize}
-  \item $P(X=0)=\answerline{2.5cm}$
-  \item $P(Y=0)=\answerline{2.5cm}$
-  \item $H(X)=\answerline{2.5cm}$
-  \item $H(Y)=\answerline{2.5cm}$
-  \item $I(X;Y)=\answerline{2.5cm}$
-\end{itemize}
 \closequestion
-
+\begin{answerprose}{0.70 / 0.50 / 0.61 / 0.69 / 0.02}
+Marginals:
+\[
+P(X=0)=0.3+0.4=\mathbf{0.70},\qquad
+P(Y=0)=0.3+0.2=\mathbf{0.50}.
+\]
+Entropies:
+\[
+H(X)=-(0.7\ln 0.7+0.3\ln 0.3)\approx\mathbf{0.61},\qquad
+H(Y)=\ln 2\approx\mathbf{0.69}.
+\]
+Joint entropy:
+$H(X,Y)=-(0.3\ln 0.3+0.4\ln 0.4+0.2\ln 0.2+0.1\ln 0.1)\approx 1.28$.
+\[
+I(X;Y)=H(X)+H(Y)-H(X,Y)\approx 0.611+0.693-1.280=\mathbf{0.02}.
+\]
+\end{answerprose}
 \questiontitle{Parameter Estimation and Maximum Likelihood}
 \repeatnote
 
@@ -309,6 +427,16 @@ Multiple answers are possible.
   \choice The mean squared error is defined as $\mathrm{mse}(\hat w)=(\hat w-w)^\top(\hat w-w)$.
 \end{itemize}
 \closequestion
+\begin{answer}{A, E, F, G}
+  \yes{A} Independence lets the joint density factorize: $\mathcal{L}=\prod_i p(x_i;w)$.
+  \no{B} Same \emph{argmax} (the logarithm is strictly monotone), but the \emph{values} differ: $\ln\mathcal{L}(\hat w)\neq\mathcal{L}(\hat w)$ in general.
+  \no{C} The model class is assumed to be \emph{known and fixed}; only its parameters are estimated from the data.
+  \no{D} ML \emph{is} asymptotically consistent (and unbiased and efficient) --- the ``not consistent'' spoils the statement.
+  \yes{E} Bias--variance decomposition: $\mathrm{mse}(\hat w)=\Var(\hat w)+\mathrm{bias}^2(\hat w)$.
+  \yes{F} That is the definition of unbiasedness.
+  \yes{G} That is the definition of the likelihood.
+  \no{H} The expectation is missing: $\mathrm{mse}(\hat w)=\E\bigl[(\hat w-w)^\top(\hat w-w)\bigr]$; without it, the expression is a random variable, not an error measure.
+\end{answer}
 
 \questiontitle{Dropdown selection task on estimation theory}
 \repeatnote
@@ -344,6 +472,23 @@ Since $p(\cdot;w)$ is usually a \textit{probability / loss / density / likelihoo
 The Cram\'er--Rao lower bound relates the \textit{expected value / bias / mean squared error / variance} of the estimator $\hat w$ to the inverse of its Fisher information.
 An estimator that reaches the Cram\'er--Rao lower bound is said to be \textit{consistent / efficient / unbiased}.
 \closequestion
+\begin{answerprose}{unbiased / mse / variance / bias / biased but consistent / unbiased but not consistent / likelihood / density / variance / efficient}
+In order of the blanks:
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item \textbf{unbiased} --- $\E(\hat w)=w$ is the definition of unbiasedness.
+  \item \textbf{mean squared error}, decomposed into \textbf{variance} $+$ squared \textbf{bias}:
+        $\mathrm{mse}(\hat w)=\Var(\hat w)+\mathrm{bias}^2(\hat w)$.
+  \item $\frac{1}{n+1}\sum_i X_i$ is \textbf{biased but consistent}: its expectation is
+        $\frac{n}{n+1}\mu\neq\mu$ for finite $n$, but bias and variance both vanish as $n\to\infty$.
+  \item $X_1$ is \textbf{unbiased but not consistent}: $\E(X_1)=\mu$, but the estimator never
+        concentrates --- it ignores all further data.
+  \item $\prod_i p(x_i;w)$ is the \textbf{likelihood} function.
+  \item $p(\cdot;w)$ is usually a \textbf{density}, so any finite set of points has probability
+        measure zero.
+  \item Cram\'er--Rao bounds the \textbf{variance}: $\Var(\hat w)\ge 1/\mathrm{Fisher}$;
+        an estimator attaining the bound is \textbf{efficient}.
+\end{itemize}
+\end{answerprose}
 
 \questiontitle{Unsupervised Machine Learning}
 Which statements about Unsupervised Machine Learning are true?
@@ -359,6 +504,16 @@ Multiple answers are possible.
   \choice Unsupervised Machine Learning algorithms learn patterns from unlabeled data.
 \end{itemize}
 \closequestion
+\begin{answer}{D, E, F, H}
+  \no{A} Adapting to noise and outliers of the training set is \emph{over}fitting; underfitting means the model is too simple to capture the structure at all.
+  \no{B} Projection methods map into a \emph{lower}-dimensional space.
+  \no{C} Training/learning fits the parameters of a model \emph{within} a model class; model selection is the separate step of choosing among models.
+  \yes{D} All of these work without labels --- classic unsupervised toolbox.
+  \yes{E} A parametric model class is a family indexed by the parameter vector; each realization picks one model.
+  \yes{F} $k$-NN keeps the training data itself instead of a fixed-size parameter vector --- nonparametric.
+  \no{G} The opposite: generative models explicitly model the data-generating process.
+  \yes{H} That is the definition of unsupervised learning.
+\end{answer}
 
 \questiontitle{Expectation Maximization (EM) and Maximum Entropy --- version A}
 Which statements about Expectation Maximization (EM) and Maximum Entropy are correct?
@@ -374,6 +529,16 @@ Multiple answers are possible.
   \choice The Maximum Entropy approach requires minimal prior assumptions to assign a-priori probabilities.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, D, G, H}
+  \yes{A} Baum--Welch (HMMs) and mixture-model fitting are \emph{the} classic EM applications.
+  \yes{B} The M-step maximizes the expected complete-data log-likelihood with respect to the parameters.
+  \no{C} EM works with a \emph{lower} bound on the log-likelihood; there is no upper bound involved.
+  \yes{D} Exactly the EM setting: latent variables plus model parameters.
+  \no{E} Discrete entropy is $\ge 0$ but \emph{not} bounded by $1$: a uniform distribution over $k$ outcomes has entropy $\ln k>1$ for $k\ge 3$.
+  \no{F} Latent-variable likelihoods are generally analytically intractable --- that is precisely why EM exists.
+  \yes{G} The E-step (re-)estimates the hidden variables via their posterior given the current parameters.
+  \yes{H} MaxEnt chooses the least-informative distribution consistent with the known constraints.
+\end{answer}
 
 \questiontitle{Expectation Maximization (EM) and Maximum Entropy --- version B}
 \repeatnote
@@ -391,7 +556,16 @@ Multiple answers are possible.
   \choice In EM, one deals with problems that have hidden variables as well as model parameters.
 \end{itemize}
 \closequestion
-
+\begin{answer}{B, E, G, H}
+  \no{A} Swapped: the M-step updates the \emph{model parameters}.
+  \yes{B} MaxEnt = minimal prior assumptions.
+  \no{C} Lower bound, not upper bound.
+  \no{D} Swapped: the E-step updates the estimates of the \emph{hidden variables}.
+  \yes{E} HMMs (Baum--Welch) and mixture models are the standard EM examples.
+  \no{F} Entropy can exceed $1$ (uniform over $k\ge3$ outcomes: $\ln k>1$).
+  \yes{G} The E-step tightens the lower bound so that it touches the log-likelihood at the current parameters.
+  \yes{H} That is the EM setting.
+\end{answer}
 \section{PCA, Kernel PCA, and ICA}
 
 \questiontitle{Principal Component Analysis --- statements, version A}
@@ -408,6 +582,16 @@ Multiple answers are possible.
   \choice PCA transforms data into a new coordinate system such that the data has the largest mean value along the first coordinate, the second largest mean value along the second coordinate, and so on.
 \end{itemize}
 \closequestion
+\begin{answer}{A, D, E, F, G}
+  \yes{A} Principal components are sorted by eigenvalue; the first one carries the largest.
+  \no{B} Near-miss: the singular values are the \emph{square roots} of the eigenvalues of $X^\top X$: $\sigma_i=\sqrt{\lambda_i}$.
+  \no{C} Not unique --- every eigenvector can be sign-flipped, and with equal eigenvalues the directions are not even determined.
+  \yes{D} Oja's rule is the classic iterative (Hebbian) method to extract the leading eigenvector.
+  \yes{E} The variance of the data projected onto $u_k$ is exactly $\lambda_k$.
+  \yes{F} Eigenvectors of a symmetric matrix can be chosen orthonormal, so $U^\top U=I$.
+  \yes{G} Any sample covariance matrix is symmetric and positive semidefinite by construction.
+  \no{H} PCA orders directions by \emph{variance}, not by mean value.
+\end{answer}
 
 \questiontitle{Principal Component Analysis --- statements, version B}
 We keep the notation of the lecture slides: $X$ is the data matrix and $U$ is the matrix of eigenvectors of $X^\top X$.
@@ -424,6 +608,16 @@ Multiple answers are possible.
   \choice The matrix $U$ is a symmetric matrix.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, E, G}
+  \yes{A} That is the variance-maximization view of PCA.
+  \yes{B} Correct, as in version A.
+  \no{C} $U$ collects the eigenvectors of the $d\times d$ matrix $X^\top X$, so it is $d\times d$ --- the sample count $n$ does not appear.
+  \no{D} Symmetric and PSD, yes; \emph{orthogonal}, no --- a covariance matrix is generally not orthogonal.
+  \yes{E} $\sigma_i=\sqrt{\lambda_i}$ --- this is the correct version of the near-miss in version A.
+  \no{F} Eigenvalues are only \emph{non-negative} (zero is possible), and they sum to the total variance ($\mathrm{tr}(X^\top X)$), not to $1$.
+  \yes{G} Standard use case: project to 2--3 dimensions for visualization while keeping maximal variance.
+  \no{H} $U$ is orthogonal ($U^\top U=I$), not symmetric in general.
+\end{answer}
 
 \questiontitle{Picture-based interpretation question: PCA, ICA, and EM}
 The original exam contained three picture-based subquestions.
@@ -431,23 +625,26 @@ State which interpretation is more likely in each case.
 \begin{enumerate}
   \item PCA and ICA are applied to a 2D cloud of points, leading to outcomes A and B.
   Which picture is more likely the result of PCA and which one the result of ICA?
-  \vspace{0.4em}
-
-  PCA: \answerline{3.0cm}\qquad ICA: \answerline{3.0cm}
-
   \item Two plots show a dataset in a coordinate system spanned by principal components.
   Which is more likely: picture 1 is shown in $\mathrm{PC2}$ vs. $\mathrm{PC1}$ and picture 2 in $\mathrm{PC3}$ vs. $\mathrm{PC1}$, or vice versa?
-  \vspace{0.4em}
-
-  Answer: \answerline{7.0cm}
-
   \item The left figure shows an original dataset, while figures $a$ and $b$ show results of running EM for a mixture of two Gaussians.
   Which is more likely: figure $a$ is after $5$ iterations and figure $b$ after $20$ iterations, or the other way around?
-  \vspace{0.4em}
-
-  Answer: \answerline{7.0cm}
 \end{enumerate}
 \closequestion
+\begin{answerprose}{PCA: A, ICA: B / picture 1 = PC2 vs.\ PC1 / a = 5 iterations, b = 20 iterations}
+\begin{itemize}[leftmargin=1.7em,itemsep=1.5pt,topsep=2pt]
+  \item \textbf{PCA vs.\ ICA:} PCA always returns \emph{orthogonal} axes aligned with the
+        directions of maximal variance, so the picture with perpendicular axes is PCA (A).
+        ICA finds statistically independent directions, which are in general \emph{not}
+        orthogonal and follow the actual (possibly skewed) structure of the cloud (B).
+  \item \textbf{PC order:} the projected variance decreases with the component index, so the
+        scatter along PC2 must be larger than along PC3. The plot with the larger vertical
+        spread is PC2 vs.\ PC1 (picture 1); the flatter one is PC3 vs.\ PC1 (picture 2).
+  \item \textbf{EM iterations:} early in EM the two Gaussians still overlap and sit near their
+        initialization; after more iterations they have converged onto the two clusters.
+        Hence $a$ (poorly separated) is after $5$ iterations and $b$ (well fitted) after $20$.
+\end{itemize}
+\end{answerprose}
 
 \questiontitle{PCA computation on a rank-1 matrix --- projected second sample}
 \repeatnote
@@ -473,10 +670,21 @@ u_3=\frac{1}{\sqrt2}(-1,1,0)^\top.
 They are already normalized and already correctly ordered corresponding to eigenvalues in descending order.
 Compute the PCA projection matrix $Y$ and enter the components of the projected second feature vector $y_2$.
 Round to two decimal places.
-\[
-y_2^{(1)}=\answerline{2.5cm}\qquad y_2^{(2)}=\answerline{2.5cm}\qquad y_2^{(3)}=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{(3.46, 0.00, 0.00)}
+The projection is $Y=XU$, i.e.\ row-wise $y_i^{(k)}=x_i^\top u_k$. For the second sample
+$x_2=(2,2,2)^\top$:
+\[
+y_2^{(1)}=\frac{2+2+2}{\sqrt3}=\frac{6}{\sqrt3}=2\sqrt3\approx\mathbf{3.46},
+\]
+\[
+y_2^{(2)}=\frac{-2+0+2}{\sqrt2}=\mathbf{0},
+\qquad
+y_2^{(3)}=\frac{-2+2+0}{\sqrt2}=\mathbf{0}.
+\]
+Every row of $X$ is a multiple of $(1,1,1)^\top$ --- the matrix has rank $1$, so \emph{all}
+variance lies along $u_1$ and the other components vanish for every sample.
+\end{answerprose}
 
 \questiontitle{PCA computation on a centered matrix --- projected third sample}
 \repeatnote
@@ -502,10 +710,19 @@ u_3=(0,1,0)^\top.
 They are already normalized and already correctly ordered corresponding to eigenvalues in descending order.
 Compute the PCA projection matrix $Y$ and enter the components of the projected third sample $y_3$.
 Round to two decimal places.
-\[
-y_3^{(1)}=\answerline{2.5cm}\qquad y_3^{(2)}=\answerline{2.5cm}\qquad y_3^{(3)}=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{(4.24, 0.00, 0.00)}
+With $Y=XU$ and $x_3=(-3,0,3)^\top$:
+\[
+y_3^{(1)}=\frac{(-3)(-1)+0+3\cdot1}{\sqrt2}=\frac{6}{\sqrt2}\approx\mathbf{4.24},
+\]
+\[
+y_3^{(2)}=\frac{-3+0+3}{\sqrt2}=\mathbf{0},
+\qquad
+y_3^{(3)}=0\cdot(-3)+1\cdot0+0\cdot3=\mathbf{0}.
+\]
+All rows are multiples of $(-1,0,1)^\top$, so the data is one-dimensional along $u_1$.
+\end{answerprose}
 
 \questiontitle{PCA computation with a repeated sample --- projected third sample}
 You are given four data samples, each of dimension $3$, collected in the data matrix
@@ -528,10 +745,19 @@ u_3=(0,1,0)^\top.
 They are already normalized and already correctly ordered corresponding to eigenvalues in descending order.
 Compute the PCA projection matrix $Y$ and enter the components of the projected third sample $y_3$.
 Round to two decimal places.
-\[
-y_3^{(1)}=\answerline{2.5cm}\qquad y_3^{(2)}=\answerline{2.5cm}\qquad y_3^{(3)}=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{(4.24, 0.00, 0.00)}
+With $Y=XU$ and $x_3=(3,0,3)^\top$:
+\[
+y_3^{(1)}=\frac{3\cdot1+0+3\cdot1}{\sqrt2}=\frac{6}{\sqrt2}\approx\mathbf{4.24},
+\qquad
+y_3^{(2)}=\frac{3\cdot(-1)+0+3\cdot1}{\sqrt2}=\mathbf{0},
+\qquad
+y_3^{(3)}=\mathbf{0}.
+\]
+The third sample lies exactly on the $(1,0,1)$ direction, so only the first component survives.
+(The fourth sample is identical to the third, so it projects to the same point.)
+\end{answerprose}
 
 \questiontitle{Kernel PCA}
 Which statements about Kernel PCA are correct?
@@ -552,6 +778,16 @@ Multiple answers are possible.
   \choice $K$ and $C$ always have the same dimensionality and the same rank.
 \end{itemize}
 \closequestion
+\begin{answer}{C, D, E, F}
+  \no{A} The kernel trick exists precisely so that $\phi$ is \emph{never} computed explicitly --- only inner products via $k$.
+  \no{B} A kernel must be symmetric \emph{and positive semidefinite} (Mercer); nonnegativity of the function values is neither necessary nor sufficient.
+  \yes{C} Centering (in feature space, applied to both $K$ and the new point) and normalizing the eigenvectors are both required for correct projections.
+  \yes{D} The eigenproblem of $C$ in $\mathcal H$ reduces to the $n\times n$ eigenproblem of the Gram matrix $K$.
+  \yes{E} Typical feature maps are nonlinear and map into a higher- (possibly infinite-) dimensional space.
+  \yes{F} With the linear kernel $k(x,y)=x^\top y$, Kernel PCA reproduces ordinary PCA.
+  \no{G} Tricky: centering \emph{is} needed, but the reason is wrong --- $K$ is PSD, so its eigenvalues are never negative. Centering removes the feature-space mean.
+  \no{H} They share the same \emph{nonzero} eigenvalues (hence rank), but $K$ is $n\times n$ while $C$ lives in feature space --- the dimensionalities differ in general.
+\end{answer}
 
 \questiontitle{Independent Component Analysis --- version A}
 Which statements about Independent Component Analysis (ICA) are correct?
@@ -567,6 +803,16 @@ Multiple answers are possible.
   \choice FastICA relies on whitening and rotating the data.
 \end{itemize}
 \closequestion
+\begin{answer}{B, D, H}
+  \no{A} Maximizing negentropy (non-Gaussianity) \emph{minimizes} the mutual information between components.
+  \yes{B} Unlike PCA, the components carry no natural order and need not be orthogonal.
+  \no{C} The second cumulant is the \emph{variance} --- it is blind to non-Gaussianity; one uses the 3rd/4th cumulants (skewness, kurtosis).
+  \yes{D} Those are exactly the two standard independence criteria.
+  \no{E} Only unique up to permutation, sign, and scaling of the components.
+  \no{F} Reversed: one needs at least as many \emph{observations} as sources.
+  \no{G} Infomax maximizes the output entropy and thereby \emph{minimizes} the mutual information between components.
+  \yes{H} FastICA: whiten the data first, then rotate to maximize non-Gaussianity.
+\end{answer}
 
 \questiontitle{Independent Component Analysis --- version B}
 Which statements about Independent Component Analysis (ICA) are correct?
@@ -582,6 +828,16 @@ Multiple answers are possible.
   \choice Infomax maximizes the mutual information between components.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, C, D, F}
+  \yes{A} Mutual information and non-Gaussianity are the standard independence criteria.
+  \yes{B} Whitening + rotation is the FastICA recipe.
+  \yes{C} This is the correct direction: negentropy up $\Leftrightarrow$ mutual information down.
+  \yes{D} Identifiability result for non-Gaussian sources: unique up to permutation and scaling (incl.\ sign).
+  \no{E} Near-miss: the \emph{third} cumulant (skewness) does measure non-Gaussianity, but the \emph{second} is just the variance --- including it makes the statement false.
+  \yes{F} $\#\text{sources}\le\#\text{observations}$ is the standard requirement.
+  \no{G} Neither ranked nor orthogonal in general.
+  \no{H} Infomax \emph{minimizes} the mutual information between components.
+\end{answer}
 
 \questiontitle{Independent Component Analysis --- version C}
 \repeatnote
@@ -599,7 +855,16 @@ Multiple answers are possible.
   \choice In general, ICA components are neither ranked nor orthogonal.
 \end{itemize}
 \closequestion
-
+\begin{answer}{C, E, H}
+  \no{A} Reversed: at least as many \emph{observations} as sources.
+  \no{B} Maximizing negentropy \emph{minimizes} mutual information.
+  \yes{C} The two standard independence criteria.
+  \no{D} Unique only up to permutation, sign, and scaling.
+  \yes{E} Whitening + rotation is the FastICA scheme.
+  \no{F} Infomax minimizes the mutual information between components.
+  \no{G} The second cumulant is the variance --- no information about Gaussianity.
+  \yes{H} Correct --- no ranking, no orthogonality.
+\end{answer}
 \section{Factor Analysis}
 
 \questiontitle{Factor Analysis: low-rank covariance part}
@@ -617,6 +882,12 @@ Multiple answers are possible.
   \choice $C_U$ is singular.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, D}
+  \yes{A} $C_U$ is a sum of $\ell$ rank-1 terms, so $\mathrm{rank}(C_U)\le\ell$.
+  \yes{B} A symmetric $m\times m$ matrix of rank $\le\ell$ has at least $m-\ell$ zero eigenvalues.
+  \no{C} A full-rank covariance matrix (rank $m$) cannot be written with only $\ell<m$ columns --- that is exactly why FA adds the diagonal noise term $\Psi$.
+  \yes{D} Rank $<m$ implies $\det C_U=0$, i.e.\ $C_U$ is singular.
+\end{answer}
 
 \questiontitle{Factor Analysis: dimensions of the objects}
 We keep the notation from the lecture.
@@ -639,6 +910,18 @@ Multiple answers are possible.
   \choice $y$ has dimension $n$.
 \end{itemize}
 \closequestion
+\begin{answerprose}{A, D, G, K}
+Everything follows from the FA model equation
+\[
+x = Uy+\varepsilon,\qquad x\in\R^m,
+\]
+read off left to right: to produce an $m$-dimensional observation from an $\ell$-dimensional
+factor vector, $U$ must be $m\times\ell$ (\textbf{D}); the factor vector $y$ has dimension
+$\ell$ (\textbf{K}); the noise $\varepsilon$ is added to the observation, so it has dimension
+$m$ (\textbf{G}); and its covariance $\Psi=\mathrm{Cov}(\varepsilon)$ is $m\times m$
+(\textbf{A}). The number of samples $n$ never appears in any of these shapes --- every option
+containing $n$ is automatically wrong.
+\end{answerprose}
 
 \questiontitle{Factor Analysis: compute the first row of the covariance matrix}
 You are given the factor loading matrix
@@ -661,11 +944,17 @@ Compute the first row of the covariance matrix
 \[
 C=UU^\top+\Psi.
 \]
-Enter integer values:
-\[
-C_{11}=\answerline{2.0cm}\qquad C_{12}=\answerline{2.0cm}\qquad C_{13}=\answerline{2.0cm}
-\]
 \closequestion
+\begin{answerprose}{(10, 11, 17)}
+The first row of $UU^\top$ is the first row of $U$, namely $(1,2)$, multiplied with each row of $U$:
+\[
+(UU^\top)_{11}=1\cdot1+2\cdot2=5,\qquad
+(UU^\top)_{12}=1\cdot3+2\cdot4=11,\qquad
+(UU^\top)_{13}=1\cdot5+2\cdot6=17.
+\]
+Adding $\Psi$ only changes the diagonal entry: $C_{11}=5+5=\mathbf{10}$, $C_{12}=\mathbf{11}$,
+$C_{13}=\mathbf{17}$.
+\end{answerprose}
 
 \questiontitle{Factor Analysis: conceptual statements}
 Which statements about Factor Analysis (FA) are correct?
@@ -680,6 +969,15 @@ Multiple answers are possible.
   \choice Factors explain the variance of the observations, while the correlation is explained by noise.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, C, E}
+  \yes{A} For any rotation $R$: $(UR)(UR)^\top=UU^\top$, so $U$ is only determined up to rotations.
+  \yes{B} With diagonal $\Psi$, all off-diagonal covariance must come from $UU^\top$ --- i.e.\ from the factors.
+  \yes{C} That is the FA model: shared latent factors plus independent noise.
+  \no{D} Swapped: $UU^\top$ is the \emph{shared/correlated} part; the independent part is $\Psi$.
+  \yes{E} Exactly the FA covariance decomposition.
+  \no{F} Standard FA assumes \emph{both} Gaussian factors and Gaussian noise (that is what makes it a tractable linear-Gaussian model; ICA is the non-Gaussian relative).
+  \no{G} Reversed: factors explain the \emph{correlations}, noise the independent leftover variance.
+\end{answer}
 
 \section{Clustering, Mixtures, and Projection Methods}
 
@@ -690,12 +988,21 @@ X=\{(1,0),(0,1),(-1,0),(0,-1),(2,0),(2,3),(5,0)\}.
 \]
 The initial cluster centers are $\mu=(0,1)$ and $\nu=(2,2)$.
 Compute the coordinates of the new cluster centers $\mu^{\mathrm{new}}$ and $\nu^{\mathrm{new}}$ after one iteration of $k$-means.
-\[
-\mu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm}),
-\qquad
-\nu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm})
-\]
 \closequestion
+\begin{answerprose}{$\mu^{\mathrm{new}}=(0,0)$, $\nu^{\mathrm{new}}=(3,1)$}
+\textbf{Assignment step} (nearest center; squared distances suffice):
+$(1,0),(0,1),(-1,0),(0,-1)$ are closer to $\mu=(0,1)$;
+$(2,0),(2,3),(5,0)$ are closer to $\nu=(2,2)$
+(e.g.\ $(2,0)$: $d^2_\mu=4+1=5$ vs.\ $d^2_\nu=0+4=4$).
+
+\textbf{Update step} (means of the assigned points):
+\[
+\mu^{\mathrm{new}}=\tfrac14\bigl[(1,0)+(0,1)+(-1,0)+(0,-1)\bigr]=(\mathbf{0},\mathbf{0}),
+\]
+\[
+\nu^{\mathrm{new}}=\tfrac13\bigl[(2,0)+(2,3)+(5,0)\bigr]=(\mathbf{3},\mathbf{1}).
+\]
+\end{answerprose}
 
 \questiontitle{$k$-means and affinity propagation}
 Which statements about $k$-means and affinity propagation are correct?
@@ -711,6 +1018,16 @@ Multiple answers are possible.
   \choice $k$-means is sensitive to initialization of the cluster centers.
 \end{itemize}
 \closequestion
+\begin{answer}{A, D, E, H}
+  \yes{A} $k$-means minimizes $\sum_k\sum_{x\in C_k}\lVert x-\mu_k\rVert^2$.
+  \no{B} Reversed: the preference is a point's a-priori suitability as an exemplar --- the larger it is, the \emph{more} cluster centers emerge.
+  \no{C} Damping stabilizes the message updates against oscillations; a larger damping factor makes convergence \emph{slower}, not faster.
+  \yes{D} Cluster centers (exemplars) are always actual data points.
+  \yes{E} $s(i,k)=-\lVert x_i-x_k\rVert^2$ is the standard choice.
+  \no{F} $k$-means only reaches a \emph{local} optimum of its objective.
+  \no{G} $k$ is a user-chosen hyperparameter --- the algorithm never selects it.
+  \yes{H} Different initial centers can lead to different local optima; that is why one restarts $k$-means several times.
+\end{answer}
 
 \questiontitle{$k$-means: one iteration, dataset B}
 Assume you want to do $k$-means on the following 2-dimensional dataset:
@@ -719,12 +1036,20 @@ X=\{(1,0),(2,-1),(1,-2),(0,-1),(2,0),(2,1),(3,0),(3,1)\}.
 \]
 The initial cluster centers are $\mu=(0,-2)$ and $\nu=(4,1)$.
 Compute the coordinates of the new cluster centers $\mu^{\mathrm{new}}$ and $\nu^{\mathrm{new}}$ after one iteration of $k$-means.
-\[
-\mu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm}),
-\qquad
-\nu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm})
-\]
 \closequestion
+\begin{answerprose}{$\mu^{\mathrm{new}}=(1,-1)$, $\nu^{\mathrm{new}}=(2.5,0.5)$}
+\textbf{Assignment:} $(1,0),(2,-1),(1,-2),(0,-1)\to\mu=(0,-2)$;
+$(2,0),(2,1),(3,0),(3,1)\to\nu=(4,1)$
+(e.g.\ $(2,0)$: $d^2_\mu=4+4=8$ vs.\ $d^2_\nu=4+1=5$).
+
+\textbf{Update:}
+\[
+\mu^{\mathrm{new}}=\tfrac14\bigl[(1,0)+(2,-1)+(1,-2)+(0,-1)\bigr]=(\mathbf{1},\mathbf{-1}),
+\]
+\[
+\nu^{\mathrm{new}}=\tfrac14\bigl[(2,0)+(2,1)+(3,0)+(3,1)\bigr]=(\mathbf{2.5},\mathbf{0.5}).
+\]
+\end{answerprose}
 
 \questiontitle{$k$-means: one iteration, dataset C}
 Assume you want to do $k$-means on the following 2-dimensional dataset:
@@ -733,12 +1058,20 @@ X=\{(1,-1),(0,0),(-1,-1),(0,-2),(2,0),(2,3),(5,0)\}.
 \]
 The initial cluster centers are $\mu=(0,0)$ and $\nu=(2,1)$.
 Compute the coordinates of the new cluster centers $\mu^{\mathrm{new}}$ and $\nu^{\mathrm{new}}$ after one iteration of $k$-means.
-\[
-\mu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm}),
-\qquad
-\nu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm})
-\]
 \closequestion
+\begin{answerprose}{$\mu^{\mathrm{new}}=(0,-1)$, $\nu^{\mathrm{new}}=(3,1)$}
+\textbf{Assignment:} $(1,-1),(0,0),(-1,-1),(0,-2)\to\mu=(0,0)$;
+$(2,0),(2,3),(5,0)\to\nu=(2,1)$
+(e.g.\ $(2,0)$: $d^2_\mu=4$ vs.\ $d^2_\nu=1$).
+
+\textbf{Update:}
+\[
+\mu^{\mathrm{new}}=\tfrac14\bigl[(1,-1)+(0,0)+(-1,-1)+(0,-2)\bigr]=(\mathbf{0},\mathbf{-1}),
+\]
+\[
+\nu^{\mathrm{new}}=\tfrac13\bigl[(2,0)+(2,3)+(5,0)\bigr]=(\mathbf{3},\mathbf{1}).
+\]
+\end{answerprose}
 
 \questiontitle{$k$-means: one iteration, dataset D}
 Assume you want to do $k$-means on the following 2-dimensional dataset:
@@ -749,12 +1082,31 @@ The initial cluster centers are $\mu=(2,0)$ and $\nu=(-1,4)$.
 Compute the coordinates of the new cluster centers $\mu^{\mathrm{new}}$ and $\nu^{\mathrm{new}}$ after one iteration of $k$-means.
 A sketch of the data points helps: the assignment step can largely be read off graphically.
 Give the values with one decimal place.
-\[
-\mu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm}),
-\qquad
-\nu^{\mathrm{new}}=(\answerline{1.7cm},\answerline{1.7cm})
-\]
 \closequestion
+\begin{answerprose}{$\mu^{\mathrm{new}}=(1.0,1.0)$, $\nu^{\mathrm{new}}=(-0.5,2.5)$}
+\textbf{Assignment} (squared distances to $\mu=(2,0)$ vs.\ $\nu=(-1,4)$):
+\[
+\begin{array}{c|cc|c}
+x & d^2_\mu & d^2_\nu & \to\\
+\hline
+(0,1) & 5 & 10 & \mu\\
+(1,2) & 5 & 8 & \mu\\
+(2,1) & 1 & 18 & \mu\\
+(1,0) & 1 & 20 & \mu\\
+(0,2) & 8 & 5 & \nu\\
+(-1,2) & 13 & 4 & \nu\\
+(0,3) & 13 & 2 & \nu\\
+(-1,3) & 18 & 1 & \nu
+\end{array}
+\]
+\textbf{Update:}
+\[
+\mu^{\mathrm{new}}=\tfrac14\bigl[(0,1)+(1,2)+(2,1)+(1,0)\bigr]=(\mathbf{1.0},\mathbf{1.0}),
+\]
+\[
+\nu^{\mathrm{new}}=\tfrac14\bigl[(0,2)+(-1,2)+(0,3)+(-1,3)\bigr]=(\mathbf{-0.5},\mathbf{2.5}).
+\]
+\end{answerprose}
 
 \questiontitle{$t$-SNE}
 Which statements about $t$-distributed Stochastic Neighborhood Embedding are correct?
@@ -766,6 +1118,12 @@ Multiple answers are possible.
   \choice It is usually trained by gradient descent.
 \end{itemize}
 \closequestion
+\begin{answer}{B, D}
+  \no{A} Gaussian in the \emph{observation} space only; the embedding space uses a Student's $t$-distribution (that is the ``$t$'' in $t$-SNE).
+  \yes{B} The objective is $\KL{P}{Q}$ between the input-space and embedding-space similarity distributions.
+  \no{C} Swapped: the $t$-distribution is used in the \emph{embedding} space; the observation space uses Gaussians.
+  \yes{D} The KL objective is minimized by (stochastic) gradient descent.
+\end{answer}
 
 \questiontitle{Scaling and Projection Methods --- version A}
 Which statements about Scaling and Projection Methods are correct?
@@ -781,6 +1139,16 @@ Multiple answers are possible.
   \choice In $t$-SNE, the similarity between data points $i$ and $j$ is given by their joint probability.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, C, F, H}
+  \yes{A} Isomap is classical MDS on geodesic distances; the leading eigenvectors of the (centered) distance matrix give the embedding coordinates.
+  \yes{B} That is exactly the $t$-SNE objective.
+  \yes{C} LLE reconstructs every point as a weighted linear combination of its neighbors and preserves those weights in the embedding.
+  \no{D} Scaling/projection methods go to a \emph{lower}-dimensional space.
+  \no{E} The Kohonen SOM update rules are \emph{not} the gradient of any global energy function --- there is no energy being minimized.
+  \yes{F} Distance preservation is the definition of MDS.
+  \no{G} LLE is a \emph{nonlinear} embedding method --- only the local reconstructions are linear.
+  \yes{H} $t$-SNE uses symmetrized joint probabilities $p_{ij}$ and $q_{ij}$.
+\end{answer}
 
 \questiontitle{Projection and scaling methods --- version B}
 Which statements about projection and scaling methods are correct?
@@ -793,6 +1161,13 @@ Multiple answers are possible.
   \choice Isomap measures distances between data points as the length of the shortest path along a neighborhood graph.
 \end{itemize}
 \closequestion
+\begin{answer}{C, D, E}
+  \no{A} NMF factorizes an \emph{entrywise non-negative} matrix into entrywise non-negative factors --- positive semidefiniteness is a different concept and plays no role.
+  \no{B} LLE preserves neighborhoods, but it is a \emph{nonlinear} method.
+  \yes{C} That is the definition of (metric) MDS.
+  \yes{D} SNE uses conditionals $p_{j\mid i}$; $t$-SNE symmetrizes them into joints $p_{ij}$.
+  \yes{E} Geodesic distance $\approx$ shortest path through the $k$-nearest-neighbor graph.
+\end{answer}
 
 \questiontitle{Scaling and projection methods --- version C}
 Tick the correct statements about scaling and projection methods.
@@ -807,6 +1182,14 @@ Multiple answers are possible.
   \choice In SNE and $t$-SNE, the computation of the similarity $p_{ij}$ between $x_i$ and $x_j$ relies on assuming a Gaussian distribution centered at $x_i$.
 \end{itemize}
 \closequestion
+\begin{answer}{A, B, F}
+  \yes{A} The heavy tails give moderately distant pairs more room in the embedding --- exactly the fix for the crowding problem.
+  \yes{B} Isomap approximates geodesics by shortest paths in the neighborhood graph.
+  \no{C} Tricky: perplexity is set on the \emph{input-space} similarities $p_{j\mid i}$ (to choose the Gaussian bandwidths), not on the $q_{ij}$ of the mapped points.
+  \no{D} The objective is the KL divergence between similarity distributions, not a mean squared distance ($x_i$ and $y_i$ don't even live in the same space).
+  \no{E} Neither LLE nor MDS is probabilistic or KL-based --- that describes SNE/$t$-SNE.
+  \yes{F} $p_{j\mid i}$ comes from a Gaussian kernel centered at $x_i$.
+\end{answer}
 
 \questiontitle{Scaling and Projection Methods --- version D}
 \repeatnote
@@ -824,6 +1207,16 @@ Multiple answers are possible.
   \choice LLE in general performs linear mappings to realize neighborhood-preserving embeddings.
 \end{itemize}
 \closequestion
+\begin{answer}{A, C, D, F, G}
+  \yes{A} Distance preservation is the definition of MDS.
+  \no{B} \emph{Lower}-dimensional, not higher.
+  \yes{C} Isomap = MDS on the geodesic distance matrix; its eigenvectors give the coordinates.
+  \yes{D} $t$-SNE uses joint probabilities $p_{ij}$, $q_{ij}$.
+  \no{E} SOMs have no global energy function.
+  \yes{F} That is the $t$-SNE objective.
+  \yes{G} LLE's local reconstruction property.
+  \no{H} LLE is nonlinear overall --- only the local reconstructions are linear.
+\end{answer}
 
 \questiontitle{Scaling and Projection Methods --- version E}
 Decide which statements about Scaling and Projection Methods are correct.
@@ -839,7 +1232,16 @@ Multiple answers are possible.
   \choice Multidimensional Scaling (MDS) projects data to a higher-dimensional space in order to increase the distance between data points.
 \end{itemize}
 \closequestion
-
+\begin{answer}{A, D, E, F, G}
+  \yes{A} This is the correct version of the recurring distractor: the projection goes into a \emph{lower}-dimensional space.
+  \no{B} The Kohonen SOM update rules are not the gradient of any energy function --- nothing is being minimized.
+  \no{C} Reversed: projection pursuit looks for maximally \emph{non}-Gaussian (``interesting'') projections --- a Gaussian projection is the least informative one.
+  \yes{D} GTM maps a grid of latent points through a nonlinear function into data space --- a nonlinear latent variable model.
+  \yes{E} The eigenvectors belonging to the largest eigenvalues of the (centered) geodesic distance matrix give the Isomap coordinates.
+  \yes{F} The $t$-SNE objective.
+  \yes{G} LLE's defining property.
+  \no{H} MDS embeds into a \emph{lower}-dimensional space while \emph{preserving} distances --- it neither adds dimensions nor inflates distances.
+\end{answer}
 \questiontitle{Non-negative Matrix Factorization (NMF)}
 As in the lecture, let
 \[
@@ -859,6 +1261,14 @@ Multiple answers are possible.
   \choice NMF factorizes any positive or negative definite matrix into two positive definite matrices.
 \end{itemize}
 \closequestion
+\begin{answer}{A, C, D, E}
+  \yes{A} The two standard NMF objectives are the squared Euclidean distance and the (generalized) KL divergence.
+  \no{B} Exact NMF is NP-hard in general; the multiplicative update rules only find local optima of the chosen objective.
+  \yes{C} $Y\in\R^{n\times\ell}$ times $U^\top\in\R^{\ell\times m}$ gives $X\in\R^{n\times m}$.
+  \yes{D} Since no negative entries exist, components can never cancel each other --- the representation is purely additive (parts-based).
+  \yes{E} Column-times-row expansion of the product: $X=\sum_k y_k u_k^\top$.
+  \no{F} Nonsense --- definiteness plays no role in NMF, and a negative definite matrix cannot even have a non-negative factorization.
+\end{answer}
 
 \questiontitle{Mixturetown bread question}
 In Mixturetown there are two bakers, Albert $(A)$ and Bibi $(B)$.
@@ -881,10 +1291,21 @@ f(1.1;1,0.1)=2.41971,
 f(1.1;1.5,0.2)=0.26995.
 \]
 Round to two decimal places.
-\[
-P(B\mid x=1.1)=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{0.25}
+Bayes' rule with priors $P(A)=0.25$, $P(B)=0.75$:
+\[
+P(B\mid x=1.1)
+=\frac{P(B)\,f(1.1;\mu_B,\sigma_B)}{P(A)\,f(1.1;\mu_A,\sigma_A)+P(B)\,f(1.1;\mu_B,\sigma_B)}
+\]
+\[
+=\frac{0.75\cdot 0.26995}{0.25\cdot 2.41971+0.75\cdot 0.26995}
+=\frac{0.20246}{0.60493+0.20246}
+=\frac{0.20246}{0.80739}
+\approx\mathbf{0.25}.
+\]
+Despite Bibi's large prior, the loaf weight is much more typical of Albert's ovens.
+\end{answerprose}
 
 \questiontitle{Mixture model posterior probability}
 \repeatnote
@@ -897,10 +1318,13 @@ Assume the following case:
 \end{itemize}
 Compute the posterior probability of component $j$.
 Round to two decimal places.
-\[
-P(j\mid x)=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{0.25}
+Bayes' rule for mixtures:
+\[
+P(j\mid x)=\frac{P(j)\,p(x\mid j)}{p(x\mid\theta)}=\frac{0.1\cdot 0.5}{0.2}=\mathbf{0.25}.
+\]
+\end{answerprose}
 
 \questiontitle{Mixture model: infer the likelihood from posterior, prior, and evidence}
 \repeatnote
@@ -913,10 +1337,13 @@ Assume the following case:
 \end{itemize}
 Compute the likelihood for observing a data sample $x$ given component $j$ and the corresponding parameter vector.
 Round to two decimal places.
-\[
-P(x\mid j)=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{0.60}
+Rearrange Bayes' rule $P(j\mid x)=\dfrac{P(j)\,p(x\mid j)}{p(x\mid\theta)}$ for the likelihood:
+\[
+p(x\mid j)=\frac{P(j\mid x)\;p(x\mid\theta)}{P(j)}=\frac{0.3\cdot 0.2}{0.1}=\mathbf{0.60}.
+\]
+\end{answerprose}
 
 \questiontitle{Mixture of Gaussians: posterior of the first Gaussian}
 The data generation process in a mixture of Gaussians model is as follows:
@@ -937,10 +1364,19 @@ f(1;3,1)=0.054.
 \]
 Calculate the probability that the datapoint $x=1$ has been produced by the first Gaussian.
 Round to two decimal places.
-\[
-P(G_1\mid x=1)=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{0.66}
+\[
+P(G_1\mid x=1)
+=\frac{\alpha_1 f(1;0,1)}{\alpha_1 f(1;0,1)+\alpha_2 f(1;3,1)}
+=\frac{0.3\cdot 0.242}{0.3\cdot 0.242+0.7\cdot 0.054}
+\]
+\[
+=\frac{0.0726}{0.0726+0.0378}
+=\frac{0.0726}{0.1104}
+\approx\mathbf{0.66}.
+\]
+\end{answerprose}
 
 \questiontitle{KL divergence for continuous uniform distributions --- variant 2}
 Assume $Y$ and $Z$ are uniformly distributed on $[0,\theta_Y]$ and $[0,\theta_Z]$, respectively.
@@ -949,10 +1385,13 @@ For $\theta_Y=e^4$ and $\theta_Z=e^{10}$, compute
 D_{\mathrm{KL}}(p_Y\|p_Z)=\int_{-\infty}^{\infty} p_Y(x)\log\!\left(\frac{p_Y(x)}{p_Z(x)}\right)\dd x.
 \]
 Use the natural logarithm and round to two decimal places.
-\[
-D_{\mathrm{KL}}(p_Y\|p_Z)=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{6.00}
+Same derivation as before:
+\[
+D_{\mathrm{KL}}(p_Y\|p_Z)=\ln\frac{\theta_Z}{\theta_Y}=\ln\frac{e^{10}}{e^{4}}=10-4=\mathbf{6.00}.
+\]
+\end{answerprose}
 
 \questiontitle{KL divergence for two discrete distributions}
 \repeatnote
@@ -963,15 +1402,19 @@ p(x=0)=0.8,\quad p(x=1)=0.2,
 \qquad
 q(x=0)=0.5,\quad q(x=1)=0.5.
 \]
-Compute the KL divergence
-\[
-D_{\mathrm{KL}}(p\|q).
-\]
+Compute the KL divergence $D_{\mathrm{KL}}(p\|q)$.
 Use the natural logarithm and round to two decimal places.
-\[
-D_{\mathrm{KL}}(p\|q)=\answerline{2.5cm}
-\]
 \closequestion
+\begin{answerprose}{0.19}
+\[
+D_{\mathrm{KL}}(p\|q)=\sum_x p(x)\ln\frac{p(x)}{q(x)}
+=0.8\ln\frac{0.8}{0.5}+0.2\ln\frac{0.2}{0.5}
+=0.8\cdot 0.470+0.2\cdot(-0.916)
+\]
+\[
+=0.376-0.183\approx\mathbf{0.19}.
+\]
+\end{answerprose}
 
 \questiontitle{Clustering --- version A}
 Which statements about Clustering are correct?
@@ -987,6 +1430,16 @@ Multiple answers are possible.
   \choice Similarity-based clustering does not require objects to be represented via feature vectors.
 \end{itemize}
 \closequestion
+\begin{answer}{A, H}
+  \yes{A} Affinity propagation selects \emph{exemplars} --- actual data points --- as cluster centers.
+  \no{B} Clustering is unsupervised --- it is neither regression nor classification (both are supervised).
+  \no{C} \emph{Fuzzy} $k$-means is exactly the variant with continuous (soft) memberships; only plain $k$-means is binary.
+  \no{D} Assignment goes to the largest \emph{posterior} (responsibility), which also accounts for how well the component explains the observation --- not the prior alone.
+  \no{E} Removing the longest edges of a minimal spanning tree reproduces \emph{single-linkage} (bottom-up) clusters; top-down (divisive) clustering instead splits clusters recursively.
+  \no{F} MAP includes the prior term, so the two optima and their values differ in general.
+  \no{G} Agglomerative clustering fuses the two \emph{closest} clusters.
+  \yes{H} It only needs pairwise similarities --- objects never have to live in a vector space.
+\end{answer}
 
 \questiontitle{Clustering --- version B}
 Which statements about Clustering are correct?
@@ -1002,6 +1455,16 @@ Multiple answers are possible.
   \choice Clustering is an unsupervised technique that aims at finding separate regions of high data density called clusters.
 \end{itemize}
 \closequestion
+\begin{answer}{D, E, F, G, H}
+  \no{A} Half-true trap: $k$-means \emph{is} faster than MoG, but it is definitely sensitive to initialization.
+  \no{B} $k$-means does, but MoG assigns \emph{soft} (probabilistic) memberships to all components.
+  \no{C} The mixing coefficients are the \emph{priors} $\alpha_j$, not the posteriors.
+  \yes{D} The prior in MAP regularizes the covariances away from collapsing onto single points (singular ML solutions).
+  \yes{E} That is the definition of the responsibility $p(j\mid x,\theta)$.
+  \yes{F} Means, covariances, and mixing coefficients are exactly the parameters EM optimizes.
+  \yes{G} $k$-means is the hard-assignment, equal-spherical-covariance limit of MoG.
+  \yes{H} Standard definition of clustering.
+\end{answer}
 
 \questiontitle{Hierarchical clustering: single linkage vs. complete linkage}
 You are given $8$ datapoints in $\R^2$:
@@ -1019,6 +1482,13 @@ Check the correct statements.
   \choice One of the two clusterings could theoretically have been the result of either linkage function.
 \end{itemize}
 \closequestion
+\begin{answer}{B, D, E}
+  \no{A} See D.
+  \yes{B} Single linkage merges via the \emph{closest} pair, so it chains the six left points into one elongated cluster and leaves the two distant points at $x=8$ as the second cluster --- the chained partition is clustering 2.
+  \no{C} See B.
+  \yes{D} Complete linkage merges via the \emph{farthest} pair, so it penalizes large cluster diameters and produces the compact partition --- clustering 1.
+  \yes{E} Correct: the linkage functions only differ once cluster diameters start to matter; for this dataset one of the two shown partitions can arise under either criterion.
+\end{answer}
 
 \questiontitle{Hierarchical clustering with average linkage on letters}
 \repeatnote
@@ -1034,13 +1504,23 @@ Perform agglomerative clustering using average linkage,
 d_{\mathrm{avg}}(A,B)=\frac{1}{n_A}\frac{1}{n_B}\sum_{a\in A}\sum_{b\in B}s(a,b),
 \]
 and stop when the distance between clusters is greater than $7$.
-Answer the following questions with integer values.
-\begin{itemize}
-  \item How many clusters are formed in total? \answerline{2.0cm}
-  \item What is the maximum number of data points in any one cluster? \answerline{2.0cm}
-  \item What is the minimum distance between any two of the formed clusters? \answerline{2.0cm}
-\end{itemize}
+How many clusters are formed in total, what is the maximum number of data points in any one cluster, and what is the minimum distance between any two of the formed clusters?
 \closequestion
+\begin{answerprose}{3 clusters / max size 4 / min distance 8}
+Alphabet positions: $a=1$, $c=3$, $e=5$, $h=8$, $i=9$, $m=13$, $n=14$, $s=19$.
+Merging the closest clusters step by step:
+\begin{enumerate}[leftmargin=2.2em,itemsep=1.5pt,topsep=2pt]
+  \item $\{h,i\}$ and $\{m,n\}$ at distance $1$ each.
+  \item $\{a,c\}$ at distance $2$.
+  \item $\{a,c\}+\{e\}$: $d_{\mathrm{avg}}=\tfrac{4+2}{2}=3$.
+  \item $\{h,i\}+\{m,n\}$: $d_{\mathrm{avg}}=\tfrac{5+6+4+5}{4}=5$.
+  \item Remaining distances:
+        $d(\{a,c,e\},\{h,i,m,n\})=\tfrac{7+8+12+13+5+6+10+11+3+4+8+9}{12}=8$ and
+        $d(\{h,i,m,n\},\{s\})=\tfrac{11+10+6+5}{4}=8$ --- both $>7$, so we \textbf{stop}.
+\end{enumerate}
+Result: \textbf{3 clusters} $\{a,c,e\}$, $\{h,i,m,n\}$, $\{s\}$; the largest contains
+\textbf{4} points; the minimum distance between the formed clusters is \textbf{8}.
+\end{answerprose}
 
 \questiontitle{Biclustering}
 Which statements about Biclustering are correct?
@@ -1054,66 +1534,13 @@ Multiple answers are possible.
   \choice Biclustering simultaneously clusters the rows and columns of a matrix.
 \end{itemize}
 \closequestion
-
-\newpage
-\section{Dense Answer Key}
-
-\begin{keybox}[Compact solutions]
-\footnotesize
-\begin{multicols}{2}
-\begin{enumerate}[leftmargin=*,label=\textbf{Q\arabic*.}]
-  \item $\kappa_4(X)=-0.13$, $\kappa_4(2X)=-2.13$, $\kappa_4(X+Y)=-0.27$, sub-Gaussian.
-  \item $\kappa_3(X)=0$, $\kappa_4(X)=-2$, $\kappa_4(3X)/\kappa_4(X)=81$, $\kappa_4(X+Y)/\kappa_4(X)=2$.
-  \item $A=12$.
-  \item $D_{\mathrm{KL}}(p_Y\|p_Z)=5.00$.
-  \item Third row $(12,15,18)$.
-  \item $P(X=1)=0.63$, $P(Y=1)=0.50$, $H(X)=0.66$, $H(Y)=0.69$, $I(X;Y)=0.03$.
-  \item $P(Y=0)=0.33$, $H(X)=0.64$, $H(Y)=0.64$, $I(X;Y)=0.17$.
-  \item $P(X=0)=0.70$, $P(Y=0)=0.50$, $H(X)=0.61$, $H(Y)=0.69$, $I(X;Y)=0.02$.
-  \item Correct: a, e, f, g.
-  \item unbiased; mean squared error; variance; bias; biased but consistent; unbiased but not consistent; likelihood; density; variance; efficient.
-  \item Correct: d, e, f, h.
-  \item Correct: a, b, d, g, h.
-  \item Correct: b, e, g, h.
-  \item Correct: a, d, e, f, g.
-  \item Correct: a, b, e, g.
-  \item PCA corresponds to A, ICA corresponds to B; picture 1 is more likely PC2 vs. PC1 and picture 2 PC3 vs. PC1; in the EM part, $a$ is earlier and $b$ is later.
-  \item $y_2=(3.46,0.00,0.00)$.
-  \item $y_3=(4.24,0.00,0.00)$.
-  \item $y_3=(4.24,0.00,0.00)$.
-  \item Correct: c, d, e, f.
-  \item Correct: b, d, h.
-  \item Correct: a, b, c, d, f.
-  \item Correct: c, e, h.
-  \item Correct: a, b, d.
-  \item Correct: a, d, g, k.
-  \item First row $[10,11,17]$.
-  \item Correct: a, b, c, e.
-  \item $\mu^{\mathrm{new}}=(0,0)$, $\nu^{\mathrm{new}}=(3,1)$.
-  \item Correct: a, d, e, h.
-  \item $\mu^{\mathrm{new}}=(1,-1)$, $\nu^{\mathrm{new}}=(2.5,0.5)$.
-  \item $\mu^{\mathrm{new}}=(0,-1)$, $\nu^{\mathrm{new}}=(3,1)$.
-  \item $\mu^{\mathrm{new}}=(1.0,1.0)$, $\nu^{\mathrm{new}}=(-0.5,2.5)$.
-  \item Correct: b, d.
-  \item Correct: a, b, c, f, h.
-  \item Correct: c, d, e.
-  \item Correct: a, b, f.
-  \item Correct: a, c, d, f, g.
-  \item Correct: a, d, e, f, g.
-  \item Correct: a, c, d, e.
-  \item $P(B\mid x=1.1)=0.25$.
-  \item $P(j\mid x)=0.25$.
-  \item $P(x\mid j)=0.60$.
-  \item $P(G_1\mid x=1)\approx 0.66$.
-  \item $D_{\mathrm{KL}}(p_Y\|p_Z)=6.00$.
-  \item $D_{\mathrm{KL}}(p\|q)=0.19$.
-  \item Correct: a, h.
-  \item Correct: d, e, f, g, h.
-  \item Correct: b, d, e.
-  \item $3$ clusters; maximum cluster size $4$; minimum inter-cluster distance $8$.
-  \item Correct: b, d, f.
-\end{enumerate}
-\end{multicols}
-\end{keybox}
+\begin{answer}{B, D, F}
+  \no{A} Made-up name --- not a biclustering method.
+  \yes{B} FABIA is a generative model of the data matrix (factor analysis with sparse priors).
+  \no{C} Near-miss: FABIA models a bicluster as an \emph{outer} product $\lambda z^\top$ of a sparse loading and a sparse factor, not an inner product.
+  \yes{D} The FABIA likelihood has no closed form; it is trained with variational EM.
+  \no{E} Biclusters may overlap --- rows and columns can belong to several biclusters or to none.
+  \yes{F} That is the definition of biclustering.
+\end{answer}
 
 \end{document}

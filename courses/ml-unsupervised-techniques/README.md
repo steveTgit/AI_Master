@@ -2,8 +2,8 @@
 
 Covers unsupervised and self-supervised learning: clustering (k-means, EM, GMMs), dimensionality reduction (PCA, autoencoders), density estimation, and related topics.
 
-**Status:** usable
-**Missing:** some topics may need deeper coverage; exam question set could be expanded
+**Status:** reviewed
+**Missing:** —
 
 ## Files
 
@@ -13,6 +13,8 @@ Covers unsupervised and self-supervised learning: clustering (k-means, EM, GMMs)
 | `summary.tex` | LaTeX source |
 | `exams.pdf` | Curated old exam questions with answer key |
 | `exams.tex` | LaTeX source |
+| `exams_solutions.pdf` | The same questions with worked solutions inline |
+| `exams_solutions.tex` | LaTeX source |
 | `figures/` | Diagrams |
 | `slides/` | Lecture slide PDFs (not tracked by git) |
 

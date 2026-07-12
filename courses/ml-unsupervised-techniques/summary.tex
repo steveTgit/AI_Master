@@ -303,10 +303,11 @@
 \begin{center}
 \begin{minipage}{0.84\textwidth}
   \small\color{gray!80!black}
-  This document is a compact summary of the course.
-  It aims to cover all relevant concepts and results, but long derivations,
-  detailed proofs, and worked examples are often condensed or omitted in
-  favour of clarity and conciseness.
+  This document is a summary of the course, written to be \emph{understood} rather
+  than merely consulted: the prose tries to explain why each method works before
+  it states what it does, and the coloured boxes flag the definitions, key
+  formulas, worked examples, mental models, and exam traps.
+  Long proofs are condensed or omitted in favour of clarity.
   Use it as a study aid alongside the lecture notes and slides, not as a
   replacement for them.
 
@@ -488,6 +489,20 @@ $k$-NN is nonparametric \emph{and} descriptive (no explicit density).
 \chapter{Basic Terms and Concepts}
 % ==========================================================
 
+This chapter is the toolbox chapter.
+Nothing here is a method you would apply to a dataset --- instead it is the
+machinery that every later chapter quietly assumes: how we judge whether an
+estimate is any good, how we turn ``fit the model to the data'' into a concrete
+objective (maximum likelihood), what to do when the model has variables we never
+get to see (EM), how to measure information and distance between distributions,
+and how to pick a distribution when we know almost nothing (maximum entropy).
+
+If you find yourself lost in a later chapter, the confusion usually traces back
+to something in here.
+EM in particular shows up again as Baum--Welch for HMMs, as the fitting procedure
+for Gaussian mixtures, for factor analysis, and for FABIA --- learn it once,
+properly, and four later chapters become re-runs of the same idea.
+
 \section{Unsupervised Learning in Bioinformatics}
 
 The primary driving application for many unsupervised methods is gene expression data.
@@ -619,6 +634,197 @@ to true output).
   its variance shrinks with more data, but it may be biased for finite $l$.
 \end{intbox}
 
+The two properties are genuinely independent, and the classic exam move is to
+hand you an estimator that has one but not the other.
+Take $\frac{1}{l+1}\sum_{i=1}^{l} X_i$ as an estimator of the mean: its
+expectation is $\frac{l}{l+1}\mu \neq \mu$, so it is \emph{biased} --- but the
+bias and the variance both die off as $l\to\infty$, so it is \emph{consistent}.
+Now take $X_1$, the first sample, as an estimator of the mean: $\E[X_1]=\mu$
+makes it \emph{unbiased}, but it never gets better no matter how much data
+arrives, so it is \emph{not consistent}.
+Bias is about being centred on the truth; consistency is about eventually
+collapsing onto it.
+
+\subsection{How good can an estimator possibly get?}
+
+Suppose we restrict ourselves to unbiased estimators.
+Is there a floor on how small the variance can be, or can a clever enough
+estimator squeeze it arbitrarily close to zero?
+There is a floor, and it is set by how sharply the likelihood reacts to the
+parameter.
+If tweaking $\wvec$ barely changes the probability of the data, the data barely
+constrains $\wvec$ and any estimator will be shaky; if a small tweak in $\wvec$
+sends the likelihood plummeting, the data pins the parameter down tightly.
+The quantity measuring this sensitivity is the \textbf{Fisher information}.
+
+\begin{defbox}[title={Fisher Information}]
+The Fisher information of the parameter $\wvec$ carried by the data is the
+variance of the score (the gradient of the log-likelihood):
+\[
+  \mathcal{I}(\wvec)
+  = \E\!\left[\left(\pd{}{\wvec}\ln p(\xvec;\wvec)\right)^{\!2}\right]
+  = -\,\E\!\left[\pdd{}{\wvec}\ln p(\xvec;\wvec)\right].
+\]
+It measures the \emph{curvature} of the log-likelihood at its peak: a sharp,
+narrow peak means high information.
+For $l$ iid samples the information simply adds up: $\mathcal{I}_l(\wvec) = l\,\mathcal{I}(\wvec)$.
+\end{defbox}
+
+\begin{thmbox}[title={Cram\'{e}r--Rao Lower Bound}]
+For any \emph{unbiased} estimator $\what$,
+\[
+  \Var(\what) \;\geq\; \frac{1}{\mathcal{I}(\wvec)}.
+\]
+The variance of the estimator is bounded below by the \emph{inverse} of the
+Fisher information.
+An estimator that attains this bound --- the smallest variance physically
+available --- is called \textbf{efficient}.
+\end{thmbox}
+
+\begin{notebox}[title={Exam trap: which quantity does Cram\'{e}r--Rao bound?}]
+The Cram\'{e}r--Rao bound relates the \textbf{variance} of $\what$ to the inverse
+Fisher information --- not the bias, not the expected value, not the MSE.
+And an estimator reaching the bound is \textbf{efficient}, not ``consistent''
+or ``unbiased'' (unbiasedness is a \emph{precondition} for the bound, not its
+conclusion).
+These three words --- consistent, efficient, unbiased --- get shuffled around in
+exam questions constantly; keep them straight:
+\emph{unbiased} = centred correctly,
+\emph{consistent} = converges with more data,
+\emph{efficient} = has the smallest variance the bound allows.
+\end{notebox}
+
+
+\section{Information Theory Essentials}
+\label{sec:info-theory}
+
+Almost every objective in this course is secretly an information-theoretic
+quantity.
+PCA keeps the most ``information'' after projection; ICA drives mutual
+information to zero; EM, $t$-SNE, NMF, and Boltzmann machines all minimise a
+Kullback--Leibler divergence.
+So it pays to get the vocabulary straight once, here, rather than re-deriving it
+in every chapter.
+
+\begin{defbox}[title={Entropy, Joint \& Conditional Entropy, Mutual Information}]
+For a discrete random variable $X$ with distribution $p(x)$:
+\[
+  H(X) = -\sum_{x} p(x)\log p(x),
+  \qquad\text{with the convention } 0\cdot\log 0 = 0.
+\]
+For a pair $(X,Y)$ with joint distribution $p(x,y)$:
+\[
+  H(X,Y) = -\sum_{x,y} p(x,y)\log p(x,y),
+  \qquad
+  H(X\mid Y) = H(X,Y) - H(Y).
+\]
+The \textbf{mutual information} is the information the two variables share:
+\[
+  \MI(X;Y)
+  = \sum_{x,y} p(x,y)\,\log\frac{p(x,y)}{p(x)\,p(y)}
+  = H(X) + H(Y) - H(X,Y).
+\]
+$\MI(X;Y)\geq 0$, with equality \emph{iff} $X$ and $Y$ are independent.
+\end{defbox}
+
+Entropy is ``how surprised am I, on average, by a draw from this distribution''.
+It is zero for a deterministic variable (no surprise ever) and maximal for the
+uniform distribution (every outcome equally unexpected).
+Mutual information is then ``how much does knowing $Y$ reduce my surprise about
+$X$'' --- which is why it is exactly zero when the two are independent, and why
+ICA hunts for the projection that drives it to zero.
+
+\begin{notebox}[title={Entropy is not bounded by 1}]
+A perennial exam distractor claims ``the entropy of a probability distribution
+is always $\geq 0$ and $\leq 1$''.
+The lower bound is right, the upper bound is nonsense: a uniform distribution
+over $k$ outcomes has entropy $\log k$, which grows without limit.
+(With $\log_2$ you get $1$ bit for a fair coin --- probably the source of the
+confusion --- but even then three equally likely outcomes already give
+$\log_2 3 \approx 1.58$.)
+Watch the base of the logarithm too: exams here usually ask for the
+\emph{natural} logarithm, so a fair coin gives $\ln 2 \approx 0.69$, not $1$.
+\end{notebox}
+
+\begin{exbox}[title={Computing marginals, entropies, and mutual information}]
+Given the joint distribution of two binary variables:
+\[
+\begin{array}{c|cc}
+ & Y=0 & Y=1\\
+\hline
+X=0 & 0.3 & 0.4\\
+X=1 & 0.2 & 0.1
+\end{array}
+\]
+\textbf{Marginals} are row and column sums:
+$p(X{=}0)=0.3+0.4=0.7$ and $p(Y{=}0)=0.3+0.2=0.5$.
+
+\textbf{Entropies} (natural log) come from the marginals only:
+\[
+  H(X) = -(0.7\ln 0.7 + 0.3\ln 0.3) \approx 0.61,
+  \qquad
+  H(Y) = -(0.5\ln 0.5 + 0.5\ln 0.5) = \ln 2 \approx 0.69.
+\]
+\textbf{Joint entropy} uses all four cells:
+\[
+  H(X,Y) = -(0.3\ln 0.3 + 0.4\ln 0.4 + 0.2\ln 0.2 + 0.1\ln 0.1) \approx 1.28.
+\]
+\textbf{Mutual information} is then the leftover:
+\[
+  \MI(X;Y) = H(X) + H(Y) - H(X,Y) \approx 0.61 + 0.69 - 1.28 = 0.02.
+\]
+The tiny value says these two variables are \emph{almost} independent --- if they
+were exactly independent, every cell would equal the product of its margins
+($0.7\times0.5=0.35 \neq 0.3$), and $\MI$ would be exactly $0$.
+\end{exbox}
+
+Finally, the workhorse of the whole course: a way to measure how far one
+distribution is from another.
+
+\begin{defbox}[title={Kullback--Leibler Divergence}]
+For distributions $p$ and $q$ over the same space:
+\[
+  \KL{p}{q} = \sum_{x} p(x)\,\log\frac{p(x)}{q(x)}
+  \qquad\text{(discrete)},
+  \qquad
+  \KL{p}{q} = \int p(x)\,\log\frac{p(x)}{q(x)}\dd x
+  \qquad\text{(continuous)}.
+\]
+Properties:
+\begin{itemize}
+  \item $\KL{p}{q} \geq 0$, with equality \emph{iff} $p = q$ (Gibbs' inequality).
+  \item It is \textbf{not symmetric}: $\KL{p}{q} \neq \KL{q}{p}$ in general ---
+        it is a divergence, not a distance (and it violates the triangle inequality).
+  \item It is infinite if $q(x) = 0$ somewhere that $p(x) > 0$: $p$'s support must
+        sit inside $q$'s support.
+  \item Mutual information is a special case:
+        $\MI(X;Y) = \KL{p(x,y)}{p(x)p(y)}$ --- the divergence between the true
+        joint and the joint you would get if the variables were independent.
+\end{itemize}
+\end{defbox}
+
+\begin{exbox}[title={Two KL computations you should be able to do cold}]
+\textbf{Discrete.} With $p=(0.8,\,0.2)$ and $q=(0.5,\,0.5)$:
+\[
+  \KL{p}{q}
+  = 0.8\ln\frac{0.8}{0.5} + 0.2\ln\frac{0.2}{0.5}
+  = 0.8(0.470) + 0.2(-0.916)
+  \approx 0.19.
+\]
+\textbf{Continuous (two uniforms).} Let $p_Y$ be uniform on $[0,\theta_Y]$ and
+$p_Z$ uniform on $[0,\theta_Z]$, with $\theta_Y \leq \theta_Z$.
+The integrand is nonzero only where $p_Y>0$, and there the density ratio is the
+constant $\theta_Z/\theta_Y$, so the integral collapses:
+\[
+  \KL{p_Y}{p_Z}
+  = \int_0^{\theta_Y}\frac{1}{\theta_Y}\,\ln\frac{1/\theta_Y}{1/\theta_Z}\dd x
+  = \ln\frac{\theta_Z}{\theta_Y}.
+\]
+With $\theta_Y=e^{5}$ and $\theta_Z=e^{10}$ this is just $10-5=5$.
+Note the asymmetry biting: $\KL{p_Z}{p_Y}$ would be \emph{infinite}, because
+$p_Z$ puts mass where $p_Y$ is zero.
+\end{exbox}
+
 
 \section{Maximum Likelihood Estimator}
 \label{sec:mle}
@@ -741,17 +947,23 @@ mixtures, factor analysis, and (soft) ICA variants.
 \section{Maximum Entropy}
 \label{sec:maxent}
 
-\begin{defbox}[title={Shannon Entropy (discrete case)}]
-For a discrete distribution $(p_1, p_2, \ldots)$:
-\[
-  H = -\sum_{k \geq 1} p_k \log p_k,
-  \qquad \text{with the convention } 0 \cdot \log 0 = 0.
-\]
+Suppose you know a few facts about a distribution --- its mean, maybe its
+variance --- but nothing else, and you have to commit to a full distribution
+anyway.
+Which one do you pick?
+Picking any particular shape smuggles in assumptions you cannot justify.
+The maximum entropy principle says: pick the \emph{least committal} distribution
+that still respects the facts you actually have.
+Since entropy measures uncertainty (\cref{sec:info-theory}), the most uncertain
+distribution consistent with your constraints is the one that assumes the least
+beyond them.
+
+\begin{defbox}[title={Principle of Maximum Entropy}]
+Among all distributions consistent with the available constraints (e.g.\ known
+moments), choose the one with \emph{maximum entropy}
+$H = -\sum_{k\ge1} p_k\log p_k$.
 \end{defbox}
 
-The \textbf{principle of maximum entropy} (Jaynes, 1957) states: among all distributions
-consistent with the available constraints (e.g.\ known moments), choose the one with
-\emph{maximum entropy}.
 This distribution:
 \begin{itemize}
   \item makes the minimal assumptions beyond the stated constraints,
@@ -886,6 +1098,41 @@ The $k$-th principal direction is the direction of maximal variance \emph{orthog
 all previous $k-1$ directions.
 The variance explained by the $k$-th component equals $\lambda_k$.
 \end{thmbox}
+
+\begin{intbox}[title={Why eigenvectors, of all things?}]
+The algebra above is short enough to hide what actually happened, so here it is in
+words.
+Writing $\bm{u} = \sum_k a_k\bm{u}_k$ expresses the candidate direction in the
+eigenvector basis, and the objective becomes $\sum_k a_k^2\lambda_k$ with the
+budget $\sum_k a_k^2 = 1$.
+That is now a completely transparent problem: you have one unit of ``weight'' to
+distribute, each eigenvector pays you its eigenvalue per unit, so obviously you
+dump the entire budget on the highest-paying one.
+The maximum-variance direction \emph{is} the top eigenvector, not by coincidence
+but because the eigendecomposition already sorted the directions by exactly the
+quantity you are maximising.
+
+Geometrically: the covariance matrix stretches space, most along its top
+eigenvector.
+PCA just asks ``which way is the data cloud longest?'', and the answer to that
+question is what an eigendecomposition computes.
+\end{intbox}
+
+\begin{notebox}[title={Exam trap: singular values are not eigenvalues}]
+The singular values $d_k$ of the data matrix $\bm{X}$ and the eigenvalues
+$\lambda_k$ of $\bm{X}\T\bm{X}$ are related by a \emph{square root}, not equality:
+\[
+  d_k = \sqrt{\lambda_k}
+  \qquad\text{(equivalently } \lambda_k = d_k^2\text{, or } d_k^2/n \text{ for the
+  covariance matrix }\bm{C}\text{).}
+\]
+``The singular values of $\bm{X}$ equal the eigenvalues of $\bm{X}\T\bm{X}$'' is a
+recurring distractor --- it is off by exactly that square root.
+
+While we are here, two more that get recycled: the matrix of eigenvectors $\bm{U}$
+is \textbf{orthogonal}, not symmetric; and the eigenvalues of $\bm{X}\T\bm{X}$ are
+non-negative and sum to the \emph{total variance}, not to $1$.
+\end{notebox}
 
 
 \section{Uniqueness}
@@ -1056,13 +1303,61 @@ The projection of a new point $\bm{x}$ onto a kernel principal direction is then
   vector $\bm{u}$), and choosing the right kernel function requires domain knowledge.
 \end{intbox}
 
+The entire trick is that we never touch $\Phi$ itself.
+Note what the projection formula
+$\bm{w}\T\Phi(\bm{x}) = \sum_i \alpha_i\,k(\bm{x}_i,\bm{x})$
+actually needs: only \emph{kernel evaluations}, never the feature vectors.
+That is the kernel trick --- the feature space may be enormous, even
+infinite-dimensional, and we never pay for it, because everything we want is
+expressible through inner products that $k$ computes for us directly.
+
+\begin{notebox}[title={$\bm{K}$ and $\bm{C}$: same rank, different size}]
+Two things about the Gram matrix $\bm{K}$ and the feature covariance $\bm{C}$ are
+routinely confused.
+
+\textbf{They have different dimensions.}
+$\bm{K}$ is $n\times n$ (one row per \emph{data point}), while $\bm{C}$ lives in
+feature space and is as big as the feature space itself --- possibly infinite.
+This is precisely why we solve the eigenproblem of $\bm{K}$ instead of $\bm{C}$.
+
+\textbf{But they share their nonzero eigenvalues}, and therefore their rank.
+So the claim ``$\bm{K}$ and $\bm{C}$ always have the same dimensionality
+\emph{and} the same rank'' is a half-truth --- the rank half is right, the
+dimensionality half is wrong.
+
+One more caveat worth having straight: centering $\bm{K}$ \emph{is} required, but
+not because ``eigenvalues of $\bm{K}$ could be negative''.
+$\bm{K}$ is positive semidefinite, so its eigenvalues are never negative.
+Centering is required because the PCA derivation assumes the mapped data has zero
+mean in feature space, and $\Phi(\bm{x})$ generally does not.
+\end{notebox}
+
 
 % ==========================================================
 \chapter{Independent Component Analysis}
 % ==========================================================
 
-Independent component analysis (ICA) seeks a representation of the data as a linear
-mixture of \textbf{statistically independent} non-Gaussian sources.
+Two people are talking at the same time in a room, and you have two microphones
+running.
+Each microphone picks up \emph{both} voices, mixed together in different
+proportions depending on where it sits.
+Can you recover the two original voices from the two mixtures, knowing nothing
+about the room, the speakers, or how the mixing happened?
+
+That is the \textbf{blind source separation} problem, and remarkably the answer
+is yes --- provided you are willing to assume the underlying sources are
+\emph{statistically independent} of each other.
+Independent component analysis is the method that exploits that assumption.
+Where PCA asks ``which directions carry the most variance?'', ICA asks a
+fundamentally different question: ``which directions correspond to the
+independent \emph{causes} that generated this data?''.
+PCA gives you a geometric summary; ICA tries to give you the physics.
+
+The catch, as we will see, is that independence alone is not enough: the sources
+must also be \emph{non-Gaussian}.
+That requirement is not a technicality --- it is the entire reason the problem is
+solvable at all, and it is why so much of this chapter is spent measuring how far
+a distribution sits from a Gaussian.
 
 \begin{defbox}[title={ICA Model}]
 \textbf{Generative (mixing) model:}
@@ -1082,9 +1377,11 @@ and in fact statistically independent).
 Unlike PCA, $\bm{U}$ is \textbf{not required to be orthogonal}.
 \end{defbox}
 
-The canonical motivation is \textbf{blind source separation}: two speakers talk
-simultaneously; multiple microphones record linear mixtures of the two voices.
-ICA recovers the original signals from the mixtures without knowing the mixing matrix.
+In the cocktail-party picture, $\bm{y}$ holds the original voices, $\bm{U}$ is the
+room (how loudly each voice reaches each microphone), and $\bm{x}$ is what the
+microphones actually record.
+Solving ICA means recovering $\bm{W} = \bm{U}^{-1}$ --- the un-mixing matrix ---
+without ever having heard the voices separately.
 
 
 \section{Identifiability and Uniqueness}
@@ -1106,6 +1403,31 @@ Consequence: for \textbf{non-Gaussian sources}, the ICA solution is unique up to
 permutation and scaling.
 The Gaussian case is the only exception.
 \end{thmbox}
+
+\begin{intbox}[title={Why Gaussians kill ICA --- and why the CLT is the key}]
+Take two independent standard Gaussians and plot them: you get a perfectly
+circular cloud.
+Now rotate that cloud by any angle you like.
+It is \emph{still} a perfectly circular cloud of two independent standard
+Gaussians --- you cannot tell the rotated version from the original.
+The independence criterion simply has nothing to grip onto, so every rotation is
+an equally valid ``solution'' and the sources are unrecoverable in principle, not
+just in practice.
+
+Non-Gaussian sources break that symmetry, and the \textbf{central limit theorem}
+explains why they are recoverable.
+The CLT says that summing independent variables pushes the result \emph{towards}
+a Gaussian.
+A mixture $\bm{a}\T\bm{y}$ is exactly such a sum --- so any mixture of the sources
+is \emph{more Gaussian} than the sources themselves.
+Turn that around and you get the entire ICA strategy: if mixing makes things more
+Gaussian, then \textbf{un-mixing must make things less Gaussian}.
+Hunt for the projection that is maximally non-Gaussian, and you will land on a
+single original source.
+This is why ``maximise non-Gaussianity'' and ``recover the independent sources''
+are the same instruction, and it is the thread connecting kurtosis, negentropy,
+and every contrast function below.
+\end{intbox}
 
 \paragraph{ICA assumptions}
 \begin{itemize}
@@ -1218,6 +1540,29 @@ The two-step procedure is:
   \item \textbf{Rotate:} find the orthogonal matrix $\hat{\bm{U}}$ that maximizes
         the contrast function (super-Gaussianity / sparseness).
 \end{enumerate}
+
+\begin{intbox}[title={Why split the search into whitening and rotation?}]
+A general invertible mixing matrix has $m^2$ free parameters --- a big search
+space.
+But notice that ICA only cares about \emph{independence}, and independence
+implies decorrelation.
+So we can knock out the easy part first: \textbf{whitening} (a PCA-style
+rescaling to unit covariance) enforces decorrelation and fixes all the stretching
+and scaling for free.
+Whatever freedom is left \emph{after} whitening must preserve unit covariance ---
+and the only transforms that do that are \emph{rotations}.
+
+That is the payoff: the search collapses from ``all invertible matrices'' to
+``rotations only'', which is a far smaller and better-behaved space.
+Whitening does the decorrelating that second-order statistics can handle, and the
+rotation step then uses higher-order statistics (kurtosis, negentropy) to find
+the one angle that makes the components genuinely \emph{independent}, not merely
+uncorrelated.
+The artificial example below makes this visible: mixing turns a square into a
+parallelogram, whitening rounds it into a circle (decorrelated but still
+dependent), and only the final rotation snaps it back into the axis-aligned
+square.
+\end{intbox}
 
 
 \section{INFOMAX Algorithm}
@@ -1427,15 +1772,39 @@ preferred in practice when outliers are expected.
 \chapter{Factor Analysis}
 % ==========================================================
 
-Factor analysis (FA) describes the \textbf{variability} of observations in terms of
-unobserved \textbf{latent variables} called \emph{factors} and \textbf{noise}.
-The factors explain the correlations between observed variables; the remaining
-per-variable variance is explained by independent Gaussian noise.
-FA is a \emph{generative} approach that models both the noise and the correlations
-explicitly.
+PCA has a blind spot: it explains \emph{all} the variance in the data, and it has
+no idea which part of that variance is real signal and which is measurement noise.
+Point it at a noisy sensor and it will happily devote a component to the noise.
+
+Factor analysis fixes this by being honest about noise from the start.
+It splits every observed variable into two pieces: a part driven by a handful of
+shared hidden \textbf{factors}, and a part that is private noise belonging to that
+one variable alone.
+The crucial modelling decision is that the noise covariance $\bm{\Psi}$ is
+\emph{diagonal} --- noise in one measurement is independent of noise in another.
+The consequence is immediate and worth pausing on: since the noise cannot create
+any cross-variable correlation, \textbf{every correlation between observed
+variables must be explained by the shared factors}.
+That single sentence is the engine of the whole method, and it is the answer to
+most conceptual exam questions about FA.
+
+So the mental split is: \emph{factors explain what the variables have in common;
+noise explains what is left over, variable by variable.}
+(Get this backwards --- ``factors explain the variance, noise explains the
+correlations'' --- and you have picked the classic wrong answer.)
 
 
 \section{The Factor Analysis Model}
+
+\begin{notebox}[title={Notation warning}]
+This chapter writes the factor loading matrix as $\bm{\Lambda}$ and the factors as
+$\bm{z}$, following the standard statistics convention.
+The lecture slides and exam questions frequently use $\bm{U}$ for the loading
+matrix and $\bm{y}$ for the factor vector instead --- and the FABIA chapter later
+uses $U$ too.
+The model is identical, only the letters change: $\bm{C}=\bm{\Lambda\Lambda}\T+\bm{\Psi}$
+is the same statement as $\bm{C}=\bm{U}\bm{U}\T+\bm{\Psi}$.
+\end{notebox}
 
 \begin{defbox}[title={Factor Analysis Model}]
 For centered data $\bm{x} \in \R^m$ with $l \leq m$ factors $\bm{z} \in \R^l$:
@@ -1669,14 +2038,42 @@ biologically.
 \chapter{Scaling and Projection Methods}
 % ==========================================================
 
-\section{Projection Pursuit}
+Every method in this chapter squeezes high-dimensional data down into a few
+dimensions --- usually two, so you can actually look at it.
+The reason to care is that we cannot see in 5{,}000 dimensions, and a great deal
+of data analysis begins with wanting to \emph{look} at the thing.
 
-All dimensionality-reduction methods in this chapter project data to a
-low-dimensional space, sometimes called \emph{scaling} of the data.
-The goal is either to \textbf{visualise} the data or to produce a compact
-low-dimensional representation for downstream tasks, exploiting the fact that
-low-dimensional models are simpler and that noise and outliers are not
-represented in the projection.
+What separates the methods is a single question: \textbf{what are you trying to
+preserve on the way down?}
+Everything in this chapter is an answer to that question, and once you see it
+that way the zoo becomes a short list:
+
+\begin{itemize}
+  \item \textbf{Projection pursuit} --- preserve \emph{interestingness}
+        (non-Gaussianity).
+  \item \textbf{MDS} --- preserve \emph{pairwise distances}.
+  \item \textbf{Isomap} --- preserve pairwise distances, but measured
+        \emph{along the manifold} (geodesics) rather than through empty space.
+  \item \textbf{LLE} --- preserve each point's \emph{local linear relationship}
+        to its neighbours.
+  \item \textbf{$t$-SNE} --- preserve \emph{neighbourhood probabilities}, with a
+        deliberate trick to stop everything crowding together.
+  \item \textbf{SOM / GTM} --- preserve \emph{topology}, by pinning the projection
+        to a grid of latent points.
+  \item \textbf{NMF} --- not a projection to visualise, but a decomposition into
+        \emph{additive parts}.
+\end{itemize}
+
+Two warnings that recur throughout, and that exams like to probe.
+First, the projection always goes to a \emph{lower}-dimensional space --- any
+statement claiming these methods project \emph{up} in order to spread points apart
+is a distractor.
+Second, a manifold method is only as good as its assumption: the last few sections
+show LLE, Isomap, and $t$-SNE all doing beautifully on Swiss rolls and digit
+images, then all failing on the gene-expression data --- because that data simply
+does not lie on a smooth low-dimensional manifold.
+
+\section{Projection Pursuit}
 
 \textbf{Projection pursuit} asks: among all linear projections
 $t = \bm{w}\T\bm{x}$ (normalised to zero mean, unit variance), which
@@ -2129,7 +2526,7 @@ via gradient descent.
         low-dimensional similarities:
         \[
           q_{ij} = \frac{(1+\|\bm{y}_i-\bm{y}_j\|^2)^{-1}}
-                        {\sum_{k\neq l}(1+\|\bm{y}_k-\bm{y}_l\|)^{-1}}.
+                        {\sum_{k\neq l}(1+\|\bm{y}_k-\bm{y}_l\|^2)^{-1}}.
         \]
         The heavier tail allows moderately distant points in the original space
         to be pushed further apart in 2-D without penalty, alleviating crowding.
@@ -2273,6 +2670,46 @@ component $j$ is obtained via Bayes' theorem:
 \]
 This \emph{soft} assignment (also called \emph{responsibility}) is the key
 quantity in the E-step of EM.
+
+It is worth naming the four pieces of that formula, because exam questions love
+to give you three of them and ask for the fourth:
+\begin{itemize}
+  \item the \textbf{prior} $p(j)=w_j$ --- how common component $j$ is overall,
+        before seeing any data;
+  \item the \textbf{likelihood} $p(\bm{x}\mid j,\theta_j)$ --- how well component
+        $j$ explains \emph{this particular} observation;
+  \item the \textbf{evidence} $p(\bm{x}\mid\theta)$ --- the denominator, i.e.\ the
+        total probability of the observation under the whole mixture;
+  \item the \textbf{posterior} $p(j\mid\bm{x},\theta)$ --- what we actually want:
+        the probability that component $j$ produced this observation.
+\end{itemize}
+They are tied together by
+$\text{posterior} = \dfrac{\text{prior}\times\text{likelihood}}{\text{evidence}}$,
+and any one of them can be recovered from the other three by rearranging.
+
+\begin{exbox}[title={Reading Bayes' rule in both directions}]
+\textbf{Forward (find the posterior).}
+A component has prior $p(j)=0.1$, the observation's likelihood under it is
+$p(\bm{x}\mid j)=0.5$, and the evidence is $p(\bm{x}\mid\theta)=0.2$.
+Then
+\[
+  p(j\mid\bm{x}) = \frac{0.1 \times 0.5}{0.2} = 0.25.
+\]
+\textbf{Backward (find the likelihood).}
+Now suppose you are told the prior $p(j)=0.1$, the \emph{posterior}
+$p(j\mid\bm{x})=0.3$, and the evidence $p(\bm{x}\mid\theta)=0.2$, and asked for
+the likelihood.
+Just rearrange the same equation:
+\[
+  p(\bm{x}\mid j) = \frac{p(j\mid\bm{x})\;p(\bm{x}\mid\theta)}{p(j)}
+  = \frac{0.3 \times 0.2}{0.1} = 0.60.
+\]
+\textbf{Sanity check on the intuition.}
+In the second case the posterior ($0.3$) is much larger than the prior ($0.1$) ---
+the observation made this component \emph{three times more plausible} than it was
+a priori. That can only happen if the component explains the data unusually well,
+so the likelihood must come out large. It does.
+\end{exbox}
 
 \textbf{Log-likelihood gradient.}
 The gradient of the log-likelihood with respect to component parameters
@@ -2471,11 +2908,32 @@ The only free parameters are the $l$ cluster centres $\bm{\mu}_j$.
 \end{enumerate}
 \end{defbox}
 
+\begin{intbox}[title={$k$-means \emph{is} EM, with the soft edges sanded off}]
+The two steps of $k$-means are not a coincidence --- they are the E-step and the
+M-step of a Gaussian mixture, simplified.
+\emph{Assignment step} = E-step: work out which component each point belongs to.
+In MoG this yields a soft responsibility spread over all components; force
+spherical equal covariances and hard membership and it collapses to ``pick the
+nearest centre''.
+\emph{Update step} = M-step: re-estimate the parameters from those assignments.
+In MoG that is the responsibility-weighted mean; with hard $0/1$ memberships the
+weighting disappears and it becomes the plain average of the assigned points.
+
+So $k$-means inherits EM's guarantee (the objective never increases, convergence
+to a \emph{local} optimum) and EM's weakness (that local optimum depends on where
+you started).
+This is also why running $k$-means several times from different initialisations is
+not a hack but a necessity.
+\end{intbox}
+
 \textbf{Properties}: $k$-means is fast and robust to outliers (hard assignment
 prevents a single outlier from shifting all means), but it is simple (only
 spherical, equal-size clusters) and sensitive to initialisation.
 A centre placed near outliers can remain stuck there,
 failing to model the true cluster distribution.
+Note that $k$ itself is \emph{never} learned --- it is a hyperparameter you choose
+in advance, and the algorithm will cheerfully carve your data into whatever number
+of clusters you asked for.
 
 \textbf{Fuzzy $k$-means} replaces the hard membership with a soft
 (``softmax'') membership controlled by a parameter $b > 1$:
@@ -2570,7 +3028,7 @@ the cluster means.
 The element-level distance $\|\cdot\|$ can be Euclidean, Manhattan, or
 Mahalanobis.
 
-\begin{intbox}[title={Linkage behaviour}]
+\begin{intbox}[title={Linkage behaviour --- and why single linkage chains}]
 \textbf{Complete linkage} avoids elongated clusters — it guarantees that
 the diameter (largest intra-cluster distance) stays small — but clusters
 may not be well-separated.
@@ -2578,6 +3036,24 @@ may not be well-separated.
 far apart; it is used for \emph{leave-one-cluster-out} cross-validation
 where an entire new group is withheld.
 \textbf{Average linkage (UPGMA)} is a commonly used compromise.
+
+The behaviour follows directly from which distance each criterion looks at.
+\emph{Single} linkage judges two clusters by their \textbf{closest} pair of
+points, so a cluster only needs \emph{one} point near another cluster to swallow
+it.
+Lay out a trail of stepping stones between two dense blobs and single linkage will
+happily walk across it, merging everything into one long straggly cluster ---
+this is \textbf{chaining}, and it is why single linkage produces those lopsided,
+uninformative dendrograms in the examples below.
+Its saving grace is exactly the same property: it can follow genuinely elongated,
+non-convex shapes that centroid-based methods would slice in half.
+
+\emph{Complete} linkage judges by the \textbf{farthest} pair, so a merge is
+penalised by its worst-case diameter.
+It therefore refuses to build sprawling clusters and yields compact, roughly
+spherical blobs --- but it will happily split a true elongated cluster in two, and
+it is sensitive to outliers (one distant point inflates the diameter and blocks an
+otherwise sensible merge).
 \end{intbox}
 
 \textbf{Ward's method} merges the pair of clusters whose union minimises the
@@ -2725,7 +3201,36 @@ The self-availability $a(k,k)$ grows when many other objects send positive
 responsibilities to $k$, confirming $k$ as a strong exemplar.
 Together the two messages implement a competition: candidates that gather
 broad support become exemplars; others do not.
+
+Read them as a negotiation.
+Responsibility is object $i$ telling candidate $k$: \emph{``here is how much I
+want you as my exemplar, given the other offers on the table''}.
+Availability is candidate $k$ replying to $i$: \emph{``here is how qualified I am
+to serve, given how many others also want me''}.
+Iterate the conversation until it settles, and the points everyone agrees on
+become the exemplars.
 \end{intbox}
+
+\begin{notebox}[title={Exam traps: which way do preference and damping go?}]
+Both of AP's knobs are easy to get backwards, and exams exploit that.
+
+\textbf{Preference $s(k,k)$} is how eager a point is to nominate \emph{itself} as
+an exemplar.
+Raise it and more points put themselves forward, so you get \textbf{more
+clusters}; lower it and you get \textbf{fewer}.
+(``The larger the preference, the smaller the number of cluster centres'' is the
+wrong direction.)
+This is what makes AP unusual: you never state the number of clusters directly ---
+but you have not really escaped the problem, you have only traded $k$ for a knob
+that controls it less predictably.
+
+\textbf{Damping $\lambda$} blends each new message with the previous one to stop
+the updates oscillating.
+More damping means the messages move more cautiously, so convergence is
+\textbf{slower but more stable} --- not faster.
+(``The larger the damping factor, the faster the convergence'' is likewise the
+wrong direction.)
+\end{notebox}
 
 \textbf{Limitation.} AP implicitly assumes spherical clusters of equal size
 because similarities are typically Euclidean distances.
@@ -2894,6 +3399,28 @@ and fails when cluster sizes differ substantially.
 % ==========================================================
 \chapter{Biclustering}
 % ==========================================================
+
+Ordinary clustering forces a bad assumption on gene-expression data: that a gene
+behaves the same way across \emph{all} samples.
+Biology does not work like that.
+A group of genes might be co-regulated only in tumour samples, and behave
+completely unremarkably everywhere else.
+Cluster over all the samples at once and that signal is diluted into nothing.
+
+Biclustering drops the assumption.
+Instead of grouping rows only, it looks for a \emph{subset of rows that behave
+coherently across a subset of columns} --- a rectangular block of the matrix,
+found by clustering rows and columns \emph{simultaneously}.
+The biological reading is compelling: a bicluster is a set of genes (a pathway or
+regulatory module) that switch on together, but only in the particular conditions
+or patients where that pathway is active.
+
+Two structural consequences separate this from ordinary clustering, and both are
+exam favourites.
+A row or column may belong to \textbf{several biclusters at once} (a gene can
+participate in more than one pathway), and it may belong to \textbf{none at all}
+(most genes are irrelevant to any given module).
+Ordinary clustering, by contrast, hands every point exactly one cluster.
 
 \section{Types of Biclusters}
 
@@ -3076,6 +3603,39 @@ marker gene.
 \chapter{Hidden Markov Models}
 % ==========================================================
 
+Everything so far treated data points as an unordered bag: shuffle the rows of
+$\bm{X}$ and PCA, ICA, and $k$-means give exactly the same answer.
+But a DNA strand is not a bag of nucleotides and a sentence is not a bag of words
+--- \emph{order carries the meaning}.
+Hidden Markov models are this course's answer to sequential data.
+
+The idea is that behind the sequence you observe, there is a second sequence you
+\emph{cannot} observe.
+A stretch of genome is visibly just letters (A, C, G, T), but each position is
+secretly in some state --- ``this is inside an exon'', ``this is inside an
+intron'' --- and that hidden state is what decides which letters tend to appear.
+You see the emissions; you want the states.
+
+Two assumptions make this tractable.
+The \textbf{Markov assumption} says the next hidden state depends only on the
+current one, not on the whole history.
+The \textbf{emission assumption} says the observed symbol depends only on the
+current hidden state.
+Both are obviously false in the strict sense, and both are useful enough to have
+carried an enormous amount of bioinformatics --- Pfam, HMMER, gene finders.
+They also come at a price, and the price is the theme that closes this chapter:
+an HMM has \emph{no way to remember something that happened long ago}, a
+limitation that will lead us to memory-augmented variants and, eventually, to the
+same problem LSTM was invented to solve.
+
+Three computational questions organise everything below:
+\begin{itemize}
+  \item \textbf{How likely is this sequence?} $\to$ the \emph{forward} algorithm.
+  \item \textbf{What hidden path most likely produced it?} $\to$ \emph{Viterbi}.
+  \item \textbf{How do I learn the probabilities in the first place?} $\to$
+        \emph{Baum--Welch}, which is just EM wearing a sequence costume.
+\end{itemize}
+
 \section{Hidden Markov Models in Bioinformatics}
 \label{sec:hmm-bioinformatics}
 
@@ -3104,6 +3664,17 @@ Profile HMMs have inherent limitations:
   \item Cannot detect higher-order correlations between positions.
   \item Cannot use a negative training set (only model what sequences look like, not what they are not).
 \end{itemize}
+
+The first of these is the deep one, and Sean Eddy --- the author of HMMER --- put
+it most memorably: an HMM's state path
+\begin{quote}
+\emph{``has no way of remembering what a distant state generated''.}
+\end{quote}
+Everything the model knows about the past is squeezed into \emph{which state it is
+in right now}.
+Keep this complaint in mind: it is the thread we pick up again in
+\cref{sec:miofhmm}, where it turns out to be the same vanishing-signal problem
+that LSTM was designed to solve.
 
 \textbf{Other applications.}
 Remote homology detection, sequence scoring, HMMs combined with phylogenetic trees,
@@ -3351,6 +3922,7 @@ This is why factorial HMMs are trained with approximate (e.g.\ variational)
 inference rather than plain Baum-Welch.
 
 \section{Memory Input Output Factorial Hidden Markov Models}
+\label{sec:miofhmm}
 
 Recall Sean Eddy's complaint from \cref{sec:hmm-bioinformatics} — an HMM's state
 path ``has no way of remembering what a distant state generated''. Long-range

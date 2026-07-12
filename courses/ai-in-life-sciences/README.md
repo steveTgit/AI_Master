@@ -2,13 +2,13 @@
 
 Covers applications of AI and machine learning in biological and medical domains.
 
-**Status:** reviewed — summary covers all 8 chapters; exam collection with worked solutions added
+**Status:** reviewed — summary reconciled against the SS26 slide decks (8 chapters + glossary); exam collection with worked solutions added
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `summary.pdf` | Complete lecture summary (8 chapters, compiled) |
+| `summary.pdf` | Complete lecture summary (8 chapters + list of abbreviations, compiled) |
 | `summary.tex` | LaTeX source |
 | `exams.pdf` | Curated old exam questions (blank practice set, answer key at the end) |
 | `exams.tex` | LaTeX source |

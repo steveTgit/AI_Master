@@ -70,6 +70,7 @@
 % ══════════════════════════════════════════════════════════
 \usepackage{graphicx}
 \usepackage{booktabs}         % \toprule, \midrule, \bottomrule
+\usepackage{longtable}      % multi-page List of Abbreviations
 \usepackage{array}            % Extended column types in tabular
 \usepackage{float}            % [H] float placement
 \usepackage{enumitem}
@@ -329,7 +330,7 @@
 %  DOCUMENT METADATA  (fill in for each new subject)
 % ══════════════════════════════════════════════════════════
 \newcommand{\coursetitle}{AI in Life Sciences}
-\newcommand{\documenttype}{Master Summary}
+\newcommand{\documenttype}{Master Summary \\ Edition 2026}
 \newcommand{\authorname}{Stefan Eder}
 \newcommand{\basedon}{Based on Lecture \emph{AI in Life Sciences} SS26}
 
@@ -504,9 +505,10 @@
 
 
 % ==========================================================
-%  CHAPTER 1 — DRUG DISCOVERY & CHEMINFORMATICS BACKGROUND
+%  CHAPTER 1 — DRUG DISCOVERY & CHEMINFORMATICS BACKGROUND   (Lecture 01)
 % ==========================================================
 \chapter{Drug Discovery and the Cheminformatics Toolbox}
+\label{chap:drugdiscovery}
 
 This first chapter is mostly scene-setting. Before we can let a machine
 learning model loose on molecules, we need to agree on three things: what
@@ -560,8 +562,16 @@ active small molecules.
 
 \subsection{A Bit of Pharmacology Vocabulary}
 
-Pharmacology is the science of how drugs interact with biological systems. Two
-words get used constantly and are easy to mix up:
+Pharmacology is the science of how drugs interact with biological systems. Almost
+every drug works by binding to a \textbf{target} --- a biological macromolecule,
+usually a protein (an enzyme, receptor, ion channel, \dots), whose activity the
+drug is meant to change. A molecule that binds such a target is called a
+\textbf{ligand}: it slots into a specific \textbf{binding site} (or ``pocket'') on
+the target and, by occupying it, modulates the target's function. ``Ligand'' is the
+word we will use throughout for the small molecules we model --- and in the
+ligand-based setting introduced below, the \emph{known ligands} of a target are
+literally our training data. Two further words get used constantly and are easy to
+mix up:
 
 \begin{itemize}
   \item \textbf{Pharmacodynamics (PD)} --- what the \emph{drug does to the body}
@@ -617,17 +627,30 @@ Drug discovery is iterative. People talk about the \textbf{DMTA cycle}:
 touches each spoke of the wheel --- generative models and matched molecular pairs
 for design, computer-aided synthesis planning for make, in-silico prediction for
 test, and sparse-data methods for analyse. Speeding up this loop is the practical
-goal behind almost everything that follows.
+goal behind almost everything that follows. Two things the exam likes to invert:
+\emph{design comes before make and test} (you cannot test a compound you have not
+yet designed and synthesised), and it is a genuine \emph{iterative cycle} --- one
+round of testing never removes the need for further design.
 
 \section{\starsec{Small Molecules and How We Represent Them}}
+A quick floor of chemistry first. \textbf{Atoms} consist of protons and neutrons
+in a nucleus surrounded by electrons in shells; the \emph{number of protons} fixes
+the element and orders the periodic table. Only a handful of elements matter for us
+--- carbon, hydrogen, oxygen and nitrogen make up the vast majority of the human
+body, with phosphorus, sulfur, and a few ions following. Bonding is driven by the
+outermost (\emph{valence}) electrons, the ones drawn in Lewis ``electron-dot''
+symbols.
 
-A drug-like small molecule is mostly a scaffold of \textbf{carbon--carbon} and
-\textbf{carbon--hydrogen} bonds, decorated with a few heteroatoms (oxygen,
-nitrogen, sulfur, halogens). Atoms are held together by \emph{covalent bonds}
-(shared electrons: single, double, triple, or delocalised ``aromatic''), and
-whole molecules attract each other through weaker \emph{intermolecular forces}
-(hydrogen bonding, van der Waals, ion--dipole, \dots). These weak forces are not
-a footnote: they are largely \emph{how a drug grips its target}.
+\medskip
+With that in place, a drug-like small molecule is mostly a scaffold of
+\textbf{carbon--carbon} and \textbf{carbon--hydrogen} bonds, decorated with a few
+heteroatoms (oxygen, nitrogen, sulfur, halogens). Atoms are held together by
+chemical \emph{bonds} --- chiefly \emph{covalent} (shared electrons: single,
+double, triple, or delocalised ``aromatic''), but also \emph{ionic} (electrons
+transferred rather than shared, as in \ce{NaCl}). Whole molecules then attract
+each other through weaker \emph{intermolecular forces} (hydrogen bonding, van der
+Waals, ion--dipole, \dots). These weak forces are not a footnote: they are
+largely \emph{how a drug grips its target}.
 
 A few structural subtleties matter for activity:
 
@@ -636,8 +659,13 @@ A few structural subtleties matter for activity:
         depending on which bonds can rotate, whether rings are planar, and how it
         interacts with its environment. Shape drives binding.
   \item \textbf{Isomers.} Molecules with the same formula but different atom
-        arrangements --- either constitutional (different connectivity) or
-        stereoisomers (same connectivity, different spatial arrangement).
+        arrangements. They split into \emph{constitutional} (structural) isomers
+        --- different connectivity --- and \emph{stereoisomers} --- same
+        connectivity, different spatial arrangement. Stereoisomers in turn are
+        either \emph{enantiomers} (non-superimposable mirror images) or
+        \emph{diastereomers} (everything else), the latter including
+        \emph{cis/trans} isomers and, as freely interconverting forms,
+        \emph{conformers} / \emph{rotamers}.
   \item \textbf{Chirality.} A molecule is \emph{chiral} if it is not identical to
         its mirror image, like a left and right hand.
 \end{itemize}
@@ -690,19 +718,36 @@ for each atom you look at growing circular neighbourhoods (diameter 0, 2, 4,
 \dots), record the local environment, and hash it into the vector. Hashing is
 cheap but causes \emph{bit collisions} (two different features landing on the same
 bit) --- a small price for fixed-length vectors you can compare in microseconds.
+ECFP is only the most common flavour; others extract different feature sets ---
+\emph{atom pairs} and \emph{atom triplets} (encoding pairs/triples of atoms with
+their topological distances) or \emph{(random) walks} up to a fixed length.
+Conversion runs one way: a molecule (e.g.\ parsed from a \texttt{SMILES} string
+into its graph) can always be reduced to a fingerprint, but the hashing is lossy
+and many-to-one, so the original graph --- let alone a \texttt{SMILES} --- cannot
+be reconstructed from it. Hence \texttt{SMILES} $\to$ graph $\to$ fingerprint is a
+standard cheminformatics pipeline, whereas fingerprint $\to$ \texttt{SMILES} does
+not exist.
+
+\newpage
 
 \paragraph{String representations.} Several text encodings exist; the important
 ones are:
 
 \begin{itemize}
+  \item \textbf{IUPAC names} --- the human-readable systematic nomenclature
+        (e.g.\ the chemical name a chemist would write). Unambiguous to a human
+        but awkward for computation, which is why line notations below exist.
   \item \textbf{SMILES} (\emph{Simplified Molecular Input Line Entry
-        Specification}) --- the dominant one. Atoms are letters (uppercase
+        System}) --- the dominant one. Atoms are letters (uppercase
         aliphatic \texttt{C}, lowercase aromatic \texttt{c}); bonds are implicit
         single, \texttt{=} double, \texttt{\#} triple; rings use matching digits;
         branches use parentheses; chirality uses \texttt{@}/\texttt{@@}. It is
         compact and ubiquitous --- but has \emph{strict syntax}, allows
         \emph{semantically invalid} strings, and is \textbf{non-unique} (one
         molecule has many valid SMILES).
+  \item \textbf{DeepSMILES} --- a SMILES variant that reworks ring-closure and
+        branch syntax to remove some classes of syntactic error, an intermediate
+        step on the road from SMILES to SELFIES.
   \item \textbf{SELFIES} (\emph{Self-referencing embedded strings}) --- designed
         to fix SMILES' fragility: every SELFIES string is a \emph{100\% valid}
         molecule, which is a big deal for generative models.
@@ -724,14 +769,90 @@ comparing SMILES strings, and naive train/test splits can accidentally place the
 (or InChIKeys) is the fix. This non-uniqueness is exactly why InChI exists.
 \end{notebox}
 
+\begin{starbox}[title={Exam-critical: representations --- what's reversible, what isn't}]
+The most-tested cheminformatics idea. \textbf{SMILES is not unique} --- one molecule
+has many valid SMILES; only a \emph{canonical} SMILES (fixed algorithm) gives a
+single representative string. \textbf{Direction matters:} the pipeline
+SMILES~$\to$~molecular graph~$\to$~fingerprint runs \emph{one way}. You can parse a
+SMILES back into a graph (that round-trip is fine), but a \textbf{fingerprint is
+lossy and hashed} (bit collisions), so you \emph{cannot} reconstruct a unique graph
+or SMILES from it --- ``fingerprint~$\to$~SMILES'' and ``a graph can always be
+rebuilt from a fingerprint'' are both wrong. Fingerprints are \textbf{binary/count
+vectors of 2D substructure}, used for similarity search and ML features --- they are
+\emph{not} a 3D representation. SMILES syntax trap: \emph{lowercase} letters denote
+\emph{aromatic} atoms, and malformed tokens like \texttt{[=O]} simply do not parse.
+\end{starbox}
+\newpage
+\begin{exbox}[title={Writing a SMILES by hand: structure $\to$ string}]
+A short procedure for transcribing a drawn skeleton:
+\begin{enumerate}
+  \item \textbf{Drop the hydrogens} --- they are implicit on C, N, O, \dots; keep
+        only the heavy atoms and their bonds.
+  \item \textbf{Walk a path} through the molecule from a starting atom (often a
+        chain end), writing each atom's letter: uppercase aliphatic
+        (\texttt{C}, \texttt{N}, \texttt{O}), \emph{lowercase} aromatic
+        (\texttt{c}, \texttt{n}, \texttt{o}).
+  \item \textbf{Insert bond symbols} between consecutive atoms: single is implicit,
+        \texttt{=} double, \texttt{\#} triple.
+  \item \textbf{Branches} --- when the path forks, write the side chain in
+        parentheses \texttt{(\dots)}, then continue the main path.
+  \item \textbf{Rings} --- break one ring bond and put the \emph{same digit} after
+        the two atoms that were joined (a ring-closure label).
+  \item \textbf{Brackets} \texttt{[\dots]} hold anything non-default: charges,
+        isotopes, or explicit chirality (\texttt{[NH4+]}, \texttt{[C@H]}).
+\end{enumerate}
+\textbf{Worked example --- pyruvic acid} ($\text{CH}_3\text{--C}(\text{=O})\text{--C}(\text{=O})\text{--OH}$):
+methyl carbon \texttt{C}; a carbonyl carbon with its double-bonded oxygen as a
+branch \texttt{C(=O)}; a second carbonyl carbon \texttt{C(=O)}; the acid hydroxyl
+oxygen \texttt{O} (its H implicit) $\Rightarrow$ \texttt{CC(=O)C(=O)O}.
+\textbf{Rings \& aromaticity:} benzene is six aromatic carbons closed with a shared
+digit, \texttt{c1ccccc1}; aspirin combines all the rules ---
+\texttt{O=C(C)Oc1ccccc1C(=O)O} (acetyl ester on an aromatic ring bearing a
+carboxyl). Any valid spelling parses to the same molecule; a \emph{canonical}
+SMILES just fixes one.
+\end{exbox}
+
+\paragraph{Geometry- and physics-based representations.} A further family keeps
+the molecule's \emph{3D structure} or its underlying \emph{physics}. These show up
+mainly in quantum- and property-prediction (QSPR) rather than ligand-based QSAR:
+
+\begin{itemize}
+  \item \textbf{3D geometry} --- each atom as a tuple $(Z_i, x_i, y_i, z_i)$:
+        nuclear charge plus Cartesian coordinates. Physically complete, but
+        \emph{conformer-dependent} and not invariant to rotation/translation.
+  \item \textbf{Coulomb matrix} --- a fixed-size square matrix encoding nuclear
+        Coulomb repulsion, off-diagonal
+        $M_{ij}\propto Z_iZ_j/\lVert\mathbf{r}_i-\mathbf{r}_j\rVert$ and diagonal a
+        fit to free-atom energies (defined only up to atom ordering).
+  \item \textbf{Bag of bonds / fragments} --- counts (a ``bag'') of bond types or
+        substructure fragments, discarding their global arrangement.
+  \item \textbf{Potentials} --- molecular interaction / electrostatic potentials
+        sampled in the space around the molecule.
+  \item \textbf{Electronic density} $\Psi$ --- the wavefunction / electron density:
+        the most information-rich but by far the most expensive to obtain.
+\end{itemize}
+
+\begin{intbox}
+The 2D representations above (graphs, fingerprints, strings) dominate
+\emph{ligand-based} work: they are cheap and need no 3D conformer. The
+geometry/physics representations carry more information but cost more and hinge on
+a chosen conformation --- which is why they live mostly in quantum-property
+prediction, not in the data-hungry QSAR this course is about.
+\end{intbox}
+
 Finally, modern pipelines increasingly use \textbf{learned} (continuous)
 representations produced by deep networks, and \textbf{biological} descriptors
 such as compound-induced transcriptomics, interaction fingerprints, or
 pharmacophores --- representations that try to capture \emph{biological} rather
 than purely \emph{chemical} similarity. We will come back to that distinction
-in Chapter~\ref{chap:vs}.
+in Chapter~\ref{chap:vsqsar}.
 
 \section{\starsec{Biological Activity and Assays}}
+We already carry a lot of informal biological knowledge about small molecules ---
+sugars taste sweet, ibuprofen relieves pain, caffeine is a stimulant. Historically
+that knowledge accrued in experts' heads; today we acquire and store it
+\emph{systematically}, as measured numbers attached to (compound, target) pairs.
+The unit of that measurement is the assay.
 
 \textbf{Bioactivity} is a compound's ability to interact with a biological system
 and produce a \emph{measurable response}. We find out about it by running a
@@ -753,6 +874,47 @@ flavours: \emph{in vitro} (cell-free or cell-based), \emph{ex vivo}
 \emph{binding} (affinity to a target) or \emph{function} (an actual biological
 response); and \emph{high-throughput screening (HTS)} automates testing on a large
 scale.
+
+\begin{exbox}[title={An \emph{in vitro} assay: the Ames test}]
+A classic cell-based example is the \textbf{Ames test} for mutagenicity. A
+histidine-dependent \emph{Salmonella} strain is plated with the test compound (and
+rat-liver extract to mimic metabolism) on histidine-poor medium. Only
+back-mutated (\emph{his$^-$}$\to$\emph{his$^+$}) revertants can grow; a colony
+count well above the natural-revertant control flags the compound as a likely
+mutagen. The endpoint here is \emph{qualitative-to-counted}, not an XC$_{50}$.
+\end{exbox}
+
+\begin{starbox}[title={Exam-critical: \emph{in vitro} vs.\ \emph{in vivo}}]
+A definitional trap. \textbf{\emph{In vitro}} means ``in glass'' --- a test tube,
+plate, or cell culture (cell-free \emph{or} cell-based); it does \emph{not} mean
+``in a living organism''. \textbf{\emph{In vivo}} is the whole living organism, and
+\textbf{\emph{ex vivo}} is excised tissue. So an option that calls \emph{in vitro}
+``testing in a living organism'' is wrong (that is \emph{in vivo}). Otherwise,
+assays do measure a biological response/function, are run over a concentration
+range (dose--response), and are physical wet-lab experiments --- those statements
+are all correct.
+\end{starbox}
+\newpage
+\noindent Which branch of pharmacology you are probing dictates the assay you run
+and the number it returns:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Branch} & \textbf{Example assay} & \textbf{Typical output(s)} \\
+\midrule
+Pharmacodynamics        & Receptor binding assay         & Binding affinity $K_i$, IC$_{50}$ \\
+Pharmacokinetics        & Microsomal stability assay     & Metabolic half-life, clearance rate \\
+Toxicology              & Cytotoxicity (cell viability)  & CC$_{50}$ (50\% cell death), LD$_{50}$ (lethal dose) \\
+Drug--drug interactions & CYP450 inhibition assay        & IC$_{50}$ for enzyme inhibition \\
+\bottomrule
+\end{tabular}
+\caption{Representative assays and their endpoints across the main pharmacology
+branches. The XC$_{50}$ family (next subsection) generalises IC$_{50}$,
+CC$_{50}$, and related half-maximal measures.}
+\end{table}
 
 \subsection{Dose--Response Curves and the \texorpdfstring{XC$_{50}$}{XC50} Family}
 
@@ -794,6 +956,8 @@ rather than IC$_{50}$ keeps the target variable on a sane, roughly Gaussian scal
 Other affinity measures ($K_i$, $K_d$) play the same role. The takeaway: these
 numbers are the \emph{labels} our QSAR models will try to predict.
 
+\newpage
+
 \subsection{\starsec{Pharmacokinetics: ADME and Drug-Likeness}}
 
 Good binding is necessary but not sufficient. The compound also has to reach its
@@ -815,9 +979,19 @@ A compound is more likely to be orally bioavailable if it has
 \emph{no more than} 5 hydrogen-bond donors, \emph{no more than} 10 hydrogen-bond
 acceptors, molecular weight $< 500$, and $\log P < 5$. The
 \textbf{Quantitative Estimate of Drug-likeness (QED)} is a softer, continuous
-alternative: it scores how closely a molecule's descriptors resemble those of
+alternative: it scores how closely a molecule's \emph{eight} physicochemical descriptors resemble those of
 $\sim$771 approved oral drugs.
 \end{defbox}
+
+\begin{starbox}[title={Exam-critical: what good ADME does (and doesn't) buy}]
+\textbf{ADME = pharmacokinetics} (what the body does to the drug over time), and
+Lipinski's Ro5 is a cheap drug-likeness \emph{proxy} for it --- both true. The trap
+is sufficiency: good ADME is \textbf{necessary but not sufficient} for an effective
+drug. It only means the compound can reach its target intact; efficacy still needs
+actual target \emph{binding} and the right pharmacodynamics. Also true and easily
+missed: ADME endpoints such as \emph{clearance} depend on complex metabolism and are
+notoriously hard to model.
+\end{starbox}
 
 \subsection{\starsec{Why the Data Is Painful}}
 
@@ -838,7 +1012,7 @@ noisy}.
 Limited + imbalanced + noisy is the default, not the exception. It is why so much
 of QSAR is about \emph{data-efficient, robust} learning and careful evaluation,
 rather than chasing the fanciest architecture. Keep this list in mind --- it
-justifies almost every design choice in Chapter~\ref{chap:qsar}.
+justifies almost every design choice in Chapter~\ref{chap:vsqsar}.
 \end{notebox}
 
 \section{\starsec{Where the Data Lives: Databases and Chemical Space}}
@@ -897,13 +1071,13 @@ archives or in non-electronic literature.}
 \end{table}
 
 \begin{notebox}[title={The data is mostly holes}]
-Take ChEMBL: $\sim$2.5M compounds and $\sim$16k targets, but only
-$\sim$21M activity values. If you arrange compounds against assays as a matrix,
-roughly \textbf{0.0005\%} of the cells are filled --- about a dozen measurements
-per compound. QSAR modelling is, to a large extent, the problem of doing
-something useful with an almost-empty matrix.
+Take ChEMBL: $\sim$2.5M compounds, $\sim$16k targets and $\sim$1.7M distinct
+assays, but only $\sim$21M activity values --- on the order of $\sim$12 datapoints
+per assay and $\sim$8 per compound. If you arrange compounds against assays as a
+matrix, roughly \textbf{0.0005\%} of the cells are filled. QSAR modelling is, to a
+large extent, the problem of doing something useful with an almost-empty matrix. 
 \end{notebox}
-
+\newpage
 \section{\starsec{From SAR to QSAR (and QSPR)}}
 
 The empirical bedrock under all of this is the \textbf{structure--activity
@@ -922,12 +1096,25 @@ stability). QSPR data is usually easier and cheaper to obtain, because it does
 not involve a living system.
 \end{defbox}
 
+\begin{starbox}[title={Exam-critical: what QSAR is --- and isn't}]
+\textbf{Scope:} QSAR maps \emph{molecule~$\to$~property} (activity, toxicity).
+Predicting 3D \emph{protein} structure (e.g.\ AlphaFold) is \emph{structure
+prediction}, and genome mapping is genomics --- neither is QSAR, even though both
+are ``AI in life science''. \textbf{Data shape:} typical bioactivity datasets are
+\textbf{limited, imbalanced and noisy} --- hundreds to a few thousand points per
+target (\emph{not} millions), far more inactives than actives (\emph{not} balanced),
+with measurement noise, and heavily clustered into \emph{analog series} (one
+scaffold, small variations). Any option calling the data ``large, balanced and
+clean'' is the reverse of reality.
+\end{starbox}
+
 QSAR is older than machine learning by a century. A quick lineage: Crum-Brown \&
 Fraser (1868) proposed that physiological action depends on chemical composition;
 Richet (1893) linked cytotoxicity inversely to water solubility; Meyer and Overton
 (\textasciitilde 1900) tied narcotic action to oil/water partitioning; and
 Hansch \& Muir (1962) related activity to Hammett constants and hydrophobicity ---
 widely called the \emph{birth of QSAR}.
+
 
 The \emph{modelling} methods then evolved roughly as:
 
@@ -949,22 +1136,26 @@ $\sim$2000s & SVMs, random forests, gradient boosting \\
 Notice the through-line: \emph{represent} the molecule as numbers, then
 \emph{regress or classify} activity from those numbers. The decades just changed
 \emph{how} we get the numbers and \emph{how flexible} the function $f$ is. With
-that framing in hand, the next two chapters are simply: how do we \emph{use} such
-a model to screen a library (Chapter~\ref{chap:vs}), and how do we \emph{build and
-trust} one in the first place (Chapter~\ref{chap:qsar})?
+that framing in hand, the next chapter is simply: how do we \emph{use} such a
+model to screen a library, and how do we \emph{build and trust} one in the first
+place (both halves of Chapter~\ref{chap:vsqsar})?
 \end{intbox}
 
 
 % ==========================================================
-%  CHAPTER 2 — (LIGAND-BASED) VIRTUAL SCREENING
+%  CHAPTER 2 — VIRTUAL SCREENING & QSAR MODELING   (Lecture 02)
 % ==========================================================
-\chapter{(Ligand-Based) Virtual Screening}
-\label{chap:vs}
+\chapter{Virtual Screening \& QSAR Modeling}
+\label{chap:vsqsar}
 
 We now have molecules, representations, and a notion of activity. The first thing
 we want to \emph{do} with all that is sift an enormous pile of candidate molecules
 down to the handful worth testing in the lab. That is \textbf{virtual screening
-(VS)}, and it is the central task of computer-aided drug design.
+(VS)}, and it is the central task of computer-aided drug design. The natural
+second question --- how do we \emph{build} the model that does the sifting, and
+how do we know whether to trust it? --- is \textbf{QSAR modelling}, the second
+half of this chapter. The two belong together: VS is what we want to do, QSAR is
+how we learn to do it well.
 
 \section{\starsec{The Idea: Screening a Library In Silico}}
 
@@ -986,7 +1177,7 @@ The mental model is a \emph{funnel}, and the model's job is \textbf{ranking}, no
 perfect prediction. We do not need the exact activity of all million molecules ---
 we need the truly active ones to float to the top of the list so that the limited
 assay budget is spent where it counts. This ``ranking matters'' view will shape
-how we evaluate models in Chapter~\ref{chap:qsar}.
+how we evaluate models later in this chapter.
 \end{intbox}
 
 \subsection{Ligand-Based vs.\ Structure-Based VS}
@@ -1009,6 +1200,18 @@ Chapter~1:
 
 \noindent The rest of this chapter is \textbf{ligand-based}, in two modes:
 similarity search and model-based search.
+
+\begin{starbox}[title={Exam-critical: four definitions students swap}]
+\textbf{SBDD vs.\ LBDD:} structure-based uses the target's \emph{3D structure};
+ligand-based uses \emph{known ligands without} the target structure (the trap
+reverses these). Molecular fingerprints are an LBDD tool, and LBDD \emph{is} used to
+predict activity of untested compounds by analogy --- selection also weighs ADME and
+structural alerts, not bioactivity alone. \textbf{Similarity search vs.\ model-based
+search:} similarity search \emph{retrieves neighbours} of a query molecule (good
+when only a few actives are known); model-based search trains a \emph{supervised
+model} on labelled actives and inactives (and, being ligand-based, needs \emph{no}
+target 3D structure). The trap reverses these two definitions too.
+\end{starbox}
 
 \section{\starsec{Similarity Search}}
 
@@ -1105,7 +1308,9 @@ learns its own rules. Concretely, fit a function
 that maps a molecule's representation $\xvec$ either to a class (active vs
 inactive) or to a continuous activity value, then apply it across the library and
 rank by the predicted score. This is the bridge into QSAR modelling proper, which
-is the whole of Chapter~\ref{chap:qsar}.
+fills the rest of this chapter.
+
+\newpage
 
 \section{\starsec{Filtering and Clustering the Hits}}
 
@@ -1153,8 +1358,8 @@ Two broad clustering styles appear:
         substructure.
 \end{itemize}
 
-This idea of similarity-aware grouping comes back with a vengeance in
-Chapter~\ref{chap:qsar}, where the \emph{same} clustering is used not to diversify
+This idea of similarity-aware grouping comes back with a vengeance later in this
+chapter, where the \emph{same} clustering is used not to diversify
 hits but to build honest train/test splits.
 
 \subsection{A Note on Tooling}
@@ -1167,19 +1372,18 @@ ML models come from \texttt{sklearn} (random forests, SVMs); and neural networks
 use \texttt{PyTorch}/\texttt{TensorFlow}/\texttt{Keras}.
 
 
-% ==========================================================
-%  CHAPTER 3 — QSAR MODELING
-% ==========================================================
-\chapter{QSAR Modeling}
-\label{chap:qsar}
+% ----------------------------------------------------------
+%  (former Chapter 3 — QSAR MODELING; now the second half of this chapter)
+% ----------------------------------------------------------
 
-Chapter~\ref{chap:vs} used a model as a black box to rank a library. This chapter
-opens the box. How do we actually \emph{build} a model
+\newpage
+\section{\starsec{The QSAR Modelling Pipeline}}
+
+So far we used a model as a black box to rank a library; we now open the box. How
+do we actually \emph{build} a model
 $f_{\params}(\text{molecule}) = \text{activity}$, and --- just as important --- how
 do we \emph{know whether to trust it}? With molecular data, that second question
 turns out to be where most of the real difficulty lives.
-
-\section{\starsec{The QSAR Modelling Pipeline}}
 
 A QSAR project is a pipeline, and it pays to see the whole assembly line before
 zooming in:
@@ -1208,10 +1412,25 @@ The same discipline applies to scaling, imputation, and any other ``learned''
 preprocessing.
 \end{notebox}
 
+A useful way to organise the representation zoo is by \emph{dimensionality}, since
+it tends to predict which model family fits:
+\begin{itemize}
+  \item \textbf{0D --- descriptors}: handcrafted molecular features \emph{or}
+        \textbf{NN-generated (learned)} descriptors, fed to gradient-boosted trees
+        (\textbf{CatBoost}) or feed-forward DNNs.
+  \item \textbf{1D --- text}: SMILES strings, fed to a \textbf{Transformer} or CNN.
+  \item \textbf{2D --- graph}: the molecular graph, fed to graph networks
+        (\textbf{KGCNN}-style models).
+\end{itemize}
+The richer representations from Chapter~1 (potentials, weighted graphs, Coulomb
+matrices, bag of bonds, 3D geometry, electronic density) carry over unchanged; the
+point here is only that representation and method are chosen \emph{together}.
+
 \subsection{\starsec{Coping With Limited, Noisy, Imbalanced Data}}
 
 Recall the pain points from Chapter~1: \$10k labels, datasets of 20--500
-molecules, far more inactives than actives, and $\sim$0.5 log-unit noise. Two
+molecules (high-throughput campaigns reach 10k--100k, but are noisier), far more
+inactives than actives, and $\sim$0.5 log-unit noise. Two
 pragmatic responses recur throughout QSAR:
 
 \begin{itemize}
@@ -1240,7 +1459,7 @@ have to fit each other:
 \toprule
 \textbf{Representation} & \textbf{Methods it pairs well with} \\
 \midrule
-Descriptors / fingerprints & linear models, RF, gradient boosting, SVM (standard / Tanimoto kernel), feed-forward NN \\
+Descriptors / fingerprints & linear models, RF, gradient boosting, SVM (standard kernel), feed-forward NN \\
 SMILES strings             & RNN/LSTM, CNN or transformer, SVM (string kernel) \\
 Molecular graph            & graph neural networks, SVM (graph / molecule kernel) \\
 Bag of fragments           & SVM (Tanimoto kernel), DNN with set pooling \\
@@ -1268,9 +1487,10 @@ good \emph{by chance}.
 \begin{notebox}[title={Hyperparameter selection bias $\to$ use nested CV}]
 Never tune hyperparameters on the same data you report performance on. The clean
 solution is \textbf{nested cross-validation}: an \emph{inner} loop selects
-hyperparameters (and features), and a separate \emph{outer} loop estimates
-generalisation. The outer loop never sees the choices the inner loop made on its
-test folds, so the final number is unbiased.
+hyperparameters, and a separate \emph{outer} loop estimates generalisation. Any
+automated \emph{feature selection} belongs to the outer loop too --- performed
+once per outer fold, on that fold's training portion only. The outer loop never
+sees the choices made on its test folds, so the final number is unbiased.
 \end{notebox}
 
 \section{\starsec{The Big QSAR Pitfall: Data Splits}}
@@ -1294,6 +1514,20 @@ has already seen?'' But the question we actually care about in drug discovery is
 ``can it generalise to \emph{new} scaffolds?'' Those are very different questions,
 and a random split silently swaps the hard one for the easy one.
 \end{intbox}
+
+\begin{starbox}[title={Exam-critical: honest splits and the defensible workflow}]
+This is the most-tested QSAR idea. \textbf{Compound-series bias:} because datasets
+are full of close analogues, a \emph{random} split puts near-twins in both train
+and test, so the test set is partly memorised and generalisation error is
+\emph{under}estimated --- a random split does \emph{not} ``eliminate bias'', it is
+the bias. Keep it distinct from generic feature/hyperparameter leakage and from
+class imbalance --- different problems. \textbf{Better splits:} cluster/scaffold
+and temporal splits make the test set structurally (or chronologically) distant.
+\textbf{Defensible workflow:} \emph{split first}, then do \emph{all} feature
+selection and hyperparameter tuning on the training data only, and touch the test
+set \emph{once}. Selecting features on the full dataset before splitting, or tuning
+on the test set, both leak.
+\end{starbox}
 
 \subsection{Smarter Splits and Cross-Validation}
 
@@ -1377,15 +1611,33 @@ sensitivity (TPR), specificity (TNR), $F_1$, and Matthews' correlation coefficie
 they grade the model's scoring directly:
 
 \begin{itemize}
-  \item \textbf{AUC-ROC} --- the model's ability to separate positives from
+  \item \textbf{AUC-ROC} (area under the receiver operating characteristic, ROC,
+        curve) --- the model's ability to separate positives from
         negatives across all thresholds.
-  \item \textbf{AUC-PR} / \textbf{Average Precision} --- the precision/recall
+  \item \textbf{AUC-PR} (area under the precision--recall curve) /
+        \textbf{Average Precision} --- the precision/recall
         trade-off, much more informative than ROC under heavy imbalance.
-  \item \textbf{BEDROC} --- a variant of ROC that rewards \emph{early recognition}
+  \item \textbf{BEDROC} (Boltzmann-enhanced discrimination of ROC) --- a variant of
+        ROC that rewards \emph{early recognition}
         (getting actives near the top of the list).
   \item \textbf{Enrichment Factor (EF)} --- how much better than random the true-positive
         rate is within the top-$k$ predictions.
 \end{itemize}
+
+\newpage
+
+\begin{starbox}[title={Exam-critical: which metrics reward \emph{early} recognition}]
+In virtual screening only the very top of the ranking is ever tested, so the
+metric must reward getting actives there. \textbf{Only BEDROC and the Enrichment
+Factor are early-recognition metrics} --- BEDROC by exponentially weighting the top
+of the list, EF by counting actives in the top $x\%$. The trap: \textbf{AUC-ROC},
+\textbf{AUC-PR}, \textbf{Average Precision} and the \textbf{precision--recall curve}
+all summarise the \emph{whole} ranking and weight every position (roughly) equally,
+so none of them is early-recognition-specific --- AUC-ROC is the classic ``odd one
+out''. Concretely: to pick a model when only the top $1\%$ can be assayed, use EF
+near the $1\%$ cutoff or BEDROC --- \emph{not} accuracy at a $0.5$ threshold and
+\emph{not} global AUC-ROC.
+\end{starbox}
 
 \begin{notebox}[title={Imbalance breaks accuracy}]
 Bioactivity classification is overwhelmingly inactive-heavy, so a lazy model that
@@ -1422,12 +1674,27 @@ The output layer encodes the question. \textbf{Sigmoid} units = ``is it active a
 different scientific question.
 \end{intbox}
 
+\begin{starbox}[title={Exam-critical: target \emph{prediction} vs.\ \emph{identification}}]
+\textbf{Target identification} (= deconvolution = target fishing): given one
+molecule and several candidate proteins present at once, find the \emph{single most
+likely} target --- a one-of-$K$ \textbf{multi-class} problem (softmax). \textbf{Target
+prediction}: given a molecule, predict activity against \emph{each} target
+independently (any number may be ``yes'') --- a \textbf{multi-task / multi-label}
+problem (sigmoid). Both traps invert this: ``deconvolution finds \emph{all} binding
+proteins'' (no --- that is prediction) and ``\emph{multi-task} does deconvolution''
+(no --- multi-class does). Mirror trap: ranking a whole library against \emph{one}
+protein is not deconvolution at all --- that is virtual screening.
+\end{starbox}
+
 \section{\starsec{Drug Synergy}}
 
 A final, different prediction task: combinations. \textbf{Synergy} means the
 combined effect of two (or more) compounds is \emph{larger than the sum} of their
-separate effects. Predicting whether a pair is \emph{synergistic} or
-\emph{antagonistic} is hugely useful --- combination therapy is standard for
+separate effects (super-additive); the mirror case, \textbf{antagonism}, is when
+the combined effect is \emph{smaller than the sum} (sub-additive), and a combined
+effect that simply \emph{equals} the additive expectation means ``no interaction''.
+Predicting whether a pair is \emph{synergistic} or \emph{antagonistic} is hugely
+useful --- combination therapy is standard for
 cancer and HIV, while some pairings backfire (grapefruit juice antagonises many
 drugs and can make them toxic).
 
@@ -1452,6 +1719,19 @@ you have \emph{already} partly explored. To estimate performance on genuinely
 combinations out'' (and, more strictly, leave whole drugs or whole cell lines out).
 \end{notebox}
 
+\begin{starbox}[title={Exam-critical: synergy vs.\ antagonism, plus symmetry}]
+Two facts, often combined in one trick question. \textbf{Definition:} synergy =
+combined effect \emph{greater} than additive; antagonism = combined effect
+\emph{smaller} than additive (a distractor that calls the super-additive case
+``antagonism'', or the sub-additive case ``synergy'', is wrong). \textbf{Property:}
+a sensible synergy model must be \textbf{permutation-invariant} --- predicting on
+$(A,B)$ and $(B,A)$ must give the same answer. The fully-correct option pairs
+\emph{super-additive} with \emph{order-invariant}; watch for options that get the
+definition right but make the model order-\emph{dependent}, or vice versa. Loewe
+additivity is the standard ``no-interaction'' reference the comparison is made
+against.
+\end{starbox}
+
 \begin{intbox}
 Notice the recurring villain of this chapter: \textbf{data leakage}. It shows up as
 random splits over compound series, as compounds shared across multi-task splits,
@@ -1470,20 +1750,25 @@ the subject of the chapters that follow.
 
 
 % ==========================================================
-%  CHAPTER 4 — ADVANCED METHODS FOR QSAR
+%  CHAPTER 3 — ADVANCED METHODS FOR QSAR   (Lecture 03)
 % ==========================================================
 \chapter{Advanced Methods for QSAR}
 \label{chap:advanced}
 
-The QSAR models of Chapter~\ref{chap:qsar} treated molecules as fixed feature
+The QSAR models of Chapter~\ref{chap:vsqsar} treated molecules as fixed feature
 vectors (descriptors, fingerprints) and fed them to off-the-shelf learners. This
 chapter upgrades both ends: representations that are \emph{learned} from the
 molecular graph itself, and learning settings tailored to the small, biased,
 multi-modal data that life sciences actually produce --- graph neural networks,
 proteochemometrics and contrastive learning, few-shot and active learning, and
-multiple-instance learning.
+multiple-instance learning. Zooming out, deep models for molecular property
+prediction fall into a few lineages --- \emph{descriptor-based} (fixed feature
+vectors, as in Chapter~\ref{chap:vsqsar}), \emph{graph-based} (representations
+learned from the molecular graph, the focus here), and \emph{SMILES/string-based},
+with \emph{hybrid} models combining them --- a useful map for the methods that
+follow.
 
-\section{Molecules as Graphs}
+\section{\starsec{Molecules as Graphs}}
 
 A molecule is naturally a \textbf{graph} $G=(\mathcal{V},\mathcal{E})$: atoms are
 nodes, bonds are edges, and both can carry labels. Graphs are extremely general
@@ -1512,7 +1797,21 @@ $u$ if $g(u(\xvec)) = g(\xvec)$, and \emph{equivariant} if
 $g(u(\xvec)) = u(g(\xvec))$. Permutation-invariant pooling (sum/mean/max) is the
 standard way to get graph-level invariance.
 
-\section{Graph Neural Networks}
+\newpage
+
+\begin{starbox}[title={Exam-critical: graphs in, symmetries out}]
+A molecular graph is \textbf{two matrices} --- a node-feature matrix $\bm{X}$ whose
+atom features are \emph{atomic number, hybridisation, formal charge}, and an
+\textbf{adjacency/edge matrix} $\bm{A}$. Bond type (single/double/aromatic) lives in
+the \textbf{edge features}, and a GNN uses \emph{both} node \emph{and} edge
+information --- ``only node features'' and ``bond type cannot be included'' are both
+false. \textbf{Relabel} the atoms without changing connectivity: node
+representations are \textbf{equivariant} (they permute the same way), the
+graph-level prediction is \textbf{invariant} (unchanged --- the same graph,
+reindexed). The trap is ``the prediction may change because $\bm{A}$ was reordered''.
+\end{starbox}
+
+\section{\starsec{Graph Neural Networks}}
 
 \subsection{The Message-Passing Framework}
 
@@ -1530,6 +1829,14 @@ where $\phi,\psi$ are small MLPs and the aggregation must be
 \emph{permutation-invariant} (it sums over an unordered neighbourhood).
 \end{thmbox}
 
+\begin{starbox}[title={Exam-critical: the one-layer order is message $\to$ aggregate $\to$ update}]
+One MPNN layer is exactly \textbf{message generation $\to$ aggregation $\to$
+update}, in that order --- the \textbf{update must come last}. ``Graph convolution''
+is \emph{not} a separate sub-step (a GCN is a special case of the whole layer), and
+aggregation is \emph{not} the final step: orderings like ``message, graph
+convolution, aggregation'' or ``graph convolution, message, update'' are the traps.
+\end{starbox}
+
 After $T$ rounds, a permutation-invariant \textbf{read-out}
 $\hat{y} = R(\{\bm{h}_1,\dots,\bm{h}_N\})$ pools the atom vectors into one
 molecule vector for the final prediction --- e.g.\
@@ -1537,6 +1844,8 @@ $\hat y = \bm{\omega}^{\!\T}\frac{1}{|G|}\sum_{v\in G}\bm{h}_v$. The choice of
 aggregation matters: \emph{sum} is the most expressive but propagates signal
 poorly, \emph{mean}/\emph{max} are smoother but lose information; variance-preserving
 aggregation is a recent compromise.
+
+\newpage
 
 \begin{exbox}[title={Message passing by hand: a 4-atom chain}]
 \emph{Intuition first --- think of \textbf{gossip}.} Each atom knows a little; every
@@ -1574,6 +1883,12 @@ $=9{+}18{+}22{+}16{=}65$ --- and feed that to an MLP to predict the molecule's
 property.
 \end{exbox}
 
+It helps to place MPNNs on a spectrum of how a node combines its neighbours:
+\emph{convolutional} layers use \textbf{fixed} coefficients (like a CNN; a GCN is
+exactly this case), \emph{attentional} layers use \textbf{learned attention
+weights} (like a Transformer), and full \emph{message-passing} layers compute a
+\textbf{learned message} per edge --- the most general of the three.
+
 A \textbf{graph convolutional network (GCN)} is a restricted MPNN that does
 everything in one matrix step,
 $\bm{H}^{l+1} = \sigma\!\big(\tilde{\bm{D}}^{-1/2}\tilde{\bm{A}}\tilde{\bm{D}}^{-1/2}\bm{H}^l\bm{W}^l\big)$
@@ -1582,9 +1897,25 @@ same weight. The practical QSAR workhorse is \textbf{ChemProp}, a \emph{directed
 MPNN (D-MPNN) that passes messages along bonds (each undirected bond becomes two
 directed edges); for best performance it is combined with classical descriptors.
 For 3D tasks, \textbf{E($n$)-equivariant} GNNs (EGNN) additionally track atom
-coordinates and stay equivariant to rotations/translations.
+coordinates and stay equivariant to rotations/translations. (The equivariance is
+cheap to see: a message built from \emph{interatomic distances}
+$\norm{\xvec_i-\xvec_j}$ is unchanged by any rotation $\bm{R}$ and translation
+$\bm{t}$, because $\norm{\bm{R}\xvec_i+\bm{t}-(\bm{R}\xvec_j+\bm{t})}=\norm{\xvec_i-\xvec_j}$.)
 
-\subsection{Where GNNs Struggle}
+\begin{notebox}[title={A zoo of 3D message-passing layers --- and their symmetry group}]
+The same message/aggregate/update skeleton yields different \emph{geometric}
+guarantees depending on what the message is allowed to see:
+\emph{plain GNN} (uses only node/edge features) --- \textbf{non-equivariant} to
+geometry; \emph{Radial Field} and \emph{EGNN} (use distances) ---
+\textbf{E($n$)-equivariant}; \emph{SchNet} (uses distances, predicts a scalar) ---
+\textbf{E($n$)-invariant}; \emph{TFN} (Tensor Field Networks, uses directional
+tensors) --- \textbf{SE($3$)-equivariant}. Rule of thumb: feed the network only
+\emph{invariant} geometric quantities (distances, angles) and the output is
+automatically invariant; track \emph{coordinates} and update them with
+direction vectors and you get equivariance.
+\end{notebox}
+
+\subsection{\starsec{Where GNNs Struggle}}
 
 GNNs are not a free lunch, and the lecture is explicit about their failure modes:
 
@@ -1601,16 +1932,29 @@ GNNs are not a free lunch, and the lecture is explicit about their failure modes
         travel far enough across a large molecule.
 \end{itemize}
 
+\begin{starbox}[title={Exam-critical: tell the four GNN pathologies apart}]
+The exam tests the \emph{distinction}, not the names.
+\textbf{Limited expressivity}: cannot separate some non-isomorphic graphs (bounded
+by the Weisfeiler--Lehman test). \textbf{Oversmoothing}: \emph{too many} layers
+$\Rightarrow$ node embeddings converge, so \emph{local} atom environments become
+indistinguishable. \textbf{Oversquashing}: distant signal is crushed through narrow
+graph \emph{bottlenecks}, so \emph{long-range} interactions are lost.
+\textbf{Under-reaching}: \emph{too few} layers $\Rightarrow$ information never
+reaches distant atoms. Mind the mirror image --- oversmoothing is the ``too many
+layers'' failure, under-reaching the ``too few'' one; oversquashing is about
+bottlenecks, not layer count.
+\end{starbox}
+
 \begin{notebox}[title={GNN vs.\ Random Forest --- a realistic comparison}]
 GNNs are not ``always better''. On the small, feature-rich datasets typical of
 QSAR, a \textbf{random forest} often \emph{overfits less} and is \emph{more
 interpretable} (you can read off feature importances) than a GNN, while GNNs are
 compute-hungry, struggle with very large/complex graphs and long-range effects,
 and are \emph{not} less sensitive to noisy data. The honest verdict from
-Chapter~\ref{chap:qsar} still holds: no single architecture wins everywhere.
+Chapter~\ref{chap:vsqsar} still holds: no single architecture wins everywhere.
 \end{notebox}
 
-\section{Using Target Information: Proteochemometrics and Multimodal Models}
+\section{\starsec{Using Target Information: Proteochemometrics and Multimodal Models}}
 
 Plain QSAR has \textbf{no target awareness}: $f_{\params}(\text{molecule})$ knows
 nothing about \emph{which} protein it is predicting activity for, so it cannot
@@ -1623,17 +1967,47 @@ pretrained protein language model (e.g.\ ESM). Pooling data across targets gives
 the price of limited applicability to truly novel targets. PCM is one instance of
 a \textbf{multimodal model} --- an architecture that integrates several modalities
 (molecule, protein, image, text) and fuses them early, jointly, or late to exploit
-their complementary information.
+their complementary information. The point worth absorbing is how \emph{many}
+modalities a single molecule offers: \emph{structural} (2D graph, SMILES/InChI
+strings, 3D geometry, fingerprints, descriptors, electron density, line drawings),
+\emph{textual} (assay descriptions, free scientific text), \emph{reaction-based}
+(reactions, reaction templates), and \emph{activity-based} (bioassay-activity
+fingerprints) --- alongside accompanying modalities such as the protein target,
+microscopy images, and organism. Multimodal models exist precisely to fuse several
+of these.
 
-\subsection{Contrastive Learning}
+Concretely, PCM architectures have evolved from \emph{concatenating non-learned
+molecule and target encodings} at the input of a classical learner (random forest,
+SVM, FNN) to fully \emph{learned} fusion: \textbf{DeepPCM} bottlenecks the compound
+and protein descriptors separately and fuses them late; \textbf{DeepDTA} and
+\textbf{DeepCDA} encode the SMILES string and the amino-acid sequence with
+1D-convolutions (the latter adding an LSTM and a two-sided attention mechanism). A
+notable recent twist is \textbf{HyperPCM}: a \emph{hypernetwork} reads the target
+and \emph{outputs the weights} of a target-specific QSAR model
+$f(\xvec;\params)$ --- which, because the target conditions the model directly,
+also enables zero-shot prediction on unseen targets (revisited in
+Section~\ref{sec:littledata}).
+
+\begin{starbox}[title={Exam-critical: what makes a model proteochemometric}]
+PCM \textbf{jointly encodes the molecule \emph{and} a representation of the protein
+target}, $f_{\params}(\text{molecule},\text{target})$, so a single model spans many
+targets. Two distractors to reject: a \emph{softmax over candidate targets from the
+molecule alone} has \textbf{no target representation}, and a \emph{separate
+prediction head per target} (plain multi-task) still takes \textbf{molecular inputs
+only} --- neither is PCM.
+\end{starbox}
+
+\subsection{\starsec{Contrastive Learning}}
 
 A particularly powerful multimodal recipe is \textbf{contrastive learning}, a
 \emph{self-supervised} technique that learns by pulling matching pairs together
 and pushing mismatched pairs apart in a \textbf{shared latent space}. CLIP is the
 canonical example (images $\leftrightarrow$ captions); in drug discovery the pairs
 are \emph{(molecule, X)} where $X$ is a binding pocket, a protein sequence, a cell
-image, or an assay description (CLAMP, DrugCLIP, CLOOME, SPRINT). Because the data
-can be huge ($>$100M assay pairs), the learned embeddings support \emph{zero-shot}
+image, or an assay description (CLAMP, DrugCLIP, CLOOME, SPRINT, ConGLUDe). The
+amount of paired data varies enormously by modality --- structure-based
+$\sim$10K pairs, imaging-based $\sim$1M, assay-based $>$100M --- and it is exactly
+this large scale that lets the learned embeddings support \emph{zero-shot}
 generalisation to new tasks.
 
 \begin{notebox}[title={Contrastive learning --- the exact wording}]
@@ -1644,6 +2018,7 @@ representations to make predictions'' --- that description is the distractor.
 \end{notebox}
 
 \section{Learning from Little Data}
+\label{sec:littledata}
 
 \subsection{Few-Shot and Zero-Shot Learning}
 
@@ -1654,7 +2029,11 @@ labelled \emph{support set}, while \textbf{zero-shot} makes predictions with
 \emph{pretraining + fine-tuning / transfer learning}, \emph{in-context /
 retrieval-based} methods that condition on example compounds without weight
 updates (e.g.\ MHN-FS, a Modern Hopfield Network), and \emph{meta-learning} (e.g.\
-MAML) which trains across many tasks to learn rapid adaptation.
+MAML) which trains across many tasks to learn rapid adaptation. Empirically the
+picture is humbling: on the FS-Mol benchmark, simple \emph{fine-tuning/probing}
+baselines (a linear or quadratic probe on a pretrained encoder such as CLAMP) are
+competitive with --- and sometimes beat --- elaborate meta-learning methods, so a
+strong baseline is worth trying first.
 
 \subsection{Active Learning}
 
@@ -1665,16 +2044,20 @@ experimental labelling, and retrains. ``Informative'' usually means \emph{high
 prediction uncertainty} (near the decision boundary or in under-explored chemical
 space), often combined with \emph{diversity filters} to avoid picking near-identical
 compounds. Uncertainty itself is estimated by ensembling, Monte-Carlo dropout, or
-evidential learning, and should be \emph{calibrated} (ECE, Brier score).
+evidential learning, and should be \emph{calibrated} (expected calibration error
+(ECE), Brier score, reliability
+diagrams).
 
-\section{Multiple Instance Learning}
+\section{\starsec{Multiple Instance Learning}}
 
 Sometimes the label belongs not to a single molecule but to a \emph{set}.
 \textbf{Multiple instance learning (MIL)} trains on \textbf{bags}
 $X=\{\xvec_1,\dots,\xvec_M\}$ that carry a \emph{single} label $y$ --- the
 individual instances are \emph{not} labelled. The classic chemistry motivation
 (Dietterich, 1997) is a molecule with many 3D \emph{conformations}: the molecule is
-active if \emph{some} conformation binds, but we don't know which one.
+active if \emph{some} conformation binds, but we don't know which one. The same
+framing fits \emph{compound mixtures} (e.g.\ a plant extract is one ``bag'' of many
+molecules with a single measured activity).
 
 \begin{notebox}[title={What MIL requires (and what it doesn't)}]
 A MIL model must be \textbf{invariant to permutations} of the instances,
@@ -1688,13 +2071,32 @@ Architecturally, MIL uses ``Deep-Sets''-style models: encode each instance, then
 apply a \emph{permutation-invariant pooling} (mean/max/sum/attention) and an output
 layer. \emph{Bag-level} scoring (pool representations, then predict) usually beats
 \emph{instance-level} scoring (predict per instance, then pool). Attention-based MIL
-learns which instances matter. Finally, \textbf{large language models} are an
-emerging --- if still unreliable --- tool for molecular reasoning, strong on
-chemistry knowledge but weak at understanding raw chemical structure.
+learns which instances matter.
+
+\section{Large Language Models for Molecules}
+\label{sec:llms}
+
+The lecture closes with large language models (LLMs) as an emerging tool in the
+molecular sciences. The trajectory of (bio)molecular LLMs runs from biomedical-text
+models toward multimodal systems that combine text with molecules and proteins. On
+knowledge-heavy chemistry benchmarks --- notably \textbf{ChemBench} (thousands of
+curated questions across many chemistry subfields) --- leading general-purpose LLMs
+(e.g.\ GPT-4, Claude~3) already rival or exceed the \emph{average} human chemist.
+The catch is \emph{structure}: on tasks that require genuinely reading a molecule
+--- name/format conversion (SMILES $\leftrightarrow$ IUPAC name / molecular formula)
+and quantitative property prediction (solubility, lipophilicity, blood-brain-barrier
+permeability, toxicity) --- general LLMs fall well behind task-specific, non-LLM
+models, and domain fine-tuning (e.g.\ \textbf{LlaSMol}) narrows but does not close
+the gap. Bottom line: promising for chemical \emph{reasoning} and knowledge
+retrieval, not yet reliable for structure-sensitive prediction.
 
 
 % ==========================================================
-%  CHAPTER 5 — GENERATIVE MODELS FOR MOLECULES
+%  CHAPTER 4 — GENERATIVE MODELS FOR MOLECULES   (Lecture 04, 04_Generative_models)  [PART 1 of 2]
+%  >>> Paradigms + evaluation. The part-2 material (architectures: LLMs, advanced
+%      constraints, GFlowNets, latent-variable models, diffusion/3D) was split out into
+%      Chapter 5 (Generative Model Architectures). Mapping is now 1:1: Ch.4=Lec04,
+%      Ch.5=Lec05, Ch.6=Lec06.
 % ==========================================================
 \chapter{Generative Models for Molecules}
 \label{chap:generative}
@@ -1706,7 +2108,10 @@ virtual screening is $f_{\params}(\text{molecule}) = \text{property}$, generatio
 is $\text{molecule} = g_{\bm\gamma}(\text{property})$. The motivation is the sheer
 size of chemical space: $\sim$$10^{8}$ molecules have ever been synthesised, but
 there are perhaps $\sim$$10^{60}$ drug-like ones --- screening can only ever look
-at a sliver, so why not \emph{design} directly?
+at a sliver, so why not \emph{design} directly? Put another way, virtual screening can
+only rank molecules someone has already enumerated --- a library of perhaps
+$\sim$$10^{6}$ screened compounds --- whereas de novo design tries to reach into the
+vast unexplored remainder of that $\sim$$10^{60}$ space.
 
 \section{\starsec{How to Generate a Molecule}}
 
@@ -1717,7 +2122,9 @@ Generators differ in the \emph{representation} they emit:
         token (autoregressive RNN/LSTM/transformer).
   \item \textbf{Graph-based} --- build the molecular graph directly, atom by atom
         (autoregressive) or all at once (matrix-based: sample an adjacency tensor
-        and node matrix).
+        and node matrix). Must enforce valence and connectivity, so chemical validity
+        is hard and the action space can be large --- but it is natural for
+        \emph{substructure edits}.
   \item \textbf{Rule-based} --- apply transformation rules to starting compounds.
   \item \textbf{3D} --- generate atom coordinates (diffusion models, equivariant).
 \end{itemize}
@@ -1735,6 +2142,8 @@ false. Generative models explore \emph{novel} chemical space (not just the
 \emph{known} synthesised set), and \textbf{GANs absolutely can} generate molecules
 (alongside VAEs, normalizing flows, and diffusion models).
 \end{notebox}
+
+\newpage
 
 \section{\starsec{Three Training Paradigms}}
 
@@ -1767,11 +2176,26 @@ The optimisation loop can be hill-climbing (iterative distribution learning),
 score, reward, retrain --- e.g.\ REINVENT), or continuous optimisation in a VAE
 latent space. Real drug design is \textbf{multi-objective} (maximise efficacy,
 selectivity, QED, synthesizability; minimise toxicity, lipophilicity), so there is
-no single best molecule --- trade-offs are handled by \emph{score aggregation}
-(weighted sums) or \emph{Pareto ranking} (keep non-dominated solutions). A nasty
+no single best molecule --- trade-offs are handled either by \emph{score aggregation}
+--- collapsing the objectives into one number via a weighted arithmetic mean, a
+weighted \emph{geometric} mean (which punishes any single near-zero objective), or a
+weighted \emph{max} / Chebyshev score (which focuses on the worst objective) --- or by
+\emph{Pareto ranking} (keep non-dominated solutions, without committing to weights). A nasty
 failure mode is \textbf{mode collapse}: the generator keeps proposing the same or
 very similar molecules, whereas we want \emph{diverse} candidates to maximise
 downstream success.
+
+\medskip
+\noindent\textbf{Where the score comes from.} The objective is rarely a single oracle;
+it is assembled from several sources, combined into one set of \emph{objective functions
+and constraints}. At the cheap, fast end sit \emph{physicochemical / drug-likeness}
+properties (QED, molecular weight, clogP), \emph{structure-based} models (docking a
+candidate into a target pocket), and \emph{machine-learning} predictors (QSAR / activity
+models); at the slow, expensive, but most trustworthy end sit \emph{experimental
+screening} and \emph{human-expert} judgement. The cheap proxies drive the inner
+optimisation loop, while the expensive signals are reserved for validating the
+survivors --- which is also exactly why proxy \emph{reward hacking} (above) is such a
+risk.
 
 The natural way to \emph{drive} an autoregressive generator toward a goal is to read
 it as a \textbf{reinforcement-learning} problem --- building a molecule one step at a
@@ -1780,7 +2204,8 @@ molecule (a SMILES prefix or partial graph); an \emph{action} $a$ is the next
 construction step (next token, atom, bond, fragment, or reaction); the \emph{policy}
 $\pi(a\mid s)$ \emph{is} the generative model (a distribution over next actions); an
 \emph{episode} $\tau$ is one finished molecule; and the \emph{reward} $R(\tau)$ is the
-score of that final molecule (activity, QED, SA, similarity, \dots). Autoregressive
+score of that final molecule (activity, QED, synthetic accessibility (SA),
+similarity, \dots). Autoregressive
 (causal, next-token) models couple to RL especially cleanly because the policy already
 factorises over construction steps --- but the reward structure makes the problem nasty.
 
@@ -1800,6 +2225,51 @@ factorises over construction steps --- but the reward structure makes the proble
 \end{itemize}
 \end{starbox}
 
+\medskip
+\noindent\textbf{The practical RL toolbox (REINVENT-style).} Real systems tame these
+problems with a standard kit: \emph{reward shaping} (turn raw scores into a usable
+learning signal and balance objectives), \emph{prior anchoring} (a KL-style penalty
+keeping the agent close to the pretrained distribution, which curbs unrealistic
+chemistry and reward hacking), \emph{chemical filters} (penalise reactive, unstable, or
+otherwise undesirable structures), \emph{diversity filters} (penalise repeated
+scaffolds / already-explored regions), and \emph{replay memory} (store high-scoring
+molecules and reuse them, improving sample efficiency). Two extensions explicitly
+\emph{strengthen the learning signal}: \textbf{Augmented Hill-Climb} updates only on the
+top-scoring molecules in each batch --- more optimisation pressure and better sample
+efficiency, at the \emph{risk} of reduced exploration and faster mode collapse --- and
+\textbf{Augmented Memory} pairs replay with SMILES augmentation, showing each
+high-scoring molecule to the model through several randomised SMILES to extract more
+signal when scoring is expensive.
+
+\medskip
+\noindent\textbf{Promoting diversity / beating mode collapse.} Because diversity is
+not automatic, a range of practical fixes have been proposed: \emph{select diverse
+high-scoring molecules} at each step while gradually raising a property threshold
+(Rupakheti et al.); \emph{mix exploitation with exploration} by blending a fixed
+exploratory generator with the trainable one during SMILES generation (Liu et al.\ ---
+\textbf{DrugEx}, which trains paired \emph{exploitation} and \emph{exploration}
+networks and samples from the explorer with probability $\varepsilon$, adding
+Pareto-based multi-objective selection for diversity);
+\emph{penalise redundant solutions} by docking the reward of molecules that are
+similar to past hits kept in a \emph{memory buffer} (Blaschke et al., the diversity
+filter in REINVENT); \emph{expand around key substructures} by generating many
+completions of extracted scaffolds (Chen et al.); \emph{sample proportionally to
+reward} so that multiple modes are covered (Bengio et al.\ --- the GFlowNet idea
+below); and \emph{reuse diverse SMILES variants} by training on non-canonical SMILES
+of the same molecule (Bjerrum et al.). The common thread is to \emph{explicitly}
+reward or inject diversity --- simply taking the single highest-scoring molecule each
+round is pure exploitation and does the opposite.
+
+\begin{starbox}[title={\ensuremath{\bigstar}\, Combating analogue rediscovery}]
+When a goal-directed generator keeps rediscovering close analogues of earlier hits,
+\textbf{genuine remedies all add or reward diversity}: \emph{mixing} a fixed
+exploratory generator with the trainable one, or \emph{penalising} reward for
+molecules similar to a memory buffer of past high-scorers. The exam \textbf{trap}:
+\emph{always selecting the single highest-scoring molecule} as the next training
+example is \emph{increased exploitation} --- it \emph{worsens} rediscovery and is
+\emph{not} a remedy.
+\end{starbox}
+
 \subsection{\starsec{Conditional Generation}}
 
 Conditional generators (conditional VAE/RNN/transformer/diffusion) give
@@ -1807,86 +2277,8 @@ Conditional generators (conditional VAE/RNN/transformer/diffusion) give
 one-pass generation, but they need \emph{paired} data (molecules with known
 properties), may only \emph{approximately} satisfy the target, generalise poorly to
 rare conditions, and risk \emph{property entanglement}.
-
-\section{\starsec{Latent-Variable Models and Latent-Space Optimisation}}
-
-Autoregressive models build a molecule step by step; the \emph{latent-variable}
-alternative is to first learn a \textbf{continuous space} of molecules (typically with
-a VAE) and then generate by sampling a latent vector $\zvec$ and \emph{decoding} it.
-New molecules come from sampling $\zvec$; goal-directed design becomes \emph{moving}
-$\zvec$ toward desired properties --- optimisation in a smooth space instead of
-surgery on discrete graphs.
-
-\textbf{The decoder depends on the representation.} A latent $\zvec$ is turned back
-into a molecule by a \emph{sequential SMILES decoder} (token sequence), a \emph{graph
-decoder} (atoms + bonds), or a \emph{fragment decoder} (motifs / scaffold pieces).
-Graph decoding in particular comes in three flavours:
-\begin{description}
-  \item[One-shot] --- predict all atom types and the bond-adjacency tensor at once.
-        Conceptually simple, but hard to enforce valence and connectivity.
-  \item[Sequential] --- $\zvec$ + partial graph $\to$ next atom/bond action; builds
-        step by step and can \emph{restrict actions to chemically valid choices} (like
-        graph autoregression, but conditioned on $\zvec$).
-  \item[Fragment-level] --- $\zvec \to$ chemically meaningful fragments that are
-        assembled into the graph; often improves validity and connects naturally to
-        scaffold/linker tasks, but is limited by the fragment vocabulary.
-\end{description}
-
-\textbf{Why optimise in latent space?} Molecules are \emph{discrete}, but $\zvec$ is
-\emph{continuous}. We train (or reuse) a property model $f(\zvec)$, search
-$\zvec^\ast = \argmax_{\zvec} f(\zvec)$, then decode $x^\ast \sim p(x \mid \zvec^\ast)$.
-Continuity unlocks tools that discrete graphs do not offer: \emph{gradient ascent}
-(if $f$ is differentiable), \emph{Bayesian optimisation} (when evaluations are
-expensive), \emph{evolutionary search} (mutate/select latent vectors), and
-\emph{interpolation} between known actives. The learned prior keeps the search near
-realistic chemistry, similar molecules tend to sit close together when the space is
-well learned, and sampling many $\zvec$ naturally yields multiple candidates --- at
-the cost of only \emph{approximate} control over the decoded structure.
-
-\section{\starsec{Diffusion Models and 3D Generation}}
-
-\textbf{Diffusion models generate by denoising}: start from a noisy representation and
-learn to \emph{reverse} a gradual noising process, producing a molecule through
-\emph{iterative} refinement rather than one-shot decoding. This iterative view is
-especially natural for \emph{continuous} representations such as 3D coordinates.
-
-\textbf{What gets denoised matters.} Two regimes:
-\begin{description}
-  \item[2D graph diffusion] --- generates molecular \emph{identity} (atoms + bonds);
-        noise is applied to \emph{discrete} atom/bond types and denoising predicts the
-        clean graph. The hard part is \emph{chemical validity}: valence, connectivity,
-        aromaticity.
-  \item[3D diffusion] --- generates identity \emph{and/or} geometry; noise is applied
-        to \emph{continuous} coordinates (sometimes also atom types). The hard part is
-        \emph{realistic geometry}: stable structures and correct symmetries, which
-        demands rotation/translation-aware models.
-\end{description}
-
-\begin{starbox}[title={\ensuremath{\bigstar}\, 3D generation needs equivariance}]
-Molecular coordinates have \textbf{no fixed global orientation}, so a 3D generator
-must not depend on an arbitrary coordinate frame. If you \emph{rotate or translate}
-the input structure, the prediction should rotate/translate \emph{consistently} ---
-this property is \textbf{equivariance}, and \emph{equivariant networks} build it in by
-construction. Ignore it and the model wastes capacity memorising orientations and
-tends to produce unstable, unrealistic geometries.
-\end{starbox}
-
-\textbf{Conditional 3D diffusion} fixes part of the molecule and denoises the rest:
-\begin{itemize}
-  \item \textbf{Conformer generation} (e.g.\ GeoDiff): the molecular \emph{identity is
-        fixed}; the model denoises \emph{coordinates conditioned on the 2D graph},
-        sampling multiple 3D conformers of one molecule. Useful for docking
-        preparation, shape-based screening, and 3D-QSAR --- but it is \emph{not} de
-        novo molecule generation.
-  \item \textbf{Pocket-conditioned ligand generation} (e.g.\ Schneuing et al.): the
-        protein \emph{pocket} supplies the 3D context, and the model generates or
-        denoises a ligand \emph{inside the binding site}, conditioned on pocket atoms,
-        geometry, pharmacophores, or interaction features. It usually needs
-        post-processing to recover valid molecules, followed by docking, filtering,
-        property prediction, and synthesis checks.
-\end{itemize}
-
-\section{Evaluating Generated Molecules}
+\vspace{-0.2 em}
+\section{\starsec{Evaluating Generated Molecules}}
 
 There is no single score. Basic \emph{diagnostic} checks are
 \textbf{validity} (\% syntactically correct), \textbf{novelty} (\% not in the
@@ -1916,9 +2308,267 @@ generated vs.\ real molecules --- \emph{not} distances between individual atoms,
 (drug-likeness, $\log P$, synthesizability).
 \end{thmbox}
 
+Rather than re-implement these metrics ad hoc, the field has converged on a handful of
+standardised \textbf{benchmarks} that bundle them together. The canonical ones are
+\textbf{GuacaMol} (distribution learning plus single- and multi-objective goal-directed
+optimisation tasks), \textbf{MOSES} (distribution learning, molecular diversity, and
+avoidance of forbidden substructures), and \textbf{MolOpt} (sample efficiency over $23$
+oracle scoring functions) --- with later suites such as \emph{MolScore} (a re-implementation
+that aggregates GuacaMol/MOSES/MolOpt and adds biological-activity and synthetic-accessibility
+evaluations) and 3D-specific ones like \emph{GenBench3D} (conformer quality against
+Cambridge-Structural-Database geometries). The takeaway is that each benchmark fixes a
+particular \emph{evaluation axis}: which metric matters depends on whether you care about
+distribution matching, optimisation efficiency, or 3D geometric realism.
+
+\medskip
+\noindent\textbf{Valid is not enough: desirable and suitable.} A diagnostic check tells you a
+molecule is \emph{valid}; goal-directed learning and conditional generation aim higher, for
+molecules that are \emph{desirable} (they satisfy \emph{all} the specified objectives, not just
+syntactic correctness). But a desirable molecule must also be a \emph{suitable} drug-discovery
+candidate: it needs reasonable ADME behaviour (Chapter~\ref{chap:drugdiscovery}) and it has to
+be \emph{synthesisable} (Chapter~\ref{chap:synthesis}). Those last two checks are exactly why
+generation does not end at the generator. A sobering reality check underlines this: of the
+40-plus multi-objective generative methods published between 2020 and 2022, only \emph{one}
+was experimentally validated --- in-silico desirability is necessary but far from sufficient.
+The next chapter first opens up the
+\emph{architectures} that implement these paradigms; suitability and synthesis are then
+taken up in Chapter~\ref{chap:synthesis}.
+
 
 % ==========================================================
-%  CHAPTER 6 — CHEMICAL REACTIONS AND SYNTHESIS PLANNING
+%  CHAPTER 5 — GENERATIVE MODEL ARCHITECTURES   (Lecture 05, 05_Generative_models_2_ocred.pdf)
+%  >>> Part-2 of the generative-models topic, split out of the old monolithic Ch.4.
+%      Sections: Chemistry-Specific LLMs, Advanced Generative Constraints, GFlowNets,
+%      Latent-Variable Models & Latent-Space Optimisation (star), Diffusion & 3D Generation (star).
+% ==========================================================
+\chapter{Generative Model Architectures}
+\label{chap:generative2}
+
+Chapter~\ref{chap:generative} framed generation by \emph{paradigm} (distribution
+learning, goal-directed, conditional) and by how to \emph{evaluate} it. This chapter
+surveys the model \emph{families} that actually implement those paradigms --- the
+\emph{representation} a generator emits largely \emph{defines the generation problem}.
+The lecture's organising taxonomy pairs each representation with the model families
+that emit it:
+\begin{itemize}
+  \item \textbf{String} (SMILES/SELFIES) $\to$ token sequence: RNNs, Transformers,
+        VAEs, GANs.
+  \item \textbf{2D graph} $\to$ atoms and bonds: graph VAEs, graph flows, graph
+        diffusion, GFlowNets.
+  \item \textbf{3D graph} $\to$ atoms and coordinates: equivariant diffusion, flows,
+        autoregressive 3D models.
+  \item \textbf{Reaction route} $\to$ building blocks and reactions: handled by the
+        reaction-based design and synthesis-planning material
+        (Chapter~\ref{chap:synthesis}).
+\end{itemize}
+Three big buckets organise the rest: \textbf{sequential} (autoregressive string/graph
+generators, including GFlowNets), \textbf{latent-space} models
+(learn a continuous space, sample and decode), and \textbf{denoising} models
+(diffusion, especially natural for 3D). We also collect the \emph{constraint tasks}
+that all of these can be pointed at.
+
+\section{Sequential (Autoregressive) String Generators}
+
+The oldest and still most common way to emit a molecule is to emit a
+\emph{string}, one token at a time. A SMILES (or SELFIES) string is consumed
+exactly like a sentence, which is why the whole language-modelling toolbox
+transfers directly: the earliest molecular generators were \textbf{RNNs} and
+\textbf{LSTMs} trained to predict the next SMILES character, and they were later
+joined by \textbf{Transformers}, \textbf{VAEs} and \textbf{GANs} over the same
+token sequence. \textbf{MolGPT} (Bagal et al., 2022) is the canonical modern
+example: a \emph{conditional Transformer} that generates SMILES conditioned on a
+scaffold plus physicochemical properties, in the same spirit as the earlier
+conditional RNN (\textbf{cRNN}, Kotsias et al., 2020) conditioned on
+fingerprints and QSAR properties.
+
+\begin{notebox}[title={``Chemistry LLM'' does not mean ``understands chemistry''}]
+It is tempting to conclude that because a Transformer generates valid SMILES, it
+has learned chemical structure. The lecture's own verdict points the other way:
+general and chemistry-tuned LLMs are strong on chemical \emph{knowledge and
+reasoning} yet measurably weak at \emph{reading a structure} (see
+Section~\ref{sec:llms} in Chapter~\ref{chap:advanced}). Generating a well-formed
+string and understanding the molecule it denotes are different skills --- do not
+let the fluency of the output stand in for structural competence.
+\end{notebox}
+
+\newpage
+
+\section{Advanced Generative Constraints}
+
+``Molecular generation'' is \emph{not one task}: the same generators are pointed at
+several distinct problems, which differ in \emph{what is held fixed} and \emph{what is
+generated}. The constraint defines the use case:
+\begin{itemize}
+  \item \textbf{Full de novo design} --- generate the whole molecule with minimal
+        structural constraints ($\varnothing \to$ molecule). Best for \emph{broad
+        exploration} of chemical space when no clear starting series exists.
+  \item \textbf{Scaffold decoration} --- keep the central core fixed and generate the
+        peripheral substituents / R-groups. This is close to medicinal-chemistry
+        \emph{lead optimisation} around a known active scaffold.
+  \item \textbf{Linker design (fragment linking)} --- keep two disconnected fragments
+        fixed (e.g.\ within a binding pocket) and generate a chemically valid linker
+        that bridges them. Useful for \emph{fragment linking}, \textbf{PROTAC} design,
+        and preserving key binding motifs.
+  \item \textbf{Scaffold hopping} --- the inverse of decoration: keep the peripheral,
+        activity-relevant features fixed and \emph{replace the central scaffold} with a
+        structurally distinct core. Useful for novelty, \textbf{IP}, selectivity, and
+        ADMET optimisation.
+  \item \textbf{Reaction-based design} --- generate molecules through available
+        \emph{building blocks} and feasible \emph{reaction steps} (amide coupling,
+        Suzuki coupling, esterification, Diels--Alder, \dots). This constrains
+        generation toward molecules that are more likely \emph{synthesisable} --- a
+        direct hand-off to the synthesis-planning ideas of
+        Chapter~\ref{chap:synthesis}.
+\end{itemize}
+Concrete RL realisations exist for several of these: \textbf{LibINVENT} performs
+reaction-based scaffold decoration and \textbf{Link-INVENT} does linker design, both by
+conditioning an encoder--decoder RNN on a SMILES specification and generating the
+missing part, which is then assembled into the full molecule.
+
+\vspace{-0.5 cm}
+
+\section{Generative Flow Networks (GFlowNets)}
+Standard reinforcement learning for molecule generation often suffers from \textbf{mode collapse} --- the agent finds a single high-scoring chemical pathway (often by exploiting a loophole in the proxy reward) and repeatedly generates the same or very similar molecules, abandoning chemical diversity.
+
+\textbf{Generative Flow Networks (GFlowNets)} offer a modern alternative. Instead of greedily maximizing the expected reward, GFlowNets treat the sequential generation of a molecule as a network flow. The agent is trained to sample terminal states (completed molecules) with a probability strictly \emph{proportional} to their objective reward, $P(x) \propto R(x)$. This ensures that the model actively explores and samples a diverse set of high-reward \emph{modes} across the chemical space, naturally mitigating mode collapse while still requiring a scoring function to guide the flow probabilities.
+\vspace{-0.5 cm}
+\section{\starsec{Latent-Variable Models and Latent-Space Optimisation}}
+
+Autoregressive models build a molecule step by step; the \emph{latent-variable}
+alternative is to first learn a \textbf{continuous space} of molecules (typically with
+a VAE --- but GANs and normalizing flows learn such spaces too) and then generate by
+sampling a latent vector $\zvec$ and \emph{decoding} it.
+New molecules come from sampling $\zvec$; goal-directed design becomes \emph{moving}
+$\zvec$ toward desired properties --- optimisation in a smooth space instead of
+surgery on discrete graphs.
+The three classic continuous-space families differ in \emph{how} they tie molecules to
+$\zvec$: a \textbf{VAE} pairs an encoder $q(\zvec\mid x)$ with a decoder
+$p(x\mid\zvec)$; a \textbf{GAN} trains a generator $G(\zvec)$ against a discriminator,
+with no explicit encoder; and a \textbf{normalizing flow} uses an \emph{invertible} map
+so that $\zvec=f^{-1}(x)$ and $x=f(\zvec)$ exactly.
+
+\textbf{The decoder depends on the representation.} A latent $\zvec$ is turned back
+into a molecule by a \emph{sequential SMILES decoder} (token sequence), a \emph{graph
+decoder} (atoms + bonds), or a \emph{fragment decoder} (motifs / scaffold pieces).
+Graph decoding in particular comes in three flavours:
+\begin{description}
+  \item[One-shot] --- predict all atom types and the bond-adjacency tensor at once
+        (one decoder pass from $\zvec$ to the whole molecule). Conceptually simple, but
+        hard to enforce valence and connectivity.
+  \item[Sequential] --- $\zvec$ + partial graph $\to$ next atom/bond action; builds
+        step by step and can \emph{restrict actions to chemically valid choices} (like
+        graph autoregression, but conditioned on $\zvec$).
+  \item[Fragment-level] --- $\zvec \to$ chemically meaningful fragments that are
+        assembled into the graph; often improves validity and connects naturally to
+        scaffold/linker tasks, but is limited by the fragment vocabulary.
+\end{description}
+
+\textbf{Why optimise in latent space?} Molecules are \emph{discrete}, but $\zvec$ is
+\emph{continuous}. We train (or reuse) a property model $f(\zvec)$, search
+$\zvec^\ast = \argmax_{\zvec} f(\zvec)$, then decode $x^\ast \sim p(x \mid \zvec^\ast)$.
+Continuity unlocks tools that discrete graphs do not offer: \emph{gradient ascent}
+(if $f$ is differentiable), \emph{Bayesian optimisation} (when evaluations are
+expensive), \emph{evolutionary search} (mutate/select latent vectors), and
+\emph{interpolation} between known actives. The learned prior keeps the search near
+realistic chemistry, similar molecules tend to sit close together when the space is
+well learned, and sampling many $\zvec$ naturally yields multiple candidates --- at
+the cost of only \emph{approximate} control over the decoded structure.
+
+\noindent\textbf{Failure modes of latent-space optimisation.} The smoothness that makes
+this attractive is also where it breaks. The latent space may simply \emph{not be
+chemically smooth}, so small moves in $\zvec$ can cause large structural changes after
+decoding, and high-scoring $\zvec$ can decode to \emph{invalid} molecules. Optimisation
+can push $\zvec$ \emph{outside the region seen during training} (a distribution shift
+echoing the RL case), and --- exactly as with goal-directed RL --- the
+\emph{property predictor $f$ can be exploited} (reward hacking in latent space). Even a
+\emph{valid} decoded molecule may be unrealistic or hard to synthesise, which is why
+latent optima are filtered and checked rather than trusted directly.
+
+\vspace{-0.5 cm}
+
+\section{\starsec{Diffusion Models and 3D Generation}}
+
+\textbf{Diffusion models generate by denoising}: start from a noisy representation and
+learn to \emph{reverse} a gradual noising process, producing a molecule through
+\emph{iterative} refinement rather than one-shot decoding. This iterative view is
+especially natural for \emph{continuous} representations such as 3D coordinates.
+
+\begin{starbox}[title={\ensuremath{\bigstar}\, Three generation modes, contrasted}]
+The exam likes to separate \emph{how} the molecule is produced:
+\begin{itemize}
+  \item \textbf{One-shot latent decoding} --- map a \emph{single} latent vector
+        directly to a \emph{complete} molecule in \emph{one} decoder pass.
+  \item \textbf{Autoregressive} --- build the molecule \emph{step by step}, predicting
+        the next token (or graph action) from the partial molecule.
+  \item \textbf{Diffusion} --- start from \emph{noise} and \emph{iteratively} apply a
+        learned \emph{denoising} process toward a molecule.
+\end{itemize}
+So what distinguishes diffusion from one-shot decoding is the \textbf{iterative
+denoising from noise}, \emph{not} a single direct latent$\to$molecule pass (one-shot)
+and \emph{not} next-step prediction from a partial molecule (autoregressive).
+\end{starbox}
+
+\textbf{What gets denoised matters.} Two regimes:
+\begin{description}
+  \item[2D graph diffusion] --- generates molecular \emph{identity} (atoms + bonds);
+        noise is applied to \emph{discrete} atom/bond types and denoising predicts the
+        clean graph. The hard part is \emph{chemical validity}: valence, connectivity,
+        aromaticity.
+  \item[3D diffusion] --- generates identity \emph{and/or} geometry; noise is applied
+        to \emph{continuous} coordinates (sometimes also atom types). The hard part is
+        \emph{realistic geometry}: stable structures and correct symmetries, which
+        demands rotation/translation-aware models.
+\end{description}
+
+\begin{starbox}[title={\ensuremath{\bigstar}\, 3D generation needs equivariance}]
+Molecular coordinates have \textbf{no fixed global orientation}, so a 3D generator
+must not depend on an arbitrary coordinate frame. If you \emph{rotate or translate}
+the input structure, the prediction should rotate/translate \emph{consistently} ---
+this property is \textbf{equivariance}, and \emph{equivariant networks} build it in by
+construction. Ignore it and the model wastes capacity memorising orientations and
+tends to produce unstable, unrealistic geometries.
+\end{starbox}
+
+The canonical equivariant backbone is the \textbf{E($n$)-equivariant graph neural
+network (EGNN)} (Satorras et al., 2021), which interleaves scalar \emph{node
+embeddings} with \emph{coordinate embeddings} and passes messages built from
+\emph{pairwise distances} $\norm{\xvec_i-\xvec_j}^2$ (themselves rotation/translation
+invariant). Coordinates are then updated only along \emph{relative offsets},
+\[
+  \xvec_i^{\,t+1} = \xvec_i^{\,t} + C\!\!\sum_{j\neq i}(\xvec_i^{\,t}-\xvec_j^{\,t})\,
+  \phi_1(\boldsymbol{m}_{ij}),
+\]
+which makes each layer \emph{equivariant} to rotations and translations, while the
+scalar node features stay \emph{invariant} --- so the whole network respects 3D
+symmetry by construction.
+
+\textbf{Conditional 3D diffusion} fixes part of the molecule and denoises the rest:
+\begin{itemize}
+  \item \textbf{Conformer generation} (e.g.\ GeoDiff): the molecular \emph{identity is
+        fixed}; the model denoises \emph{coordinates conditioned on the 2D graph},
+        sampling multiple 3D conformers of one molecule. Useful for docking
+        preparation, shape-based screening, and 3D-QSAR --- but it is \emph{not} de
+        novo molecule generation.
+  \item \textbf{Pocket-conditioned ligand generation} (e.g.\ Schneuing et al.): the
+        protein \emph{pocket} supplies the 3D context, and the model generates or
+        denoises a ligand \emph{inside the binding site}, conditioned on pocket atoms,
+        geometry, pharmacophores, or interaction features. It usually needs
+        post-processing to recover valid molecules, followed by docking, filtering,
+        property prediction, and synthesis checks.
+\end{itemize}
+
+\noindent\emph{Two distractors to reject here.} Pocket-conditioned generation
+\textbf{conditions the generator on the pocket \emph{during} generation}: the binding
+site is an \emph{input} that shapes what gets built. It is \emph{not} ``generate a
+ligand with no protein context and only dock afterwards'' --- in that picture the
+docking score never steers the generator. And it is \emph{not} conformer generation,
+which \emph{fixes the ligand identity} and samples 3D shapes \emph{without} using any
+protein information. The pocket drives generation; it is not a post-hoc filter.
+
+
+% ==========================================================
+%  CHAPTER 6 — CHEMICAL REACTIONS AND SYNTHESIS PLANNING   (Lecture 06, 06_Synthesis_ocred.pdf)
+%  >>> Renders as Chapter 6 (Ch.5 = Generative Model Architectures now sits above).
 % ==========================================================
 \chapter{Chemical Reactions and Synthesis Planning}
 \label{chap:synthesis}
@@ -1937,11 +2587,22 @@ c\mathrm{C} + d\mathrm{D}$ with reactants on the left, products on the right, an
 $(a,b,c,d)$ the smallest integers that balance the atom counts (conservation of
 mass). Common types are \emph{combination} ($A+B\to AB$), \emph{decomposition}
 ($AB\to A+B$), \emph{substitution} ($A+BC\to AC+B$), and \emph{metathesis}
-($AB+CD\to AD+CB$). Which product actually forms is governed by \emph{thermodynamics}
-(is it energetically favourable?), \emph{kinetics} (is it fast enough?), and
-\emph{selectivity} (which of several possible products dominates under given
-conditions) --- so planning cares not just about \emph{what} can react but under
-\emph{which conditions} and with \emph{what yield}.
+($AB+CD\to AD+CB$). Which product actually forms is governed by three factors.
+\emph{Thermodynamics} asks whether the transformation is favourable: it depends on
+the relative stability / free energy of reactants and products and determines which
+products are energetically favoured. \emph{Kinetics} asks whether it happens fast
+enough: it depends on the reaction barrier and on conditions such as temperature,
+concentration, catalyst, and solvent --- so the \emph{same} reactants under different
+conditions can give different products. \emph{Selectivity} asks which product is
+actually obtained when several are possible: conditions shift the major product,
+yield, and side products. In practice, then, synthesis planning cares not just about
+\emph{what} can react but under \emph{which conditions} and with \emph{what
+yield/selectivity}.
+
+\textbf{Chemical synthesis} is the artificial execution of useful reactions to obtain
+the desired product(s): selecting reactants, usually over multiple steps, from
+available or easily accessible building blocks, while choosing and optimising the
+reaction conditions.
 
 \section{\starsec{Computer-Assisted Synthesis Planning (CASP)}}
 
@@ -1952,6 +2613,14 @@ models, route scoring, and search. Reactions are stored in a SMILES-like languag
 with an \textbf{atom-to-atom mapping} (numbering atoms across reactants and
 products). Datasets include \textbf{USPTO} (reactions mined from US patents), CAS /
 Reaxys / Pistachio, and the Open Reaction Database.
+
+A modern CASP system is a pipeline. From the reaction datasets a \emph{knowledge
+base} is curated --- a template library, a reaction network, and curated reaction
+sequences --- which feeds two learned components: \emph{reaction prediction} (forward
+products, and optionally conditions and selectivity) and \emph{retrosynthesis}. The
+planner then recursively traverses a search tree of disconnections, scoring candidate
+\emph{routes} and checking each leaf against a \emph{stock database} of purchasable
+compounds; a route is complete once every leaf is in stock.
 
 \begin{notebox}[title={Reaction data is biased}]
 Most reaction datasets contain only \emph{successful} reactions (no failed
@@ -1971,6 +2640,14 @@ Two directions, both supervised ML over reaction data:
         output plausible precursors.
 \end{itemize}
 
+The two directions are not equally hard. Forward prediction is the most constrained
+(reactants $\to$ a single major product) and is generally the \emph{easiest};
+single-step retrosynthesis is harder because it is one-to-many (a product has many
+valid precursor sets); and \emph{multi-step} planning (next section), which chains
+many such decisions under search, is the hardest of the three. Beyond products and
+precursors, the same models are also pointed at \emph{other tasks} --- predicting
+reaction \emph{conditions} (solvent, catalyst, temperature) and \emph{yield}.
+
 There are two philosophies for how to do it:
 
 \begin{description}
@@ -1985,11 +2662,31 @@ There are two philosophies for how to do it:
 
 A \textbf{reaction template} (reaction rule) is a generalised blueprint of a
 reaction --- which substructures must be present and how they transform --- designed
-by experts or extracted from a database. Complex templates don't generalise to new
-reactants; simple templates apply to too many molecules. Template selection can be
-framed as \emph{classification} (predict the template with a softmax over $K$
-templates) or as \emph{retrieval} from a template database using Modern Hopfield
-Networks (MHNreact).
+by experts or extracted from a database. Templates are extracted from atom-mapped
+reactions by recording the bonds that break and form plus a chosen radius of
+surrounding atomic environment: a large radius gives a specific template that may not
+generalise to new reactants, a small one gives a general template that applies to too
+many molecules --- the core complexity-vs-coverage trade-off.
+
+Across these philosophies the lecture distinguishes four ML approaches: rule-based
+\emph{expert systems}; \emph{translation} (direct sequence-to-sequence or
+graph-to-graph prediction --- the template-free route); \emph{classification}
+(predict the reaction template/class with a neural network); and \emph{retrieval}
+(learn to fetch the correct template from a database). The last two are both
+template-based but differ in how the template is \emph{scored}. Classification uses
+$\hat{y} = \softmax(\mathbf{W}\,\hvec^{m}(m))$, where each row of $\mathbf{W}$ is an
+independent, freely-adjustable reaction class with no notion of similarity between
+templates --- so it degrades on \emph{rare} templates that have few training
+examples. Retrieval (MHNreact, built on \textbf{Modern Hopfield Networks}) replaces
+$\mathbf{W}$ with learned template embeddings,
+$\hat{y} = \softmax(\hvec^{t}(\mathbf{T})\,\hvec^{m}(m))$: reactant and templates are
+encoded into a shared associative memory and the closest template is retrieved, so
+related templates share structure. Template-free translation (the Molecular
+Transformer) is the most accurate ($\sim$90\%) but acts as a \emph{black box} ---
+there is no explicit transformation rule or electron-pushing mechanism to inspect.
+On the standard \textbf{USPTO-50k} single-step-retrosynthesis benchmark the best
+template-based (MHNreact, GLN) and template-free (Molecular Transformer, MEGAN)
+models are broadly competitive, with top-1 accuracies around 50\%.
 
 \begin{notebox}[title={AI for chemical reactions --- key claims}]
 Some methods rely on \textbf{reaction templates} (transformation rules); deep models
@@ -2000,8 +2697,20 @@ QM calculations. And synthesis planning is \emph{not} ``trivial'' nor merely
 ``selecting reactants'': it designs a whole \emph{sequence} of reactions and uses
 \emph{retrosynthetic analysis} to break the target into simpler building blocks.
 \end{notebox}
-
-\section{Multi-Step Retrosynthesis as a Game}
+\begin{starbox}[title={Reaction prediction --- exam essentials}]
+\textbf{Directions.} Forward prediction maps \emph{reactants $\to$ major product};
+single-step retrosynthesis maps \emph{product $\to$ precursors}. Forward is the
+\emph{easiest} task, multi-step planning the \emph{hardest}.\\
+\textbf{Philosophies.} \emph{Template-free} = sequence-to-sequence translation (the
+Molecular Transformer), $\sim$90\% accurate but uninspectable. \emph{Template-based}
+= neural-symbolic: a neural part picks a \textbf{reaction template} (a generalised
+symbolic rule: required substructures + how they transform), a symbolic part executes
+it --- via \emph{classification} $\softmax(\mathbf{W}\hvec^{m})$ or \emph{retrieval}
+$\softmax(\hvec^{t}(\mathbf{T})\hvec^{m})$ (MHNreact / Modern Hopfield).\\
+\textbf{Data.} Trained on reaction \emph{databases} (USPTO, Reaxys, ORD), \emph{not}
+on quantum-mechanical data.
+\end{starbox}
+\section{\starsec{Multi-Step Retrosynthesis as a Game}}
 
 A full synthesis is many steps, so multi-step retrosynthesis repeats single-step
 decisions until every leaf is a purchasable building block. The elegant framing is
@@ -2025,11 +2734,30 @@ building blocks are the \emph{goal} you are trying to reach. Saying ``the state 
 the set of available building blocks'' is the classic trap --- it is false.
 \end{notebox}
 
-Because the search tree is astronomically large (like chess or Go), DNNs predict,
-for unvisited states, both the \emph{value} (how likely to lead to a solution) and a
-\emph{policy} (which disconnection to try). In practice $\sim$50\% of molecules can
-be ``solved'' with routes that make sense to chemists --- though whether the routes
-actually run, and under which conditions, remains uncertain.
+Each move in this game is one round of \textbf{Monte-Carlo Tree Search}, which cycles
+through four phases: \emph{selection} (descend the tree to the most promising
+unexpanded node via a tree policy), \emph{expansion} (add child nodes by retro-analysing
+that molecule into candidate precursor sets), \emph{simulation / rollout} (play out a
+route from the new node and evaluate it), and \emph{backpropagation / update} (push the
+result back up the path so future selections are better informed).
+
+Because the search tree is astronomically large (like chess or Go --- $\sim$10$^{46}$
+and $\sim$10$^{170}$ states respectively), DNNs predict, for unvisited states, both the
+\emph{value} (how likely to lead to a solution) and a \emph{policy} (which disconnection
+to try). In practice $\sim$50\% of molecules can
+be ``solved'' with routes that make sense to chemists --- a ``chemical Turing test''
+found expert chemists could not reliably tell AI-planned routes from human ones ---
+though whether the routes actually run, and under which conditions, remains uncertain.
+
+This closes the chapter's two halves: \emph{chemical reactions} are predicted with
+\emph{supervised} learning over reaction databases, whereas multi-step \emph{chemical
+synthesis} is solved as a \emph{reinforcement-learning} search problem.
+
+
+
+
+
+
 
 
 % ==========================================================
@@ -2192,5 +2920,132 @@ $f_{\params}$ from data that is invariably limited, biased and noisy. Everything
 QSAR to AlphaFold is a variation on that single theme.
 \end{intbox}
 
+
+
+% ==========================================================
+%  LIST OF ABBREVIATIONS
+% ==========================================================
+\chapter*{List of Abbreviations}
+\addcontentsline{toc}{chapter}{List of Abbreviations}
+\vspace{-1.0 cm}
+
+\noindent {\small Branded model and database names used in the text (e.g.\ ChEMBL, ZINC, PubChem, REINVENT, DrugCLIP) are identified where they appear and are omitted here, as they are proper names rather than expandable abbreviations.}
+
+\begin{longtable}{@{}p{0.16\textwidth}p{0.78\textwidth}@{}}
+\toprule
+\textbf{Abbreviation} & \textbf{Expansion} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Abbreviation} & \textbf{Expansion} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\footnotesize\itshape continued on next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+AI & Artificial Intelligence \\
+ADME & Absorption, Distribution, Metabolism, Excretion (pharmacokinetics) \\
+ADMET & ADME plus Toxicity \\
+AUC & Area Under the Curve \\
+AUC-PR & Area Under the Precision--Recall curve \\
+AUC-ROC & Area Under the ROC curve \\
+BEDROC & Boltzmann-Enhanced Discrimination of ROC \\
+CADD & Computer-Aided Drug Design \\
+CAS & Chemical Abstracts Service \\
+CASP & Computer-Assisted Synthesis Planning \\
+CC$_{50}$ & Half-maximal Cytotoxic Concentration (50\% cell death) \\
+CLIP & Contrastive Language--Image Pre-training \\
+CMC & Chemistry, Manufacturing and Controls \\
+CNN & Convolutional Neural Network \\
+CT & Computed Tomography (X-ray-based 3D imaging) \\
+CV & Cross-Validation \\
+CYP450 & Cytochrome P450 \\
+D-MPNN & Directed Message-Passing Neural Network \\
+DMTA & Design--Make--Test--Analyse (cycle) \\
+DNA & Deoxyribonucleic Acid (chain of nucleotides) \\
+DNN & Deep Neural Network \\
+ECE & Expected Calibration Error \\
+ECFP & Extended-Connectivity Fingerprint \\
+EF & Enrichment Factor \\
+EGNN & E($n$)-Equivariant Graph Neural Network \\
+EHR & Electronic Health Record \\
+ESM & Evolutionary Scale Modeling (protein language model) \\
+FCD & Fr\'echet ChemNet Distance \\
+FNN & Feed-forward Neural Network \\
+GAN & Generative Adversarial Network \\
+GCN & Graph Convolutional Network \\
+GFlowNet & Generative Flow Network \\
+GNN & Graph Neural Network \\
+GPT & Generative Pre-trained Transformer \\
+Grad-CAM & Gradient-weighted Class Activation Mapping \\
+hERG & human Ether-\`a-go-go-Related Gene (cardiac ion channel) \\
+HTS & High-Throughput Screening \\
+IC$_{50}$ & Half-maximal Inhibitory Concentration \\
+InChI & International Chemical Identifier \\
+IoU & Intersection over Union (Jaccard / Tanimoto) \\
+IP & Intellectual Property \\
+IUPAC & International Union of Pure and Applied Chemistry \\
+$K_d$ & Dissociation Constant \\
+$K_i$ & Inhibition Constant \\
+KGCNN & Keras Graph Convolutional Neural Network (library) \\
+KL & Kullback--Leibler (divergence) \\
+LBDD & Ligand-Based Drug Design \\
+LD$_{50}$ & Median Lethal Dose \\
+LLM & Large Language Model \\
+$\log P$ & octanol--water Partition coefficient (log scale) \\
+LRP & Layer-wise Relevance Propagation \\
+LSTM & Long Short-Term Memory \\
+MACCS & Molecular ACCess System (keys) \\
+MAE & Mean Absolute Error \\
+MAML & Model-Agnostic Meta-Learning \\
+MAPK & Mitogen-Activated Protein Kinase \\
+MCC & Matthews Correlation Coefficient \\
+MHN & Modern Hopfield Network \\
+MIL & Multiple Instance Learning \\
+ML & Machine Learning \\
+MLP & Multilayer Perceptron \\
+MPNN & Message-Passing Neural Network \\
+MRI & Magnetic Resonance Imaging \\
+MSA & Multiple Sequence Alignment \\
+NN & Neural Network \\
+OCT & Optical Coherence Tomography (light-based imaging) \\
+ORD & Open Reaction Database \\
+PAINS & Pan-Assay Interference Compounds \\
+PCM & Proteochemometrics \\
+PD & Pharmacodynamics (what the drug does to the body) \\
+PDB & Protein Data Bank \\
+PK & Pharmacokinetics (what the body does to the drug) \\
+PPV & Positive Predictive Value (precision) \\
+PROTAC & Proteolysis-Targeting Chimera \\
+QED & Quantitative Estimate of Drug-likeness \\
+QM & Quantum Mechanics / Mechanical \\
+QSAR & Quantitative Structure--Activity Relationship \\
+QSPR & Quantitative Structure--Property Relationship \\
+$R^2$ & Coefficient of Determination \\
+RF & Random Forest \\
+RL & Reinforcement Learning \\
+RMSE & Root Mean Squared Error \\
+RNN & Recurrent Neural Network \\
+Ro5 & (Lipinski's) Rule of Five \\
+ROC & Receiver Operating Characteristic \\
+SA & Synthetic Accessibility \\
+SAR & Structure--Activity Relationship \\
+SBDD & Structure-Based Drug Design \\
+SELFIES & SELF-referencing Embedded Strings (always-valid line notation) \\
+SMARTS & SMILES Arbitrary Target Specification \\
+SMILES & Simplified Molecular Input Line Entry System \\
+SVM & Support Vector Machine \\
+TFN & Tensor Field Network \\
+TNR & True Negative Rate (specificity) \\
+TPR & True Positive Rate (recall / sensitivity) \\
+TPSA & Topological Polar Surface Area \\
+USPTO & United States Patent and Trademark Office \\
+VAE & Variational Autoencoder \\
+VS & Virtual Screening \\
+XAI & Explainable Artificial Intelligence \\
+XC$_{50}$ & Half-maximal Effect Concentration (the IC$_{50}$/EC$_{50}$/CC$_{50}$ family) \\
+\end{longtable}
 
 \end{document}
