@@ -25,10 +25,8 @@
 
 \usepackage{amsmath, amssymb, amsthm, mathtools}
 \usepackage{bm}
-\usepackage{bbm}
 \usepackage{mathrsfs}
 \usepackage{nicefrac}
-\usepackage{cancel}
 
 \usepackage{siunitx}
 \sisetup{per-mode = symbol}
@@ -41,11 +39,6 @@
 
 \setlist[itemize]{topsep=3pt, itemsep=2pt, leftmargin=2.2em}
 \setlist[enumerate]{topsep=3pt, itemsep=2pt, leftmargin=2.4em}
-
-\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
-\SetAlFnt{\small}
-\SetAlCapFnt{\small\bfseries}
-\SetCommentSty{textit}
 
 \usepackage{xcolor}
 
@@ -77,7 +70,7 @@
   belowskip        = 0.5em
 }
 
-\usepackage[most]{tcolorbox}
+\usepackage[skins,breakable]{tcolorbox}
 
 \tcbset{
   enhanced,
@@ -126,30 +119,6 @@
   colback = note@bg, colframe = note@frame,
   borderline west = {3.5pt}{0pt}{note@frame},
   #1
-}
-
-% Compile-safe marker for visuals that should be added later.  Keeping the
-% description and search terms in the source makes replacing the marker with an
-% actual \includegraphics command straightforward.
-\newcommand{\figureplaceholder}[3]{%
-\begin{figure}[H]
-  \centering
-  \begin{tcolorbox}[
-    width=.94\linewidth,
-    breakable=false,
-    colback=gray!4,
-    colframe=accent!55,
-    title={Visual to add},
-    borderline west={3.5pt}{0pt}{accent!55}
-  ]
-    \raggedright
-    \textbf{What the figure should show:} #2
-
-    \smallskip
-    \textbf{Good search query:} \texttt{#3}
-  \end{tcolorbox}
-  \caption{#1}
-\end{figure}
 }
 
 \usepackage[titles]{tocloft}
@@ -245,7 +214,7 @@
 \newcommand{\Var}{\mathrm{Var}}
 \newcommand{\Cov}{\mathrm{Cov}}
 \newcommand{\iid}{\overset{\mathrm{iid}}{\sim}}
-\newcommand{\ind}{\mathbbm{1}}
+\newcommand{\ind}{\mathbf{1}}
 
 % ── Information Theory ────────────────────────────────────
 \newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1 \,\|\, #2\right)}
@@ -1125,10 +1094,20 @@ The original data can be reconstructed as the outer product sum
 \]
 \end{defbox}
 
-\figureplaceholder
-  {Geometric view of PCA and low-rank reconstruction.}
-  {A centred two-dimensional point cloud with its covariance ellipse, PC1 along the long axis and PC2 along the short axis. Project points onto PC1 and draw the perpendicular reconstruction residuals.}
-  {PCA geometric interpretation covariance ellipse projection reconstruction error}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.72\linewidth]{figures/pca.png}
+  \caption{Rank-one PCA reconstruction. The blue points are the original data,
+  the orange points their projections onto PC1, and the short connecting
+  segments are the discarded PC2 residuals. The red and green arrows indicate
+  the first and second principal directions.}
+  \label{fig:pca-rank-one-reconstruction}
+\end{figure}
+
+\Cref{fig:pca-rank-one-reconstruction} makes the low-rank approximation
+geometric: retaining only PC1 replaces each sample by its orthogonal projection
+onto the red axis. The squared lengths of the connecting segments add up to the
+rank-one reconstruction error.
 
 \paragraph{Online learning: Oja's rule}
 A single-component PCA can be learned online (one sample at a time) using
@@ -1910,10 +1889,22 @@ The model gives $\bm{x} \mid \bm{z} \sim \mathcal{N}(\bm{\Lambda}\bm{z},\bm{\Psi
 \end{defbox}
 
 \paragraph{Covariance decomposition}
-\figureplaceholder
-  {Factor analysis separates shared factors from variable-specific noise.}
-  {A graphical model with a few latent factors pointing to several observed variables, plus one private noise node per observation. Next to it, show covariance as low-rank shared covariance plus diagonal noise.}
-  {factor analysis graphical model latent factors unique variance diagram}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.82\linewidth]{figures/fa.png}
+  \caption{A two-factor measurement model. In the diagram, the latent variables
+  $\eta_1,\eta_2$ correspond to our factors $\bm{z}$, the boxes $y_i$ to
+  observed variables $x_i$, the arrows $\lambda_i$ to factor loadings, and each
+  $\epsilon_i$ is a private error source with variance $\theta_i$.}
+  \label{fig:fa-graphical-model}
+\end{figure}
+
+The example in \cref{fig:fa-graphical-model} has two groups of observed
+variables driven by two latent factors. Shared arrows from a factor induce
+covariance among its observations, whereas the separate $\epsilon_i$ terms can
+only contribute variable-specific variance. This is the graphical version of
+the following covariance decomposition.
 
 Marginalising over $\bm{z}$ gives $\bm{x} \sim \mathcal{N}(\bm{0},\, \bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})$.
 The model-implied covariance is compared with the sample covariance
@@ -2156,18 +2147,33 @@ that way the zoo becomes a short list:
 \end{itemize}
 
 Two warnings that recur throughout, and that exams like to probe.
-\figureplaceholder
-  {What the main projection methods try to preserve.}
-  {A single Swiss-roll data set shown with four overlays: straight Euclidean distances for MDS, neighbour reconstruction weights for LLE, graph geodesics for Isomap, and local similarity probabilities for t-SNE.}
-  {PCA MDS LLE Isomap t-SNE comparison Swiss roll}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.86\linewidth]{figures/manifold_lle_isomap_comparison.png}
+  \caption{The same Swiss-roll input embedded with regular LLE, Hessian LLE,
+  and Isomap. Colour tracks position on the original manifold. Different
+  preservation criteria produce visibly different two-dimensional geometries;
+  Hessian LLE is included as a variant of LLE.}
+  \label{fig:manifold-methods-comparison}
+\end{figure}
+
+\Cref{fig:manifold-methods-comparison} is a useful warning against treating
+``manifold learning'' as one unique operation. Regular LLE preserves local
+reconstruction weights, its Hessian variant imposes a different local
+smoothness criterion, and Isomap preserves shortest-path distances in a
+neighbourhood graph. Even on the same coloured input, their embeddings need
+not have the same global shape.
 
 First, the projection always goes to a \emph{lower}-dimensional space --- any
 statement claiming these methods project \emph{up} in order to spread points apart
 is a distractor.
 Second, a manifold method is only as good as its assumption: the last few sections
-show LLE, Isomap, and $t$-SNE all doing beautifully on Swiss rolls and digit
-images, then all failing on the gene-expression data --- because that data simply
-does not lie on a smooth low-dimensional manifold.
+show that LLE, Isomap, and $t$-SNE can expose useful structure on smooth
+manifolds and image data, but that the result depends on the preservation
+criterion and neighbourhood parameters. They then all struggle on the
+gene-expression data because those samples do not lie on a simple smooth
+low-dimensional manifold.
 
 \section{Projection Pursuit}
 
@@ -2784,10 +2790,21 @@ component $j$ is obtained via Bayes' theorem:
 This \emph{soft} assignment (also called \emph{responsibility}) is the key
 quantity in the E-step of EM.
 
-\figureplaceholder
-  {Soft assignments in a Gaussian mixture.}
-  {A 2-D point cloud with several Gaussian covariance ellipses. Colour points by blended responsibility near overlapping components and solid colour where one component dominates.}
-  {Gaussian mixture model responsibilities covariance ellipses soft clustering}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.88\linewidth]{figures/gmm.png}
+  \caption{Hard versus soft clustering. $k$-means draws a hard boundary and
+  assigns every point to exactly one centre. A Gaussian mixture instead models
+  component densities; points in their overlap have non-trivial responsibility
+  for both components and are shown in a blended colour.}
+  \label{fig:gmm-soft-assignments}
+\end{figure}
+
+The right panel of \cref{fig:gmm-soft-assignments} visualises the posterior
+$p(j\mid\bm{x},\theta)$ rather than merely the closest centre. Far inside a
+component the responsibility is nearly one; in the overlapping density contours
+it is shared between the two components. The means $\bm{\mu}_j$ locate the
+centres, while the elliptical contours reflect the component covariance.
 
 It is worth naming the four pieces of that formula, because exam questions love
 to give you three of them and ask for the fourth:
@@ -3119,10 +3136,21 @@ split).
 Cutting the dendrogram at a chosen height yields a flat partition;
 varying the cut gives a nested family of solutions at every granularity.
 
-\figureplaceholder
-  {Reading a dendrogram and comparing linkage rules.}
-  {The same small point set clustered with single, complete, and Ward linkage. Show merge heights and a horizontal cut that produces a flat partition; make the chaining effect of single linkage visible.}
-  {hierarchical clustering dendrogram single complete Ward linkage comparison}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.86\linewidth]{figures/linkage.png}
+  \caption{Dendrograms for the same nine objects under single, complete,
+  average, and Ward linkage. The linkage rule changes both the merge order and
+  the merge heights; coloured subtrees indicate the flat groups obtained at the
+  plotting threshold.}
+  \label{fig:linkage-dendrograms}
+\end{figure}
+
+The leaves are identical in all four panels of \cref{fig:linkage-dendrograms},
+yet the resulting hierarchies differ because ``distance between clusters'' has
+changed. Heights should be interpreted within a panel, not numerically compared
+across panels: Ward's increase in within-cluster sum of squares is on a different
+scale from the pairwise distances used by single, complete, and average linkage.
 
 Two broad strategies exist:
 \begin{itemize}
@@ -3585,10 +3613,21 @@ additive structure. Multiplicative coherence means all rows are proportional —
 row by its mean yields identical rows.
 \end{intbox}
 
-\figureplaceholder
-  {A bicluster is a local rectangle, not a whole-row cluster.}
-  {A gene-by-sample heatmap containing several overlapping rectangular expression patterns. Highlight that one gene and one sample may participate in multiple coloured rectangles or none.}
-  {biclustering gene expression heatmap overlapping biclusters illustration}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.84\linewidth]{figures/biclusters.png}
+  \caption{Synthetic feature-by-condition matrices with local rectangular
+  biclusters. Panel (a) contains isolated blocks against a noisy background;
+  panel (b) shows a more complex arrangement in which active feature and
+  condition subsets can overlap.}
+  \label{fig:bicluster-local-blocks}
+\end{figure}
+
+Unlike an ordinary row clustering, \cref{fig:bicluster-local-blocks} does not
+assign an entire feature to one global group. A feature participates only over
+the selected conditions, and a row or column may take part in multiple local
+blocks or in none. This local, non-exclusive membership is the defining visual
+signature of biclustering.
 
 \section{Overview of Biclustering Methods}
 
@@ -3840,11 +3879,6 @@ hidden sequence.
 Higher-order HMMs condition on more history, e.g.\ second-order: $p(u_t \mid u_{t-1}, u_{t-2})$.
 \end{defbox}
 
-\figureplaceholder
-  {An HMM state graph and its dynamic-programming trellis.}
-  {On the left, a small state graph with transition and emission probabilities. On the right, unroll it through time and show forward messages, backward messages, and a highlighted Viterbi path with back-pointers.}
-  {HMM state graph forward backward Viterbi trellis diagram}
-
 The probability of a hidden state sequence $u^T = (u_1, u_2, \ldots, u_T)$ of length $T$ is:
 \begin{equation}
   p(u^T) = p_S(u_1) \prod_{t=2}^{T} p(u_t \mid u_{t-1}).
@@ -3930,6 +3964,22 @@ the end backwards:
   \beta_t(a) &= \sum_{b=1}^{S} p_E(x_{t+1} \mid b)\,
                 p(u_{t+1} = b \mid u_t = a)\, \beta_{t+1}(b).
 \end{align*}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.68\linewidth]{figures/hmm_backward_pass.png}
+  \caption{One step of the HMM backward recursion. From the current state
+  $S_2$ at time $t$, each possible successor $S_j$ contributes its transition
+  probability $a_{2j}$, the probability $b_{jk}$ of emitting the next observed
+  symbol $V_k$, and its future message $\beta_j(t+1)$.}
+  \label{fig:hmm-backward-step}
+\end{figure}
+
+Thus \cref{fig:hmm-backward-step} expands the recurrence as
+$\beta_2(t)=\sum_j a_{2j}b_{jk}\beta_j(t+1)$. The arrows are drawn backwards
+because the already-computed information at time $t+1$ is being accumulated
+into the message for time $t$; the underlying Markov transitions themselves
+still run forward from $t$ to $t+1$.
 
 \subsection*{E-step: posterior state and transition probabilities}
 
@@ -4155,10 +4205,22 @@ Begin and end states ($B$, $E$) bracket the pattern. A new sequence is scored by
 its likelihood; HMMER actually reports a log-odds score against a random model,
 which makes the score's significance easy to read.
 
-\figureplaceholder
-  {Profile HMM architecture for one sequence motif.}
-  {A left-to-right chain with match, insert, and silent delete states for several alignment columns. Trace one path that contains both an insertion and a deletion and align its emitted residues underneath.}
-  {profile HMM match insert delete states architecture}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.96\linewidth]{figures/profile_hmm.png}
+  \caption{Constructing a profile HMM from a multiple sequence alignment.
+  Consensus columns become match states $M_1,\ldots,M_5$; gaps are represented
+  by silent delete states $D_i$, and extra residues between consensus columns by
+  insert states $I_i$. The alignment marks a deletion in red and an insertion
+  in blue.}
+  \label{fig:profile-hmm-architecture}
+\end{figure}
+
+In \cref{fig:profile-hmm-architecture}, the gap in sequence 2 skips a consensus
+column through a delete state, whereas the lower-case residue in sequence 3 is
+emitted by an insert state between two match columns. Occupancy determines
+whether an alignment column becomes a match position, and the residue counts in
+that column determine its position-specific emission distribution.
 
 Building a profile from \emph{unaligned} positive examples runs straight into the
 local-minimum problem, so one either pays for global optimisation (deterministic
@@ -4325,10 +4387,23 @@ with each conditional given by a sigmoid,
 \]
 So a whole layer can be sampled in one parallel shot, conditioned on the other.
 
-\figureplaceholder
-  {RBM bipartite architecture and one CD-1 step.}
-  {Visible and hidden units with only cross-layer connections, followed by the Gibbs chain $v^{(0)}$ to $h^{(0)}$ to $v^{(1)}$ to $h^{(1)}$. Label data statistics and reconstruction statistics.}
-  {restricted Boltzmann machine architecture contrastive divergence CD-1 diagram}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.82\linewidth]{figures/rbm.png}
+  \caption{RBM sampling statistics. The left pair is clamped to the data at
+  step $0$, the middle pair is the one-step reconstruction used by CD-1, and
+  the right pair represents samples after running the chain to equilibrium.
+  The image writes $x$ for the visible vector denoted $\bm{v}$ in the text.}
+  \label{fig:rbm-cd-sampling}
+\end{figure}
+
+The two layers in \cref{fig:rbm-cd-sampling} have only cross-layer connections,
+which is why all hidden units can be sampled together given the visibles and
+vice versa. Exact maximum-likelihood learning would compare the data statistics
+at step $0$ with the equilibrium statistics at the far right. CD-1 replaces
+that expensive equilibrium term by the reconstruction statistics after one
+Gibbs step in the middle. Here the labels $T=0,1,\infty$ count sampling steps;
+they do not denote the thermodynamic temperature used earlier.
 
 \subsection*{Contrastive divergence}
 
