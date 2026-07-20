@@ -128,6 +128,30 @@
   #1
 }
 
+% Compile-safe marker for visuals that should be added later.  Keeping the
+% description and search terms in the source makes replacing the marker with an
+% actual \includegraphics command straightforward.
+\newcommand{\figureplaceholder}[3]{%
+\begin{figure}[H]
+  \centering
+  \begin{tcolorbox}[
+    width=.94\linewidth,
+    breakable=false,
+    colback=gray!4,
+    colframe=accent!55,
+    title={Visual to add},
+    borderline west={3.5pt}{0pt}{accent!55}
+  ]
+    \raggedright
+    \textbf{What the figure should show:} #2
+
+    \smallskip
+    \textbf{Good search query:} \texttt{#3}
+  \end{tcolorbox}
+  \caption{#1}
+\end{figure}
+}
+
 \usepackage[titles]{tocloft}
 
 \renewcommand{\cftchapfont}     {\bfseries\color{accent}}
@@ -372,11 +396,14 @@ enough to adapt standard algorithms, and recognize when a model is likely to fai
 
 \section{Course Specific Introduction}
 
-A learning problem is called \emph{unsupervised} when the desired output is not given
-for the training data.
-In contrast to supervised learning, quality on unsupervised problems is measured as a
-\emph{cumulative} quantity over all samples --- there is no per-sample ground truth.
-Modern Generative AI (VAEs, GANs, diffusion models) is a prominent subtopic.
+A learning problem is called \emph{unsupervised} when the training data contain no
+target label or desired output. The algorithm must discover useful structure from the
+observations themselves. That makes evaluation less direct than in supervised learning:
+there is usually no single per-sample answer to compare against. Depending on the goal,
+we therefore inspect held-out likelihood, reconstruction error, cluster stability,
+neighbourhood preservation, or whether the representation helps a downstream task.
+Modern generative models such as VAEs and diffusion models belong to this broad family,
+although they use additional ideas beyond the classical methods in this script.
 
 \paragraph{Objectives} Unsupervised methods are driven by different optimality criteria,
 depending on the problem:
@@ -403,7 +430,9 @@ sub- and super-Gaussian distributions, sparse codes and population codes.
 \paragraph{Model selection and overfitting}
 The goal of learning is to select, from a model class, the model with the highest
 \emph{generalization performance} --- the model that best explains \emph{future} data.
-Model selection, training, and learning are all the same thing.
+These terms should not be conflated. \emph{Training} estimates parameters for a fixed
+model and objective; \emph{model selection} chooses hyperparameters or even a model
+family, ideally using held-out data; \emph{learning} is the umbrella term for both.
 \emph{Overfitting} occurs when the model is fitted to idiosyncratic training
 characteristics (noise, outliers, labeling errors) rather than to the true underlying
 structure; the model has high training performance but poor generalization.
@@ -424,11 +453,11 @@ An important early decision is the \emph{model class}:
         Disadvantages: different parameterizations can represent the same function; model
         complexity is implicitly controlled through the parameters.
 
-  \item \textbf{Nonparametric models:} the model is locally constant or a superimposition
-        of local pieces. Examples: $k$-nearest-neighbor (where $k$ is a hyperparameter fixed
-        before training), kernel density estimation, decision trees.
-        The constant rules/kernels must be chosen a priori; hyperparameters ($k$, kernel
-        width, splitting rules) are not learned from data.
+  \item \textbf{Nonparametric models:} their effective number of parameters can grow
+        with the amount of data. Examples are $k$-nearest neighbours, kernel density
+        estimation, and many decision-tree methods. ``Nonparametric'' does \emph{not}
+        mean ``has no parameters'': choices such as $k$, bandwidth, or tree depth still
+        matter and are commonly selected from data by validation.
 \end{itemize}
 
 \paragraph{Unsupervised methods covered in this course}
@@ -443,8 +472,9 @@ Methods fall into two broad families:
   \item \textbf{Projection methods:} produce a new representation of objects by
         down-projecting feature vectors into a lower-dimensional space while preserving
         neighborhoods or other desired properties.
-        Examples: PCA (orthogonal components of maximal variance), ICA (statistically
-        independent components), factor analysis (PCA with noise).
+        Examples: PCA (orthogonal components of maximal variance) and ICA (statistically
+        independent components). Factor analysis is related but is better viewed as a
+        probabilistic latent-variable model with an explicit noise model.
   \item \textbf{Generative models:} build an explicit probabilistic model of the observed
         data; the fitted model should match the observed data density.
 \end{itemize}
@@ -527,7 +557,9 @@ samples; the correlation coefficient bar on the dendrogram indicates relatedness
 
 \section{Unsupervised Learning Categories}
 
-All unsupervised methods fall into one of two frameworks:
+For this course it is useful to organise most methods into two frameworks. This is a
+mental map, not an exhaustive taxonomy: methods such as clustering can be descriptive
+($k$-means) or generative (mixture models), and some methods combine both views.
 
 \begin{defbox}[title={Two Frameworks of Unsupervised Learning}]
 \begin{itemize}
@@ -537,6 +569,14 @@ All unsupervised methods fall into one of two frameworks:
         Objective: \emph{maximal variance}, orthogonality, independence, \emph{maximum entropy}.
 \end{itemize}
 \end{defbox}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/01_generative_vs_recoding.png}
+  \caption{The two complementary directions: representation learning maps observations
+  into a useful latent code, whereas generative modelling maps latent variables into the
+  data space.}
+\end{figure}
 
 \subsection{Generative Framework}
 
@@ -548,7 +588,7 @@ The learned model distribution $p(\xvec;\wvec)$ must match the observed distribu
 \begin{thmbox}[title={Generative Model Objective}]
 Find parameters $\wvec$ such that the model distribution
 \[
-  p(\xvec;\wvec) = \int_U p_{\uvec}(\uvec)\,\delta\!\bigl(\xvec = g(\uvec;\wvec)\bigr)\dd\uvec
+  p(\xvec;\wvec) = \int_U p_{\uvec}(\uvec)\,\delta\!\bigl(\xvec-g(\uvec;\wvec)\bigr)\dd\uvec
 \]
 is as close as possible to the empirical distribution $p(\xvec)$.
 The loss function measures the distance between these two distributions; typically this
@@ -566,14 +606,16 @@ The resulting distribution $p(\uvec;\wvec)$ should match a desired \emph{target}
 distribution $p_t(\uvec)$:
 
 \begin{itemize}
-  \item \textbf{PCA:} projects to a low-dimensional space with maximal information
-        conservation (maximal variance). Target: components are orthogonal and uncorrelated.
+  \item \textbf{PCA:} projects to a low-dimensional space with maximal retained variance.
+        This can be interpreted as maximal information preservation only under additional
+        assumptions, for example Gaussian data or isotropic Gaussian reconstruction noise.
+        The component directions are orthogonal and their scores are uncorrelated.
 
   \item \textbf{ICA:} projects into a space with statistically \emph{independent}
-        components (factorial code). Often characteristics of a factorial distribution are
-        optimized: maximal entropy given fixed variance, or cumulants (kurtosis).
-        Alternatively, the projection distribution is matched to a product of
-        super-Gaussians.
+        components (factorial code). Algorithms approximate independence by minimising
+        mutual information, maximising non-Gaussianity, or maximising likelihood under a
+        chosen source distribution. Merely maximising the entropy of a fixed-variance
+        linear projection would instead favour a Gaussian and is not the ICA objective.
 
   \item \textbf{Projection Pursuit:} projects such that components are maximally
         non-Gaussian (since Gaussian components arise from random projections of any
@@ -587,10 +629,11 @@ In the generative direction: sources $\uvec \xrightarrow{g(\uvec;\wvec)} \xvec$
 (sources produce observations).
 In the recoding direction: observations $\xvec \xrightarrow{g^{-1}(\xvec;\wvec)} \uvec$
 (observations are encoded into sources).
-When the model $g$ is invertible, these two views are mathematically equivalent and
-yield the same parameter estimates.
-This unification is exploited in ICA: the INFOMAX and likelihood approaches give
-identical learning rules for invertible linear models.
+When $g$ is invertible, the change-of-variables formula lets us express the same model
+in either direction. That does \emph{not} make arbitrary encoder and decoder objectives
+equivalent: the source density, Jacobian term, and loss must match. Under the standard
+invertible ICA assumptions, however, INFOMAX and maximum likelihood lead to equivalent
+learning rules.
 
 
 \section{Quality of Parameter Estimation}
@@ -657,23 +700,26 @@ constrains $\wvec$ and any estimator will be shaky; if a small tweak in $\wvec$
 sends the likelihood plummeting, the data pins the parameter down tightly.
 The quantity measuring this sensitivity is the \textbf{Fisher information}.
 
-\begin{defbox}[title={Fisher Information}]
-The Fisher information of the parameter $\wvec$ carried by the data is the
-variance of the score (the gradient of the log-likelihood):
+\begin{defbox}[title={Fisher Information (scalar parameter)}]
+For a scalar parameter $w$, the Fisher information carried by one observation is the
+variance of the score (the derivative of the log-likelihood):
 \[
-  \mathcal{I}(\wvec)
-  = \E\!\left[\left(\pd{}{\wvec}\ln p(\xvec;\wvec)\right)^{\!2}\right]
-  = -\,\E\!\left[\pdd{}{\wvec}\ln p(\xvec;\wvec)\right].
+  \mathcal{I}(w)
+  = \E\!\left[\left(\pd{}{w}\ln p(\xvec;w)\right)^{\!2}\right]
+  = -\,\E\!\left[\pdd{}{w}\ln p(\xvec;w)\right].
 \]
 It measures the \emph{curvature} of the log-likelihood at its peak: a sharp,
 narrow peak means high information.
-For $l$ iid samples the information simply adds up: $\mathcal{I}_l(\wvec) = l\,\mathcal{I}(\wvec)$.
+For $l$ iid samples the information simply adds up: $\mathcal{I}_l(w) = l\,\mathcal{I}(w)$.
+For a parameter vector the corresponding object is the Fisher information \emph{matrix},
+the expected outer product of score vectors.
 \end{defbox}
 
 \begin{thmbox}[title={Cram\'{e}r--Rao Lower Bound}]
-For any \emph{unbiased} estimator $\what$,
+Under the usual differentiability and support regularity conditions, any unbiased
+estimator $\hat w$ of a scalar parameter satisfies
 \[
-  \Var(\what) \;\geq\; \frac{1}{\mathcal{I}(\wvec)}.
+  \Var(\hat w) \;\geq\; \frac{1}{\mathcal{I}_l(w)}.
 \]
 The variance of the estimator is bounded below by the \emph{inverse} of the
 Fisher information.
@@ -698,11 +744,13 @@ exam questions constantly; keep them straight:
 \section{Information Theory Essentials}
 \label{sec:info-theory}
 
-Almost every objective in this course is secretly an information-theoretic
-quantity.
-PCA keeps the most ``information'' after projection; ICA drives mutual
-information to zero; EM, $t$-SNE, NMF, and Boltzmann machines all minimise a
-Kullback--Leibler divergence.
+Information theory connects many objectives in this course, but not always in the same
+way. ICA can minimise mutual information and $t$-SNE explicitly minimises a KL
+divergence. Maximum likelihood --- used by EM and Boltzmann machines --- is equivalent
+to minimising the forward KL divergence from the empirical data distribution to the
+model, up to a constant. NMF only has a KL interpretation for its KL-divergence loss;
+the common squared-error version does not. PCA's retained variance has an information
+interpretation only under suitable probabilistic assumptions.
 So it pays to get the vocabulary straight once, here, rather than re-deriving it
 in every chapter.
 
@@ -853,10 +901,12 @@ It finds the parameters $\wvec$ that make the observed data most probable under 
 \]
 
 \begin{thmbox}[title={Properties of the MLE}]
-The maximum likelihood estimator is:
+Under standard regularity conditions and when the model is identifiable and correctly
+specified, the maximum likelihood estimator is:
 \begin{itemize}
   \item \textbf{Invariant under reparameterization:} if $\hat{\wvec}$ is the MLE of
-        $\wvec$, then $f(\hat{\wvec})$ is the MLE of $f(\wvec)$ for any function $f$.
+        $\wvec$, then $f(\hat{\wvec})$ is an MLE of $f(\wvec)$, with the usual care
+        needed for non-injective transformations.
   \item \textbf{Asymptotically unbiased and efficient:} for large $l$, the MLE achieves
         the Cram\'{e}r-Rao lower bound, i.e.\ it has the smallest possible variance among
         all unbiased estimators. It is asymptotically optimal.
@@ -879,7 +929,7 @@ Many generative models include \emph{latent (hidden) variables} $\uvec$ that are
 directly observed.
 The marginal likelihood then requires integrating over all latent configurations:
 \[
-  p(\xvec;\wvec) = \int_U p_{\uvec}(\uvec)\,\delta\!\bigl(\xvec = g(\uvec;\wvec)\bigr)\dd\uvec.
+  p(\xvec;\wvec) = \int_U p_{\uvec}(\uvec)\,\delta\!\bigl(\xvec-g(\uvec;\wvec)\bigr)\dd\uvec.
 \]
 This integral is in general intractable due to:
 \begin{itemize}
@@ -923,6 +973,14 @@ EM alternates between two steps until convergence:
 \end{align*}
 \end{thmbox}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.72\linewidth]{figures/02_em_elbo_coordinate_ascent.png}
+  \caption{EM viewed as coordinate ascent. The E-step makes the ELBO touch the
+  log-likelihood at the current parameters; the M-step moves to a parameter value with
+  a higher bound and therefore a non-decreased likelihood.}
+\end{figure}
+
 \paragraph{Monotone convergence}
 Both steps can only increase (or leave unchanged) the lower bound $\Fbound$.
 The E-step tightens the bound: at the beginning of the M-step,
@@ -937,7 +995,8 @@ Therefore the log-likelihood is guaranteed to be non-decreasing at every EM iter
   The E-step does not change model parameters --- it only updates the posterior
   distribution over latent variables. The M-step maximizes the expected complete-data
   log-likelihood, which for exponential family models has a closed-form solution.
-  EM converges to a local maximum (not necessarily global).
+  EM converges to a stationary point (often a local maximum, but possibly a saddle point
+  or boundary solution), not necessarily to the global optimum.
 \end{intbox}
 
 EM is applied throughout this course: Baum-Welch algorithm for HMMs, fitting Gaussian
@@ -1012,10 +1071,10 @@ The Lagrange multipliers $\lambda_k$ are determined by the constraint equations:
 \end{exbox}
 
 \begin{intbox}
-  The MaxEnt principle explains why Gaussian distributions appear so frequently in
-  nature: they are the maximum entropy distributions for processes with finite variance.
-  Any physical system evolving under energy constraints (finite second moment) will
-  converge to a Gaussian-like distribution.
+  The MaxEnt principle explains one precise reason Gaussian models appear so frequently:
+  among all continuous distributions with a \emph{fixed mean and variance}, the Gaussian
+  has maximum differential entropy. Finite variance by itself does not make a process
+  Gaussian, and an energy constraint does not guarantee convergence to a Gaussian.
   In ICA, maximizing entropy of a nonlinear transform of the data is equivalent to
   maximizing likelihood of an independent-component model (INFOMAX).
 \end{intbox}
@@ -1043,9 +1102,9 @@ The \textbf{sample covariance matrix} is
 \[
   \bm{C} = \frac{1}{n}\bm{X}\T\bm{X} \in \R^{m \times m}.
 \]
-Its eigendecomposition $\bm{C} = \frac{1}{n}\bm{U}\bm{D}_m\bm{U}\T$ yields an orthogonal
+Its eigendecomposition $\bm{C} = \bm{U}\bm{\Lambda}\bm{U}\T$ yields an orthogonal
 matrix $\bm{U}$ whose columns $\bm{u}_k$ are the principal directions (\emph{loadings}),
-and a diagonal matrix $\bm{D}_m = \mathrm{diag}(\lambda_1,\ldots,\lambda_m)$ of
+and a diagonal matrix $\bm{\Lambda} = \mathrm{diag}(\lambda_1,\ldots,\lambda_m)$ of
 eigenvalues sorted in decreasing order.
 
 The \textbf{SVD} of $\bm{X}$ gives the same result: $\bm{X} = \bm{V}\bm{D}\bm{U}\T$
@@ -1066,6 +1125,11 @@ The original data can be reconstructed as the outer product sum
 \]
 \end{defbox}
 
+\figureplaceholder
+  {Geometric view of PCA and low-rank reconstruction.}
+  {A centred two-dimensional point cloud with its covariance ellipse, PC1 along the long axis and PC2 along the short axis. Project points onto PC1 and draw the perpendicular reconstruction residuals.}
+  {PCA geometric interpretation covariance ellipse projection reconstruction error}
+
 \paragraph{Online learning: Oja's rule}
 A single-component PCA can be learned online (one sample at a time) using
 \textbf{Oja's rule}:
@@ -1082,7 +1146,7 @@ PCA can be motivated as the projection that maximizes the variance of the projec
 
 The first principal direction solves
 \[
-  \bm{u}_1 = \argmax_{\|\bm{u}\|=1} \sum_{i=1}^{n}(\bm{u}\T\bm{x}_i)^2
+  \bm{u}_1 = \argmax_{\|\bm{u}\|=1} \frac{1}{n}\sum_{i=1}^{n}(\bm{u}\T\bm{x}_i)^2
   = \argmax_{\|\bm{u}\|=1} \bm{u}\T\bm{C}\bm{u}.
 \]
 
@@ -1201,12 +1265,12 @@ the optimal choice.
 The Iris dataset has $n = 150$ samples (50 per species: \textit{setosa}, \textit{versicolor},
 \textit{virginica}) and $m = 4$ features (sepal length, sepal width, petal length, petal width).
 
-PC1 accounts for approximately \textbf{92\% of variance} and is the only component that
-separates the three species.
-Pairwise scatter plots of all four PCs show that only plots involving PC1 reveal a
-clear three-group structure; all other pairs (PC2 vs.\ PC3, etc.)\ show no meaningful
-separation.
-This tells us the discriminative signal is essentially one-dimensional.
+PC1 accounts for approximately \textbf{92\% of the variance} when the raw features are
+centred but not scaled, and clearly separates \textit{setosa} from the other species.
+Distinguishing \textit{versicolor} from \textit{virginica} also benefits from PC2;
+the exact percentages and plots depend on whether the four features were standardised.
+The example illustrates an important warning: a high-variance direction can expose
+class structure, but PCA never uses class labels and does not optimise separation.
 
 \subsection{Multiple Tissue Data Set}
 
@@ -1295,6 +1359,13 @@ The projection of a new point $\bm{x}$ onto a kernel principal direction is then
 \end{enumerate}
 \end{thmbox}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.93\linewidth]{figures/03_kernel_pca_concentric_circles.png}
+  \caption{Linear PCA cannot unfold concentric rings, whereas an appropriate kernel
+  produces coordinates in which the two groups can be separated.}
+\end{figure}
+
 \begin{intbox}
   Kernel PCA can detect nonlinear structure that linear PCA misses.
   For example, concentric rings are linearly inseparable but perfectly separable in
@@ -1376,6 +1447,13 @@ Matrix form: $\bm{X} = \bm{Y}\bm{U}\T$, with $\bm{Y}\T\bm{Y} = \bm{D}_m$ (decorr
 and in fact statistically independent).
 Unlike PCA, $\bm{U}$ is \textbf{not required to be orthogonal}.
 \end{defbox}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.86\linewidth]{figures/04_ica_cocktail_party.png}
+  \caption{The cocktail-party problem: both microphones record different mixtures of
+  both speakers, and ICA attempts to recover the original independent signals.}
+\end{figure}
 
 In the cocktail-party picture, $\bm{y}$ holds the original voices, $\bm{U}$ is the
 room (how loudly each voice reaches each microphone), and $\bm{x}$ is what the
@@ -1494,15 +1572,17 @@ Key properties:
   \item Additivity: $\kappa_4(x_1 + x_2) = \kappa_4(x_1) + \kappa_4(x_2)$ for
         independent $x_1, x_2$.
   \item Scaling: $\kappa_4(\alpha x) = \alpha^4 \kappa_4(x)$.
-  \item Mixing \emph{reduces} kurtosis toward zero (towards Gaussian by CLT).
-        Therefore \textbf{maximizing kurtosis} recovers the unmixed sources.
+  \item Mixing tends to move kurtosis toward zero (towards Gaussian by the CLT).
+        Therefore maximising \textbf{absolute} kurtosis can recover either super-Gaussian
+        or sub-Gaussian sources; maximising signed kurtosis alone only favours the former.
 \end{itemize}
 Kurtosis is not robust: as a fourth-order moment, it is heavily influenced by outliers.
 
 \paragraph{Sparseness}
-Maximizing kurtosis is equivalent to maximizing \textbf{sparseness}: a sparse variable
-is almost always near zero but occasionally takes large values (relative to a Gaussian
-with the same variance).
+For super-Gaussian sources, large positive kurtosis often corresponds to
+\textbf{sparseness}: a sparse variable is usually near zero but occasionally takes large
+values. This interpretation does not extend to sub-Gaussian sources such as a uniform
+distribution, which have negative kurtosis but can still be separated by ICA.
 Sparseness does \emph{not} imply small variance.
 
 \paragraph{Contrast functions}
@@ -1563,6 +1643,14 @@ parallelogram, whitening rounds it into a circle (decorrelated but still
 dependent), and only the final rotation snaps it back into the axis-aligned
 square.
 \end{intbox}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.82\linewidth]{figures/05_ica_whitening_and_rotation.png}
+  \caption{PCA decorrelates the observations but does not recover the independent axes.
+  ICA uses higher-order structure to rotate the representation back towards the true
+  independent sources.}
+\end{figure}
 
 
 \section{INFOMAX Algorithm}
@@ -1666,10 +1754,10 @@ Beyond the basic square, invertible model several extensions exist:
   \midrule
   Seeks \emph{causes} of the data & Seeks \emph{geometrical abstractions} \\
   Statistically independent components & Decorrelated (orthogonal) components \\
-  Explains super-Gaussian structure & Explains all variance \\
+  Fits an independent-source model & Captures directions of maximal variance \\
   Scale invariant & Not scale invariant \\
   Unique up to scaling and permutation & Unique (up to sign) \\
-  Assumes super-Gaussian sources & No distributional assumptions \\
+  Requires non-Gaussian sources (at most one Gaussian) & Uses only second-order structure \\
   Components not ranked & Components ranked by eigenvalue \\
   \bottomrule
 \end{tabular}
@@ -1822,10 +1910,16 @@ The model gives $\bm{x} \mid \bm{z} \sim \mathcal{N}(\bm{\Lambda}\bm{z},\bm{\Psi
 \end{defbox}
 
 \paragraph{Covariance decomposition}
+\figureplaceholder
+  {Factor analysis separates shared factors from variable-specific noise.}
+  {A graphical model with a few latent factors pointing to several observed variables, plus one private noise node per observation. Next to it, show covariance as low-rank shared covariance plus diagonal noise.}
+  {factor analysis graphical model latent factors unique variance diagram}
+
 Marginalising over $\bm{z}$ gives $\bm{x} \sim \mathcal{N}(\bm{0},\, \bm{\Lambda}\bm{\Lambda}\T+\bm{\Psi})$.
-Empirically, with sample covariance $\bm{C} = \frac{1}{n}\bm{X}\T\bm{X}$:
+The model-implied covariance is compared with the sample covariance
+$\bm{C} = \frac{1}{n}\bm{X}\T\bm{X}$:
 \[
-  \bm{C} \;=\; \bm{\Lambda}\bm{\Lambda}\T + \bm{\Psi}.
+  \bm{C} \;\approx\; \bm{\Lambda}\bm{\Lambda}\T + \bm{\Psi}.
 \]
 FA is therefore a \textbf{decomposition of the covariance matrix}: $\bm{\Lambda}$
 captures the shared (dependent) variance; $\bm{\Psi}$ captures the unique
@@ -1863,17 +1957,17 @@ to $x_j$.
 Like PCA, projecting onto $l$ factors maximizes the variance that can be explained by $l$
 factors --- but FA counts only signal variance, not noise.
 
-\paragraph{Rotation non-uniqueness}
-The FA loading matrix is \textbf{not unique} up to orthogonal rotation:
+\paragraph{Rotation non-identifiability}
+The FA loading matrix is \textbf{not identifiable}: every orthogonal rotation gives
+the same marginal covariance and likelihood,
 $\bm{\Lambda}\bm{z} = \bm{\Lambda}\bm{V}\bm{V}\T\bm{z} = \bm{\Lambda}'\bm{z}'$
 for any orthogonal $\bm{V}$.
 Rotations are therefore chosen to improve interpretability:
 \begin{itemize}
-  \item \textbf{Varimax}: maximizes the squared loadings of each factor across all
-        variables, so each factor has either large or small loadings --- each variable
-        is clearly associated with one factor.
-  \item \textbf{Quartimax}: minimizes the number of factors needed per variable;
-        each factor explains many variables but is usually hard to interpret.
+  \item \textbf{Varimax}: simplifies columns of the loading matrix, encouraging each
+        factor to have a small set of large loadings and many near-zero loadings.
+  \item \textbf{Quartimax}: simplifies rows, encouraging each variable to load strongly
+        on only a small number of factors; it can produce one broad general factor.
   \item \textbf{Equimax}: a compromise between Varimax and Quartimax.
 \end{itemize}
 
@@ -1948,7 +2042,7 @@ EM run.
   Noise model & Explicit Gaussian noise $\bm{\Psi}$ & None (PCA: no noise; ICA: no noise) \\
   Factors/sources & Gaussian priors $\mathcal{N}(\bm{0},\bm{I})$ & PCA: none; ICA: non-Gaussian \\
   Objective & Max.\ signal variance (covariance fit) & PCA: all variance; ICA: independence \\
-  Uniqueness & Unique up to rotation & PCA: unique (up to sign); ICA: unique \\
+  Uniqueness & Rotation-indeterminate & PCA: up to sign; ICA: up to scale/permutation \\
   Estimation & EM (no closed form) & PCA: eigen; ICA: gradient/fixed-point \\
   \bottomrule
 \end{tabular}
@@ -1977,18 +2071,17 @@ statistically independent and non-Gaussian, the ICA objective (contrast function
 or kurtosis) can identify them.
 
 \textbf{FA} with two factors does \emph{not} recover the star.
-FA's generative model assumes the latent factors $\bm{z}$ are Gaussian; it can
-only model the global covariance structure $\bm{C}=\bm{\Lambda\Lambda}\T+\bm{\Psi}$
-and cannot distinguish the individual non-Gaussian sources.
-The FA scatter plots show a much worse demixing — the tissue subgroups blur
-together.
+FA's generative model assumes the latent factors $\bm{z}$ are Gaussian. It can still
+recover a useful low-dimensional subspace and covariance structure, but covariance alone
+cannot choose the particular rotation corresponding to independent non-Gaussian sources.
+ICA uses higher-order information to identify that rotation.
 
 \begin{intbox}[title={Why FA fails for non-Gaussian sources}]
 FA is the maximum-likelihood model when factors are Gaussian.
-Forcing super-Gaussian data into a Gaussian-factor model distorts the latent
-structure: the EM algorithm converges, but to a solution that explains the
-observed covariance by smearing mass along incorrect axes.
-ICA is the right tool whenever the true sources are non-Gaussian.
+Forcing super-Gaussian data into a Gaussian-factor likelihood throws away the feature
+that identifies the axes: non-Gaussian shape. EM may fit the covariance well while
+returning a rotated version of the sources. ICA is preferable when the goal is
+specifically to recover independent, non-Gaussian causes.
 \end{intbox}
 
 
@@ -1996,12 +2089,10 @@ ICA is the right tool whenever the true sources are non-Gaussian.
 
 \subsection{Iris Data Set}
 
-Applying FA to the Iris data set with only \textbf{one factor} is sufficient to
-achieve a clean, linear separation of all three species (setosa, versicolor,
-virginica).
-The single maximum-likelihood factor captures the dominant axis of biological
-variation; a scatter plot of the factor scores colour-coded by species shows
-three nearly non-overlapping clusters arranged along a line.
+In the lecture's Iris analysis, a \textbf{one-factor} model captures much of the dominant
+size-related variation. Its factor scores separate \textit{setosa} strongly and order the
+other two species, but one should not read this as a general guarantee of clean class
+separation: FA is unsupervised and never sees the species labels.
 
 \subsection{Multiple Tissue Data Set}
 
@@ -2065,6 +2156,11 @@ that way the zoo becomes a short list:
 \end{itemize}
 
 Two warnings that recur throughout, and that exams like to probe.
+\figureplaceholder
+  {What the main projection methods try to preserve.}
+  {A single Swiss-roll data set shown with four overlays: straight Euclidean distances for MDS, neighbour reconstruction weights for LLE, graph geodesics for Isomap, and local similarity probabilities for t-SNE.}
+  {PCA MDS LLE Isomap t-SNE comparison Swiss roll}
+
 First, the projection always goes to a \emph{lower}-dimensional space --- any
 statement claiming these methods project \emph{up} in order to spread points apart
 is a distractor.
@@ -2136,7 +2232,10 @@ Different \textbf{stress measures} formalise the mismatch:
   && \text{(Sammon mapping — compromise)}
 \end{align*}
 
-All three are minimised by gradient descent.
+These stress objectives can be minimised iteratively, but not every MDS variant needs
+gradient descent: classical metric MDS has the eigendecomposition solution described
+below, while non-metric MDS additionally fits monotone disparities to the observed
+dissimilarities.
 The gradient of $R_1$ with respect to the projected position $\bm{y}_k$ is:
 \[
   \frac{\partial}{\partial\bm{y}_k}R_1
@@ -2191,11 +2290,20 @@ data matrix $\bm{X}\in\mathbb{R}^{n\times m}$ ($X_{ij}\geq 0$) as
 where $\bm{Y}\in\mathbb{R}^{n\times l}$ and $\bm{U}\in\mathbb{R}^{m\times l}$
 are also required to be non-negative ($Y_{ik}\geq 0$, $U_{jk}\geq 0$).
 
-The non-negativity constraint forces a \textbf{parts-based representation}:
+The non-negativity constraint encourages an additive, often \textbf{parts-based
+representation}:
 every observation is reconstructed by \emph{adding} non-negative parts, never
-by subtraction.
+by subtraction. Localised semantic parts are a common outcome, not a mathematical
+guarantee.
 This contrasts with PCA, whose eigenvectors can have both signs, producing
 holistic (whole-image) components.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.82\linewidth,trim=0 590bp 0 0,clip]{figures/07_nmf_parts_based_faces.png}
+  \caption{NMF reconstructs a face by combining non-negative, spatially localised
+  basis parts with non-negative activation weights.}
+\end{figure}
 
 \paragraph{Multiplicative update rules}
 
@@ -2205,7 +2313,7 @@ Two objectives are in common use.
 For non-negative matrices normalised to sum to one:
 \[
   D(\bm{A}\|\bm{B})
-  = \sum_{ij}\Bigl(A_{ij}\log\frac{A_{ij}}{B_{ij}} + A_{ij} - B_{ij}\Bigr).
+  = \sum_{ij}\Bigl(A_{ij}\log\frac{A_{ij}}{B_{ij}} - A_{ij} + B_{ij}\Bigr).
 \]
 Minimising $D(\bm{X}\|\bm{Y}\bm{U}\T)$ leads to multiplicative updates:
 \[
@@ -2298,18 +2406,18 @@ $W_{ij}$ that best reconstruct $\bm{x}_i$ from its neighbours:
     - \sum_{j=1}^{k} W_{ij}\,\bm{x}_j\right\|^2,
   \quad\text{subject to}\quad \sum_{j=1}^{k} W_{ij} = 1.
 \]
-The constraint makes the weights invariant to rotations, rescalings, and
-translations of $\bm{x}_i$.
-Define the local covariance $C_{jk} = \bm{x}_j\T\bm{x}_k$; the Lagrange
-multiplier enforcing the sum-to-one constraint is:
+The sum-to-one constraint makes the weights invariant to translations; uniform
+rotations and rescalings multiply the local least-squares objective without changing
+its minimiser. For point $i$, form the centred neighbour matrix from vectors
+$\bm{x}_i-\bm{x}_j$ and its local Gram matrix
+$C^{(i)}_{jk}=(\bm{x}_i-\bm{x}_j)\T(\bm{x}_i-\bm{x}_k)$. The optimal neighbour weights
+have the compact form
 \[
-  \lambda = \frac{1 - \sum_{jk} C_{jk}^{-1}\,\bm{x}_i\T\bm{x}_k}
-                 {\sum_{jk} C_{jk}^{-1}},
+  \bm{w}_i = \frac{(\bm{C}^{(i)})^{-1}\mathbf{1}}
+                   {\mathbf{1}\T(\bm{C}^{(i)})^{-1}\mathbf{1}},
 \]
-and the optimal weights are:
-\[
-  W_{ij} = \sum_k C_{jk}^{-1}\bigl(\bm{x}_i\T\bm{x}_k + \lambda\bigr).
-\]
+with all non-neighbour weights set to zero. In practice one solves this linear system
+rather than forming the inverse explicitly.
 
 \paragraph{Step 2 — compute the embedding.}
 Hold the weights $W_{ij}$ fixed and find low-dimensional coordinates
@@ -2319,8 +2427,8 @@ $\bm{y}_i$ that minimise the same reconstruction error:
   \quad\text{where}\quad
   M_{ij} = \delta_{ij} - W_{ij} - W_{ji} + \sum_k W_{ki}W_{kj},
 \]
-which can be written compactly as $\bm{M}=(\bm{I}-\bm{W})(\bm{I}-\bm{W})\T$.
-Because the row sums of $\bm{W}$ are one, $(\bm{I}-\bm{W})\T\mathbf{1}=\mathbf{0}$,
+which can be written compactly as $\bm{M}=(\bm{I}-\bm{W})\T(\bm{I}-\bm{W})$.
+Because the row sums of $\bm{W}$ are one, $(\bm{I}-\bm{W})\mathbf{1}=\mathbf{0}$,
 so $\bm{M}$ always has a zero eigenvalue with eigenvector $\mathbf{1}$.
 The optimal $d$-dimensional embedding consists of the \emph{bottom} $d$
 eigenvectors of $\bm{M}$ (those with the $d$ smallest non-zero eigenvalues);
@@ -2452,7 +2560,7 @@ around each mapped point:
 The marginal density over observations is obtained by integrating over the
 latent space:
 \[
-  p(\bm{t}\mid\bm{w},\beta) = \int p(\bm{t}\mid\bm{x},\bm{w},\beta)\,p(\bm{x})\,\mathrm{d}\bm{x}.
+  p(\bm{t}\mid\bm{w},\beta) = \int p(\bm{t}\mid\bm{y},\bm{w},\beta)\,p(\bm{y})\,\mathrm{d}\bm{y}.
 \]
 
 In practice the latent prior $p(\bm{y})$ is approximated by a uniform discrete
@@ -2555,8 +2663,10 @@ forms a closed loop (ring) in the 2-D t-SNE map — the topology of the
 rotation manifold is preserved.
 The other methods do not recover these loops clearly.
 
-\textbf{Iris data}: PCA partially overlaps versicolor and virginica; t-SNE
-achieves perfect three-cluster separation with no overlap.
+\textbf{Iris data}: PCA partially overlaps \textit{versicolor} and \textit{virginica};
+a particular t-SNE run may display three visually separated groups. This is exploratory
+evidence, not proof of separability: t-SNE is stochastic and can exaggerate gaps, so
+results should be checked across seeds and perplexities.
 
 \textbf{Multiple Tissue}: both perplexity settings (30 and 50) give poor
 tissue separation — same conclusion as LLE and Isomap.
@@ -2581,8 +2691,10 @@ ordered maps}, TOMs).
 \paragraph{Online update rule.}
 For each incoming sample $\bm{x}$:
 \begin{enumerate}
-  \item Find the \emph{winner} neuron:
-        $k^* = \arg\max_s\;\bm{x}\T\bm{w}_s$.
+  \item Find the \emph{winner} or best-matching unit:
+        $k^* = \arg\min_s\;\|\bm{x}-\bm{w}_s\|^2$.
+        The equivalent dot-product $\arg\max_s\bm{x}\T\bm{w}_s$ is valid only
+        when the relevant vector norms are fixed.
   \item Move $k^*$ and its neighbours towards $\bm{x}$:
         \[
           \bm{w}_k^{\text{new}}
@@ -2596,16 +2708,17 @@ For each incoming sample $\bm{x}$:
 \end{enumerate}
 
 \begin{notebox}[title={SOM has no objective function}]
-The SOM update rule cannot be derived from a single scalar energy or
-loss function.
+For the classical online SOM, there is no generally valid single scalar objective whose
+gradient exactly produces every neighbourhood update (special variants and limiting
+cases do have energy functions).
 Practical consequences:
 \begin{itemize}
-  \item No theoretical basis for choosing $\eta$, neighbourhood width, or
-        stopping criterion.
+  \item Learning rate, neighbourhood width, and stopping rule require schedules and
+        empirical tuning.
   \item No guarantee that topographic ordering is achieved.
-  \item No convergence proof.
-  \item Different runs cannot be compared objectively.
-  \item Overfitting is not detectable.
+  \item Convergence and comparison are less clean than for an explicit likelihood model.
+  \item Different runs should be compared with external diagnostics such as quantisation
+        and topographic error, not a universal training likelihood.
   \item The result carries no probability density and cannot be handed to a
         downstream probabilistic model.
 \end{itemize}
@@ -2670,6 +2783,11 @@ component $j$ is obtained via Bayes' theorem:
 \]
 This \emph{soft} assignment (also called \emph{responsibility}) is the key
 quantity in the E-step of EM.
+
+\figureplaceholder
+  {Soft assignments in a Gaussian mixture.}
+  {A 2-D point cloud with several Gaussian covariance ellipses. Colour points by blended responsibility near overlapping components and solid colour where one component dominates.}
+  {Gaussian mixture model responsibilities covariance ellipses soft clustering}
 
 It is worth naming the four pieces of that formula, because exam questions love
 to give you three of them and ask for the fourth:
@@ -2882,11 +3000,13 @@ showing that model selection (choosing $l$) is crucial.
 
 \subsection{The Method}
 
-$k$-means is obtained from a mixture of Gaussians by imposing three
-simplifying assumptions:
+$k$-means is closely related to a mixture of Gaussians. Impose equal mixture weights,
+equal spherical covariances $\bm{\Sigma}_j=\sigma^2\bm{I}$, and use hard assignments
+(or take the limit $\sigma^2\to0$). Then maximum likelihood reduces to minimising
+within-cluster squared distances:
 \begin{enumerate}
   \item equal weights $w_j = 1/l$;
-  \item spherical and equal covariance $\bm{\Sigma}_j^{-1} = \bm{I}$;
+  \item spherical and equal covariance $\bm{\Sigma}_j = \sigma^2\bm{I}$;
   \item \emph{hard} (discrete) cluster membership — a sample belongs to
         exactly one cluster.
 \end{enumerate}
@@ -2926,30 +3046,31 @@ This is also why running $k$-means several times from different initialisations 
 not a hack but a necessity.
 \end{intbox}
 
-\textbf{Properties}: $k$-means is fast and robust to outliers (hard assignment
-prevents a single outlier from shifting all means), but it is simple (only
-spherical, equal-size clusters) and sensitive to initialisation.
+\textbf{Properties}: $k$-means is fast, but it is \emph{not} robust to outliers:
+because a centre is an arithmetic mean, one extreme point can move it substantially.
+Its squared-Euclidean objective also favours compact, roughly spherical clusters and it
+is sensitive to initialisation and feature scaling.
 A centre placed near outliers can remain stuck there,
 failing to model the true cluster distribution.
 Note that $k$ itself is \emph{never} learned --- it is a hyperparameter you choose
 in advance, and the algorithm will cheerfully carve your data into whatever number
 of clusters you asked for.
 
-\textbf{Fuzzy $k$-means} replaces the hard membership with a soft
-(``softmax'') membership controlled by a parameter $b > 1$:
+\textbf{Fuzzy $k$-means} replaces hard membership with a soft membership
+$u_{ij}$ controlled by a fuzzifier $b > 1$:
 \[
-  p^b(j\mid\bm{x}_i,\bm{\mu}_j)
+  u_{ij}
   = \frac{\|\bm{x}_i-\bm{\mu}_j\|^{-2/(b-1)}}
          {\sum_{k=1}^l \|\bm{x}_i-\bm{\mu}_k\|^{-2/(b-1)}}.
 \]
 The centre update becomes the responsibility-weighted mean:
 \[
   \bm{\mu}_j^{\text{new}}
-  = \frac{\sum_i p^b(j\mid\bm{x}_i,\bm{\mu}_j)\,\bm{x}_i}
-         {\sum_i p^b(j\mid\bm{x}_i,\bm{\mu}_j)},
+  = \frac{\sum_i u_{ij}^{b}\,\bm{x}_i}
+         {\sum_i u_{ij}^{b}},
 \]
 and the minimised objective is
-$\sum_j\sum_i p^b(j\mid\bm{x}_i,\bm{\mu}_j)\,\|\bm{x}_i-\bm{\mu}_j\|^2$.
+$\sum_j\sum_i u_{ij}^{b}\,\|\bm{x}_i-\bm{\mu}_j\|^2$.
 As $b\to 1$ this recovers hard $k$-means; as $b\to\infty$ all memberships
 converge to $1/l$ (fully fuzzy).
 
@@ -2997,6 +3118,11 @@ internal nodes encode the distance at which two sub-trees were merged (or
 split).
 Cutting the dendrogram at a chosen height yields a flat partition;
 varying the cut gives a nested family of solutions at every granularity.
+
+\figureplaceholder
+  {Reading a dendrogram and comparing linkage rules.}
+  {The same small point set clustered with single, complete, and Ward linkage. Show merge heights and a horizontal cut that produces a flat partition; make the chaining effect of single linkage visible.}
+  {hierarchical clustering dendrogram single complete Ward linkage comparison}
 
 Two broad strategies exist:
 \begin{itemize}
@@ -3127,6 +3253,9 @@ explaining their correlation without direct dependence.
 cold weather ($z$), so $x \perp y \mid z$.
 
 \textbf{EM for the aspect model.}
+Let $N=\sum_{x,y}n(x,y)$ and let
+$N_z=\sum_{x,y}n(x,y)p(z\mid x,y)$ be the expected number of pairs assigned to
+latent class $z$.
 \begin{itemize}
   \item \textbf{E-step}: compute the posterior
         $p(z\mid x,y) = \dfrac{p(z)\,p(x\mid z)\,p(y\mid z)}
@@ -3134,9 +3263,9 @@ cold weather ($z$), so $x \perp y \mid z$.
   \item \textbf{M-step}: update the parameters using the weighted counts
         $n(x,y)$:
         \begin{align*}
-          p(z) &= \sum_{x,y} n(x,y)\,p(z\mid x,y),\\
-          p(y\mid z) &= \frac{\sum_x n(x,y)\,p(z\mid x,y)}{p(z)},\\
-          p(x\mid z) &= \frac{\sum_y n(x,y)\,p(z\mid x,y)}{p(z)}.
+          p(z) &= \frac{N_z}{N},\\
+          p(y\mid z) &= \frac{\sum_x n(x,y)\,p(z\mid x,y)}{N_z},\\
+          p(x\mid z) &= \frac{\sum_y n(x,y)\,p(z\mid x,y)}{N_z}.
         \end{align*}
 \end{itemize}
 
@@ -3164,8 +3293,8 @@ Four quantities drive the algorithm:
   \item \textbf{Similarities} $s(i,k)$: how well object $k$ can serve as an
         exemplar for object $i$ (e.g.\ negative squared distance,
         $s(i,k)=-\|\bm{x}_i-\bm{x}_k\|^2$).
-  \item \textbf{Preferences} $s(k,k)$: the prior probability that object $k$
-        becomes an exemplar; a uniform value controls the expected number of
+  \item \textbf{Preferences} $s(k,k)$: a self-similarity score expressing how
+        suitable object $k$ is as an exemplar; a uniform value controls the tendency toward
         clusters. \emph{Higher preference → more cluster centres; lower
         preference → fewer cluster centres.}
   \item \textbf{Responsibilities} $r(i,k)$: message from $i$ to candidate
@@ -3232,11 +3361,11 @@ More damping means the messages move more cautiously, so convergence is
 wrong direction.)
 \end{notebox}
 
-\textbf{Limitation.} AP implicitly assumes spherical clusters of equal size
-because similarities are typically Euclidean distances.
-When cluster sizes differ, AP cannot adjust the effective bandwidth per
-cluster, and elements of a large diffuse cluster may be assigned to a nearby
-compact cluster instead.
+\textbf{Limitation.} AP itself accepts arbitrary similarities and therefore does not
+mathematically require spherical clusters. With the common choice of negative squared
+Euclidean distance and one global preference, however, it often behaves as though
+clusters had comparable scale. Large diffuse and small compact groups can then be merged
+or split poorly unless the similarity and preferences encode the differing scales.
 
 \subsubsection{Examples}
 
@@ -3358,7 +3487,7 @@ The complete EM update cycle is:
 \begin{enumerate}
   \item \textbf{E-step}: $\hat\alpha_{ik} = \dfrac{\alpha_i^{\text{old}}\,k(\bm{x}_k;\bm{\mu}_i,\sigma_i^2)}{p(\bm{x}_k)}$,\quad
         $p(\bm{x}_k) = \sum_i \alpha_i^{\text{old}}\,k(\bm{x}_k;\bm{\mu}_i,\sigma_i^2)$.
-  \item \textbf{Weight update}: $\alpha_i^{\text{new}} = \dfrac{n\hat\alpha_i + \gamma_i - 1}{\gamma_s}$.
+  \item \textbf{Weight update}: $\alpha_i^{\text{new}} = \dfrac{n\hat\alpha_i + \gamma_i - 1}{n+\gamma_s-K}$.
   \item \textbf{Variance update}:
         $(\sigma_i^2)^{\text{new}} = \dfrac{\displaystyle\sum_k \hat\alpha_{ik}(-2\log k(\bm{x}_k,\bm{\mu}_i)) + wS}{\displaystyle n\hat\alpha_i + w}$.
   \item \textbf{Kernel update}: compute $-2\log k(\bm{x}_l,\bm{\mu}_i) = \|\bm{x}_l-\bm{\mu}_i\|^2$
@@ -3456,6 +3585,11 @@ additive structure. Multiplicative coherence means all rows are proportional —
 row by its mean yields identical rows.
 \end{intbox}
 
+\figureplaceholder
+  {A bicluster is a local rectangle, not a whole-row cluster.}
+  {A gene-by-sample heatmap containing several overlapping rectangular expression patterns. Highlight that one gene and one sample may participate in multiple coloured rectangles or none.}
+  {biclustering gene expression heatmap overlapping biclusters illustration}
+
 \section{Overview of Biclustering Methods}
 
 Biclustering algorithms fall into four broad categories:
@@ -3490,7 +3624,7 @@ FABIA (Factor Analysis for Bicluster Acquisition) represents each bicluster as a
 \emph{outer product} of two sparse vectors.
 
 \begin{defbox}[title={FABIA Bicluster Representation}]
-A bicluster is the rank-1 matrix $\mathbf{u}_j \mathbf{y}_j^T$ where
+A bicluster is the rank-1 matrix $\mathbf{y}_j \mathbf{u}_j^T$ where
 \begin{itemize}
   \item $\mathbf{u}_j \in \mathbb{R}^m$ is a sparse \emph{prototype} (loading) vector — its non-zero entries
         indicate which features (genes) belong to bicluster $j$.
@@ -3499,7 +3633,7 @@ A bicluster is the rank-1 matrix $\mathbf{u}_j \mathbf{y}_j^T$ where
 \end{itemize}
 The full data matrix is modelled as
 \[
-  X = \sum_{j=1}^{l} \mathbf{u}_j \mathbf{y}_j^T + \Gamma = Y U^T + \Gamma,
+  X = \sum_{j=1}^{l} \mathbf{y}_j \mathbf{u}_j^T + \Gamma = Y U^T + \Gamma,
 \]
 where $X, \Gamma \in \mathbb{R}^{n \times m}$, $U \in \mathbb{R}^{m \times l}$, $Y \in \mathbb{R}^{n \times l}$,
 and $\Gamma$ is noise.
@@ -3541,7 +3675,7 @@ in the E-step, and the model parameters are updated in the M-step.
 The Laplace prior is a sparsity-inducing prior — analogous to the $\ell_1$ penalty in LASSO.
 Factors and loadings are driven towards zero unless there is strong evidence in the data,
 so only the samples and features that genuinely participate in a bicluster receive large values.
-The resulting sparse outer products $\mathbf{u}_j\mathbf{y}_j^T$ cleanly delimit rectangular
+The resulting sparse outer products $\mathbf{y}_j\mathbf{u}_j^T$ cleanly delimit rectangular
 bicluster regions in the data matrix.
 \end{intbox}
 
@@ -3653,14 +3787,18 @@ The tool GENSCAN achieves a base-pair specificity of 50\%–80\%.
 A profile HMM stores a \emph{multiple sequence alignment} in a model;
 new sequences are scored by their likelihood under the profile.
 When building a profile HMM from unaligned sequences, training can get stuck in local
-maxima; \emph{deterministic annealing} (used in HMMER) avoids this.
+maxima. In practice, profile HMMs are usually initialised from a multiple sequence
+alignment; annealing-style optimisation is one possible strategy when alignment and
+model estimation are coupled.
 Standard software packages: HMMER and SAM.
 The PFAM protein family database is built entirely on profile HMMs.
 
 Profile HMMs have inherent limitations:
 \begin{itemize}
   \item Cannot discover long-range dependencies.
-  \item Cannot handle real-valued inputs (discrete alphabet only).
+  \item Classical profile HMMs use a discrete residue alphabet. HMMs in general can use
+        continuous emission densities, so this is a profile-design choice, not a limit of
+        the HMM formalism.
   \item Cannot detect higher-order correlations between positions.
   \item Cannot use a negative training set (only model what sequences look like, not what they are not).
 \end{itemize}
@@ -3701,6 +3839,11 @@ hidden sequence.
 \textbf{Markov assumption:} the next state depends only on the current state (first-order).
 Higher-order HMMs condition on more history, e.g.\ second-order: $p(u_t \mid u_{t-1}, u_{t-2})$.
 \end{defbox}
+
+\figureplaceholder
+  {An HMM state graph and its dynamic-programming trellis.}
+  {On the left, a small state graph with transition and emission probabilities. On the right, unroll it through time and show forward messages, backward messages, and a highlighted Viterbi path with back-pointers.}
+  {HMM state graph forward backward Viterbi trellis diagram}
 
 The probability of a hidden state sequence $u^T = (u_1, u_2, \ldots, u_T)$ of length $T$ is:
 \begin{equation}
@@ -3910,11 +4053,11 @@ harder to estimate reliably.
 A single state variable taking $S$ values is a clumsy way to represent a process
 that is really several things happening at once — you would need one state per
 \emph{combination} of factors. A \emph{factorial HMM} instead splits the hidden
-state into several parallel chains $u^1, u^2, \ldots, u^h$ (three in the standard
-picture). The transition of chain $u^i$ is conditioned on the chains $u^k$ with
-$k \le i$, and the emission depends jointly on \emph{all} chains. A natural
-reading is multi-timescale dynamics: $u^1$ evolves slowly, the higher chains
-faster, with slow chains influencing fast ones but not the reverse.
+state into several parallel chains $u^1, u^2, \ldots, u^h$. In the standard factorial
+HMM, each chain evolves from its own previous state and the observation depends jointly
+on the current states of all chains. Coupled or hierarchical variants may additionally
+let chains influence one another. The chains can represent simultaneous causes or
+processes operating at different time scales.
 
 The price is combinatorial. With $h$ chains of $S$ values each, the joint
 emission distribution has $P\,S^{h}$ entries, so exact learning is expensive.
@@ -4012,14 +4155,19 @@ Begin and end states ($B$, $E$) bracket the pattern. A new sequence is scored by
 its likelihood; HMMER actually reports a log-odds score against a random model,
 which makes the score's significance easy to read.
 
+\figureplaceholder
+  {Profile HMM architecture for one sequence motif.}
+  {A left-to-right chain with match, insert, and silent delete states for several alignment columns. Trace one path that contains both an insertion and a deletion and align its emitted residues underneath.}
+  {profile HMM match insert delete states architecture}
+
 Building a profile from \emph{unaligned} positive examples runs straight into the
 local-minimum problem, so one either pays for global optimisation (deterministic
 annealing) or — as is now standard — \emph{initialises} the HMM from a multiple
 alignment of the positives and only fine-tunes from there. Profile HMMs are
-pervasive: Pfam is built entirely on them, with roughly 67\% of proteins
-containing at least one Pfam profile and about 45\% of all residues covered. The
-same machinery, outside the profile setting, is also used for tasks like
-splice-site detection.
+pervasive: Pfam is organised around profile HMMs for protein families. Coverage
+percentages change with every database release and should be looked up rather than
+memorised from an old slide. The same machinery, outside the profile setting, is also
+used for tasks such as splice-site detection.
 
 
 % ==========================================================
@@ -4051,21 +4199,21 @@ constrained to be symmetric with no self-loops,
 so the weight matrix $\bm{W}$ is symmetric with a zero diagonal (and in general
 indefinite).
 
-How does a unit decide its state? Flipping unit $i$ from off to on changes the
-energy by
+How does a unit decide its state? Define the local field as the energy advantage of
+turning unit $i$ on,
 \[
-  \Delta E_i = \sum_j w_{ij}\, s_j + \theta_i .
+  h_i \;\eqdef\; E(s_i=0)-E(s_i=1) = \sum_j w_{ij}\, s_j + \theta_i .
 \]
 Under the Boltzmann distribution the energy of a state is proportional to its
 negative log probability, so the log-odds of the unit being on are exactly
-$\Delta E_i / T$:
+$h_i / T$:
 \[
-  \frac{\Delta E_i}{T} = \ln p_{i=\text{on}} - \ln p_{i=\text{off}}
+  \frac{h_i}{T} = \ln p_{i=\text{on}} - \ln p_{i=\text{off}}
    = \ln\!\frac{p_{i=\text{on}}}{1 - p_{i=\text{on}}} .
 \]
 Solving for the probability gives the logistic (sigmoid) activation,
 \[
-  p_{i=\text{on}} = \frac{1}{1 + \exp(-\Delta E_i / T)} ,
+  p_{i=\text{on}} = \frac{1}{1 + \exp(-h_i / T)} ,
 \]
 where $T$ is the temperature. The logistic function is therefore not an arbitrary
 modelling choice — it drops straight out of the Boltzmann distribution.
@@ -4074,9 +4222,10 @@ The network runs by repeatedly picking a unit and resampling its state from this
 probability (Gibbs sampling). Once it reaches \emph{thermal equilibrium} the
 distribution over global states has settled and no longer changes. In practice
 one starts hot — a high $T$ makes flips nearly random, which lets the system jump
-out of poor local minima — and then gradually cools, so the energy settles near
-a global minimum while still fluctuating a little around it. This is simulated
-annealing.
+out of poor local minima — and then gradually cools, biasing the sampler toward
+low-energy configurations. This is simulated annealing; only idealised infinitely slow
+schedules carry global-optimum guarantees, so practical runs can still settle in a poor
+basin.
 
 \begin{intbox}
 Picture an energy landscape over all $2^n$ configurations. Low-energy
@@ -4109,14 +4258,16 @@ Just like EM, training alternates two phases:
   \item \textbf{Negative (free) phase:} let the whole network run freely, with no
         data clamped, and measure the corresponding correlation $p^-_{ij}$.
 \end{itemize}
-The gradient of the divergence with respect to a weight turns out to be
-beautifully simple — just the difference of these two correlations:
+At temperature $T=1$, the gradient of the divergence is the negative difference of
+these two correlations:
 \[
-  \pd{D}{w_{ij}} = -\frac{1}{\eta}\left( p^+_{ij} - p^-_{ij} \right),
+  \pd{D}{w_{ij}} = -\left( p^+_{ij} - p^-_{ij} \right),
   \qquad
-  \pd{D}{\theta_i} = -\frac{1}{\eta}\left( p^+_{i} - p^-_{i} \right),
+  \pd{D}{\theta_i} = -\left( p^+_{i} - p^-_{i} \right).
 \]
-where $\eta$ is the learning rate.
+Gradient descent therefore uses
+$\Delta w_{ij}=\eta(p^+_{ij}-p^-_{ij})$ and
+$\Delta\theta_i=\eta(p^+_i-p^-_i)$, where $\eta$ is the learning rate.
 
 \begin{intbox}
 The rule reads as ``fit the correlations''. Raise the weight between two units
@@ -4131,9 +4282,9 @@ called biologically plausible.
 The catch is the negative phase. Two problems make the unrestricted Boltzmann
 machine impractical:
 \begin{itemize}
-  \item the time needed to collect equilibrium statistics grows
-        \emph{exponentially} with the size of the machine and the magnitude of
-        the weights;
+  \item collecting reliable equilibrium statistics can require exponentially long
+        mixing times in the worst case, especially with strong weights and separated
+        energy modes;
   \item connections are most plastic when their units have activation
         probabilities midway between $0$ and $1$, causing a \emph{variance trap}:
         noise makes the weights random-walk until activities finally saturate.
@@ -4174,6 +4325,11 @@ with each conditional given by a sigmoid,
 \]
 So a whole layer can be sampled in one parallel shot, conditioned on the other.
 
+\figureplaceholder
+  {RBM bipartite architecture and one CD-1 step.}
+  {Visible and hidden units with only cross-layer connections, followed by the Gibbs chain $v^{(0)}$ to $h^{(0)}$ to $v^{(1)}$ to $h^{(1)}$. Label data statistics and reconstruction statistics.}
+  {restricted Boltzmann machine architecture contrastive divergence CD-1 diagram}
+
 \subsection*{Contrastive divergence}
 
 Training maximises the likelihood of the data, $\arg\max_{\bm{W}} \prod_{v\in V}
@@ -4185,10 +4341,10 @@ full free phase with a single short Gibbs step started from the data. One step
 \begin{enumerate}
   \item Take a training vector $\bm{v}$ and sample the hidden activations
         $\bm{h} \sim p(\bm{h}\mid\bm{v})$. The outer product $\bm{v}\bm{h}\T$ is
-        the \emph{positive gradient}.
+        the positive-phase statistic.
   \item Sample a reconstruction $\bm{v}' \sim p(\bm{v}\mid\bm{h})$, then resample
         $\bm{h}' \sim p(\bm{h}\mid\bm{v}')$.
-  \item The outer product ${\bm{v}'}{\bm{h}'}\T$ is the \emph{negative gradient}.
+  \item The outer product ${\bm{v}'}{\bm{h}'}\T$ is the negative-phase statistic.
   \item Update $\Delta w_{ij} = \eta\,(\,$positive $-$ negative$\,)
         = \eta\,(\langle v_i h_j\rangle_{\text{data}}
         - \langle v'_i h'_j\rangle_{\text{recon}})$.
