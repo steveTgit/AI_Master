@@ -208,14 +208,56 @@ for centered $X$.
 \end{itemize}
 \closequestion
 \begin{answerprose}{-0.13 / -2.13 / -0.27 / sub-Gaussian}
-For $X\sim U[-1,1]$: $\E(X^2)=\tfrac13$ and $\E(X^4)=\tfrac15$ (in general $\E(X^{2k})=\tfrac{1}{2k+1}$).
+For a discrete random variable, an expectation is a probability-weighted sum; for a
+continuous random variable with density $f_X$, it is an integral:
+\[
+\E[g(X)]
+=\sum_x g(x)P(X=x)
+\quad\text{or}\quad
+\E[g(X)]=\int_{-\infty}^{\infty}g(x)f_X(x)\dd x.
+\]
+To compute a moment, choose $g(x)=x^r$. Since $X\sim U[-1,1]$, its density is
+\[
+f_X(x)=\frac{1}{2}\quad\text{for }-1\leq x\leq1
+\qquad\text{and}\qquad
+f_X(x)=0\quad\text{otherwise}.
+\]
+Consequently,
+\[
+\E(X^r)=\int_{-1}^{1}x^r\frac12\dd x.
+\]
+Odd moments are zero because an odd integrand cancels on the symmetric interval. For even
+moments $r=2k$,
+\[
+\E(X^{2k})
+=\frac12\left[\frac{x^{2k+1}}{2k+1}\right]_{-1}^{1}
+=\frac{1}{2k+1}.
+\]
+In particular,
+\[
+\E(X^2)=\frac12\left[\frac{x^3}{3}\right]_{-1}^{1}
+=\frac13,
+\qquad
+\E(X^4)=\frac12\left[\frac{x^5}{5}\right]_{-1}^{1}
+=\frac15.
+\]
+Also $\E(X)=0$ by symmetry, so $X$ is centered and the given cumulant formula applies:
 \[
 \kappa_4(X)=\tfrac15-3\bigl(\tfrac13\bigr)^2=\tfrac15-\tfrac13=-\tfrac{2}{15}\approx\mathbf{-0.13}.
 \]
-Cumulants are homogeneous of degree $n$: $\kappa_4(cX)=c^4\kappa_4(X)$, so
-$\kappa_4(2X)=16\cdot(-\tfrac{2}{15})=-\tfrac{32}{15}\approx\mathbf{-2.13}$.
-Cumulants are additive for independent variables:
-$\kappa_4(X+Y)=\kappa_4(X)+\kappa_4(Y)=-\tfrac{4}{15}\approx\mathbf{-0.27}$.
+Cumulants of order $n$ scale as $\kappa_n(cX)=c^n\kappa_n(X)$. Therefore,
+\[
+\kappa_4(2X)=2^4\kappa_4(X)
+=16\left(-\frac{2}{15}\right)
+=-\frac{32}{15}\approx\mathbf{-2.13}.
+\]
+For independent variables, cumulants of the same order add. Since $X$ and $Y$ have the
+same distribution,
+\[
+\kappa_4(X+Y)=\kappa_4(X)+\kappa_4(Y)
+=2\left(-\frac{2}{15}\right)
+=-\frac{4}{15}\approx\mathbf{-0.27}.
+\]
 Since $\kappa_4(X)<0$ (negative excess kurtosis), $X$ is \textbf{sub-Gaussian}
 --- the uniform distribution has lighter tails than a Gaussian.
 \end{answerprose}
@@ -238,7 +280,22 @@ for centered $X$.
 \end{itemize}
 \closequestion
 \begin{answerprose}{0 / -2 / 81 / 2}
-$X^2=X^4=1$ always, and $X^3=X$, so
+For a discrete random variable,
+\[
+\E[g(X)]=\sum_x g(x)P(X=x).
+\]
+Here the only possible values are $-1$ and $1$, each with probability $\tfrac12$. Thus,
+\[
+\E(X)=(-1)\frac12+(1)\frac12=0,
+\]
+\[
+\E(X^2)=(-1)^2\frac12+1^2\frac12=1,\qquad
+\E(X^3)=(-1)^3\frac12+1^3\frac12=0,
+\]
+\[
+\E(X^4)=(-1)^4\frac12+1^4\frac12=1.
+\]
+Equivalently, $X^2=X^4=1$ always and $X^3=X$. Because $\E(X)=0$, $X$ is centered, so
 \[
 \kappa_3(X)=\E(X^3)=\E(X)=\mathbf{0}
 \qquad\text{(the distribution is symmetric),}
@@ -246,8 +303,20 @@ $X^2=X^4=1$ always, and $X^3=X$, so
 \[
 \kappa_4(X)=\E(X^4)-3\bigl(\E(X^2)\bigr)^2=1-3=\mathbf{-2}.
 \]
-Homogeneity: $\kappa_4(3X)/\kappa_4(X)=3^4=\mathbf{81}$.
-Additivity under independence: $\kappa_4(X+Y)=2\,\kappa_4(X)$, so the ratio is $\mathbf{2}$.
+Using homogeneity of fourth-order cumulants,
+\[
+\frac{\kappa_4(3X)}{\kappa_4(X)}
+=\frac{3^4\kappa_4(X)}{\kappa_4(X)}
+=3^4=\mathbf{81}.
+\]
+Using additivity for the independent variables $X$ and $Y$ and the fact that they are
+identically distributed,
+\[
+\frac{\kappa_4(X+Y)}{\kappa_4(X)}
+=\frac{\kappa_4(X)+\kappa_4(Y)}{\kappa_4(X)}
+=\frac{2\kappa_4(X)}{\kappa_4(X)}
+=\mathbf{2}.
+\]
 \end{answerprose}
 
 \questiontitle{Eigenvectors, covariance matrix, and a scalar expression}
@@ -260,14 +329,27 @@ A=(2v_1^\top+v_2^\top+3v_3^\top)\,C\,(3v_2+v_3).
 \]
 \closequestion
 \begin{answerprose}{12}
-Use $Cv_i=\lambda_i v_i$ and orthonormality of the eigenvectors ($v_i^\top v_j=\delta_{ij}$):
+For a real symmetric covariance matrix, eigenvectors belonging to different eigenvalues are
+orthogonal. Together with the given normalization this means
+$v_i^\top v_j=\delta_{ij}$: the inner product is $1$ when $i=j$ and $0$ otherwise.
+Also, by the definition of an eigenvector, $Cv_i=\lambda_i v_i$. First multiply from the
+right:
 \[
-C(3v_2+v_3)=3\lambda_2 v_2+\lambda_3 v_3=9v_2+v_3.
+C(3v_2+v_3)
+=3Cv_2+Cv_3
+=3\lambda_2v_2+\lambda_3v_3
+=9v_2+v_3.
 \]
-Multiplying from the left kills every mixed term:
+Now expand all products:
 \[
-A=(2v_1^\top+v_2^\top+3v_3^\top)(9v_2+v_3)
-=9\,(v_2^\top v_2)+3\,(v_3^\top v_3)=9+3=\mathbf{12}.
+\begin{aligned}
+A
+&=(2v_1^\top+v_2^\top+3v_3^\top)(9v_2+v_3)\\
+&=18\,v_1^\top v_2+2\,v_1^\top v_3
+  +9\,v_2^\top v_2+v_2^\top v_3
+  +27\,v_3^\top v_2+3\,v_3^\top v_3\\
+&=0+0+9+0+0+3=\mathbf{12}.
+\end{aligned}
 \]
 \end{answerprose}
 
@@ -293,12 +375,20 @@ D_{\mathrm{KL}}(p_Y\|p_Z)=\int_{-\infty}^{\infty} p_Y(x)\log\!\left(\frac{p_Y(x)
 Use the natural logarithm and round to two decimal places.
 \closequestion
 \begin{answerprose}{5.00}
-The integrand is nonzero only on $[0,\theta_Y]$ (where $p_Y>0$), and there the ratio is constant:
+In general, the integral only has to cover the support of the first distribution $p_Y$,
+because the factor $p_Y(x)$ is zero elsewhere. Here this support is $[0,\theta_Y]$, and it
+lies inside $[0,\theta_Z]$ because $e^5<e^{10}$. On this interval both densities are
+nonzero and their ratio is constant:
 \[
+\begin{aligned}
 D_{\mathrm{KL}}(p_Y\|p_Z)
-=\int_0^{\theta_Y}\frac{1}{\theta_Y}\ln\!\frac{1/\theta_Y}{1/\theta_Z}\dd x
-=\ln\frac{\theta_Z}{\theta_Y}
-=\ln\frac{e^{10}}{e^{5}}=10-5=\mathbf{5.00}.
+&=\int_0^{\theta_Y}\frac{1}{\theta_Y}
+  \ln\!\left(\frac{1/\theta_Y}{1/\theta_Z}\right)\dd x\\
+&=\ln\!\left(\frac{\theta_Z}{\theta_Y}\right)
+  \underbrace{\int_0^{\theta_Y}\frac{1}{\theta_Y}\dd x}_{=\,1}\\
+&=\ln\!\left(\frac{e^{10}}{e^5}\right)
+ =\ln(e^5)=\mathbf{5.00}.
+\end{aligned}
 \]
 (This works because the support of $p_Y$ is contained in the support of $p_Z$; the reverse
 divergence would be infinite.)
@@ -314,9 +404,26 @@ y=\begin{pmatrix}4\\5\\6\end{pmatrix},
 compute the outer product matrix $A=xy^\top$ and give the third row of $A$.
 \closequestion
 \begin{answerprose}{(12, 15, 18)}
-$(xy^\top)_{ij}=x_i y_j$, so row $i$ of $A$ is $x_i\cdot y^\top$. The third row is
+An outer product multiplies every component of the column vector $x$ with every component
+of the row vector $y^\top$. In symbols, $(xy^\top)_{ij}=x_i y_j$. Therefore,
 \[
-3\cdot(4,5,6)=(\mathbf{12},\,\mathbf{15},\,\mathbf{18}).
+A=xy^\top
+=\begin{pmatrix}1\\2\\3\end{pmatrix}
+ \begin{pmatrix}4&5&6\end{pmatrix}
+=\begin{pmatrix}
+1\cdot4&1\cdot5&1\cdot6\\
+2\cdot4&2\cdot5&2\cdot6\\
+3\cdot4&3\cdot5&3\cdot6
+\end{pmatrix}
+=\begin{pmatrix}
+4&5&6\\
+8&10&12\\
+12&15&18
+\end{pmatrix}.
+\]
+Hence the requested third row is
+\[
+(\mathbf{12},\,\mathbf{15},\,\mathbf{18}).
 \]
 \end{answerprose}
 
@@ -336,20 +443,49 @@ Compute $P(X=1)$, $P(Y=1)$, $H(X)$, $H(Y)$, $I(X;Y)$ using the natural logarithm
 Round the final values to two decimal places.
 \closequestion
 \begin{answerprose}{0.63 / 0.50 / 0.66 / 0.69 / 0.03}
-Marginals (row/column sums):
+Marginal probabilities are obtained by summing the joint distribution over the other
+variable:
 \[
-P(X=1)=0.25+0.375=\mathbf{0.63},\qquad
+P(X=x)=\sum_y P(X=x,Y=y),\qquad
+P(Y=y)=\sum_x P(X=x,Y=y).
+\]
+Thus the complete marginals are
+\[
+P(X=0)=0.25+0.125=0.375,\qquad
+P(X=1)=0.25+0.375=0.625\approx\mathbf{0.63},
+\]
+\[
+P(Y=0)=0.25+0.25=0.50,\qquad
 P(Y=1)=0.125+0.375=\mathbf{0.50}.
 \]
-Entropies:
+For a discrete random variable, $H(X)=-\sum_x p_X(x)\ln p_X(x)$. Therefore,
 \[
-H(X)=-(0.375\ln 0.375+0.625\ln 0.625)\approx\mathbf{0.66},\qquad
-H(Y)=\ln 2\approx\mathbf{0.69}.
+\begin{aligned}
+H(X)
+&=-\bigl(0.375\ln 0.375+0.625\ln 0.625\bigr)\\
+&\approx-\bigl(0.375(-0.981)+0.625(-0.470)\bigr)
+ \approx\mathbf{0.66},
+\end{aligned}
 \]
-Joint entropy:
-$H(X,Y)=-(0.25\ln 0.25+0.125\ln 0.125+0.25\ln 0.25+0.375\ln 0.375)\approx 1.32$.
 \[
-I(X;Y)=H(X)+H(Y)-H(X,Y)\approx 0.662+0.693-1.321=\mathbf{0.03}.
+H(Y)=-\bigl(0.5\ln0.5+0.5\ln0.5\bigr)=\ln2\approx\mathbf{0.69}.
+\]
+The joint entropy uses all four cells:
+\[
+\begin{aligned}
+H(X,Y)
+&=-\sum_{x,y} p(x,y)\ln p(x,y)\\
+&=-\bigl(0.25\ln0.25+0.125\ln0.125
+          +0.25\ln0.25+0.375\ln0.375\bigr)\\
+&\approx1.321.
+\end{aligned}
+\]
+Finally, mutual information is the amount by which knowing one variable reduces the
+uncertainty about the other:
+\[
+I(X;Y)=H(X)+H(Y)-H(X,Y)
+\approx0.662+0.693-1.321
+\approx\mathbf{0.03}.
 \]
 \end{answerprose}
 
@@ -369,13 +505,32 @@ Compute $P(Y=0)$, $H(X)$, $H(Y)$, $I(X;Y)$ using the natural logarithm.
 Round the final values to two decimal places.
 \closequestion
 \begin{answerprose}{0.33 / 0.64 / 0.64 / 0.17}
-Marginals: $P(Y=0)=\tfrac13\approx\mathbf{0.33}$, $P(X=0)=\tfrac23$, $P(Y=1)=\tfrac23$.
+Add rows or columns of the joint table to obtain the marginals:
 \[
-H(X)=H(Y)=-\bigl(\tfrac23\ln\tfrac23+\tfrac13\ln\tfrac13\bigr)\approx\mathbf{0.64}.
+P(X=0)=\tfrac13+\tfrac13=\tfrac23,\qquad
+P(X=1)=0+\tfrac13=\tfrac13,
 \]
-The joint distribution has three equally likely cells, so $H(X,Y)=\ln 3\approx 1.10$.
 \[
-I(X;Y)=H(X)+H(Y)-H(X,Y)\approx 0.637+0.637-1.099=\mathbf{0.17}.
+P(Y=0)=\tfrac13+0=\tfrac13\approx\mathbf{0.33},\qquad
+P(Y=1)=\tfrac13+\tfrac13=\tfrac23.
+\]
+Using $H(X)=-\sum_x p_X(x)\ln p_X(x)$, both variables have the same entropy because both
+have marginal probabilities $\{\tfrac13,\tfrac23\}$:
+\[
+H(X)=H(Y)
+=-\left(\tfrac23\ln\tfrac23+\tfrac13\ln\tfrac13\right)
+\approx\mathbf{0.64}.
+\]
+The joint distribution has three nonzero cells, each with probability $\tfrac13$.
+The zero cell contributes $0\ln0:=0$, so
+\[
+H(X,Y)=-3\left(\tfrac13\ln\tfrac13\right)=\ln3\approx1.099.
+\]
+Therefore,
+\[
+I(X;Y)=H(X)+H(Y)-H(X,Y)
+\approx0.637+0.637-1.099
+\approx\mathbf{0.17}.
 \]
 \end{answerprose}
 
@@ -395,20 +550,34 @@ Compute $P(X=0)$, $P(Y=0)$, $H(X)$, $H(Y)$, $I(X;Y)$ using the natural logarithm
 Round the final values to two decimal places.
 \closequestion
 \begin{answerprose}{0.70 / 0.50 / 0.61 / 0.69 / 0.02}
-Marginals:
+Summing the rows and columns gives all marginal probabilities:
 \[
 P(X=0)=0.3+0.4=\mathbf{0.70},\qquad
-P(Y=0)=0.3+0.2=\mathbf{0.50}.
+P(X=1)=0.2+0.1=0.30,
 \]
-Entropies:
+\[
+P(Y=0)=0.3+0.2=\mathbf{0.50},\qquad
+P(Y=1)=0.4+0.1=0.50.
+\]
+Insert these marginals into $H(X)=-\sum_x p_X(x)\ln p_X(x)$:
 \[
 H(X)=-(0.7\ln 0.7+0.3\ln 0.3)\approx\mathbf{0.61},\qquad
-H(Y)=\ln 2\approx\mathbf{0.69}.
+H(Y)=-2(0.5\ln0.5)=\ln 2\approx\mathbf{0.69}.
 \]
-Joint entropy:
-$H(X,Y)=-(0.3\ln 0.3+0.4\ln 0.4+0.2\ln 0.2+0.1\ln 0.1)\approx 1.28$.
+For the joint entropy, use the four entries of the original table:
 \[
-I(X;Y)=H(X)+H(Y)-H(X,Y)\approx 0.611+0.693-1.280=\mathbf{0.02}.
+\begin{aligned}
+H(X,Y)
+&=-\sum_{x,y} p(x,y)\ln p(x,y)\\
+&=-\bigl(0.3\ln0.3+0.4\ln0.4+0.2\ln0.2+0.1\ln0.1\bigr)\\
+&\approx1.280.
+\end{aligned}
+\]
+Hence,
+\[
+I(X;Y)=H(X)+H(Y)-H(X,Y)
+\approx0.611+0.693-1.280
+\approx\mathbf{0.02}.
 \]
 \end{answerprose}
 \questiontitle{Parameter Estimation and Maximum Likelihood}
@@ -427,14 +596,19 @@ Multiple answers are possible.
   \choice The mean squared error is defined as $\mathrm{mse}(\hat w)=(\hat w-w)^\top(\hat w-w)$.
 \end{itemize}
 \closequestion
-\begin{answer}{A, E, F, G}
+\begin{answer}{A, E, F}
   \yes{A} Independence lets the joint density factorize: $\mathcal{L}=\prod_i p(x_i;w)$.
   \no{B} Same \emph{argmax} (the logarithm is strictly monotone), but the \emph{values} differ: $\ln\mathcal{L}(\hat w)\neq\mathcal{L}(\hat w)$ in general.
   \no{C} The model class is assumed to be \emph{known and fixed}; only its parameters are estimated from the data.
   \no{D} ML \emph{is} asymptotically consistent (and unbiased and efficient) --- the ``not consistent'' spoils the statement.
   \yes{E} Bias--variance decomposition: $\mathrm{mse}(\hat w)=\Var(\hat w)+\mathrm{bias}^2(\hat w)$.
   \yes{F} That is the definition of unbiasedness.
-  \yes{G} That is the definition of the likelihood.
+  \no{G} A likelihood is not, in general, the probability of the observed data. More
+  precisely, $\mathcal L(w;x)=p(x\mid w)$ is the probability mass or density at the
+  observed $x$, viewed as a function of the parameter $w$. It need not sum or integrate
+  to $1$ over $w$; for continuous data, moreover, $P(X=x)=0$ even when
+  $f(x\mid w)>0$. Therefore the wording ``the probability that the model produces the
+  data'' is false.
   \no{H} The expectation is missing: $\mathrm{mse}(\hat w)=\E\bigl[(\hat w-w)^\top(\hat w-w)\bigr]$; without it, the expression is a random variable, not an error measure.
 \end{answer}
 
@@ -478,10 +652,25 @@ In order of the blanks:
   \item \textbf{unbiased} --- $\E(\hat w)=w$ is the definition of unbiasedness.
   \item \textbf{mean squared error}, decomposed into \textbf{variance} $+$ squared \textbf{bias}:
         $\mathrm{mse}(\hat w)=\Var(\hat w)+\mathrm{bias}^2(\hat w)$.
-  \item $\frac{1}{n+1}\sum_i X_i$ is \textbf{biased but consistent}: its expectation is
-        $\frac{n}{n+1}\mu\neq\mu$ for finite $n$, but bias and variance both vanish as $n\to\infty$.
-  \item $X_1$ is \textbf{unbiased but not consistent}: $\E(X_1)=\mu$, but the estimator never
-        concentrates --- it ignores all further data.
+  \item Let $\E(X_i)=\mu$ and $\Var(X_i)=\sigma^2$. For
+        $\hat\mu_n=\frac{1}{n+1}\sum_{i=1}^nX_i$, linearity of expectation gives
+        \[
+        \E(\hat\mu_n)
+        =\frac{1}{n+1}\sum_{i=1}^n\E(X_i)
+        =\frac{n}{n+1}\mu\neq\mu
+        \]
+        for finite $n$, so the estimator is biased. However,
+        \[
+        \operatorname{bias}(\hat\mu_n)
+        =-\frac{\mu}{n+1}\longrightarrow0,\qquad
+        \Var(\hat\mu_n)
+        =\frac{n\sigma^2}{(n+1)^2}\longrightarrow0.
+        \]
+        Thus it converges to $\mu$ and is \textbf{biased but consistent}.
+  \item Taking $\hat\mu=X_1$ gives $\E(\hat\mu)=\mu$, so it is unbiased. But
+        $\Var(\hat\mu)=\sigma^2$ for every sample size: the variance never approaches zero
+        because all further observations are ignored. Therefore $X_1$ is
+        \textbf{unbiased but not consistent}.
   \item $\prod_i p(x_i;w)$ is the \textbf{likelihood} function.
   \item $p(\cdot;w)$ is usually a \textbf{density}, so any finite set of points has probability
         measure zero.
@@ -672,8 +861,13 @@ Compute the PCA projection matrix $Y$ and enter the components of the projected 
 Round to two decimal places.
 \closequestion
 \begin{answerprose}{(3.46, 0.00, 0.00)}
-The projection is $Y=XU$, i.e.\ row-wise $y_i^{(k)}=x_i^\top u_k$. For the second sample
-$x_2=(2,2,2)^\top$:
+Put the eigenvectors into the columns of $U=(u_1,u_2,u_3)$. The PCA coordinates are
+\[
+Y=XU,\qquad
+Y_{ik}=x_i^\top u_k.
+\]
+Thus every entry is the scalar projection of sample $x_i$ onto direction $u_k$. For the
+second sample $x_2=(2,2,2)^\top$:
 \[
 y_2^{(1)}=\frac{2+2+2}{\sqrt3}=\frac{6}{\sqrt3}=2\sqrt3\approx\mathbf{3.46},
 \]
@@ -682,8 +876,30 @@ y_2^{(2)}=\frac{-2+0+2}{\sqrt2}=\mathbf{0},
 \qquad
 y_2^{(3)}=\frac{-2+2+0}{\sqrt2}=\mathbf{0}.
 \]
-Every row of $X$ is a multiple of $(1,1,1)^\top$ --- the matrix has rank $1$, so \emph{all}
-variance lies along $u_1$ and the other components vanish for every sample.
+Repeating the same three scalar products for all four rows gives the complete projection
+matrix:
+\[
+Y=
+\begin{pmatrix}
+\sqrt3&0&0\\
+2\sqrt3&0&0\\
+3\sqrt3&0&0\\
+4\sqrt3&0&0
+\end{pmatrix}
+\approx
+\begin{pmatrix}
+1.73&0.00&0.00\\
+3.46&0.00&0.00\\
+5.20&0.00&0.00\\
+6.93&0.00&0.00
+\end{pmatrix}.
+\]
+Every row of $X$ is a multiple of $(1,1,1)^\top$: the matrix has rank $1$, so all
+variation lies along $u_1$ and the other two coordinates vanish for every sample. The
+requested row is therefore
+\[
+y_2=(\mathbf{3.46},\,\mathbf{0.00},\,\mathbf{0.00}).
+\]
 \end{answerprose}
 
 \questiontitle{PCA computation on a centered matrix --- projected third sample}
@@ -712,7 +928,8 @@ Compute the PCA projection matrix $Y$ and enter the components of the projected 
 Round to two decimal places.
 \closequestion
 \begin{answerprose}{(4.24, 0.00, 0.00)}
-With $Y=XU$ and $x_3=(-3,0,3)^\top$:
+Again, $U=(u_1,u_2,u_3)$ and $Y=XU$, so $Y_{ik}=x_i^\top u_k$. For
+$x_3=(-3,0,3)^\top$:
 \[
 y_3^{(1)}=\frac{(-3)(-1)+0+3\cdot1}{\sqrt2}=\frac{6}{\sqrt2}\approx\mathbf{4.24},
 \]
@@ -721,7 +938,26 @@ y_3^{(2)}=\frac{-3+0+3}{\sqrt2}=\mathbf{0},
 \qquad
 y_3^{(3)}=0\cdot(-3)+1\cdot0+0\cdot3=\mathbf{0}.
 \]
-All rows are multiples of $(-1,0,1)^\top$, so the data is one-dimensional along $u_1$.
+For a general row $x_i=(-i,0,i)^\top$, these products are
+$x_i^\top u_1=i\sqrt2$ and $x_i^\top u_2=x_i^\top u_3=0$. Hence the complete matrix is
+\[
+Y=
+\begin{pmatrix}
+\sqrt2&0&0\\
+2\sqrt2&0&0\\
+3\sqrt2&0&0\\
+4\sqrt2&0&0
+\end{pmatrix}
+\approx
+\begin{pmatrix}
+1.41&0.00&0.00\\
+2.83&0.00&0.00\\
+4.24&0.00&0.00\\
+5.66&0.00&0.00
+\end{pmatrix}.
+\]
+Thus $y_3=(\mathbf{4.24},\,\mathbf{0.00},\,\mathbf{0.00})$. All rows are multiples
+of $(-1,0,1)^\top$, so the data is one-dimensional along $u_1$.
 \end{answerprose}
 
 \questiontitle{PCA computation with a repeated sample --- projected third sample}
@@ -747,7 +983,8 @@ Compute the PCA projection matrix $Y$ and enter the components of the projected 
 Round to two decimal places.
 \closequestion
 \begin{answerprose}{(4.24, 0.00, 0.00)}
-With $Y=XU$ and $x_3=(3,0,3)^\top$:
+Using the projection convention in the question, put the stated directions into
+$U=(u_1,u_2,u_3)$ and calculate $Y=XU$. For $x_3=(3,0,3)^\top$:
 \[
 y_3^{(1)}=\frac{3\cdot1+0+3\cdot1}{\sqrt2}=\frac{6}{\sqrt2}\approx\mathbf{4.24},
 \qquad
@@ -755,8 +992,29 @@ y_3^{(2)}=\frac{3\cdot(-1)+0+3\cdot1}{\sqrt2}=\mathbf{0},
 \qquad
 y_3^{(3)}=\mathbf{0}.
 \]
-The third sample lies exactly on the $(1,0,1)$ direction, so only the first component survives.
-(The fourth sample is identical to the third, so it projects to the same point.)
+The other rows are computed in exactly the same way:
+\[
+Y=
+\begin{pmatrix}
+-4\sqrt2&0&0\\
+0&2\sqrt2&0\\
+3\sqrt2&0&0\\
+3\sqrt2&0&0
+\end{pmatrix}
+\approx
+\begin{pmatrix}
+-5.66&0.00&0.00\\
+0.00&2.83&0.00\\
+4.24&0.00&0.00\\
+4.24&0.00&0.00
+\end{pmatrix}.
+\]
+The third sample lies exactly on the $(1,0,1)$ direction, so only its first component
+survives:
+\[
+y_3=(\mathbf{4.24},\,\mathbf{0.00},\,\mathbf{0.00}).
+\]
+The fourth sample is identical to the third, so it projects to the same point.
 \end{answerprose}
 
 \questiontitle{Kernel PCA}
@@ -796,7 +1054,8 @@ Multiple answers are possible.
   \choice Maximizing the negentropy maximizes the mutual information.
   \choice In general, ICA components are neither ranked nor orthogonal.
   \choice Non-Gaussianity can be measured by the second cumulant.
-  \choice Criteria for independence are mutual information between components and non-Gaussianity of components.
+  \choice Criteria for independence are mutual information between components and\\
+          non-Gaussianity of components.
   \choice The ICA solution is unique.
   \choice For ICA, one needs at least as many sources as observations.
   \choice Infomax maximizes the mutual information between components.
@@ -847,7 +1106,8 @@ Multiple answers are possible.
 \begin{itemize}
   \choice For ICA, one needs more sources than observations.
   \choice Maximizing the negentropy maximizes the mutual information.
-  \choice Criteria for independence are mutual information between components and non-Gaussianity of components.
+  \choice Criteria for independence are mutual information between components and\\
+          non-Gaussianity of components.
   \choice The ICA solution is unique.
   \choice Fast ICA relies on whitening and rotating the data.
   \choice Infomax maximizes the mutual information between components.
@@ -946,14 +1206,24 @@ C=UU^\top+\Psi.
 \]
 \closequestion
 \begin{answerprose}{(10, 11, 17)}
-The first row of $UU^\top$ is the first row of $U$, namely $(1,2)$, multiplied with each row of $U$:
+In general, entry $(i,j)$ of $UU^\top$ is the dot product of row $i$ and row $j$ of
+$U$:
+\[
+(UU^\top)_{ij}=\sum_{k=1}^{\ell}U_{ik}U_{jk}.
+\]
+For the first row, take $(1,2)$ and form its dot product with each row of $U$:
 \[
 (UU^\top)_{11}=1\cdot1+2\cdot2=5,\qquad
 (UU^\top)_{12}=1\cdot3+2\cdot4=11,\qquad
 (UU^\top)_{13}=1\cdot5+2\cdot6=17.
 \]
-Adding $\Psi$ only changes the diagonal entry: $C_{11}=5+5=\mathbf{10}$, $C_{12}=\mathbf{11}$,
-$C_{13}=\mathbf{17}$.
+Hence the first row of $UU^\top$ is $(5,11,17)$. The first row of $\Psi$ is
+$(5,0,0)$, so
+\[
+C_{1,:}=(5,11,17)+(5,0,0)
+=(\mathbf{10},\,\mathbf{11},\,\mathbf{17}).
+\]
+The diagonal noise term changes $C_{11}$ but not the off-diagonal entries in this row.
 \end{answerprose}
 
 \questiontitle{Factor Analysis: conceptual statements}
@@ -990,17 +1260,44 @@ The initial cluster centers are $\mu=(0,1)$ and $\nu=(2,2)$.
 Compute the coordinates of the new cluster centers $\mu^{\mathrm{new}}$ and $\nu^{\mathrm{new}}$ after one iteration of $k$-means.
 \closequestion
 \begin{answerprose}{$\mu^{\mathrm{new}}=(0,0)$, $\nu^{\mathrm{new}}=(3,1)$}
-\textbf{Assignment step} (nearest center; squared distances suffice):
-$(1,0),(0,1),(-1,0),(0,-1)$ are closer to $\mu=(0,1)$;
-$(2,0),(2,3),(5,0)$ are closer to $\nu=(2,2)$
-(e.g.\ $(2,0)$: $d^2_\mu=4+1=5$ vs.\ $d^2_\nu=0+4=4$).
-
-\textbf{Update step} (means of the assigned points):
+\textbf{Assignment step.} For $x=(x_1,x_2)$ and center
+$c=(c_1,c_2)$, use
 \[
-\mu^{\mathrm{new}}=\tfrac14\bigl[(1,0)+(0,1)+(-1,0)+(0,-1)\bigr]=(\mathbf{0},\mathbf{0}),
+d^2(x,c)=(x_1-c_1)^2+(x_2-c_2)^2.
+\]
+The square root is unnecessary because the smaller squared distance also has the smaller
+ordinary distance. With $\mu=(0,1)$ and $\nu=(2,2)$:
+\[
+\begin{array}{c|cc|c}
+x & d^2(x,\mu) & d^2(x,\nu) & \text{assignment}\\
+\hline
+(1,0)  & 2  & 5  & \mu\\
+(0,1)  & 0  & 5  & \mu\\
+(-1,0) & 2  & 13 & \mu\\
+(0,-1) & 4  & 13 & \mu\\
+(2,0)  & 5  & 4  & \nu\\
+(2,3)  & 8  & 1  & \nu\\
+(5,0)  & 26 & 13 & \nu
+\end{array}
+\]
+
+\textbf{Update step.} A new center is the component-wise mean of all points assigned to
+that cluster:
+\[
+\begin{aligned}
+\mu^{\mathrm{new}}
+&=\tfrac14\bigl[(1,0)+(0,1)+(-1,0)+(0,-1)\bigr]\\
+&=\left(\frac{1+0-1+0}{4},\frac{0+1+0-1}{4}\right)
+ =(\mathbf{0},\mathbf{0}),
+\end{aligned}
 \]
 \[
-\nu^{\mathrm{new}}=\tfrac13\bigl[(2,0)+(2,3)+(5,0)\bigr]=(\mathbf{3},\mathbf{1}).
+\begin{aligned}
+\nu^{\mathrm{new}}
+&=\tfrac13\bigl[(2,0)+(2,3)+(5,0)\bigr]\\
+&=\left(\frac{2+2+5}{3},\frac{0+3+0}{3}\right)
+ =(\mathbf{3},\mathbf{1}).
+\end{aligned}
 \]
 \end{answerprose}
 
@@ -1038,16 +1335,39 @@ The initial cluster centers are $\mu=(0,-2)$ and $\nu=(4,1)$.
 Compute the coordinates of the new cluster centers $\mu^{\mathrm{new}}$ and $\nu^{\mathrm{new}}$ after one iteration of $k$-means.
 \closequestion
 \begin{answerprose}{$\mu^{\mathrm{new}}=(1,-1)$, $\nu^{\mathrm{new}}=(2.5,0.5)$}
-\textbf{Assignment:} $(1,0),(2,-1),(1,-2),(0,-1)\to\mu=(0,-2)$;
-$(2,0),(2,1),(3,0),(3,1)\to\nu=(4,1)$
-(e.g.\ $(2,0)$: $d^2_\mu=4+4=8$ vs.\ $d^2_\nu=4+1=5$).
-
-\textbf{Update:}
+\textbf{Assignment step.} Compare
+$d^2(x,c)=(x_1-c_1)^2+(x_2-c_2)^2$ for the two initial centers:
 \[
-\mu^{\mathrm{new}}=\tfrac14\bigl[(1,0)+(2,-1)+(1,-2)+(0,-1)\bigr]=(\mathbf{1},\mathbf{-1}),
+\begin{array}{c|cc|c}
+x & d^2(x,\mu) & d^2(x,\nu) & \text{assignment}\\
+\hline
+(1,0)  & 5  & 10 & \mu\\
+(2,-1) & 5  & 8  & \mu\\
+(1,-2) & 1  & 18 & \mu\\
+(0,-1) & 1  & 20 & \mu\\
+(2,0)  & 8  & 5  & \nu\\
+(2,1)  & 13 & 4  & \nu\\
+(3,0)  & 13 & 2  & \nu\\
+(3,1)  & 18 & 1  & \nu
+\end{array}
+\]
+
+\textbf{Update step.} Take the component-wise mean in each cluster:
+\[
+\begin{aligned}
+\mu^{\mathrm{new}}
+&=\tfrac14\bigl[(1,0)+(2,-1)+(1,-2)+(0,-1)\bigr]\\
+&=\left(\frac{1+2+1+0}{4},\frac{0-1-2-1}{4}\right)
+ =(\mathbf{1},\mathbf{-1}),
+\end{aligned}
 \]
 \[
-\nu^{\mathrm{new}}=\tfrac14\bigl[(2,0)+(2,1)+(3,0)+(3,1)\bigr]=(\mathbf{2.5},\mathbf{0.5}).
+\begin{aligned}
+\nu^{\mathrm{new}}
+&=\tfrac14\bigl[(2,0)+(2,1)+(3,0)+(3,1)\bigr]\\
+&=\left(\frac{2+2+3+3}{4},\frac{0+1+0+1}{4}\right)
+ =(\mathbf{2.5},\mathbf{0.5}).
+\end{aligned}
 \]
 \end{answerprose}
 
@@ -1060,16 +1380,38 @@ The initial cluster centers are $\mu=(0,0)$ and $\nu=(2,1)$.
 Compute the coordinates of the new cluster centers $\mu^{\mathrm{new}}$ and $\nu^{\mathrm{new}}$ after one iteration of $k$-means.
 \closequestion
 \begin{answerprose}{$\mu^{\mathrm{new}}=(0,-1)$, $\nu^{\mathrm{new}}=(3,1)$}
-\textbf{Assignment:} $(1,-1),(0,0),(-1,-1),(0,-2)\to\mu=(0,0)$;
-$(2,0),(2,3),(5,0)\to\nu=(2,1)$
-(e.g.\ $(2,0)$: $d^2_\mu=4$ vs.\ $d^2_\nu=1$).
-
-\textbf{Update:}
+\textbf{Assignment step.} Compare the squared Euclidean distances to
+$\mu=(0,0)$ and $\nu=(2,1)$:
 \[
-\mu^{\mathrm{new}}=\tfrac14\bigl[(1,-1)+(0,0)+(-1,-1)+(0,-2)\bigr]=(\mathbf{0},\mathbf{-1}),
+\begin{array}{c|cc|c}
+x & d^2(x,\mu) & d^2(x,\nu) & \text{assignment}\\
+\hline
+(1,-1)  & 2  & 5  & \mu\\
+(0,0)   & 0  & 5  & \mu\\
+(-1,-1) & 2  & 13 & \mu\\
+(0,-2)  & 4  & 13 & \mu\\
+(2,0)   & 4  & 1  & \nu\\
+(2,3)   & 13 & 4  & \nu\\
+(5,0)   & 25 & 10 & \nu
+\end{array}
+\]
+
+\textbf{Update step.} Average the coordinates of the assigned points:
+\[
+\begin{aligned}
+\mu^{\mathrm{new}}
+&=\tfrac14\bigl[(1,-1)+(0,0)+(-1,-1)+(0,-2)\bigr]\\
+&=\left(\frac{1+0-1+0}{4},\frac{-1+0-1-2}{4}\right)
+ =(\mathbf{0},\mathbf{-1}),
+\end{aligned}
 \]
 \[
-\nu^{\mathrm{new}}=\tfrac13\bigl[(2,0)+(2,3)+(5,0)\bigr]=(\mathbf{3},\mathbf{1}).
+\begin{aligned}
+\nu^{\mathrm{new}}
+&=\tfrac13\bigl[(2,0)+(2,3)+(5,0)\bigr]\\
+&=\left(\frac{2+2+5}{3},\frac{0+3+0}{3}\right)
+ =(\mathbf{3},\mathbf{1}).
+\end{aligned}
 \]
 \end{answerprose}
 
@@ -1084,7 +1426,9 @@ A sketch of the data points helps: the assignment step can largely be read off g
 Give the values with one decimal place.
 \closequestion
 \begin{answerprose}{$\mu^{\mathrm{new}}=(1.0,1.0)$, $\nu^{\mathrm{new}}=(-0.5,2.5)$}
-\textbf{Assignment} (squared distances to $\mu=(2,0)$ vs.\ $\nu=(-1,4)$):
+\textbf{Assignment step.} Use
+$d^2(x,c)=(x_1-c_1)^2+(x_2-c_2)^2$ and compare the squared distances to
+$\mu=(2,0)$ and $\nu=(-1,4)$:
 \[
 \begin{array}{c|cc|c}
 x & d^2_\mu & d^2_\nu & \to\\
@@ -1099,12 +1443,22 @@ x & d^2_\mu & d^2_\nu & \to\\
 (-1,3) & 18 & 1 & \nu
 \end{array}
 \]
-\textbf{Update:}
+\textbf{Update step.} Take the component-wise mean in each cluster:
 \[
-\mu^{\mathrm{new}}=\tfrac14\bigl[(0,1)+(1,2)+(2,1)+(1,0)\bigr]=(\mathbf{1.0},\mathbf{1.0}),
+\begin{aligned}
+\mu^{\mathrm{new}}
+&=\tfrac14\bigl[(0,1)+(1,2)+(2,1)+(1,0)\bigr]\\
+&=\left(\frac{0+1+2+1}{4},\frac{1+2+1+0}{4}\right)
+ =(\mathbf{1.0},\mathbf{1.0}),
+\end{aligned}
 \]
 \[
-\nu^{\mathrm{new}}=\tfrac14\bigl[(0,2)+(-1,2)+(0,3)+(-1,3)\bigr]=(\mathbf{-0.5},\mathbf{2.5}).
+\begin{aligned}
+\nu^{\mathrm{new}}
+&=\tfrac14\bigl[(0,2)+(-1,2)+(0,3)+(-1,3)\bigr]\\
+&=\left(\frac{0-1+0-1}{4},\frac{2+2+3+3}{4}\right)
+ =(\mathbf{-0.5},\mathbf{2.5}).
+\end{aligned}
 \]
 \end{answerprose}
 
@@ -1293,7 +1647,10 @@ f(1.1;1.5,0.2)=0.26995.
 Round to two decimal places.
 \closequestion
 \begin{answerprose}{0.25}
-Bayes' rule with priors $P(A)=0.25$, $P(B)=0.75$:
+The statement ``75\% are made by Bibi'' supplies the priors
+$P(B)=0.75$ and $P(A)=1-0.75=0.25$. For a continuous observation, the values
+$f(x\mid A)$ and $f(x\mid B)$ are densities; Bayes' rule combines each density with its
+prior and then normalizes:
 \[
 P(B\mid x=1.1)
 =\frac{P(B)\,f(1.1;\mu_B,\sigma_B)}{P(A)\,f(1.1;\mu_A,\sigma_A)+P(B)\,f(1.1;\mu_B,\sigma_B)}
@@ -1320,9 +1677,18 @@ Compute the posterior probability of component $j$.
 Round to two decimal places.
 \closequestion
 \begin{answerprose}{0.25}
-Bayes' rule for mixtures:
+Bayes' rule for a mixture component is
 \[
-P(j\mid x)=\frac{P(j)\,p(x\mid j)}{p(x\mid\theta)}=\frac{0.1\cdot 0.5}{0.2}=\mathbf{0.25}.
+P(j\mid x)
+=\frac{\overbrace{P(j)}^{\text{prior}}\,
+       \overbrace{p(x\mid j)}^{\text{component likelihood}}}
+      {\underbrace{p(x\mid\theta)}_{\text{total evidence}}}.
+\]
+The joint contribution of component $j$ and observation $x$ is
+$P(j)p(x\mid j)=0.1\cdot0.5=0.05$. Normalizing by the total probability of observing
+$x$ gives
+\[
+P(j\mid x)=\frac{0.05}{0.2}=\mathbf{0.25}.
 \]
 \end{answerprose}
 
@@ -1339,9 +1705,18 @@ Compute the likelihood for observing a data sample $x$ given component $j$ and t
 Round to two decimal places.
 \closequestion
 \begin{answerprose}{0.60}
-Rearrange Bayes' rule $P(j\mid x)=\dfrac{P(j)\,p(x\mid j)}{p(x\mid\theta)}$ for the likelihood:
+Start with Bayes' rule
 \[
-p(x\mid j)=\frac{P(j\mid x)\;p(x\mid\theta)}{P(j)}=\frac{0.3\cdot 0.2}{0.1}=\mathbf{0.60}.
+P(j\mid x)=\frac{P(j)\,p(x\mid j)}{p(x\mid\theta)}.
+\]
+Multiply by $p(x\mid\theta)$ and divide by $P(j)$ to isolate the unknown component
+likelihood:
+\[
+p(x\mid j)
+=\frac{P(j\mid x)\,p(x\mid\theta)}{P(j)}
+=\frac{0.3\cdot0.2}{0.1}
+=\frac{0.06}{0.1}
+=\mathbf{0.60}.
 \]
 \end{answerprose}
 
@@ -1366,6 +1741,13 @@ Calculate the probability that the datapoint $x=1$ has been produced by the firs
 Round to two decimal places.
 \closequestion
 \begin{answerprose}{0.66}
+The weighted density
+\[
+\alpha_k f(x;\mu_k,\sigma_k)
+\]
+is the joint contribution of component $k$ and observation $x$. The posterior
+responsibility of the first Gaussian is its contribution divided by the sum of the
+contributions of all components:
 \[
 P(G_1\mid x=1)
 =\frac{\alpha_1 f(1;0,1)}{\alpha_1 f(1;0,1)+\alpha_2 f(1;3,1)}
@@ -1387,9 +1769,19 @@ D_{\mathrm{KL}}(p_Y\|p_Z)=\int_{-\infty}^{\infty} p_Y(x)\log\!\left(\frac{p_Y(x)
 Use the natural logarithm and round to two decimal places.
 \closequestion
 \begin{answerprose}{6.00}
-Same derivation as before:
+The support of $p_Y$ is $[0,\theta_Y]$. Because $\theta_Y=e^4<e^{10}=\theta_Z$, it lies
+entirely inside the support of $p_Z$. On $[0,\theta_Y]$ the two uniform densities are
+$1/\theta_Y$ and $1/\theta_Z$, so their ratio is constant:
 \[
-D_{\mathrm{KL}}(p_Y\|p_Z)=\ln\frac{\theta_Z}{\theta_Y}=\ln\frac{e^{10}}{e^{4}}=10-4=\mathbf{6.00}.
+\begin{aligned}
+D_{\mathrm{KL}}(p_Y\|p_Z)
+&=\int_0^{\theta_Y}\frac{1}{\theta_Y}
+  \ln\!\left(\frac{1/\theta_Y}{1/\theta_Z}\right)\dd x\\
+&=\ln\!\left(\frac{\theta_Z}{\theta_Y}\right)
+  \underbrace{\int_0^{\theta_Y}\frac{1}{\theta_Y}\dd x}_{=\,1}\\
+&=\ln\!\left(\frac{e^{10}}{e^4}\right)
+ =\ln(e^6)=\mathbf{6.00}.
+\end{aligned}
 \]
 \end{answerprose}
 
@@ -1406,14 +1798,21 @@ Compute the KL divergence $D_{\mathrm{KL}}(p\|q)$.
 Use the natural logarithm and round to two decimal places.
 \closequestion
 \begin{answerprose}{0.19}
+For discrete distributions, replace the integral in the KL definition by a sum over all
+possible outcomes:
 \[
 D_{\mathrm{KL}}(p\|q)=\sum_x p(x)\ln\frac{p(x)}{q(x)}
-=0.8\ln\frac{0.8}{0.5}+0.2\ln\frac{0.2}{0.5}
-=0.8\cdot 0.470+0.2\cdot(-0.916)
 \]
 \[
-=0.376-0.183\approx\mathbf{0.19}.
+\begin{aligned}
+&=p(0)\ln\frac{p(0)}{q(0)}+p(1)\ln\frac{p(1)}{q(1)}\\
+&=0.8\ln\frac{0.8}{0.5}+0.2\ln\frac{0.2}{0.5}\\
+&\approx0.8(0.470)+0.2(-0.916)\\
+&=0.376-0.183\approx\mathbf{0.19}.
+\end{aligned}
 \]
+The second outcome contributes a negative term, but the sum is nonnegative, as every KL
+divergence must be.
 \end{answerprose}
 
 \questiontitle{Clustering --- version A}
@@ -1516,7 +1915,9 @@ Merging the closest clusters step by step:
   \item $\{h,i\}+\{m,n\}$: $d_{\mathrm{avg}}=\tfrac{5+6+4+5}{4}=5$.
   \item Remaining distances:
         $d(\{a,c,e\},\{h,i,m,n\})=\tfrac{7+8+12+13+5+6+10+11+3+4+8+9}{12}=8$ and
-        $d(\{h,i,m,n\},\{s\})=\tfrac{11+10+6+5}{4}=8$ --- both $>7$, so we \textbf{stop}.
+        $d(\{h,i,m,n\},\{s\})=\tfrac{11+10+6+5}{4}=8$. The third distance is
+        $d(\{a,c,e\},\{s\})=\tfrac{18+16+14}{3}=16$. The smallest remaining
+        inter-cluster distance is therefore $8>7$, so we \textbf{stop}.
 \end{enumerate}
 Result: \textbf{3 clusters} $\{a,c,e\}$, $\{h,i,m,n\}$, $\{s\}$; the largest contains
 \textbf{4} points; the minimum distance between the formed clusters is \textbf{8}.
