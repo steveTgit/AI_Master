@@ -1,0 +1,3409 @@
+% ==========================================================
+%  MASTER SUMMARY TEMPLATE — AI / ML / MATHEMATICS
+%  Design Philosophy:
+%    1. Readable running text is the default. Prose over boxes.
+%    2. Boxes are used sparingly as visual landmarks for skimming.
+%    3. Visual hierarchy: chapter > section > subsection > prose.
+%    4. Every box is breakable — no orphaned whitespace at page ends.
+%    5. A single consistent accent color ties all structure together.
+% ==========================================================
+
+\documentclass[11pt, oneside]{book}
+
+
+% ══════════════════════════════════════════════════════════
+%  PAGE GEOMETRY
+% ══════════════════════════════════════════════════════════
+\usepackage[
+  a4paper,
+  top    = 2.6cm,
+  bottom = 2.1cm,
+  left   = 2.5cm,
+  right  = 2.5cm,
+  headheight = 15pt
+]{geometry}
+
+
+% ══════════════════════════════════════════════════════════
+%  TYPOGRAPHY
+% ══════════════════════════════════════════════════════════
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Latin Modern: improved Computer Modern
+\usepackage{microtype}       % Microtypographic refinements (better justification,
+                             %   fewer overfull hboxes — invaluable for math text)
+
+% If inconsolata is not installed, simply remove this line.
+% It provides a crisper monospace font for code listings.
+\usepackage{inconsolata}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.62em}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICS
+% ══════════════════════════════════════════════════════════
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}        % Bold math symbols: \bm{\theta}
+\usepackage{bbm}       % Blackboard bold for indicator: \mathbbm{1}
+\usepackage{mathrsfs}  % Script letters: \mathscr{F}, \mathscr{H}
+\usepackage{nicefrac}  % Compact inline fractions: \nicefrac{1}{2}
+\usepackage{cancel}    % Strike-through in math: \cancel{x}
+
+
+% ══════════════════════════════════════════════════════════
+%  SCIENTIFIC NOTATION
+% ══════════════════════════════════════════════════════════
+% siunitx — consistent typesetting of numbers and SI units.
+%   Usage: \SI{1.5}{\micro\meter}  \SI{50}{\kilo\hertz}  \num{6.022e23}
+\usepackage{siunitx}
+\sisetup{per-mode = symbol}   % render "per unit" as e.g. m/s rather than m s^{-1}
+
+% mhchem — chemical formulas and reaction equations.
+%   Usage: \ce{H2O}   \ce{ATP -> ADP + P_i}   \ce{^{14}C}
+\usepackage[version=4]{mhchem}
+
+
+% ══════════════════════════════════════════════════════════
+%  FIGURES, TABLES, LISTS
+% ══════════════════════════════════════════════════════════
+\usepackage{graphicx}
+\usepackage{booktabs}         % \toprule, \midrule, \bottomrule
+\usepackage{array}            % Extended column types in tabular
+\usepackage{float}            % [H] float placement
+\usepackage{enumitem}
+
+\setlist[itemize]{topsep=3pt, itemsep=2pt, leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt, itemsep=2pt, leftmargin=2.4em}
+
+\usepackage{needspace}        % keep headings together with their first lines
+
+% ── Course addition: self-drawn figures (TikZ / pgfplots) ──
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc, fit,
+                backgrounds, decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots, fillbetween}
+
+% Float pages: stack floats from the top instead of spreading them out.
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{14pt plus 4pt}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
+
+
+% ══════════════════════════════════════════════════════════
+%  ALGORITHMS / PSEUDOCODE
+% ══════════════════════════════════════════════════════════
+% Remove this block if you do not need pseudocode.
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetCommentSty{textit}
+
+
+% ══════════════════════════════════════════════════════════
+%  COLORS  (a refined, academic palette)
+% ══════════════════════════════════════════════════════════
+\usepackage{xcolor}
+
+% Primary structural accent — deep navy used for headings, rules, ToC
+\definecolor{accent}{HTML}{1B3A5C}
+
+% Box accent colors: frame and background, designed to be legible but
+% unobtrusive so running text remains the visual focus.
+\definecolor{def@frame}{HTML}{1A5276}   \definecolor{def@bg}{HTML}{EBF5FB}
+\definecolor{thm@frame}{HTML}{922B21}   \definecolor{thm@bg}{HTML}{FDEDEC}
+\definecolor{ex@frame} {HTML}{1E8449}   \definecolor{ex@bg} {HTML}{EAFAF1}
+\definecolor{int@frame}{HTML}{9A6A00}   \definecolor{int@bg}{HTML}{FEF9E7}
+\definecolor{note@frame}{HTML}{5B2C6F}  \definecolor{note@bg}{HTML}{F5EEF8}
+
+
+% ══════════════════════════════════════════════════════════
+%  CODE LISTINGS
+% ══════════════════════════════════════════════════════════
+\usepackage{listings}
+\lstset{
+  basicstyle       = \ttfamily\small,
+  breaklines       = true,
+  numbers          = left,
+  numberstyle      = \tiny\color{gray!70},
+  frame            = tb,
+  framerule        = 0.4pt,
+  rulecolor        = \color{gray!35},
+  tabsize          = 2,
+  showstringspaces = false,
+  keywordstyle     = \color{def@frame}\bfseries,
+  commentstyle     = \color{gray!55!black}\itshape,
+  stringstyle      = \color{ex@frame!90!black},
+  backgroundcolor  = \color{gray!5},
+  xleftmargin      = 2em,
+  xrightmargin     = 0.4em,
+  aboveskip        = 0.8em,
+  belowskip        = 0.5em
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  CUSTOM BOXES  (tcolorbox)
+%
+%  KEY DESIGN DECISIONS:
+%  1. enhanced   — enables advanced tcolorbox features (borderline etc.)
+%  2. breakable  — box may split across a page break; eliminates the ugly
+%                  white gap that appears when a long box would overflow.
+%  3. Left-accent bar style — a thick colored stripe on the left margin.
+%                  This is legible, modern, and unobtrusive relative to
+%                  a full colored frame. The box background is a very
+%                  light tint, keeping the reading experience calm.
+%  4. sharp corners=west — left side is flat (squared), right is rounded.
+%                  This mirrors the visual logic of the left accent bar.
+%  5. parbox=false — allows display math to stretch properly inside boxes.
+% ══════════════════════════════════════════════════════════
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  enhanced,
+  breakable,
+  arc             = 2.5mm,
+  boxrule         = 0.5pt,
+  left            = 4.5mm,
+  right           = 4mm,
+  top             = 2.5mm,
+  bottom          = 2.5mm,
+  fonttitle       = \bfseries\small,
+  sharp corners   = west,
+  parbox          = false
+}
+
+\newtcolorbox{defbox}[1][]{
+  title  = {Definition},
+  colback = def@bg, colframe = def@frame,
+  borderline west = {3.5pt}{0pt}{def@frame},
+  #1
+}
+
+\newtcolorbox{thmbox}[1][]{
+  title  = {Theorem / Key Formula},
+  colback = thm@bg, colframe = thm@frame,
+  borderline west = {3.5pt}{0pt}{thm@frame},
+  #1
+}
+
+\newtcolorbox{exbox}[1][]{
+  title  = {Example},
+  colback = ex@bg, colframe = ex@frame,
+  borderline west = {3.5pt}{0pt}{ex@frame},
+  #1
+}
+
+\newtcolorbox{intbox}[1][]{
+  title  = {Intuition \& Mental Model},
+  colback = int@bg, colframe = int@frame,
+  borderline west = {3.5pt}{0pt}{int@frame},
+  #1
+}
+
+\newtcolorbox{notebox}[1][]{
+  title  = {Note},
+  colback = note@bg, colframe = note@frame,
+  borderline west = {3.5pt}{0pt}{note@frame},
+  #1
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  TABLE OF CONTENTS  (tocloft)
+%
+%  The [titles] option prevents tocloft from conflicting
+%  with titlesec's redefinition of chapter/section titles.
+% ══════════════════════════════════════════════════════════
+\usepackage[titles]{tocloft}
+
+% Chapter entries: accented, bold, with dots leading to page number
+\renewcommand{\cftchapfont}     {\bfseries\color{accent}}
+\renewcommand{\cftchappagefont} {\bfseries\color{accent}}
+\renewcommand{\cftchapleader}   {\bfseries\color{accent!40}\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip} {7pt}
+
+% Section entries: standard weight, small size
+\renewcommand{\cftsecfont}      {\small}
+\renewcommand{\cftsecpagefont}  {\small}
+\setlength{\cftsecindent}      {1.8em}
+\setlength{\cftbeforesecskip}  {1.5pt}
+
+% Subsection entries: muted gray to visually recede
+\renewcommand{\cftsubsecfont}      {\small\color{gray!65!black}}
+\renewcommand{\cftsubsecpagefont}  {\small\color{gray!65!black}}
+\setlength{\cftsubsecindent}      {3.4em}
+\setlength{\cftbeforesubsecskip}  {0.5pt}
+
+
+% ══════════════════════════════════════════════════════════
+%  CHAPTER & SECTION HEADINGS  (titlesec)
+%
+%  Chapter: large faded chapter number floated right, title
+%           left-aligned beneath it, then a double rule.
+%           The oversized ghost number is a quiet nod to
+%           modern textbook design without being gimmicky.
+%
+%  Section: accent-colored, with a thin rule beneath.
+%           The rule draws the eye without shouting.
+%
+%  Subsection: slightly smaller accent color, no rule — the
+%           rule at section level is already enough structure.
+% ══════════════════════════════════════════════════════════
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{accent}\huge}
+  {\hfill\fontsize{68}{68}\selectfont\color{accent!13}\thechapter}
+  {-10pt}
+  {}
+  [{\vspace{4pt}%
+    {\color{accent}\rule{\linewidth}{1.6pt}}\\[-2pt]%
+    {\color{accent!35}\rule{\linewidth}{0.5pt}}}]
+\titlespacing*{\chapter}{0pt}{-28pt}{22pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}
+  {\thesection}
+  {0.8em}
+  {}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.8ex plus 1ex minus .2ex}{2.2ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {\thesubsection}
+  {0.7em}
+  {}
+\titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.4ex plus .2ex}
+
+% Run-in paragraph label — useful for named sub-items in a derivation.
+\titleformat{\paragraph}[runin]
+  {\normalfont\small\bfseries}
+  {}
+  {0em}
+  {}[.\enspace]
+\titlespacing{\paragraph}{0pt}{1.2ex plus .5ex minus .2ex}{0.5em}
+
+
+% ══════════════════════════════════════════════════════════
+%  HEADER & FOOTER
+% ══════════════════════════════════════════════════════════
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Chapter-opening pages use LaTeX's 'plain' style — redefine it here
+% to match the rest of the document (page number at foot, no header line).
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\small\color{gray!70}\thepage}
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  LINKS & REFERENCES
+% ══════════════════════════════════════════════════════════
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink, capitalize]{cleveref}
+
+
+% ══════════════════════════════════════════════════════════
+%  DOCUMENT METADATA  (fill in for each new subject)
+% ══════════════════════════════════════════════════════════
+\newcommand{\coursetitle}{Deep Learning: Basic Techniques}
+\newcommand{\documenttype}{Study Notes -- Working Draft}
+\newcommand{\authorname}{Stefan Eder}
+\newcommand{\basedon}{Based on the lecture \emph{Deep Learning: Basic Techniques} (G.~Klambauer, JKU Linz), slides of WS 2025/26}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICAL MACROS
+%  Organized by domain. Add your own at the end of each group.
+% ══════════════════════════════════════════════════════════
+
+% ── Number Sets & Spaces ──────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Q}{\mathbb{Q}}
+
+% ── Probability & Statistics ──────────────────────────────
+\newcommand{\E}{\mathbb{E}}              % Expectation
+\newcommand{\Prob}{\mathbb{P}}           % Probability measure
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Corr}{\mathrm{Corr}}
+\newcommand{\iid}{\overset{\mathrm{iid}}{\sim}}
+% Indicator function. Usage: \ind_{\{x > 0\}}
+\newcommand{\ind}{\mathbbm{1}}
+
+% ── Information Theory ────────────────────────────────────
+% KL divergence. Usage: \KL{q}{p}  →  D_KL(q ‖ p)
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1 \,\|\, #2\right)}
+\newcommand{\Ent}{\mathrm{H}}            % Entropy:         \Ent(X)
+\newcommand{\MI}{\mathrm{I}}             % Mutual information: \MI(X;Y)
+
+% ── Calculus & Optimization ───────────────────────────────
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\grad}{\nabla}               % Gradient
+\newcommand{\hess}{\nabla^2}             % Hessian
+\newcommand{\lapl}{\Delta}               % Laplacian
+% Differential (upright d). Usage: \int f(x) \dd x
+\newcommand{\dd}{\,\mathrm{d}}
+% Partial derivatives. Usage: \pd{f}{x}  or  \pdd{f}{x}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+% ── Norms, Abs, Inner Products ────────────────────────────
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\normsq}[1]{\left\lVert #1 \right\rVert^2}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% ── Linear Algebra ────────────────────────────────────────
+\newcommand{\T}{^{\mathsf{T}}}           % Transpose:        \mathbf{A}\T
+\newcommand{\inv}{^{-1}}                 % Inverse:          A\inv
+\newcommand{\pinv}{^{\dagger}}           % Pseudo-inverse:   A\pinv
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\spanop}{\operatorname{span}}
+\newcommand{\eye}{\mathbf{I}}            % Identity matrix
+\newcommand{\zeros}{\mathbf{0}}
+\newcommand{\ones}{\mathbf{1}}
+
+% ── ML / AI Core Notation ────────────────────────────────
+\newcommand{\loss}{\mathcal{L}}          % Loss:          \loss(\params)
+\newcommand{\reg}{\mathcal{R}}           % Regularizer:   \reg(\params)
+\newcommand{\dataset}{\mathcal{D}}       % Dataset:       \dataset
+\newcommand{\params}{\boldsymbol{\theta}}   % Parameters
+\newcommand{\weights}{\mathbf{w}}
+\newcommand{\xvec}{\mathbf{x}}
+\newcommand{\yvec}{\mathbf{y}}
+\newcommand{\zvec}{\mathbf{z}}
+\newcommand{\hvec}{\mathbf{h}}           % Hidden state
+\newcommand{\feature}{\boldsymbol{\phi}} % Feature map
+
+% Activation functions
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\relu}{ReLU}
+\DeclareMathOperator{\sign}{sign}
+% sigmoid: just use \sigma (standard Greek letter)
+
+% ── Complexity ────────────────────────────────────────────
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\bigOm}[1]{\Omega\!\left(#1\right)}
+\newcommand{\bigTh}[1]{\Theta\!\left(#1\right)}
+
+% ── Common Distributions ──────────────────────────────────
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\Uniform}{\mathcal{U}}
+\newcommand{\Bernoulli}{\mathrm{Ber}}
+\newcommand{\Categorical}{\mathrm{Cat}}
+\newcommand{\Dirichlet}{\mathrm{Dir}}
+\newcommand{\Binomial}{\mathrm{Bin}}
+
+% ── Miscellaneous ─────────────────────────────────────────
+\newcommand{\given}{\,\vert\,}           % Conditional: \Prob(A \given B)
+\newcommand{\st}{\;\text{s.t.}\;}        % "subject to"
+\newcommand{\eqdef}{\coloneqq}           % Definitional equality  :=
+\newcommand{\eqq}{\overset{?}{=}}        % "Does this equal?"
+
+% ══════════════════════════════════════════════════════════
+%  COURSE-SPECIFIC MACROS  (Deep Learning: Basic Techniques)
+%  Notation follows the lecture slides: bold italic vectors and
+%  matrices, sample index as superscript (x^n), layer index in
+%  square brackets (W^{[l]}), weight w_{ij} from unit j to unit i.
+% ══════════════════════════════════════════════════════════
+\newcommand{\bx}{\bm{x}}        \newcommand{\by}{\bm{y}}
+\newcommand{\bw}{\bm{w}}        \newcommand{\bW}{\bm{W}}
+\newcommand{\ba}{\bm{a}}        \newcommand{\bs}{\bm{s}}
+\newcommand{\bb}{\bm{b}}        \newcommand{\bh}{\bm{h}}
+\newcommand{\bg}{\bm{g}}        \newcommand{\be}{\bm{e}}
+\newcommand{\bX}{\bm{X}}        \newcommand{\bY}{\bm{Y}}
+\newcommand{\bI}{\bm{I}}        \newcommand{\bJ}{\bm{J}}
+\newcommand{\bH}{\bm{H}}        \newcommand{\bR}{\bm{R}}
+\newcommand{\bdelta}{\bm{\delta}}
+\newcommand{\byhat}{\hat{\bm{y}}}
+\newcommand{\what}{\hat{\bm{w}}}
+\newcommand{\lay}[1]{^{[#1]}}            % layer index:  \bW\lay{l}
+\newcommand{\Remp}{R_{\mathrm{emp}}}     % empirical error
+\newcommand{\Rgen}{R_{\mathrm{gen}}}     % generalization error (Ch. 5)
+\newcommand{\dsig}{\sigma'}              % derivative of the sigmoid
+\DeclareMathOperator{\tanhop}{tanh}
+
+% ── Figure colours (aliases of the template palette) ──────
+\colorlet{figblue}{def@frame}
+\colorlet{figred}{thm@frame}
+\colorlet{figgreen}{ex@frame}
+\colorlet{figamber}{int@frame}
+\colorlet{figpurple}{note@frame}
+
+% ── TikZ styles for network diagrams ──────────────────────
+\tikzset{
+  unit/.style    = {circle, draw=accent, thick, fill=accent!6,
+                    minimum size=8mm, inner sep=0pt, font=\small},
+  inunit/.style  = {unit, fill=gray!12, draw=gray!70!black},
+  outunit/.style = {unit, fill=accent!18},
+  conn/.style    = {-{Stealth[length=2.2mm]}, accent!80!black, thin},
+  bconn/.style   = {-{Stealth[length=2.4mm]}, figred, thick},
+  lbl/.style     = {font=\scriptsize, inner sep=1pt, fill=white},
+  every pin/.style = {font=\scriptsize},
+}
+
+% ── pgfplots look shared by all plots ─────────────────────
+\pgfplotsset{
+  dlbt/.style = {
+    axis lines = middle,
+    axis line style = {gray!70, -{Stealth[length=1.6mm]}},
+    tick label style = {font=\scriptsize, gray!70!black},
+    label style = {font=\small},
+    grid = major, grid style = {gray!15},
+    samples = 160,
+  },
+}
+
+% ── Placeholders ──────────────────────────────────────────
+% Figure placeholder (same signature as in other course notes).
+% #1 height, #2 concept, #3 what the picture should show + search hint,
+% #4 caption, #5 label.  Replace with \includegraphics{figures/...}
+% once a suitable image is in figures/.
+\newcommand{\figureplaceholder}[5]{%
+\begin{figure}[htbp]
+\centering
+\begin{tcolorbox}[unbreakable,width=\linewidth,height=#1,colback=accent!3,
+  colframe=accent!30,boxrule=0.5pt,arc=2.5mm,sharp corners=all,
+  valign=center,halign=center,fontupper=\small]
+{\bfseries\color{accent}Figure to insert: #2}\par\medskip
+{\color{gray!75!black}#3}
+\end{tcolorbox}
+\caption{#4}\label{#5}
+\end{figure}}
+
+% Outline text for chapters that are not written yet.
+\newcommand{\planned}[1]{%
+  \par{\small\color{gray!70!black}\textit{Planned content:} #1}\par}
+
+% Keep section headings together with the start of their text.
+\let\originalsection\section
+\renewcommand{\section}{\Needspace{7\baselineskip}\originalsection}
+\let\originalsubsection\subsection
+\renewcommand{\subsection}{\Needspace{6\baselineskip}\originalsubsection}
+
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+\frontmatter  % Roman-numeral page numbers for front matter
+
+
+% ──────────────────────────────────────────────────────────
+%  TITLE PAGE
+% ──────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.8cm}
+
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}
+  \vspace{0.65cm}
+
+  {\fontsize{28}{34}\selectfont\bfseries\color{accent}\coursetitle\par}
+  \vspace{0.25cm}
+  {\large\color{gray!80!black}\documenttype\par}
+
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}
+  \vspace{0.55cm}
+
+  {\large\authorname\par}
+  \vspace{0.2cm}
+  {\small\color{gray!70}\basedon\par}
+\end{center}
+
+\vspace{1.6cm}
+
+\begin{center}
+\begin{minipage}{0.84\textwidth}
+  \small\color{gray!80!black}
+  These notes walk through the basic techniques of deep learning the way the
+  lecture builds them up: from a single linear neuron, via the perceptron,
+  logistic and softmax regression, to multi-layer and deep networks trained
+  with backpropagation. Every idea comes in plain words first, then as a
+  formula, and wherever it helps there is a small example with actual numbers.
+  All worked numbers were re-computed by script, and the backpropagation
+  example was checked against finite differences.
+  Use the notes as a study aid alongside the lecture slides, not as a
+  replacement for them.
+
+  \medskip
+  \textbf{Working draft:} Chapters 1, 3 and 4 are written out. Chapter 2 and
+  Chapters 5--10 are still outlines and will be filled in once their slides
+  are available.
+
+  \medskip
+  If you spot an error or a gap, please open an issue or pull request at
+  \textbf{github.com/steveTgit/AI\_Master} --- corrections are always welcome.
+
+  \medskip
+  \color{gray!60!black}
+  Good study materials should be shared, not gatekept.
+  If this helped you, take it as a reason to help the next colleague you see struggling with something.
+\end{minipage}
+\end{center}
+
+\vfill
+{\centering\small\color{gray!65} \today\par}
+\clearpage
+
+
+% ──────────────────────────────────────────────────────────
+%  TABLE OF CONTENTS
+% ──────────────────────────────────────────────────────────
+\setcounter{tocdepth}{2}  % Show: chapters, sections, subsections only
+
+\begingroup
+  \let\cleardoublepage\relax
+  \let\clearpage\relax
+  \tableofcontents
+\endgroup
+
+\mainmatter  % Switch to Arabic numerals
+
+
+% ==========================================================
+%  CHAPTER 1 — A BRIEF HISTORY OF NEURAL NETWORKS
+%  Source: "Deep Learning and Neural Networks I: Intro & History of NN"
+% ==========================================================
+\chapter{A Brief History of Neural Networks and Deep Learning}
+\label{ch:history}
+
+The first lecture does two things. It sets up the course (what it covers,
+how it is examined, what to read), and it tells the story of how neural
+networks went from a 1940s model of a nerve cell to the technology behind
+almost every recent AI headline. The history is worth knowing for its own
+sake, but it also previews the technical content: nearly every milestone in
+this chapter --- the perceptron, the XOR problem, backpropagation, the
+vanishing gradient, ReLUs, convolutions --- comes back later in these notes
+as a formula.
+
+\section{About the Course}
+
+\emph{Deep Learning: Basic Techniques} (some slide decks use the title
+\emph{Deep Learning and Neural Networks I}) is a first-semester basic course
+of the AI master at JKU Linz. It consists of a lecture (VO, 2~hours per week,
+3~ECTS), examined by a written on-site exam at the end of the semester, and
+an exercise (UE, 1~hour per week, 1.5~ECTS) with five to six roughly
+bi-weekly assignments. The lecture notes on KUSSS/Moodle contain a reference
+list; the main textbooks recommended in the first lecture are:
+\begin{itemize}
+  \item C.\,M.~Bishop \& H.~Bishop (2023), \emph{Deep Learning: Foundations
+    and Concepts}, Springer;
+  \item C.\,M.~Bishop (2006), \emph{Pattern Recognition and Machine
+    Learning}, Springer;
+  \item I.~Goodfellow, Y.~Bengio \& A.~Courville (2016), \emph{Deep
+    Learning}, MIT Press;
+  \item M.\,P.~Deisenroth, A.\,A.~Faisal \& C.\,S.~Ong (2020),
+    \emph{Mathematics for Machine Learning}, Cambridge University Press;
+  \item A.~Zhang, Z.\,C.~Lipton, M.~Li \& A.\,J.~Smola, \emph{Dive into Deep
+    Learning} (freely available online).
+\end{itemize}
+
+\Cref{tab:roadmap} lists the chapters of the course. These notes follow the
+same numbering, so ``Chapter~4'' on the slides is \cref{ch:basic} here, and
+the section numbers 4.1--4.10 match as well.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}rll@{}}
+\toprule
+\textbf{Ch.} & \textbf{Topic} & \textbf{Status in these notes} \\
+\midrule
+1  & A brief history of neural networks          & written \\
+2  & Biological neural networks                  & outline \\
+3  & Notation                                    & written (collected from Ch.~4) \\
+4  & Basic neural network architectures (4.1--4.10) & written \\
+5  & Generalization error, test set and cross-validation & outline \\
+6  & Convolutional neural networks               & outline \\
+7  & Learning methods: basic algorithms          & outline \\
+8  & Regularization                              & outline \\
+9  & Initialization                              & outline \\
+10 & Normalization                               & outline \\
+\bottomrule
+\end{tabular}
+\caption{Roadmap of the course as announced in the first lecture.
+Chapter~4 is by far the largest: it goes from the single linear neuron
+(4.1) to deep feed-forward networks, backpropagation and the practical
+``tricks of the trade'' (4.10).}
+\label{tab:roadmap}
+\end{table}
+
+And one piece of advice from the first lecture that is not about maths:
+connect with your colleagues. Most of this material is much easier to learn
+in a group than alone.
+
+\section{Machine Learning and Deep Learning}
+
+The lecture opens with three nested circles: \emph{intelligent machines and
+programs} (artificial intelligence), inside it the \emph{ability to learn}
+(machine learning), and inside that \emph{neural networks} (deep learning).
+The claim behind the picture is that the current success of AI is, to a
+large extent, the success of deep learning.
+
+\begin{defbox}[title={Machine learning and deep learning}]
+\textbf{Machine learning} is ``the science of getting computers to act
+without being explicitly programmed'' (Andrew Ng): the system infers
+knowledge from data and has to \emph{generalize} to data it has not seen,
+for example in supervised learning, where it learns to classify from
+labelled examples.
+
+\textbf{Deep learning} is machine learning with (deep) neural networks.
+Instead of relying on hand-crafted features, deep networks \emph{learn
+representations} of the data themselves, in several levels: lower levels
+code simple patterns, higher levels code increasingly abstract concepts that
+help to solve the task.
+\end{defbox}
+
+\begin{intbox}
+The standard picture is a face-recognition network. The first layer learns
+something like edge and blob detectors, the next layers combine them into
+parts (eyes, noses, mouths), and the top layers respond to whole faces.
+Nobody programmed ``look for an eye'' --- the hierarchy emerges because it is
+useful for minimizing the training loss. That is what ``learning increasingly
+abstract features'' means, and it is the main difference to classical machine
+learning, where a human designs the features and the model only learns the
+last step.
+\end{intbox}
+
+\section{A Brief History}
+\label{sec:history}
+
+The history in the lecture follows J.~Schmidhuber's review \emph{Deep
+learning in neural networks: an overview} (Neural Networks, 2015), and the
+lecture is explicit about a caveat: all history is biased, incomplete and
+inaccurate --- and the history of neural networks is interwoven with, but
+not the same as, the history of AI. \Cref{fig:timeline} gives the overview;
+the subsections fill in the details.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1.7mm, y=1cm,
+    ev/.style = {font=\tiny, align=center, text width=15mm, inner sep=1pt},
+    tk/.style = {gray!55, thin}]
+  % winters
+  \fill[gray!11] (30,-2.75) rectangle (40,2.85);
+  \fill[gray!11] (50,-2.75) rectangle (65,2.85);
+  \node[font=\scriptsize\itshape, gray!65!black, anchor=south] at (35,-2.75)
+    {1st winter};
+  \node[font=\scriptsize\itshape, gray!65!black, anchor=south] at (59.5,-2.75)
+    {2nd winter};
+  % axis
+  \draw[thick, accent, -{Stealth[length=2.4mm]}] (0,0) -- (86,0);
+  % helper: \ev{year}{level}{text}
+  \newcommand{\ev}[3]{%
+    \pgfmathsetmacro{\xx}{#1-1940}%
+    \draw[tk] (\xx,0) -- (\xx,#2);%
+    \ifdim #2pt>0pt
+      \node[ev, anchor=south] at (\xx,#2) {\textbf{#1}\\#3};
+    \else
+      \node[ev, anchor=north] at (\xx,#2) {\textbf{#1}\\#3};
+    \fi}
+  % above: techniques
+  \ev{1943}{0.45}{McCulloch--Pitts neuron}
+  \ev{1957}{0.45}{Rosenblatt's perceptron}
+  \ev{1969}{1.25}{Minsky \& Papert: XOR}
+  \ev{1986}{0.45}{Backprop popularized}
+  \ev{1991}{1.25}{Vanishing gradients}
+  \ev{1997}{2.05}{LSTM}
+  \ev{2006}{2.05}{Stacked pre-training}
+  \ev{2012}{0.45}{AlexNet wins ImageNet}
+  \ev{2017}{1.45}{Transformer}
+  \ev{2022}{2.05}{Large language models}
+  % below: more milestones
+  \ev{1949}{-0.45}{Hebbian learning}
+  \ev{1965}{-0.45}{GMDH: first deep nets}
+  \ev{1974}{-1.25}{Backprop for NNs (Werbos)}
+  \ev{1982}{-0.45}{Hopfield networks}
+  \ev{1989}{-1.25}{CNNs (LeCun); universal approximation}
+  \ev{2009}{-0.45}{ImageNet data set}
+  \ev{2016}{-1.25}{AlphaGo}
+  \ev{2021}{-0.45}{AlphaFold}
+  % year ticks drawn last, so they sit on top of the leader lines
+  \foreach \y in {1940,1950,...,2020} {
+    \pgfmathsetmacro{\xx}{\y-1940}
+    \draw[accent] (\xx,-0.08) -- (\xx,0.08);
+    \node[font=\tiny, accent, fill=white, inner sep=0.6pt] at (\xx,-0.22) {\y};
+  }
+  \foreach \y in {1943,1949,1957,1965,1969,1974,1982,1986,1989,1991,1997,2006,2009,2012,2016,2017,2021,2022}
+    \fill[accent] (\y-1940,0) circle (0.45mm);
+\end{tikzpicture}
+\caption{Milestones of neural-network history as told in the lecture. The
+shaded bands are the two ``AI winters'' for neural networks (1970--$\sim$1980
+and 1990--$\sim$2005), periods in which funding and interest dried up.
+Notice that backpropagation and LSTM were both invented \emph{during} a
+winter.}
+\label{fig:timeline}
+\end{figure}
+
+\subsection{Before 1940: Least Squares, Gradient Descent and the Chain Rule}
+
+Three ingredients of modern deep learning are centuries old:
+\begin{itemize}
+  \item \textbf{Linear regression and least squares} (Legendre 1805, Gauss
+    1809). A linear regression model is exactly a single linear
+    ``neuron'' (\cref{sec:linear-neuron}).
+  \item \textbf{Gradient descent} (Cauchy 1847, Hadamard 1908): improve a
+    guess by stepping against the gradient.
+  \item \textbf{The chain rule} (Leibniz 1676, later Euler): the only
+    mathematical tool behind backpropagation (\cref{sec:backprop}).
+\end{itemize}
+Put together, ``a linear model fitted by gradient descent on a squared error,
+with gradients computed by the chain rule'' already describes a good part of
+\cref{ch:basic}.
+
+\subsection{1943--1969: The First Neurons, Hebb and the Perceptron}
+
+In 1943, \textbf{McCulloch and Pitts} published \emph{A logical calculus of
+the ideas immanent in nervous activity}, the first computational model of a
+neuron. Their neuron is a basic logic unit: it takes inputs, forms the
+weighted sum (dot product of inputs and weights), applies an activation
+function (a threshold) and ``fires'' an output. There is no learning --- the
+weights are set by hand.
+
+In 1949, \textbf{Donald O.~Hebb} proposed a hypothesis about how biological
+networks learn: the connection between two neurons that fire together is
+strengthened (``cells that fire together wire together''). This
+\emph{Hebbian learning} reappears in the Hopfield networks at the end of
+\cref{ch:basic}.
+
+In 1957, \textbf{Frank Rosenblatt} built the \emph{perceptron}: an electronic
+device with adaptable connections, 400 photocells as input neurons, used for
+image recognition --- and, crucially, with the ability to \emph{learn} its
+weights from examples. Its learning rule is the subject of
+\cref{sec:perceptron}.
+
+Multi-layer networks are older than often assumed: \textbf{Oleksiy
+Ivakhnenko}'s \emph{Group Method of Data Handling} (GMDH, 1965 and 1971)
+already trained networks with several layers.
+
+In 1969, \textbf{Marvin Minsky and Seymour Papert} published the book
+\emph{Perceptrons}. Among other things, it showed that a single-layer
+perceptron cannot solve the simple XOR problem (\cref{sec:xor}). The book
+contributed to a strong reduction of research on neural networks --- the
+\textbf{first AI winter} (1970--$\sim$1980). Minsky received the Turing Award
+in 1969.
+
+\subsection{1974--1989: Backpropagation and Multi-Layer Perceptrons}
+
+The way out of the XOR dead end is a hidden layer, and the way to train a
+hidden layer is backpropagation. \textbf{Paul Werbos} suggested
+backpropagation for neural networks in 1974; it became widely known through
+\textbf{Rumelhart, Hinton and Williams} (1986) in the \emph{Parallel
+Distributed Processing} volumes, which showed how to train multi-layer
+perceptrons (MLPs) with it.
+
+In 1989, \textbf{Cybenko} and \textbf{Kurt Hornik} proved versions of the
+\emph{universal function approximation theorem}: an MLP with a single hidden
+layer and enough hidden units can approximate any continuous function on a
+compact set arbitrarily well. So MLPs do not only solve XOR --- they can, in
+principle, represent (almost) anything.
+
+Two more architectures appear in this period. In 1982, \textbf{John Hopfield}
+introduced \emph{Hopfield networks}, recurrent networks that work as
+associative memories. And convolutional networks have their roots here too:
+\textbf{Kunihiko Fukushima}'s \emph{Neocognitron} (1979) introduced the
+architecture (but was not trained by backprop), and \textbf{Yann LeCun}
+trained convolutional neural networks with backpropagation for image
+recognition in 1989.
+
+The 2024 Nobel Prize in Physics went to Hopfield (``Hopfield networks'') and
+Hinton (``Boltzmann machines'') for foundational work on neural networks.
+
+\subsection{1991--1997: The Vanishing Gradient Problem and LSTM}
+
+\begin{defbox}[title={The vanishing gradient problem (VGP)}]
+Training a neural network relies on gradients, which are propagated backward
+through the layers. In deep networks (and in recurrent networks unrolled
+over time) these gradients shrink --- or blow up --- exponentially with the
+number of layers they pass. The deeper the network, the harder it is to
+train. Discovered by \textbf{Sepp Hochreiter} in his 1991 diploma thesis;
+called by the lecture ``the fundamental problem of all deep learning
+methods''.
+\end{defbox}
+
+The mathematical reason is derived in \cref{sec:vgp}. For recurrent networks,
+Hochreiter and Schmidhuber's \textbf{Long Short-Term Memory (LSTM)} (1997)
+ameliorates the problem; for feed-forward networks, ReLUs, careful
+initialization and skip connections help (\cref{sec:vgp}).
+
+The 1990s and early 2000s were the \textbf{second AI winter} for neural
+networks (1990--$\sim$2005): support-vector machines and other kernel
+methods dominated machine learning, and neural networks were considered hard
+to train.
+
+\subsection{Around 2010: Re-Emergence as Deep Learning}
+
+Deep learning took off when several developments came together:
+\begin{itemize}
+  \item \textbf{GPU training} of neural networks (Oh and Jung, 2004);
+  \item \textbf{stacked, layer-wise training} of deep networks (Hinton et
+    al., 2006);
+  \item \textbf{rectified linear units}, ReLUs (Nair and Hinton, 2010);
+  \item \textbf{deep CNNs} trained on GPUs (Krizhevsky et al., 2012);
+  \item \textbf{large data sets}: in 2009, Fei-Fei Li launched
+    \emph{ImageNet}, a database of about 14~million labelled images that
+    became \emph{the} benchmark of deep learning research.
+\end{itemize}
+The lecture dates the starting point of the deep learning era to about
+2010. In 2018, Yoshua Bengio, Geoffrey Hinton and Yann LeCun received the
+Turing Award for deep learning.
+
+\section{Why Deep Learning Took Off}
+
+\begin{intbox}
+Neural networks are not new; what changed around 2010--2012 is the
+environment they run in. The lecture lists four reasons for the boom:
+\textbf{fast computers}, \textbf{GPUs}, \textbf{large data sets} and
+\textbf{algorithmic improvements}. A network that was hopeless to train on
+a 1995 workstation with a few thousand examples becomes practical with
+a GPU and a million labelled images --- and once it worked, people found
+the algorithmic tricks (ReLU, better initialization, dropout, \ldots) to make
+it work even better.
+\end{intbox}
+
+The ``third wave'' started with a series of records around 2012, in vision
+and in speech:
+\begin{itemize}
+  \item \textbf{2009:} deep (LSTM-based recurrent) networks won
+    international handwriting-recognition competitions (French, Arabic and
+    Chinese handwriting).
+  \item \textbf{2011:} deep networks won the German traffic-sign recognition
+    contest with super-human performance: 0.56\,\% error, compared with
+    1.16\,\% for humans and 3.86\,\% for the best non-neural competitor.
+  \item \textbf{2011:} on an industry speech-recognition benchmark, deep
+    networks lowered the error rate from about 24\,\% to about 16\,\% --- after
+    the community had been stuck at 24\,\% for more than a decade. This is
+    when IT companies became seriously interested.
+  \item \textbf{2012:} deep networks won the brain-image segmentation
+    challenge with super-human pixel error rate.
+  \item \textbf{2012:} a deep CNN trained on GPUs (``AlexNet'') won the
+    ImageNet competition with about 16\,\% error on 1.2~million images,
+    against 26\,\% for the runner-up.\footnote{The record list on the slides
+    dates this to 2013; the winning network was presented at the 2012
+    ImageNet challenge (Krizhevsky et al., 2012), which is also the date the
+    slides use elsewhere.}
+  \item \textbf{2013:} deep networks won the grand challenge on mitosis
+    detection, and Google researchers improved previous face-recognition
+    results by 70\,\% using 16{,}000 CPU cores.
+\end{itemize}
+
+Since then the list of milestones has kept growing. Examples from the
+lecture:
+\begin{itemize}
+  \item \textbf{2016:} AlphaGo beats a human Go champion; deep learning
+    systems understand human speech well enough for everyday assistants.
+  \item \textbf{2017:} deep networks classify skin cancer at the level of
+    dermatologists (Esteva et al., \emph{Nature}).
+  \item \textbf{2021:} AlphaFold, a Transformer-based network for protein
+    structure prediction, is named scientific breakthrough of the year.
+  \item \textbf{2022:} deep reinforcement learning steers the magnetic
+    confinement of plasma in a tokamak fusion reactor (Degrave et al.,
+    \emph{Nature}).
+  \item \textbf{2022:} large language models produce human-like text --- the
+    era of LLMs and of the broad uptake of deep learning methods begins.
+\end{itemize}
+
+\section{Main Types of Networks}
+\label{sec:network-types}
+
+The lecture distinguishes four main families of networks. The useful way to
+remember them is by the \emph{kind of input} they are built for.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}p{4.6cm}p{2.6cm}p{5.9cm}@{}}
+\toprule
+\textbf{Network type} & \textbf{Input} & \textbf{Typical applications} \\
+\midrule
+Feed-forward / fully connected networks & vectors &
+  standard classification problems: spam vs.\ non-spam, cancer vs.\ normal
+  tissue \\
+Recurrent neural networks (RNNs) & time series, sequences &
+  text, speech, video; e.g.\ chatbots \\
+Convolutional neural networks (CNNs) & spatial data (images) &
+  image processing, image recognition \\
+Transformer networks (2017) & sets (of tokens) &
+  natural language processing \\
+\bottomrule
+\end{tabular}
+\caption{The four main network families. This course covers fully connected
+networks (\cref{ch:basic}) and CNNs (\cref{ch:cnn}); RNNs, LSTM and
+Transformers are the topic of later courses.}
+\label{tab:network-types}
+\end{table}
+
+\section{Credit, Prizes and Disputes}
+
+The history of neural networks is not a settled story, and the lecture shows
+an example of an ongoing dispute. In 2020, Geoffrey Hinton received the
+Honda Prize; J\"urgen Schmidhuber publicly criticized the choice, arguing
+that inventions were attributed to Hinton that were not his. He made similar
+criticism of the 2018 Turing Award to Bengio, Hinton and LeCun, and of the
+fact that Hopfield networks are usually credited to Hopfield alone, although
+Shun-Ichi Amari had described the same kind of network in 1972 (this is why
+the lecture says \emph{Amari--Hopfield} networks, \cref{sec:hopfield}).
+
+A more neutral record is the list of IEEE Neural Networks Pioneer Award
+winners, which contains most of the names in this chapter --- among them
+Widrow, Kohonen and Grossberg (1991), Amari (1992), Werbos (1995), Hopfield
+(1997), Hinton (1998), Fukushima (2003), Vapnik (2010), LeCun (2014),
+Schmidhuber (2016), Bengio (2019) and Hochreiter (2020).
+
+\section{Neural-Network History versus AI History}
+
+Everything above is a history of \emph{neural networks}, not of \emph{AI}. A
+history of AI would start with Alan Turing and the Turing test, and with the
+1956 Dartmouth workshop (J.~McCarthy, C.~Shannon, R.~Solomonoff, T.~More,
+N.~Rochester, O.~Selfridge, A.~Samuel and others), where the term
+``artificial intelligence'' was coined. It would talk about symbolic
+reasoning, expert systems, and IBM's Deep Blue beating Kasparov at chess in
+1997. Broadly, AI went through three waves --- the birth of AI in the 1950s
+and 1960s, expert systems and knowledge engineering in the 1970s and 1980s,
+and machine learning with deep networks since about 2010 --- separated by two
+winters.
+
+\begin{notebox}[title={Two different sets of ``AI winter'' dates}]
+The general AI history places the winters roughly in the mid-1970s and in
+the late 1980s to early 1990s, triggered by limited computing power and by
+the failure of expert systems to scale. The neural-network winters on the
+slides (1970--$\sim$1980 and 1990--$\sim$2005) are shifted, because neural
+networks fell out of favour within AI at different times. If an exam asks
+for dates, check which history the question means.
+\end{notebox}
+
+\section{Chapter Checklist}
+
+What you should take away from this chapter:
+\begin{itemize}
+  \item what machine learning and deep learning are, and that learning
+    \emph{representations} (increasingly abstract features) is what makes
+    deep learning different;
+  \item the main milestones and their order: McCulloch--Pitts (1943), Hebb
+    (1949), perceptron (1957), Minsky \& Papert and XOR (1969), backprop
+    (Werbos 1974; Rumelhart et al.\ 1986), universal approximation (1989),
+    Hopfield networks (1982), vanishing gradients (1991), LSTM (1997), CNNs
+    (Fukushima 1979; LeCun 1989), ImageNet (2009), the deep learning boom
+    around 2010--2012;
+  \item the two AI winters for neural networks and why they ended;
+  \item the four reasons for the success since 2012: fast computers, GPUs,
+    large data sets, algorithmic improvements;
+  \item the four main network types and the kind of input each is made for.
+\end{itemize}
+
+% ==========================================================
+%  CHAPTER 2 — BIOLOGICAL NEURAL NETWORKS   (outline)
+%  Slides for this chapter are not in the course folder yet.
+% ==========================================================
+\chapter{Biological Neural Networks}
+\label{ch:bio}
+
+Artificial neural networks borrowed their name and their basic building
+block from the brain. This chapter looks at the original: how a biological
+neuron works, how neurons communicate, and which of these features survive
+in the artificial neuron of \cref{ch:basic} --- and which do not.
+
+\planned{The slides of this chapter are not yet in the course folder. The
+section list below is the expected structure; adapt it to the slides once
+they are available.}
+
+\section{The Biological Neuron}
+\planned{Cell body, dendrites, axon and synapses; resting potential and
+action potential (``spike''); excitatory and inhibitory synapses; synaptic
+strength as the biological counterpart of a weight.}
+
+\section{Learning in Biological Networks}
+\planned{Synaptic plasticity; Hebb's rule (``cells that fire together wire
+together''); connection to Hebbian learning in Amari--Hopfield networks
+(\cref{sec:hopfield}).}
+
+\section{From Biological to Artificial Neurons}
+\planned{The abstraction: weighted sum of inputs, activation function,
+output; McCulloch--Pitts neuron; what is lost (spike timing, dendritic
+computation, energy efficiency) and why the analogy should not be taken too
+literally.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 3 — NOTATION
+%  The lecture's own notation slides are not in the folder yet; this
+%  chapter collects the notation as it is used on the Chapter 4 slides.
+% ==========================================================
+\chapter{Notation}
+\label{ch:notation}
+
+Deep learning papers, textbooks and lectures all use slightly different
+symbols, and a lot of confusion in exams comes from mixing them up. This
+chapter collects the notation \emph{as it is used on the Chapter~4 slides} of
+this lecture, so that the rest of these notes reads consistently. The
+lecture has its own notation chapter; once its slides are available, this
+chapter should be checked against them.
+
+\section{Data}
+\label{sec:notation-data}
+
+In supervised learning we are given $N$ examples (\emph{samples}, data
+points), each consisting of an input vector with $D$ \emph{features} and a
+label. The sample index is written as a \textbf{superscript}, so that
+subscripts stay free for feature (or unit) indices:
+\[
+  \bx^n \in \R^D \quad\text{(input of sample } n\text{)}, \qquad
+  y^n \quad\text{(its label)}, \qquad n = 1, \dots, N.
+\]
+The inputs are collected in the \emph{data matrix}
+$\bX = (\bx^1, \dots, \bx^N)$, where the lecture's convention is that
+\textbf{samples are rows} and \textbf{features are columns}, so
+$\bX \in \R^{N \times D}$ and $x_{nd}$ is feature $d$ of sample $n$. The
+slides' example: in a data table whose second row is $\bx^2 = (0.15, 0.14)$,
+the single entry $x_{21} = 0.15$ is the first feature of the second sample;
+$\bx_{\cdot 1}$ is the column of all values of feature~1. Scalar labels are
+collected in $\by = (y^1, \dots, y^N)\T$.
+
+For classification with $K$ classes, a label is written as a
+\emph{one-hot vector} $\by \in \{0,1\}^K$ (\cref{sec:softmax}), and the label
+vectors of all samples form the label matrix $\bY$; $y^n_k$ (or $y_{nk}$) is
+entry $k$ of the label of sample $n$.
+
+\section{Models, Losses and Learning}
+
+\begin{itemize}
+  \item $g(\bx; \bw)$ --- the network (model) as a function of the input
+    $\bx$, with all its parameters collected in $\bw$ (or a weight matrix
+    $\bW$, or several weight matrices $\bW\lay{1}, \dots, \bW\lay{L}$).
+    A prediction is $\hat y = g(\bx; \bw)$.
+  \item $\loss(y, g(\bx; \bw))$ --- the \textbf{loss function} for a single
+    sample: how bad is the prediction $g(\bx; \bw)$ if the true label is $y$?
+  \item $\Remp(\bw, \bX, \by)$ --- the \textbf{empirical error} (empirical
+    risk): the loss summed or averaged over the training set,
+    $\Remp = \frac{1}{N}\sum_n \loss(y^n, g(\bx^n; \bw))$. Training means
+    minimizing $\Remp$ with respect to $\bw$.
+  \item $\eta$ --- the \textbf{learning rate} (step size) of gradient
+    descent: $\bw^{\text{new}} = \bw^{\text{old}} - \eta\, \grad_{\bw}
+    \Remp$.
+\end{itemize}
+
+\begin{notebox}[title={Loss $\loss$ versus number of layers $L$}]
+The slides use the same letter $L$ for the loss function $L(y, g(\bx;\bw))$
+and for the number of layers $L$ (and $L_\nu$ for the set of units in layer
+$\nu$). These notes write the loss as $\loss$ (calligraphic) to keep the two
+apart. When reading the slides, the context always tells which one is meant.
+\end{notebox}
+
+\section{Units and Weights}
+\label{sec:notation-units}
+
+A neural network consists of \emph{units} (artificial neurons) connected by
+weighted, directed connections.
+
+\begin{defbox}[title={Unit-wise notation (single neurons, MLPs)}]
+\begin{itemize}
+  \item $w_{ij}$ --- the \textbf{weight} (connection strength, synaptic
+    weight) \textbf{from unit $j$ to unit $i$}. Note the order: the
+    \emph{target} comes first.
+  \item $s_i = \sum_j w_{ij} a_j + b_i$ --- the \textbf{network input} or
+    \textbf{pre-activation} of unit $i$; $b_i$ is its bias. Alternatively the
+    bias is treated as a weight $w_{i0}$ from a constant unit $a_0 = 1$, and
+    the sum runs from $j = 0$.
+  \item $f$ --- the \textbf{activation function} (also \emph{transfer
+    function}); it may differ between units.
+  \item $a_i = f(s_i)$ --- the \textbf{activation} (activity, output) of unit
+    $i$. For input units, $a_i = x_i$.
+  \item Units are numbered consecutively through the whole network: the $D$
+    input units are $1, \dots, D$, and if the network has $Q$ units and $K$
+    outputs, the output units are $Q - K + 1, \dots, Q$.
+  \item $\delta_i = \pd{\loss}{s_i}$ --- the \textbf{delta error} of unit $i$
+    (\cref{sec:backprop}).
+\end{itemize}
+\end{defbox}
+
+\section{Layer-Wise Notation (Deep Networks)}
+\label{sec:notation-layers}
+
+For deep networks it is easier to number the \emph{layers} and to write
+everything as vectors and matrices. Layers are indexed by a superscript in
+square brackets.
+
+\begin{defbox}[title={Layer-wise notation (deep feed-forward networks)}]
+\begin{itemize}
+  \item $\ba\lay{0} = \bx$ --- the input is the ``activation of layer 0''.
+  \item $\bW\lay{l}$ --- the weight matrix connecting layer $l-1$ to layer
+    $l$; entry $w\lay{l}_{ij}$ goes from unit $j$ in layer $l-1$ to unit $i$
+    in layer $l$. If layer $l$ has $n_l$ units, $\bW\lay{l} \in
+    \R^{n_l \times n_{l-1}}$. Bias vector: $\bb\lay{l}$.
+  \item $\bs\lay{l} = \bW\lay{l} \ba\lay{l-1} + \bb\lay{l}$ --- the
+    pre-activations of layer $l$.
+  \item $\ba\lay{l} = f(\bs\lay{l})$ --- the activations of layer $l$, with
+    $f$ applied element-wise.
+  \item $\byhat = \ba\lay{L}$ --- the output of the last layer $L$ (the
+    output activation is often written $\sigma$ to stress that it may be
+    different from the hidden-layer $f$).
+  \item $\bdelta\lay{l} = \bigl(\pd{\loss}{\bs\lay{l}}\bigr)\T$ --- the delta
+    errors of layer $l$ (\cref{sec:backprop-dnn}).
+\end{itemize}
+\end{defbox}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Quantity} & \textbf{Unit-wise (MLP)} & \textbf{Layer-wise (DNN)} \\
+\midrule
+input              & $a_i = x_i$, $i \le D$   & $\ba\lay{0} = \bx$ \\
+weight             & $w_{ij}$ (from $j$ to $i$) & $\bW\lay{l}$, entries $w\lay{l}_{ij}$ \\
+pre-activation     & $s_i = \sum_j w_{ij} a_j + b_i$ & $\bs\lay{l} = \bW\lay{l}\ba\lay{l-1} + \bb\lay{l}$ \\
+activation         & $a_i = f(s_i)$          & $\ba\lay{l} = f(\bs\lay{l})$ \\
+output             & $a_k$, $Q-K+1 \le k \le Q$ & $\byhat = \ba\lay{L}$ \\
+delta error        & $\delta_i = \partial\loss/\partial s_i$ & $\bdelta\lay{l} = (\partial\loss/\partial\bs\lay{l})\T$ \\
+\bottomrule
+\end{tabular}
+\caption{The two notations side by side. The unit-wise notation is used for
+single-layer networks and MLPs (Sections~4.1--4.6), the layer-wise notation
+for deep feed-forward networks (Section~4.7).}
+\label{tab:notation}
+\end{table}
+
+\section{Further Conventions}
+
+\begin{itemize}
+  \item Vectors are column vectors and written in bold italic ($\bx$, $\bw$);
+    matrices are bold capitals ($\bW$, $\bX$). Transposition: $\bw\T$.
+  \item $\sigma(x) = 1/(1 + e^{-x})$ is the logistic sigmoid; $\softmax$
+    is defined in \cref{sec:softmax}.
+  \item $\grad_{\bw} \Remp$ is the gradient (a vector of the same shape as
+    $\bw$); $\hess_{\bw} \Remp$ the Hessian (\cref{sec:hessian}).
+  \item $\diag(\bm{v})$ is the diagonal matrix with $\bm{v}$ on the diagonal;
+    $\odot$ is the element-wise product.
+\end{itemize}
+
+% ==========================================================
+%  CHAPTER 4 — BASIC NEURAL NETWORK ARCHITECTURES
+%  Sources: "TEX Chapter4 - Basics" (4.1--4.4, Hopfield) and
+%           "Chapter4 - FNN" (4.5--4.10)
+% ==========================================================
+\chapter{Basic Neural Network Architectures}
+\label{ch:basic}
+
+This is the central chapter of the course. It starts with the simplest
+possible network --- a single neuron that computes a weighted sum --- and
+adds one idea at a time: a threshold (perceptron), a sigmoid (logistic
+regression), a softmax (multi-class classification), a hidden layer (MLP),
+many hidden layers (deep networks). Along the way it develops the two tools
+that every later chapter relies on: \emph{maximum likelihood} to decide
+which loss to minimize, and \emph{gradient descent with backpropagation} to
+minimize it.
+
+The section numbers follow the lecture: Sections 4.1--4.4 cover
+\emph{single-layer} networks, 4.5 shows why they are not enough, 4.6--4.7
+cover multi-layer and deep networks with backpropagation, 4.8--4.9 the
+Jacobian and the Hessian, and 4.10 the practical tricks of the trade. An
+excursion to Amari--Hopfield networks, which closed the single-layer lecture,
+comes at the end (\cref{sec:hopfield}).
+
+\paragraph{Units, weights and layers}
+An artificial neural network is a set of \emph{units} connected by directed,
+weighted connections. The weight $w_{ij}$ is the connection strength
+(``synaptic weight'') from unit $j$ to unit $i$. Units are organized in
+\emph{layers}: an \emph{input} layer that receives the data, one or more
+\emph{hidden} layers, and an \emph{output} layer (\cref{fig:three-layer}).
+Learning means adapting the weights so that the network computes something
+useful. The notation is collected in \cref{ch:notation}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=12mm]
+  % input
+  \node[inunit] (x1) at (-0.7,0) {};
+  \node[inunit] (x2) at (0.7,0) {};
+  % hidden
+  \foreach \i/\xx in {1/-2.1,2/-0.7,3/0.7,4/2.1}
+    \node[unit] (h\i) at (\xx,1.6) {};
+  % output
+  \node[outunit] (o) at (0,3.2) {};
+  \foreach \i in {1,...,4} {
+    \draw[conn] (x1) -- (h\i);
+    \draw[conn] (x2) -- (h\i);
+    \draw[conn] (h\i) -- (o);
+  }
+  \node[font=\small, anchor=east] at (-3.0,0) {input};
+  \node[font=\small, anchor=east] at (-3.0,1.6) {hidden};
+  \node[font=\small, anchor=east] at (-3.0,3.2) {output};
+  % zoom on a single weight
+  \begin{scope}[xshift=6.3cm]
+    \node[inunit] (j) at (0.6,0.4) {$j$};
+    \node[unit] (i) at (0.6,2.8) {$i$};
+    \draw[conn, thick] (j) -- node[right, font=\small] {$w_{ij}$} (i);
+    \node[font=\scriptsize, align=left, anchor=west] at (1.4,1.6)
+      {weight \emph{from} unit $j$\\ \emph{to} unit $i$};
+  \end{scope}
+\end{tikzpicture}
+\caption{Left: a three-layer network with an input, a hidden and an output
+layer. Right: the weight $w_{ij}$ connects unit $j$ to unit $i$ --- the
+\emph{target} index comes first.}
+\label{fig:three-layer}
+\end{figure}
+
+\paragraph{Data for supervised learning}
+Throughout the chapter we have a supervised data set of $N$ samples. In
+\emph{regression} the labels are real numbers, $y^n \in \R$; in
+\emph{classification} they are class labels. The inputs form the data
+matrix $\bX \in \R^{N \times D}$ (one sample $\bx^n$ per row), and the labels
+form the vector $\by = (y^1, \dots, y^N)\T$.
+
+
+% ----------------------------------------------------------
+\section{Linear Model: The Linear Neuron}
+\label{sec:linear-neuron}
+% ----------------------------------------------------------
+
+The simplest network has no hidden layer at all: the inputs are directly
+connected to a single output unit, which outputs the weighted sum of its
+inputs.
+
+\begin{defbox}[title={Linear neuron}]
+For an input $\bx \in \R^D$ and adaptive weights $\bw \in \R^D$, the linear
+neuron computes the activation
+\[
+  g(\bx; \bw) = a = \bw\T\bx = \sum_{d=1}^{D} w_d x_d \;(+\, w_0).
+\]
+A bias $w_0$ can be included by appending a constant feature $x_0 = 1$ to
+every input, so we can always write $\bw\T\bx$. The linear neuron is exactly
+the model of \textbf{linear regression}.
+\end{defbox}
+
+\subsection{From Gaussian Noise to the Squared Loss}
+
+Which weights are ``good''? The lecture answers this with a probabilistic
+model, and it is worth understanding the argument, because the same recipe
+gives us the loss functions for every other network in this chapter.
+
+Assume the label is a deterministic function of the input plus Gaussian
+noise:
+\[
+  y = g(\bx; \bw) + \epsilon, \qquad \epsilon \sim \Normal(0, \sigma^2).
+\]
+Then the label itself is Gaussian around the network output,
+$p(y \given \bx, \bw, \sigma) = \Normal(y \given g(\bx;\bw), \sigma^2)$,
+and the best prediction (the conditional mean) is the network output:
+$\E[y \given \bx] = \int y\, p(y \given \bx) \dd y = g(\bx; \bw)$.
+
+If the $N$ data points are drawn independently, their joint probability ---
+the \emph{likelihood} of the weights --- is the product
+\[
+  p(\by \given \bX, \bw, \sigma)
+  = \prod_{n=1}^{N} \Normal(y^n \given \bw\T\bx^n, \sigma^2)
+  = \prod_{n=1}^{N} \frac{1}{\sqrt{2\pi\sigma^2}}
+    \exp\!\Bigl(-\frac{(y^n - \bw\T\bx^n)^2}{2\sigma^2}\Bigr).
+\]
+Taking the logarithm (which does not move the location of the maximum)
+turns the product into a sum:
+\[
+  \log p(\by \given \bX, \bw, \sigma)
+  = -\frac{N}{2}\log(2\pi\sigma^2) - \frac{1}{\sigma^2}\, S(\bw),
+  \qquad
+  S(\bw) = \frac12 \sum_{n=1}^{N} \bigl(\underbrace{y^n - \bw\T\bx^n}_{=:\,\epsilon^n}\bigr)^2 .
+\]
+The first term does not depend on $\bw$, and $\sigma^2$ only scales the
+second. So maximizing the likelihood is the same as minimizing $S(\bw)$, the
+(halved) \emph{sum of squared residuals} $\epsilon^n$.
+
+\begin{thmbox}[title={Maximum likelihood $\Leftrightarrow$ least squares}]
+Under the assumption of additive Gaussian noise, maximizing the likelihood
+of the data is equivalent to minimizing the \textbf{squared loss}
+\begin{align*}
+  \loss(y, g(\bx;\bw)) &= \tfrac12\bigl(y - g(\bx;\bw)\bigr)^2, \\
+  \Remp(\bw) = S(\bw) &= \tfrac12 \sum_{n=1}^{N} (y^n - \bw\T\bx^n)^2
+  = \tfrac12 (\by - \bX\bw)\T(\by - \bX\bw).
+\end{align*}
+A candidate weight vector $\tilde\bw$ with a low sum of squared residuals
+$S(\tilde\bw)$ has a high likelihood.
+\end{thmbox}
+
+\begin{notebox}[title={$\Normal(0,\sigma)$ on the slides}]
+The slides write the noise as $\epsilon \sim \Normal(0, \sigma)$, with
+$\sigma$ the \emph{standard deviation}. These notes write the second
+argument as the variance, $\Normal(0,\sigma^2)$. The formulas are the same
+either way --- just do not plug $\sigma$ in where $\sigma^2$ belongs.
+\end{notebox}
+
+\subsection{Learning: Empirical Risk Minimization}
+
+Learning now means finding the weights that minimize the error on the
+training set,
+\[
+  \what = \argmin_{\tilde\bw} S(\tilde\bw),
+\]
+an approach called \textbf{empirical risk minimization} (ERM) with
+$\Remp(\tilde\bw, \bX, \by) = S(\tilde\bw)$. Equivalently, we minimize the
+\emph{negative log-likelihood}
+$-\log p(\by \given \bX, \bw, \sigma) = \frac{N}{2}\log(2\pi\sigma^2) +
+\frac{1}{\sigma^2} S(\bw)$. Its gradient is
+\[
+  \grad_{\bw}\bigl(-\log p(\by \given \bX, \bw, \sigma)\bigr)
+  = \frac{1}{\sigma^2} \sum_{n=1}^{N} (\bw\T\bx^n - y^n)\,\bx^n
+  = \frac{1}{\sigma^2}\bigl(\bX\T\bX\bw - \bX\T\by\bigr).
+\]
+Note the structure of each summand: \emph{(prediction $-$ target) $\times$
+input}. We will meet it again for every single-layer network.
+
+There are two ways to find the minimum: solve for it directly, or walk
+towards it step by step.
+
+\subsection{Closed-Form Solution: The Normal Equations}
+
+Setting the gradient to zero gives the \emph{normal equations}:
+\[
+  0 = \bX\T\bX\bw - \bX\T\by
+  \quad\Longleftrightarrow\quad
+  \bX\T\bX\,\bw = \bX\T\by
+  \quad\Longrightarrow\quad
+  \what = (\bX\T\bX)\inv\bX\T\by .
+\]
+
+\begin{thmbox}[title={Least-squares solution}]
+If $\bX\T\bX$ has full rank (is invertible), the unique minimizer of the
+squared error --- and the maximum-likelihood estimator under Gaussian noise
+--- is
+\[
+  \what = (\bX\T\bX)\inv\bX\T\by = \bX^{+}\by,
+  \qquad \bX^{+} = (\bX\T\bX)\inv\bX\T,
+\]
+where $\bX^{+}$ is the \textbf{Moore--Penrose pseudo-inverse} of $\bX$.
+For centered data, $\frac1N\bX\T\bX$ is the estimate of the covariance
+matrix of the features.
+\end{thmbox}
+
+\begin{exbox}[title={Fitting a line through three points}]
+Data: $x = 0, 1, 2$ with labels $\by = (1, 3, 4)\T$. To fit an intercept, we
+append the constant feature, so each row of $\bX$ is $(1, x^n)$:
+\[
+  \bX = \begin{pmatrix} 1 & 0 \\ 1 & 1 \\ 1 & 2 \end{pmatrix}, \quad
+  \bX\T\bX = \begin{pmatrix} 3 & 3 \\ 3 & 5 \end{pmatrix}, \quad
+  \bX\T\by = \begin{pmatrix} 8 \\ 11 \end{pmatrix}, \quad
+  (\bX\T\bX)\inv = \frac16\begin{pmatrix} 5 & -3 \\ -3 & 3 \end{pmatrix}.
+\]
+Hence $\what = \frac16(40 - 33,\; -24 + 33)\T = (7/6,\; 3/2)\T \approx
+(1.167, 1.5)\T$, i.e.\ the line $\hat y = 1.167 + 1.5\,x$. The predictions are
+$(1.167, 2.667, 4.167)$, the residuals $(-0.167, 0.333, -0.167)$, and
+$S(\what) = \frac12(0.0278 + 0.1111 + 0.0278) = 0.083$. No other line through
+these points has a smaller squared error.
+\end{exbox}
+
+\subsection{Gradient Descent and Stochastic Gradient Descent}
+
+Instead of solving the normal equations, we can start from an initial
+guess and improve it repeatedly by stepping against the gradient:
+\[
+  \bw^{\text{new}} = \bw^{\text{old}} - \eta\, \grad_{\bw} S(\bw)\big|_{\bw^{\text{old}}},
+  \qquad
+  \grad_{\bw} S(\bw) = \sum_{n=1}^{N} (\bw\T\bx^n - y^n)\,\bx^n .
+\]
+This is \textbf{gradient descent}. The \emph{learning rate} $\eta$ is
+critical: too small and the algorithm crawls, too large and it overshoots
+and diverges. For least squares, gradient descent works well because the
+problem is \emph{convex}: there are no bad local minima to get stuck in.
+
+\begin{exbox}[title={One gradient step on the three points}]
+Start at $\bw = (0,0)\T$, where $S = \frac12(1 + 9 + 16) = 13$. The gradient
+is $\bX\T(\bX\bw - \by) = -\bX\T\by = (-8, -11)\T$. With $\eta = 0.1$ the new
+weights are $\bw = (0.8, 1.1)\T$, the predictions $(0.8, 1.9, 3.0)$, and the
+error drops to $S = \frac12(0.04 + 1.21 + 1.00) = 1.125$. Repeating the step
+converges to the closed-form solution $(1.167, 1.5)\T$ with $S = 0.083$.
+\end{exbox}
+
+For large data sets, computing the full gradient over all $N$ samples for
+every single step is expensive. Here a simple observation helps: the scaled
+gradient is a \emph{mean} over data points,
+\[
+  \frac1N \grad_{\bw} S(\bw) = \frac1N\sum_{n=1}^{N} (\bw\T\bx^n - y^n)\,\bx^n,
+\]
+and a mean can be estimated from a random subset. Drawing a
+\textbf{mini-batch}
+\[
+  B = \{\bx^{n_1}, \dots, \bx^{n_{|B|}}\} \subset \{\bx^1, \dots, \bx^N\}
+\]
+gives
+\[
+  \frac1N \grad_{\bw} S(\bw) \approx
+  \frac{1}{|B|} \sum_{b=1}^{|B|} (\bw\T\bx^{n_b} - y^{n_b})\,\bx^{n_b},
+\]
+and using this noisy but cheap estimate in the update is \textbf{stochastic
+gradient descent} (SGD). It is the workhorse of all deep learning
+(\cref{sec:tricks}).
+
+\subsection{The Trained Network}
+
+The goal of learning is a trained network that makes predictions for new
+inputs, $g(\bx^{\text{new}}; \bw) = \bw\T\bx^{\text{new}}$. In the slides'
+example, the weights $\bw = (0.1, -1.0, 0.4)\T$ and the new input
+$\bx^{\text{new}} = (1.0, -0.3, 0)\T$ give the prediction
+\[
+  a = 0.1\cdot 1.0 + (-1.0)\cdot(-0.3) + 0.4 \cdot 0 = 0.4 .
+\]
+
+\begin{intbox}
+The linear neuron already contains the whole pipeline of this course in
+miniature: an \emph{architecture} (weighted sum), an \emph{objective}
+(empirical error, motivated by maximum likelihood), \emph{learning}
+(minimizing the objective --- in closed form or by gradient descent), and
+the \emph{goal}: a trained network that predicts well on new data. Every
+network that follows changes one of these pieces.
+\end{intbox}
+
+
+% ----------------------------------------------------------
+\section{Perceptron}
+\label{sec:perceptron}
+% ----------------------------------------------------------
+
+Now the labels are not real numbers but two classes, coded as
+$y \in \{-1, +1\}$: diseased vs.\ healthy, spam vs.\ normal email, win or
+loss. We could simply run linear regression on the labels $\pm 1$, but this is
+a poor fit to the problem: the squared loss also punishes points that are
+classified correctly with a large margin (a prediction of $+5$ for a label
+$+1$ is ``wrong'' by 4), and the output is a real number, not a class.
+
+\begin{defbox}[title={Perceptron}]
+The perceptron is a linear neuron followed by the sign function:
+\[
+  g(\bx; \bw) = a = \sign(\bw\T\bx), \qquad
+  \sign(z) = \begin{cases} +1 & z > 0, \\ \phantom{+}0 & z = 0, \\ -1 & z < 0. \end{cases}
+\]
+It predicts class $+1$ on one side of the hyperplane $\bw\T\bx = 0$ and class
+$-1$ on the other. The weight vector $\bw$ is the \emph{normal vector} of this
+decision boundary and points to the $+1$ side.
+\end{defbox}
+
+\subsection{Perceptron Loss and Learning Rule}
+
+A sample is classified correctly if $y$ and $\bw\T\bx$ have the same sign,
+i.e.\ if $y\,\bw\T\bx > 0$. The \textbf{perceptron loss} is zero for correct
+samples and grows linearly with how far a misclassified sample is on the
+wrong side:
+\[
+  \loss(y, \bw\T\bx) = \max\bigl(0,\; -y\,\bw\T\bx\bigr),
+  \qquad
+  \Remp(\by, \bX, \bw) = -\sum_{n \in \mathcal{M}} y^n\, \bw\T\bx^n,
+\]
+where $\mathcal{M}$ is the set of \textbf{misclassified} samples (the slides
+write the sum as running over all $n$ with $a^n y^n = -1$). Each term is
+positive, so $\Remp \ge 0$, with equality exactly when all samples are
+classified correctly.
+
+The gradient is $\grad_{\bw}\Remp = -\sum_{n\in\mathcal{M}} y^n\bx^n$, and a
+gradient-descent step gives the \textbf{perceptron learning rule}:
+\[
+  \Delta\bw = \eta \sum_{n \in \mathcal{M}} y^n\, \bx^n
+  \quad\text{(whole data set)},
+  \qquad
+  \Delta\bw = \eta\, y\, \bx \;\text{ if } \bx \text{ is misclassified}
+  \quad\text{(single sample)}.
+\]
+In the online version, we go through the samples one by one and change the
+weights only when the current sample is misclassified.
+
+\begin{notebox}[title={Sign conventions on the slides}]
+The slides write the perceptron loss as ``$y(\bw\T\bx)$ for misclassified
+samples''; with that sign it would be \emph{negative}. The loss must be
+$-y\,\bw\T\bx$ (as in the slides' empirical error, which has the minus sign).
+Also, with $\sign(0) = 0$, a sample exactly on the boundary would count as
+correct, and a perceptron started at $\bw = \bm{0}$ would never move. In
+practice --- and in the convergence proof --- a sample counts as
+misclassified if $y\,\bw\T\bx \le 0$.
+\end{notebox}
+
+\subsection{Geometric Interpretation}
+
+The learning rule has a nice geometric meaning (\cref{fig:perceptron-rule}).
+If a sample $\bx$ of class $+1$ lies on the wrong side, then $\bw\T\bx < 0$:
+the angle between $\bw$ and $\bx$ is larger than $90^\circ$. Adding $\eta\bx$
+rotates $\bw$ \emph{towards} $\bx$, and the boundary rotates with it. For a
+misclassified sample of class $-1$, the update $\bw - \eta\bx$ rotates $\bw$
+\emph{away} from $\bx$. Either way, $y\,\bw\T\bx$ increases by
+$\eta\norm{\bx}^2$: the update makes this particular sample ``more
+correct''. It may, however, make other samples wrong.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=1.25,
+    cpos/.style={font=\small\bfseries, figgreen},
+    cneg/.style={font=\small\bfseries, figred}]
+  \draw[gray!60, -{Stealth[length=1.6mm]}] (-2.2,0) -- (2.3,0) node[right, font=\scriptsize] {$x_1$};
+  \draw[gray!60, -{Stealth[length=1.6mm]}] (0,-2.0) -- (0,2.1) node[above, font=\scriptsize] {$x_2$};
+  % old and new boundary
+  \draw[accent, thick] (-0.632,1.897) -- (0.632,-1.897)
+    node[below, font=\scriptsize, accent] {old boundary};
+  \draw[accent, thick, dashed] (1.728,-1.008) -- (-1.728,1.008)
+    node[left, font=\scriptsize, accent, align=right] {new\\boundary};
+  % points
+  \node[cpos] at (1.1,1.75) {$+$};
+  \node[cpos] at (1.9,0.6) {$+$};
+  \node[cneg] at (-1.4,-0.6) {$-$};
+  \node[cneg] at (-0.4,-1.4) {$-$};
+  \node[cneg] at (0.2,-1.6) {$-$};
+  \node[cpos, draw=figgreen, circle, inner sep=0.5pt] (xx) at (-1.0,1.6) {$+$};
+  \node[font=\scriptsize, figgreen!70!black, anchor=east] at (-1.15,1.6) {$\bx$ (misclassified)};
+  % vectors
+  \draw[-{Stealth[length=2.2mm]}, very thick, accent] (0,0) -- (1.2,0.4)
+    node[below right, font=\small] {$\bw^{\text{old}}$};
+  \draw[-{Stealth[length=2mm]}, thick, figgreen, dashed] (1.2,0.4) -- (0.7,1.2)
+    node[midway, right, font=\small] {$\eta\bx$};
+  \draw[-{Stealth[length=2.2mm]}, very thick, figblue] (0,0) -- (0.7,1.2)
+    node[above, font=\small] {$\bw^{\text{new}}$};
+\end{tikzpicture}
+\caption{One perceptron update. The $+$ sample $\bx$ lies on the negative side
+of the old boundary (solid). Adding $\eta\bx$ to the weight vector rotates
+$\bw$ towards $\bx$; the new boundary (dashed) is perpendicular to
+$\bw^{\text{new}}$ and now classifies all points correctly. Here
+$\bw^{\text{old}} = (1.2, 0.4)$, $\bx = (-1, 1.6)$, $\eta = 0.5$.}
+\label{fig:perceptron-rule}
+\end{figure}
+
+\begin{exbox}[title={Running the perceptron by hand}]
+Four samples in 2D, each extended by a constant feature 1 for the bias:
+$\bx^1 = (2, 1, 1)$, $\bx^2 = (0, 2, 1)$ with $y = +1$ and
+$\bx^3 = (-1, 0, 1)$, $\bx^4 = (1, -2, 1)$ with $y = -1$. Start with
+$\bw = (0, 0, 0)$, $\eta = 1$, and update whenever $y\,\bw\T\bx \le 0$.
+
+\medskip
+\centering
+\begin{tabular}{@{}cccrl@{}}
+\toprule
+epoch & sample & $\bw$ before & $y\,\bw\T\bx$ & action \\
+\midrule
+1 & $\bx^1$ & $(0, 0, 0)$ & $0$  & update: $\bw = (2, 1, 1)$ \\
+1 & $\bx^2$ & $(2, 1, 1)$ & $3$  & correct \\
+1 & $\bx^3$ & $(2, 1, 1)$ & $1$  & correct \\
+1 & $\bx^4$ & $(2, 1, 1)$ & $-1$ & update: $\bw = (2,1,1) - (1,-2,1) = (1, 3, 0)$ \\
+2 & all     & $(1, 3, 0)$ & $5, 6, 1, 5$ & all correct --- stop \\
+\bottomrule
+\end{tabular}
+
+\raggedright
+\smallskip
+After two updates the perceptron has found the separating line
+$x_1 + 3x_2 = 0$. A different order of the samples would have found a
+different line.
+\end{exbox}
+
+\subsection{Convergence for Linearly Separable Data}
+
+Does the learning rule always find a solution? If one exists, yes.
+
+\begin{thmbox}[title={Perceptron convergence theorem}, unbreakable]
+If the training data are \textbf{linearly separable} --- there is a $\what$
+with $y^n\,\what\T\bx^n > 0$ for all $n$ --- then the perceptron learning rule
+finds a separating weight vector after a \emph{finite} number of updates.
+With margin $\gamma = \min_n y^n\,\what\T\bx^n$ and $R = \max_n\norm{\bx^n}$,
+the number of updates is at most $\norm{\what}^2 R^2 / \gamma^2$.
+\end{thmbox}
+
+\paragraph{Proof idea} Start with $\bw = \bm{0}$ and update with $\eta = 1$
+(the step size does not matter when starting from zero). If sample $n$ has
+been misclassified $\tau_n$ times, then after $\tau = \sum_n \tau_n$ updates
+$\bw = \sum_n \tau_n\, y^n\bx^n$. Now compare two quantities:
+\begin{enumerate}
+  \item \emph{The projection onto $\what$ grows linearly.} Every update adds
+    at least $\gamma$, so
+    \[
+      \what\T\bw = \sum_n \tau_n\, \what\T\bx^n y^n \ge \tau\gamma .
+    \]
+  \item \emph{The length grows only like $\sqrt\tau$.} An update on a
+    misclassified sample changes the squared length by
+    $\norm{\bw + y^n\bx^n}^2 - \norm{\bw}^2 = \norm{\bx^n}^2 + 2y^n\bw\T\bx^n
+    \le R^2$, because the last term is $\le 0$ for a misclassified sample.
+    So $\norm{\bw}^2 \le \tau R^2$.
+\end{enumerate}
+By Cauchy--Schwarz, $\tau\gamma \le \what\T\bw \le \norm{\what}\norm{\bw}
+\le \norm{\what}\sqrt{\tau}R$. The left side grows like $\tau$, the right
+side only like $\sqrt\tau$ --- for large $\tau$ the two would be
+incompatible. Hence $\tau \le \norm{\what}^2R^2/\gamma^2$. \hfill$\square$
+
+\begin{notebox}[title={What the theorem does \emph{not} say}]
+\begin{itemize}
+  \item \textbf{The solution is not unique.} Any separating hyperplane has
+    zero perceptron loss. Which one the algorithm finds depends on the
+    initialization and on the order of the samples.
+  \item \textbf{Non-separable data:} if no separating hyperplane exists, the
+    perceptron never stops updating --- the weights keep cycling, and the
+    algorithm does not converge.
+  \item The bound can be large: a small margin $\gamma$ means many updates.
+\end{itemize}
+\end{notebox}
+
+
+% ----------------------------------------------------------
+\section{Linear Neuron with Sigmoid Activation: Logistic Regression}
+\label{sec:logreg}
+% ----------------------------------------------------------
+
+Again we have two classes, now coded as $y \in \{0, 1\}$. Instead of a hard
+decision we would like the network to output a \emph{probability} for
+class~1. The trick: squash the weighted sum into $(0,1)$.
+
+\begin{defbox}[title={Logistic neuron (logistic regression)}]
+\[
+  g(\bx; \bw) = a = \sigma(\bw\T\bx) = \frac{1}{1 + e^{-\bw\T\bx}},
+\]
+where $\sigma$ is the \textbf{logistic sigmoid}. The output is interpreted as
+$p(y = 1 \given \bx; \bw)$. This is the model of logistic regression.
+\end{defbox}
+
+The sigmoid (\cref{fig:sigmoid}) is $0.5$ at zero, approaches $1$ for large
+positive and $0$ for large negative inputs, and is symmetric:
+$\sigma(-z) = 1 - \sigma(z)$. Its derivative has a particularly convenient
+form, which we will use over and over:
+\[
+  \sigma'(z) = \frac{\dd}{\dd z}\frac{1}{1 + e^{-z}}
+  = \frac{e^{-z}}{(1+e^{-z})^2} = \sigma(z)\bigl(1 - \sigma(z)\bigr).
+\]
+It is largest at $z = 0$, where $\sigma'(0) = 0.5 \cdot 0.5 = 0.25$, and
+goes to zero for large $|z|$ --- the sigmoid \emph{saturates}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[dlbt, width=0.62\linewidth, height=4.6cm,
+    xmin=-6.2, xmax=6.2, ymin=-0.05, ymax=1.12,
+    xtick={-6,-4,...,6}, ytick={0.25,0.5,1},
+    legend style={font=\scriptsize, draw=none, fill=white, fill opacity=0.85,
+                  at={(0.02,0.97)}, anchor=north west}]
+  \addplot[very thick, accent, domain=-6:6] {1/(1+exp(-x))};
+  \addlegendentry{$\sigma(z)$}
+  \addplot[very thick, figamber, dashed, domain=-6:6] {exp(-x)/(1+exp(-x))^2};
+  \addlegendentry{$\sigma'(z) = \sigma(z)(1-\sigma(z))$}
+\end{axis}
+\end{tikzpicture}
+\caption{The logistic sigmoid and its derivative. The derivative never
+exceeds $0.25$ --- a fact that becomes important for the vanishing gradient
+problem (\cref{sec:vgp}).}
+\label{fig:sigmoid}
+\end{figure}
+
+\subsection{Likelihood and Binary Cross-Entropy}
+
+The recipe is the same as for the linear neuron: write down the probability
+of the data and maximize it. The network says
+$p(y = 1 \given \bx; \bw) = g(\bx;\bw)$ and $p(y = 0 \given \bx; \bw) = 1 -
+g(\bx;\bw)$, which can be written compactly as a Bernoulli distribution
+\[
+  p(y \given \bx; \bw) = g(\bx;\bw)^{y}\,\bigl(1 - g(\bx;\bw)\bigr)^{1-y}.
+\]
+(For $y = 1$ the second factor is 1, for $y = 0$ the first.) For independent
+samples, the likelihood and the negative log-likelihood are
+\[
+  p(\by \given \bX, \bw) = \prod_{n=1}^{N} g(\bx^n;\bw)^{y^n}\bigl(1 - g(\bx^n;\bw)\bigr)^{1-y^n},
+\]
+\[
+  -\log p(\by \given \bX, \bw)
+  = -\sum_{n=1}^{N} \Bigl( y^n \log g(\bx^n;\bw) + (1 - y^n)\log\bigl(1 - g(\bx^n;\bw)\bigr) \Bigr).
+\]
+
+\begin{defbox}[title={Binary cross-entropy}]
+The loss
+\[
+  \loss(y, g(\bx;\bw)) = -\Bigl(y \log g(\bx;\bw) + (1-y)\log\bigl(1 - g(\bx;\bw)\bigr)\Bigr)
+\]
+is called \textbf{binary cross-entropy}. It is the negative log-probability
+that the model assigns to the correct class: small if the model is
+confidently right, very large if it is confidently wrong.
+\end{defbox}
+
+\subsection{Gradient and Hessian}
+
+Using $\sigma' = \sigma(1-\sigma)$ and writing $a^n = \sigma(\bw\T\bx^n)$:
+\begin{align*}
+  \grad_{\bw}\Remp
+  &= -\sum_{n=1}^{N} \Bigl( \frac{y^n}{a^n} - \frac{1 - y^n}{1 - a^n} \Bigr)
+     \grad_{\bw}\sigma(\bw\T\bx^n)
+   = -\sum_{n=1}^{N} \Bigl( \frac{y^n}{a^n} - \frac{1 - y^n}{1 - a^n} \Bigr)
+     a^n(1 - a^n)\,\bx^n \\
+  &= -\sum_{n=1}^{N} \bigl( y^n(1 - a^n) - (1 - y^n)a^n \bigr)\bx^n
+   = \sum_{n=1}^{N} \bigl(\sigma(\bw\T\bx^n) - y^n\bigr)\,\bx^n .
+\end{align*}
+
+\begin{thmbox}[title={Logistic regression: gradient and Hessian}]
+For a single sample and for the whole data set:
+\[
+  \grad_{\bw}\Remp = (\sigma(\bw\T\bx) - y)\,\bx,
+  \qquad
+  \grad_{\bw}\Remp = \sum_{n=1}^{N}(\sigma(\bw\T\bx^n) - y^n)\,\bx^n = \bX\T(\ba - \by),
+\]
+\[
+  \hess_{\bw}\Remp = \sigma(\bw\T\bx)\bigl(1 - \sigma(\bw\T\bx)\bigr)\,\bx\bx\T,
+  \qquad
+  \hess_{\bw}\Remp = \sum_{n=1}^{N} a^n(1 - a^n)\,\bx^n\bx^{n\mathsf{T}} = \bX\T\bR\bX,
+\]
+where $\ba = (a^1, \dots, a^N)\T$ and $\bR = \diag\bigl(a^n(1 - a^n)\bigr)$.
+Since all diagonal entries of $\bR$ are positive, $\bX\T\bR\bX$ is positive
+semi-definite: the binary cross-entropy is \textbf{convex} in $\bw$.
+\end{thmbox}
+
+The gradient looks exactly like the one of linear regression ---
+\emph{(prediction $-$ target) $\times$ input} --- only the prediction is now
+$\sigma(\bw\T\bx)$ instead of $\bw\T\bx$. This is no coincidence, and it will
+save us a lot of work in backpropagation (\cref{tab:loss-activation}).
+
+\begin{notebox}[title={The sign of the Hessian}]
+One slide writes the Hessian of logistic regression as $-\bX\T\bR\bX$; that
+is the Hessian of the \emph{log-likelihood}, which is maximized. For the
+error $\Remp$ (negative log-likelihood), which is minimized, the Hessian is
+$+\bX\T\bR\bX$, and this is the matrix that appears in the update rule
+below.
+\end{notebox}
+
+\subsection{Learning}
+
+Setting the gradient to zero gives no closed-form solution this time (the
+$\sigma$ is in the way), so we have to iterate:
+\begin{itemize}
+  \item \textbf{gradient descent:}
+    $\bw^{\text{new}} = \bw^{\text{old}} - \eta\,\grad_{\bw}\Remp(\by, \bX, \bw)|_{\bw^{\text{old}}}$;
+  \item \textbf{stochastic gradient descent:} the same with a mini-batch
+    estimate $\tilde\grad_{\bw}\Remp$ of the gradient;
+  \item \textbf{iteratively reweighted least squares} (IRLS), the method
+    typically used in statistics software: Newton's method with the Hessian,
+    $\bw^{\text{new}} = \bw^{\text{old}} - \bH\inv\grad_{\bw}\Remp|_{\bw^{\text{old}}}$
+    (derived below).
+\end{itemize}
+
+\begin{exbox}[title={One gradient step for logistic regression}]
+Weights $\bw = (0.5, -1)\T$, one sample $\bx = (1, 2)\T$ with label $y = 1$.
+\begin{itemize}
+  \item Forward: $\bw\T\bx = 0.5 - 2 = -1.5$, $a = \sigma(-1.5) = 0.182$. The
+    model gives the correct class only 18\,\% probability; the loss is
+    $-\log 0.182 = 1.70$.
+  \item Gradient: $(a - y)\bx = (0.182 - 1)(1, 2)\T = (-0.818, -1.635)\T$.
+  \item Step with $\eta = 0.5$: $\bw = (0.5, -1)\T + 0.5\,(0.818, 1.635)\T
+    = (0.909, -0.182)\T$.
+  \item Check: $\bw\T\bx = 0.544$, $a = \sigma(0.544) = 0.633$, loss $0.458$.
+\end{itemize}
+One step moved the prediction from ``probably class 0'' to ``probably class
+1''. Note how large the step was: the gradient is proportional to the error
+$a - y$, which was big.
+\end{exbox}
+
+\subsection{Intermezzo: Optimization and Newton's Method}
+
+Learning is an optimization problem, so it is worth placing it in the
+general picture. A generic (constrained) optimization problem reads
+\[
+  \min_{\bx}\; f(\bx) \quad\text{s.t.}\quad g(\bx) \le 0,\;\; h(\bx) = 0,
+  \qquad f: \R^n \to \R,\; g: \R^n \to \R^m,\; h: \R^n \to \R .
+\]
+(This is general optimization notation, not the course's ML notation.) In
+neural-network training, the variable $\bx$ is our \emph{weight vector},
+$f$ is the \emph{empirical error}, and there are typically \emph{no
+constraints}. Optimization methods differ in what they may ask about $f$:
+\begin{itemize}
+  \item \textbf{black-box optimization:} only function values $f(\bx)$;
+  \item \textbf{gradient-based optimization:} $f(\bx)$ and the gradient
+    $\grad f(\bx)$ --- this is what deep learning uses;
+  \item \textbf{second-order optimization:} additionally the Hessian
+    $\hess f(\bx)$.
+\end{itemize}
+
+\paragraph{Newton's method}
+To find a \emph{root} of a function, approximate it by its tangent (a
+first-order Taylor expansion) and solve for the zero of the tangent:
+\[
+  f(x) \approx f(x_0) + (x - x_0) f'(x_0) = 0
+  \quad\Longrightarrow\quad
+  x = x_0 - \frac{f(x_0)}{f'(x_0)} .
+\]
+To find an \emph{optimum}, apply the same idea to the derivative (an
+optimum is a root of $f'$). In one and in $n$ dimensions:
+\[
+  x^{\text{new}} = x^{\text{old}} - \frac{f'(x^{\text{old}})}{f''(x^{\text{old}})},
+  \qquad
+  \bx^{\text{new}} = \bx^{\text{old}} - \bigl(\hess f(\bx^{\text{old}})\bigr)\inv \grad f(\bx^{\text{old}}).
+\]
+Compared with gradient descent, the Hessian replaces the fixed learning rate
+by a step that is adapted to the curvature in every direction.
+
+\begin{thmbox}[title={Newton's method for linear and logistic regression}]
+With $\bw^{\text{new}} = \bw^{\text{old}} - (\hess_{\bw}\Remp)\inv\grad_{\bw}\Remp$:
+\begin{itemize}
+  \item \textbf{Linear regression:} $\grad_{\bw}\Remp = \bX\T\bX\bw - \bX\T\by$,
+    $\hess_{\bw}\Remp = \bX\T\bX$, so
+    \[
+      \bw^{\text{new}} = \bw^{\text{old}} - (\bX\T\bX)\inv(\bX\T\bX\bw^{\text{old}} - \bX\T\by)
+      = (\bX\T\bX)\inv\bX\T\by .
+    \]
+    A single Newton step from \emph{any} starting point lands exactly on the
+    least-squares solution --- the error is quadratic, so its second-order
+    Taylor expansion is exact.
+  \item \textbf{Logistic regression:} $\grad_{\bw}\Remp = \bX\T(\ba - \by)$,
+    $\hess_{\bw}\Remp = \bX\T\bR\bX$, so
+    \[
+      \bw^{\text{new}} = \bw^{\text{old}} - (\bX\T\bR\bX)\inv\bX\T(\ba - \by).
+    \]
+    This is \textbf{iteratively reweighted least squares}: every step solves
+    a weighted least-squares problem, and the weights $\bR$ change in each
+    iteration because they depend on the current predictions.
+\end{itemize}
+\end{thmbox}
+
+\begin{notebox}[title={Logistic regression on separable data}]
+If the two classes are \emph{linearly separable}, the binary cross-entropy
+can be pushed arbitrarily close to zero by scaling up any separating
+$\bw$: the sigmoid becomes steeper and steeper, and the maximum-likelihood
+solution does not exist ($\norm{\bw} \to \infty$). On non-separable data (the
+typical case, shown on the slides) a finite optimum exists. Regularization
+(\cref{ch:regularization}) is the standard remedy for the separable case.
+\end{notebox}
+
+\paragraph{A real-world example}
+In 2019, the Austrian public employment service (AMS) announced that an
+algorithm would be used to assess job-seekers. The model was a logistic
+regression on several person-centric variables (gender, age, occupational
+group, education, citizenship group, impairment, employment history, and
+their interactions), estimating a job-seeker's short-term chance of
+re-employment (90 days of employment within seven months). It was shown to be
+unfair, for example with respect to women. The example is a reminder that
+even the simplest models in this chapter are used for high-stakes decisions
+--- and that a model fitted by maximum likelihood faithfully reproduces the
+patterns, including the biases, of its training data.
+
+
+% ----------------------------------------------------------
+\section{Linear Neuron with Softmax Activation: Softmax Regression}
+\label{sec:softmax}
+% ----------------------------------------------------------
+
+Next, the labels can take one of $K$ classes: cars, dogs, cats, airplanes,
+\ldots\ in image recognition. Coding the classes as numbers $1, \dots, K$ and
+running regression would impose a meaningless order (is a cat ``between''
+a dog and an airplane?). Instead, each label becomes a vector.
+
+\begin{defbox}[title={One-hot encoding}]
+A label of class $k$ out of $K$ classes is coded as the vector
+$\by \in \{0,1\}^K$ with $y_k = 1$ and all other entries $0$. For example,
+with classes A, B, C, D: $\text{A} \mapsto (1,0,0,0)$, $\text{C} \mapsto
+(0,0,1,0)$. The same encoding is used for categorical \emph{input}
+features (\cref{sec:tricks}).
+\end{defbox}
+
+\begin{defbox}[title={Softmax regression}]
+The network has $K$ output units and a \emph{weight matrix}
+$\bW \in \R^{K \times D}$ instead of a weight vector:
+\[
+  g(\bx; \bW) = \ba = \softmax(\bW\bx), \qquad
+  \softmax(\bs) = \Bigl(\frac{e^{s_1}}{\sum_{j=1}^K e^{s_j}}, \dots,
+                        \frac{e^{s_K}}{\sum_{j=1}^K e^{s_j}}\Bigr)\T .
+\]
+The output is a \textbf{probability vector}: all entries are positive and
+sum to one, and $a_k$ is the predicted probability of class $k$. The weight
+$w_{kd}$ connects input $d$ to output $k$; row $k$ of $\bW$ is the weight
+vector $\bw_k$ of output unit $k$.
+\end{defbox}
+
+\subsection{Categorical Cross-Entropy}
+
+Same recipe once more. The probability the model assigns to a one-hot label
+is $p(\by \given \ba) = \prod_{k=1}^K a_k^{y_k}$ (only the factor of the
+correct class is not 1), and its negative logarithm is the loss.
+
+\begin{defbox}[title={Categorical cross-entropy}]
+\[
+  \loss(\by, \ba) = -\log p(\by \given \ba) = -\sum_{k=1}^{K} y_k \log a_k,
+  \qquad
+  \Remp(\bW, \bX, \bY) = -\sum_{n=1}^{N}\sum_{k=1}^{K} y^n_k \log a^n_k .
+\]
+For a one-hot label, only one term survives: the loss is minus the log of
+the predicted probability of the correct class.
+\end{defbox}
+
+\subsection{Gradient}
+
+The derivative of the softmax is \emph{coupled}: each output depends on all
+pre-activations $s_j = \bw_j\T\bx$,
+\[
+  \pd{a_k}{s_j} = a_k(\delta_{kj} - a_j)
+  \qquad (\delta_{kj} = 1 \text{ if } k = j, \text{ else } 0).
+\]
+Combining with the cross-entropy and using $\sum_k y_k = 1$:
+\[
+  \pd{\loss}{s_j} = -\sum_{k=1}^K y_k \frac{1}{a_k}\,a_k(\delta_{kj} - a_j)
+  = -y_j + a_j\sum_{k} y_k = a_j - y_j .
+\]
+Since $\partial s_\xi / \partial w_{\xi d} = x_d$, the derivative with
+respect to a single weight and the gradient with respect to the whole
+matrix are
+\[
+  \pd{\loss}{w_{\xi d}} = (a_\xi - y_\xi)\,x_d,
+  \qquad
+  \grad_{\bW}\loss = (\ba - \by)\,\bx\T .
+\]
+(The full derivation is part of the exercises.)
+
+\begin{exbox}[title={Softmax and cross-entropy with numbers}]
+Three classes, pre-activations $\bs = \bW\bx = (2, 1, 0.1)\T$, and the true
+class is the second one, $\by = (0, 1, 0)\T$.
+\begin{itemize}
+  \item $e^{\bs} = (7.389, 2.718, 1.105)$, sum $11.212$, so
+    $\ba = \softmax(\bs) = (0.659, 0.242, 0.099)\T$ (sums to 1).
+  \item Loss: $-\log a_2 = -\log 0.242 = 1.417$.
+  \item Error signal: $\ba - \by = (0.659, -0.758, 0.099)\T$. The gradient
+    $(\ba - \by)\bx\T$ pushes the weights of class 2 \emph{up} (towards $\bx$)
+    and those of classes 1 and 3 \emph{down}, the more so the larger their
+    wrong probability.
+\end{itemize}
+\end{exbox}
+
+\paragraph{Type of optimization problem and convergence}
+As for logistic regression, the categorical cross-entropy is convex in
+$\bW$, there is no closed-form solution, and gradient descent (or Newton's
+method) is used. Two remarks answer the slides' questions about uniqueness
+and convergence:
+\begin{itemize}
+  \item The softmax does not change if the same number is added to all
+    pre-activations, $\softmax(\bs + c\ones) = \softmax(\bs)$. Adding the same
+    vector $\bm{v}$ to every row of $\bW$ adds $\bm{v}\T\bx$ to every $s_k$,
+    so infinitely many weight matrices give the same model: the minimizer is
+    never unique (it is unique only up to such shifts).
+  \item As in the binary case, perfectly separable data let the weights grow
+    without bound.
+\end{itemize}
+
+\begin{intbox}
+For $K = 2$ the softmax reduces to the sigmoid:
+$a_1 = e^{s_1}/(e^{s_1} + e^{s_2}) = 1/(1 + e^{-(s_1 - s_2)}) = \sigma(s_1 -
+s_2)$. Softmax regression is logistic regression with $K$ classes; only the
+\emph{difference} of the pre-activations matters --- which is exactly the
+shift invariance above.
+\end{intbox}
+
+\subsection{Comparing the Single-Layer Networks}
+
+Put the three gradients next to each other:
+
+\begin{thmbox}[title={Same gradient, three models}]
+\begin{align*}
+  \text{linear regression:}  \quad & \grad_{\bw}\Remp(y, \bx, \bw) = (\bw\T\bx - y)\,\bx, \\
+  \text{logistic regression:}\quad & \grad_{\bw}\Remp(y, \bx, \bw) = (\sigma(\bw\T\bx) - y)\,\bx, \\
+  \text{softmax regression:} \quad & \grad_{\bW}\Remp(\by, \bx, \bW) = (\softmax(\bW\bx) - \by)\,\bx\T .
+\end{align*}
+In all three cases: \textbf{(prediction $-$ target) $\times$ input}. The
+pairs (linear output, squared loss), (sigmoid output, binary cross-entropy)
+and (softmax output, categorical cross-entropy) are ``matched'' --- in
+statistics they are called \emph{canonical links} --- and the derivative of
+the activation cancels against the derivative of the loss.
+\end{thmbox}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Network} & \textbf{Labels} & \textbf{Output} & \textbf{Loss} & \textbf{Learning} \\
+\midrule
+linear neuron & $y \in \R$ & $\bw\T\bx$ & squared loss &
+  closed form, GD, SGD \\
+perceptron & $y \in \{-1, 1\}$ & $\sign(\bw\T\bx)$ & perceptron loss &
+  perceptron rule \\
+logistic regression & $y \in \{0, 1\}$ & $\sigma(\bw\T\bx)$ & binary CE &
+  GD, SGD, Newton/IRLS \\
+softmax regression & $\by \in \{0,1\}^K$ & $\softmax(\bW\bx)$ & categorical CE &
+  GD, SGD, Newton \\
+\bottomrule
+\end{tabular}
+\caption{The four single-layer networks of Sections 4.1--4.4. For many
+applications these networks are already sufficient --- but they all have
+\emph{linear} decision boundaries, which is their fundamental limitation
+(\cref{sec:xor}).}
+\label{tab:single-layer}
+\end{table}
+
+% ----------------------------------------------------------
+\section{Single-Layer Networks Cannot Solve XOR}
+\label{sec:xor}
+% ----------------------------------------------------------
+
+The lecture opens the multi-layer part with a quick task. Here are some
+labelled points --- what are the missing labels?
+\[
+\begin{array}{rcl@{\qquad}rcl}
+(-0.02,\ 0.01) &\to& 0 & (0.02,\ 0.98) &\to& 1 \\
+(1.05,\ 0.99)  &\to& 0 & (1.03,\ -0.02) &\to& 1 \\
+(0.03,\ 0.01)  &\to& 0 & (1.03,\ 1.01) &\to& 0 \\
+(0.97,\ -0.01) &\to& 1 & (0.96,\ 0.03) &\to& 1 \\
+(1.00,\ 0.01)  &\to& \;? & (-0.04,\ 0.03) &\to& \;?
+\end{array}
+\]
+The points cluster around the corners of the unit square, and the label is
+1 exactly when one coordinate is (close to) 1 and the other (close to) 0: it
+is a noisy version of \textbf{XOR}. So the answers are 1 and 0. Easy for a
+human --- and impossible for every network of the previous sections.
+
+\subsection{Why a Linear Network Fails}
+
+Take the four clean XOR points
+$\bx^1 = (0,0)$, $\bx^2 = (1,0)$, $\bx^3 = (0,1)$, $\bx^4 = (1,1)$ with labels
+$y^1 = 0$, $y^2 = 1$, $y^3 = 1$, $y^4 = 0$, and a linear (single-layer)
+network $g_1(\bx; \bw) = x_1 w_1 + x_2 w_2$. Fitting the labels exactly
+requires
+\[
+  0 = 0\,w_1 + 0\,w_2, \qquad 1 = 1\,w_1 + 0\,w_2, \qquad
+  1 = 0\,w_1 + 1\,w_2, \qquad 0 = 1\,w_1 + 1\,w_2 .
+\]
+The second and third equation give $w_1 = w_2 = 1$, and then the fourth
+says $0 = 2$. No parameters solve the problem.
+
+The failure is more fundamental than this particular model. Adding a bias
+does not help, and neither does a sigmoid or softmax on the output: these
+are monotone functions of a \emph{linear} score $z(\bx) = \bw\T\bx + b$, so
+the decision boundary is still a straight line. And no straight line
+separates XOR. For an affine function,
+$z(\bx^2) + z(\bx^3) = z(\bx^1) + z(\bx^4)$ (both sides equal
+$w_1 + w_2 + 2b$). The two class-1 points would need scores above the
+threshold and the two class-0 points scores below it --- impossible when
+the two sums are equal.
+
+\subsection{A Hidden Layer Solves It}
+
+The way out is a hidden layer with a non-linearity. The lecture uses a
+two-layer network with ReLU hidden units:
+\[
+  g_2(\bx; \bW, \bw, \bb) = \bw\T\max(0, \bW\bx + \bb) = \bw\T\bh,
+  \qquad
+  \bW = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}, \;
+  \bb = \begin{pmatrix} 0 \\ -1 \end{pmatrix}, \;
+  \bw = \begin{pmatrix} 1 \\ -2 \end{pmatrix}.
+\]
+
+\begin{exbox}[title={The XOR network, step by step}]
+\centering
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+$\bx$ & $\bW\bx + \bb$ & $\bh = \max(0, \bW\bx + \bb)$ & $\bw\T\bh = h_1 - 2h_2$ & label \\
+\midrule
+$(0,0)$ & $(0, -1)$ & $(0, 0)$ & $0$ & 0 \\
+$(1,0)$ & $(1, 0)$  & $(1, 0)$ & $1$ & 1 \\
+$(0,1)$ & $(1, 0)$  & $(1, 0)$ & $1$ & 1 \\
+$(1,1)$ & $(2, 1)$  & $(2, 1)$ & $0$ & 0 \\
+\bottomrule
+\end{tabular}
+
+\raggedright
+\smallskip
+The network reproduces all four labels exactly. The first hidden unit
+counts how many inputs are on; the second fires only if both are on, and
+the output subtracts it twice.
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    c0/.style={circle, draw=figred, fill=figred!25, thick, minimum size=2.6mm, inner sep=0pt},
+    c1/.style={circle, draw=figblue, fill=figblue!30, thick, minimum size=2.6mm, inner sep=0pt}]
+  % input space
+  \begin{scope}
+    \draw[gray!60, -{Stealth[length=1.6mm]}] (-0.4,0) -- (2.6,0) node[right, font=\scriptsize] {$x_1$};
+    \draw[gray!60, -{Stealth[length=1.6mm]}] (0,-0.4) -- (0,2.6) node[above, font=\scriptsize] {$x_2$};
+    \node[c0] at (0,0) {}; \node[c0] at (2,2) {};
+    \node[c1] at (2,0) {}; \node[c1] at (0,2) {};
+    \node[font=\tiny, below left] at (0,0) {$(0,0)$};
+    \node[font=\tiny, below] at (2,-0.1) {$(1,0)$};
+    \node[font=\tiny, left] at (-0.1,2) {$(0,1)$};
+    \node[font=\tiny, right] at (2.1,2) {$(1,1)$};
+    \node[font=\small, align=center] at (1.1,-1.0) {input space:\\no line separates the classes};
+  \end{scope}
+  \draw[-{Stealth[length=2.5mm]}, thick, accent] (3.3,1.1) -- node[above, font=\scriptsize] {$\bh = \max(0, \bW\bx + \bb)$} (5.9,1.1);
+  % hidden space
+  \begin{scope}[xshift=6.9cm]
+    \draw[gray!60, -{Stealth[length=1.6mm]}] (-0.4,0) -- (4.6,0) node[right, font=\scriptsize] {$h_1$};
+    \draw[gray!60, -{Stealth[length=1.6mm]}] (0,-0.4) -- (0,2.6) node[above, font=\scriptsize] {$h_2$};
+    \foreach \t in {1,2} \draw[gray!50] (2*\t,0.05) -- (2*\t,-0.05) node[below, font=\tiny] {\t};
+    \draw[gray!50] (0.05,2) -- (-0.05,2) node[left, font=\tiny] {1};
+    \draw[accent, thick, dashed] (1,0) -- (4.6,1.8) node[below right, font=\scriptsize] {$h_1 - 2h_2 = 0.5$};
+    \node[c0] at (0,0) {};
+    \node[c1] at (2,0) {};
+    \node[font=\tiny, above=1pt] at (2,0.12) {(two points)};
+    \node[c0] at (4,2) {};
+    \node[font=\small, align=center] at (2.1,-1.0) {hidden space:\\linearly separable};
+  \end{scope}
+\end{tikzpicture}
+\caption{What the hidden layer does. In input space (left) the XOR classes
+cannot be separated by a line. The hidden layer maps $(1,0)$ and $(0,1)$ to
+the same point $(1,0)$ and $(1,1)$ to $(2,1)$. In this new space a single
+line --- the output unit $h_1 - 2h_2$, thresholded at $0.5$ --- separates
+the classes.}
+\label{fig:xor}
+\end{figure}
+
+\begin{intbox}
+This is the key idea of all of deep learning in its smallest form: the
+hidden layer \emph{transforms the data into a new representation} in which
+the problem becomes easy (here: linearly separable), and the output layer is
+just a linear model on top. In a deep network, every layer does this once
+more.
+\end{intbox}
+
+\begin{thmbox}[title={Universal function approximation (Hornik, 1989; Cybenko, 1989)}]
+A multi-layer perceptron with a single hidden layer, enough hidden units and
+a suitable non-linear activation function (for example a sigmoid) can
+approximate any continuous function on a compact set to arbitrary accuracy.
+\end{thmbox}
+
+So single-layer networks cannot solve XOR, a simple two-layer network with a
+ReLU non-linearity does, and MLPs can even approximate any continuous
+function. The theorem says that a solution \emph{exists}; it says nothing
+about how many hidden units are needed or how to find the weights. Finding
+them is the job of backpropagation.
+
+
+% ----------------------------------------------------------
+\section{Multi-Layer Perceptron}
+\label{sec:mlp}
+% ----------------------------------------------------------
+
+\subsection{Model and Forward Pass}
+
+A multi-layer perceptron (MLP) consists of an input layer $L_1$, one or more
+hidden layers, and an output layer; every unit of one layer is connected to
+every unit of the next. The lecture numbers the units consecutively through
+the network (\cref{sec:notation-units}): the $D$ input units come first,
+the $K$ output units are the last ones, $Q - K + 1, \dots, Q$.
+
+\begin{defbox}[title={Quantities of an MLP}]
+For every non-input unit $i$ (i.e.\ $i > D$):
+\[
+  s_i = \sum_{j} w_{ij}\, a_j + b_i \qquad\text{(network input, pre-activation)},
+  \qquad
+  a_i = f(s_i) \qquad\text{(activation)},
+\]
+where the sum runs over all units $j$ with a connection to $i$, and for
+input units $a_i = x_i$. The \textbf{architecture} of a network is given by
+the number of layers, the number of units per layer and the connections
+between them; the activation functions may also be counted as part of it.
+Different units can have different activation functions $f_i$.
+\end{defbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  \node[inunit] (x1) at (-0.8,0) {};
+  \node[inunit] (x2) at (0.8,0) {$j$};
+  \foreach \i/\xx in {1/-2.4,2/-0.8,3/0.8} \node[unit] (h\i) at (\xx,2) {};
+  \node[unit, fill=figblue!20] (h4) at (2.4,2) {$i$};
+  \node[outunit] (o) at (0,4) {};
+  \foreach \i in {1,...,4} {
+    \draw[conn] (x1) -- (h\i); \draw[conn] (x2) -- (h\i); \draw[conn] (h\i) -- (o);
+  }
+  \draw[-{Stealth[length=2.6mm]}, very thick, figblue] (x2) -- node[right, font=\small] {$w_{ij}$} (h4);
+  \node[font=\small, figblue, anchor=west] at (3.0,2.25) {$s_i = \sum_j w_{ij}a_j + b_i$};
+  \node[font=\small, figblue, anchor=west] at (3.0,1.65) {$a_i = f(s_i)$};
+  \node[font=\small, anchor=east] at (-3.2,0) {$L_1$: input};
+  \node[font=\small, anchor=east] at (-3.2,2) {$L_2$: hidden};
+  \node[font=\small, anchor=east] at (-3.2,4) {$L_3$: output};
+\end{tikzpicture}
+\caption{An MLP with one hidden layer. Unit $i$ collects the weighted
+activations of the units below (pre-activation $s_i$, including its bias
+$b_i$) and passes them through its activation function.}
+\label{fig:mlp}
+\end{figure}
+
+\paragraph{Activation functions}
+The hidden units need a \emph{non-linear} activation function --- otherwise
+the whole network collapses to a linear model (\cref{sec:dnn}). The lecture
+shows six common choices; \cref{tab:activations} lists them with their
+derivatives (which backpropagation needs), and \cref{fig:activations}
+plots them.
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Name} & $f(x)$ & $f'(x)$ \\
+\midrule
+logistic sigmoid & $\sigma(x) = \dfrac{1}{1+e^{-x}}$ & $\sigma(x)(1-\sigma(x)) \le \tfrac14$ \\
+tanh & $\tanh(x) = \dfrac{e^x - e^{-x}}{e^x + e^{-x}} = 2\sigma(2x) - 1$ & $1 - \tanh^2(x) \le 1$ \\
+ReLU & $\max(0, x)$ & $1$ for $x > 0$, $0$ for $x < 0$ \\
+leaky ReLU & $x$ for $x > 0$, $\alpha x$ for $x \le 0$ (small $\alpha$) & $1$ for $x > 0$, $\alpha$ for $x < 0$ \\
+ELU & $x$ for $x > 0$, $\alpha(e^x - 1)$ for $x \le 0$ & $1$ for $x > 0$, $\alpha e^x$ for $x < 0$ \\
+SELU & $\lambda x$ for $x > 0$, $\lambda\alpha(e^x - 1)$ for $x \le 0$ & $\lambda$ for $x > 0$, $\lambda\alpha e^x$ for $x < 0$ \\
+\bottomrule
+\end{tabular}
+\caption{Common activation functions. For SELU, $\lambda \approx 1.0507$ and
+$\alpha \approx 1.6733$ are fixed constants (chosen so that activations stay
+normalized, see \cref{ch:normalization}).}
+\label{tab:activations}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[
+    group style={group size=3 by 2, horizontal sep=9mm, vertical sep=11mm},
+    dlbt, width=0.36\linewidth, height=3.7cm,
+    xmin=-3, xmax=3, ymin=-1.9, ymax=3.1,
+    xtick={-2,0,2}, ytick={-1,0,1,2,3},
+    title style={font=\small, yshift=-1.5mm}]
+  \nextgroupplot[title={sigmoid}]
+    \addplot[very thick, accent, domain=-3:3] {1/(1+exp(-x))};
+    \addplot[thick, figamber, dashed, domain=-3:3] {exp(-x)/(1+exp(-x))^2};
+  \nextgroupplot[title={tanh}]
+    \addplot[very thick, accent, domain=-3:3] {tanh(x)};
+    \addplot[thick, figamber, dashed, domain=-3:3] {1-tanh(x)^2};
+  \nextgroupplot[title={ReLU}]
+    \addplot[very thick, accent, domain=-3:3] {max(0,x)};
+    \addplot[thick, figamber, dashed, domain=-3:0] {0};
+    \addplot[thick, figamber, dashed, domain=0:3] {1};
+  \nextgroupplot[title={leaky ReLU ($\alpha = 0.1$)}]
+    \addplot[very thick, accent, domain=-3:3] {max(0.1*x,x)};
+    \addplot[thick, figamber, dashed, domain=-3:0] {0.1};
+    \addplot[thick, figamber, dashed, domain=0:3] {1};
+  \nextgroupplot[title={ELU ($\alpha = 1$)}]
+    \addplot[very thick, accent, domain=-3:0] {exp(x)-1};
+    \addplot[very thick, accent, domain=0:3] {x};
+    \addplot[thick, figamber, dashed, domain=-3:0] {exp(x)};
+    \addplot[thick, figamber, dashed, domain=0:3] {1};
+  \nextgroupplot[title={SELU}]
+    \addplot[very thick, accent, domain=-3:0] {1.0507*1.6733*(exp(x)-1)};
+    \addplot[very thick, accent, domain=0:3] {1.0507*x};
+    \addplot[thick, figamber, dashed, domain=-3:0] {1.0507*1.6733*exp(x)};
+    \addplot[thick, figamber, dashed, domain=0:3] {1.0507};
+\end{groupplot}
+\end{tikzpicture}
+\caption{Activation functions (solid) and their derivatives (dashed). The
+sigmoid's derivative never exceeds $0.25$ and both sigmoid and tanh saturate
+for large $|x|$. ReLU and its variants have derivative $1$ (SELU:
+$\lambda$) for all positive inputs --- the property that makes them
+attractive for deep networks (\cref{sec:vgp}).}
+\label{fig:activations}
+\end{figure}
+
+\paragraph{Output activations}
+The activation of the \emph{output} units is chosen according to the task,
+exactly as in the single-layer networks: usually a \textbf{linear}
+activation for regression, the \textbf{logistic sigmoid} for binary (or
+multi-label) classification, and the \textbf{softmax} for multi-class
+classification. An MLP is therefore ``a linear, logistic or softmax
+regression on top of learned hidden features''.
+
+\paragraph{Forward pass}
+Computing the output for an input is called the \emph{forward pass}: start
+with the input units and go layer by layer upwards, computing $s_i$ and
+$a_i$ for every unit.
+
+\begin{algorithm}[htbp]
+\caption{Forward pass of an MLP}
+\label{alg:forward}
+\KwIn{input $\bx$, weights $w_{ij}$, layers $L_1, \dots, L_L$}
+\For(\tcp*[f]{initialization}){$i = 1, \dots, D$}{
+  $a_i \leftarrow x_i$\;
+}
+\For{$\nu = 2, \dots, L$}{
+  \For{all $i \in L_\nu$}{
+    $s_i \leftarrow \sum_{j:\, w_{ij}\text{ exists}} w_{ij}\, a_j$\;
+    $a_i \leftarrow f(s_i)$\;
+  }
+}
+\KwOut{$\hat y_i = (g(\bx; \bw))_i = a_i$ for all $Q - K + 1 \le i \le Q$}
+\end{algorithm}
+
+\subsection{Gradient Descent and the Backpropagation Algorithm}
+\label{sec:backprop}
+
+To train an MLP we minimize the empirical error by gradient descent, just as
+before:
+\[
+  \Remp(\bw, \bX, \bY) = \frac1N\sum_{n=1}^{N} \loss\bigl(\by^n, g(\bx^n; \bw)\bigr),
+  \qquad
+  \bw^{\text{new}} = \bw^{\text{old}} - \eta\,\grad_{\bw}\Remp,
+\]
+where $g(\bx^n; \bw)$ is the network and $\bw$ contains all weights (weight
+matrices) of all layers and the biases. For a single data point the update
+uses $\grad_{\bw}\loss(\by, g(\bx; \bw))$.
+
+The only new problem is computing the gradient: a weight deep inside the
+network influences the loss through all the layers above it.
+\textbf{Backpropagation} --- made popular by Rumelhart et al.\ (1986),
+proposed earlier by Werbos (1974), also called \emph{delta propagation} ---
+solves it with nothing but the chain rule, organized cleverly.
+
+\paragraph{Step 1: split the derivative at the pre-activation}
+Weight $w_{ij}$ influences the loss only through the pre-activation $s_i =
+\sum_j w_{ij}a_j + b_i$ of the unit it points to. By the chain rule,
+\[
+  \pd{\loss}{w_{ij}} = \pd{\loss}{s_i}\,\pd{s_i}{w_{ij}} = \pd{\loss}{s_i}\, a_j,
+  \qquad\text{since } \pd{s_i}{w_{ij}} = a_j .
+\]
+
+\begin{defbox}[title={Delta error}]
+The \textbf{delta error} of unit $i$ is the derivative of the loss with
+respect to its pre-activation:
+\[
+  \delta_i \coloneqq \pd{}{s_i}\,\loss\bigl(\by^n, g(\bx^n; \bw)\bigr).
+\]
+With it, the gradient for every weight is simply
+\[
+  \pd{\loss}{w_{ij}} = \delta_i\, a_j
+  \qquad\text{(delta at the target unit $\times$ activation at the source unit).}
+\]
+\end{defbox}
+
+Compare this with softmax regression: there,
+$\partial\Remp / \partial w_{ij} = (\softmax(\bW\bx)_i - y_i)\,x_j$, i.e.\
+$\delta_i = a_i - y_i$ and $a_j = x_j$. The single-layer result is the
+special case of a network without hidden units.
+
+\paragraph{Step 2: deltas at the output units}
+For an output unit $k$ (with an element-wise activation),
+\[
+  \delta_k = \pd{\loss}{a_k}\, f'(s_k),
+  \qquad Q - K + 1 \le k \le Q,
+\]
+where $a_k = (g(\bx^n;\bw))_k$ is the output activation and $s_k$ the
+output pre-activation. For the matched loss/activation pairs this is the
+familiar error signal (\cref{tab:loss-activation}) --- the same as for
+linear, logistic and softmax regression.
+
+\paragraph{Step 3: deltas at the hidden units (the recursion)}
+A hidden unit $j$ influences the loss only through the units $i$ in the
+layer above that it is connected to, via
+$s_i = \sum_j w_{ij} f(s_j) + b_i$. The multivariate chain rule therefore
+gives
+\[
+  \delta_j = \pd{\loss}{s_j} = \sum_i \pd{\loss}{s_i}\pd{s_i}{s_j}
+  = \sum_i \delta_i\, w_{ij} f'(s_j)
+  = f'(s_j)\sum_i \delta_i\, w_{ij},
+\]
+where the sum goes over all units $i$ for which the weight $w_{ij}$ exists.
+
+\begin{thmbox}[title={Backpropagation (unit-wise)}]
+\[
+  \underbrace{\delta_k = \pd{\loss}{a_k}\,f'(s_k)}_{\text{output units}},
+  \qquad
+  \underbrace{\delta_j = f'(s_j)\sum_i \delta_i\, w_{ij}}_{\text{hidden units}},
+  \qquad
+  \underbrace{\pd{\loss}{w_{ij}} = \delta_i\, a_j, \quad
+  \Delta w_{ij} = -\eta\,\delta_i\, a_j}_{\text{gradient and update}} .
+\]
+\end{thmbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[xscale=1.35, yscale=1.1]
+  \foreach \i in {1,2} \node[inunit] (a\i) at (\i+0.5,0) {};
+  \foreach \i in {1,...,4} \node[unit] (b\i) at (\i,1.6) {};
+  \foreach \i in {1,...,4} \node[unit, fill=figred!20, draw=figred] (c\i) at (\i,3.2) {};
+  \node[unit, fill=figred!35, draw=figred] (d) at (2.5,4.8) {};
+  \foreach \i in {1,2} \foreach \j in {1,...,4} \draw[conn, gray!60] (a\i) -- (b\j);
+  \foreach \i in {1,...,4} \foreach \j in {1,...,4} \draw[conn, gray!60] (b\i) -- (c\j);
+  \foreach \i in {1,...,4} \draw[conn, gray!60] (c\i) -- (d);
+  % highlight unit i in hidden 1
+  \node[unit, fill=figred!12, draw=figred, very thick] (bi) at (4,1.6) {$i$};
+  \foreach \j in {1,...,4} \draw[bconn] (c\j) -- (bi);
+  \node[font=\scriptsize, figred, anchor=west, align=left] at (4.45,1.6)
+    {$\delta_i = f'(s_i)\sum_k \delta_k w_{ki}$};
+  \node[font=\scriptsize, figred, anchor=west] at (4.45,3.2) {$\delta_k$};
+  \node[font=\scriptsize, figred, anchor=west] at (2.9,4.8)
+    {$\delta = \frac{\partial\loss}{\partial a}\,f'(s)$};
+  \node[font=\small, anchor=east] at (0.3,0) {$L_1$: input};
+  \node[font=\small, anchor=east] at (0.3,1.6) {$L_2$: hidden 1};
+  \node[font=\small, anchor=east] at (0.3,3.2) {$L_3$: hidden 2};
+  \node[font=\small, anchor=east] at (0.3,4.8) {$L_4$: output};
+\end{tikzpicture}
+\caption{Delta propagation. The deltas are computed at the output and then
+passed \emph{backwards} through the same weights that carried the
+activations forward: unit $i$ in hidden layer 1 collects the deltas of all
+units $k$ it feeds into, weighted by $w_{ki}$, and multiplies by its own
+$f'(s_i)$. The gradient for a weight $w_{ki}$ is then $\delta_k a_i$.}
+\label{fig:delta-propagation}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Loss function} & & \textbf{Output activation} & \textbf{Delta error} \\
+\midrule
+squared loss & $\tfrac12(a - y)^2$ & linear: $f(x) = x$ & $\delta = a - y$ \\
+binary CE & $-y\log a - (1-y)\log(1-a)$ & sigmoid: $f(x) = \frac{1}{1+e^{-x}}$ & $\delta = a - y$ \\
+categorical CE & $-\sum_{k=1}^K y_k\log a_k$ & softmax: $f(\bx) = \softmax(\bx)$ & $\bdelta = \ba - \by$ \\
+\bottomrule
+\end{tabular}
+\caption{Frequently used loss functions and their matching output
+activations. For these pairs, the derivative of the activation cancels and
+the delta error at the output is simply ``prediction minus target''.}
+\label{tab:loss-activation}
+\end{table}
+
+\begin{notebox}[title={Potential problems of other combinations}]
+The slides ask what goes wrong if loss and output activation do not match.
+Two examples:
+\begin{itemize}
+  \item \textbf{Squared loss with a sigmoid output:} now
+    $\delta = (a - y)\,\sigma'(s) = (a - y)\,a(1-a)$. If the network is
+    \emph{confidently wrong} (say $a \approx 0$ but $y = 1$), then
+    $a(1-a) \approx 0$ and the delta almost vanishes --- the network learns
+    slowest exactly when it is most wrong. With cross-entropy the factor
+    $a(1-a)$ cancels.
+  \item \textbf{Cross-entropy with a linear output:} the output is not
+    restricted to $(0, 1)$, so $\log a$ or $\log(1-a)$ may be undefined.
+\end{itemize}
+Also note that for the softmax the derivative is not element-wise:
+``$\partial\loss/\partial a_k\,f'(s_k)$'' has to be replaced by the full
+Jacobian of the softmax, which yields $\bdelta = \ba - \by$ in combination
+with the cross-entropy (\cref{sec:softmax}).
+\end{notebox}
+
+\begin{algorithm}[htbp]
+\caption{Backward pass of an MLP (online version)}
+\label{alg:backward}
+\KwIn{activations $a_i$ and pre-activations $s_i$ from the forward pass,
+  label $\by$, learning rate $\eta$}
+\For(\tcp*[f]{output layer}){$i = Q - K + 1, \dots, Q$}{
+  $\delta_i \leftarrow \pd{\loss}{a_i}\, f'(s_i)$\;
+  \For{all $j \in L_{L-1}$}{
+    $\Delta w_{ij} \leftarrow -\eta\,\delta_i\, a_j$\;
+  }
+}
+\For(\tcp*[f]{hidden layers, top to bottom}){$\nu = L - 1, \dots, 2$}{
+  \For{all $i \in L_\nu$}{
+    $\delta_i \leftarrow f'(s_i)\sum_k \delta_k\, w_{ki}$\;
+    \For{all $j \in L_{\nu-1}$}{
+      $\Delta w_{ij} \leftarrow -\eta\,\delta_i\, a_j$\;
+    }
+  }
+}
+\end{algorithm}
+
+\begin{thmbox}[title={Backpropagation in five steps (recap)}]
+\begin{enumerate}
+  \item Select a sample $\bx$ (randomly) from the training set and perform a
+    forward pass. Memorize the activations $a_i$ and pre-activations $s_i$
+    of all units.
+  \item Compute the delta errors at the output units:
+    $\delta_k = \frac{\partial\loss}{\partial a_k}f'(s_k)$.
+  \item Compute the delta errors of the hidden layers, starting with the
+    layer closest to the output, by backpropagating the error signal:
+    $\delta_j = f'(s_j)\sum_i \delta_i w_{ij}$.
+  \item Compute the gradients $\frac{\partial\loss}{\partial w_{ij}} = \delta_i a_j$.
+  \item Update the weights with a gradient-descent step:
+    $\Delta w_{ij} = -\eta\,\delta_i\, a_j$.
+\end{enumerate}
+\end{thmbox}
+
+\begin{exbox}[title={Backpropagation with numbers (checked by finite differences)}]
+A 2--2--1 network: sigmoid hidden units, a linear output unit, squared loss,
+no biases. Input $\bx = (1, 0.5)\T$, label $y = 1$,
+\[
+  \bW\lay{1} = \begin{pmatrix} 0.5 & -0.3 \\ 0.2 & 0.8 \end{pmatrix}, \qquad
+  \bW\lay{2} = \begin{pmatrix} 0.7 & -0.4 \end{pmatrix}.
+\]
+\textbf{Forward pass.}
+$\bs\lay{1} = \bW\lay{1}\bx = (0.5 - 0.15,\; 0.2 + 0.4)\T = (0.35, 0.60)\T$,
+$\ba\lay{1} = \sigma(\bs\lay{1}) = (0.5866, 0.6457)\T$,
+$\hat y = 0.7 \cdot 0.5866 - 0.4 \cdot 0.6457 = 0.1524$,
+loss $\loss = \frac12(0.1524 - 1)^2 = 0.3592$.
+
+\textbf{Output delta.} Linear output with squared loss:
+$\delta\lay{2} = \hat y - y = -0.8476$.
+
+\textbf{Hidden deltas.} $f'(\bs\lay{1}) = \ba\lay{1}\odot(1 - \ba\lay{1})
+= (0.2425, 0.2288)\T$, so
+\[
+  \delta\lay{1}_1 = 0.2425 \cdot 0.7 \cdot (-0.8476) = -0.1439, \qquad
+  \delta\lay{1}_2 = 0.2288 \cdot (-0.4) \cdot (-0.8476) = 0.0776 .
+\]
+\textbf{Gradients} ($\delta$ at the target times activation at the source):
+\[
+  \pd{\loss}{\bW\lay{2}} = \delta\lay{2}\,\ba\lay{1\mathsf{T}} = (-0.4972,\; -0.5473),
+  \qquad
+  \pd{\loss}{\bW\lay{1}} = \bdelta\lay{1}\bx\T =
+  \begin{pmatrix} -0.1439 & -0.0719 \\ 0.0776 & 0.0388 \end{pmatrix}.
+\]
+Central finite differences give the same six numbers (maximum deviation
+below $10^{-10}$). One update with $\eta = 0.5$ raises the output to
+$\hat y = 0.4968$ and lowers the loss from $0.359$ to $0.127$.
+\end{exbox}
+
+\paragraph{Why backprop is efficient}
+The name refers to the fact that the delta errors of one layer are used to
+compute the deltas of the layer below: every delta is computed once and
+reused by all weights below it. For a network with $W$ weights, a forward
+and a backward pass each cost $\bigO{W}$ operations, so the \emph{whole}
+gradient costs $\bigO{W}$. Computing it naively by finite differences would
+need a separate forward pass for every single weight, i.e.\ $\bigO{W^2}$. A
+similar approach can be used to compute second derivatives.
+
+\paragraph{Full batch, online and mini-batch learning}
+The gradient can be computed on the full training set before taking one
+step (\emph{full-batch} gradient), on a single sample followed by an update
+(\emph{online learning}), or on a small random subset of, e.g., 32 samples
+(\emph{mini-batch training} or \emph{stochastic gradient descent}).
+Details in \cref{sec:tricks}.
+
+\subsection{Training MLPs}
+
+With MLPs we suddenly have many design choices: the number of layers, the
+number of neurons per layer, the activation function, the learning rate.
+These are \textbf{hyperparameters} --- they are not learned by gradient
+descent. And minimizing the empirical error is not sufficient: what we care
+about is the error on \emph{new} data (\cref{ch:generalization}). So the
+architecture and hyperparameters are optimized on a separate
+\emph{validation set}, and the final model is evaluated on a \emph{test set}
+(\cref{sec:tricks}).
+
+\paragraph{The loss surface}
+For linear and logistic regression the error was convex. For an MLP the
+loss surface as a function of the weights is \textbf{highly non-convex},
+with many local minima and saddle points. The minimum is also never unique,
+because of \textbf{weight-space symmetries}:
+\begin{itemize}
+  \item For an odd activation such as $\tanh$ ($\tanh(-x) = -\tanh(x)$),
+    flipping the signs of all weights into and out of a hidden unit gives
+    exactly the same network function.
+  \item The order of the hidden units within a layer can be permuted (along
+    with their weights) without changing the function.
+\end{itemize}
+A layer with $M$ tanh units therefore has $M!\,2^M$ equivalent weight
+settings for every solution. Despite all this, there are theoretical results
+indicating that SGD still finds ``good'' minima (more in the follow-up
+course).
+
+
+% ----------------------------------------------------------
+\section{(Deep) Feed-Forward Neural Networks}
+\label{sec:dnn}
+% ----------------------------------------------------------
+
+Deep feed-forward networks (DNNs) work on the same principle as MLPs ---
+layers of interconnected neurons --- but with more layers, more neurons, and
+different activation functions. The boundary between the two is informal
+(\cref{tab:mlp-dnn}).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & \textbf{MLP} & \textbf{DNN} \\
+\midrule
+number of hidden layers       & 1 or few        & $> 1$, up to several hundreds \\
+number of neurons per layer   & $< 10$          & $> 100$ \\
+activation function           & tanh, sigmoid   & ReLU, SELU \\
+\bottomrule
+\end{tabular}
+\caption{Typical MLPs versus deep feed-forward networks (informal
+guidelines from the lecture).}
+\label{tab:mlp-dnn}
+\end{table}
+
+For deep networks the unit-by-unit numbering becomes unwieldy, so we switch
+to the \textbf{layer-wise notation} of \cref{sec:notation-layers}: the input
+is $\ba\lay{0} = \bx$, layer $l$ has weight matrix $\bW\lay{l}$,
+pre-activations $\bs\lay{l}$ and activations $\ba\lay{l}$, and the
+activation function $f$ is applied element-wise. (In the MLP picture the
+units are numbered $1, \dots, Q$ snaking through the network; in the DNN
+picture each layer is numbered separately.)
+
+\subsection{Forward Pass}
+
+From one layer to the next:
+\[
+  \ba\lay{l} = f(\bs\lay{l}) = f(\bW\lay{l}\ba\lay{l-1})
+  \qquad\text{or, with bias units,}\qquad
+  \ba\lay{l} = f(\bW\lay{l}\ba\lay{l-1} + \bb\lay{l}).
+\]
+The whole network is a nested function,
+\[
+  \byhat = g(\bx; \bW\lay{1}, \dots, \bW\lay{L})
+  = \sigma\Bigl(\bW\lay{L}\bigl(\cdots f\bigl(\bW\lay{2} f(\bW\lay{1}\bx)\bigr)\cdots\bigr)\Bigr),
+\]
+with the output activation $\sigma$ (linear, sigmoid or softmax) chosen
+for the task.
+
+\paragraph{Why non-linearities?}
+Without the non-linear $f$ in the hidden layers, the nested function
+collapses:
+\[
+  g(\bx; \bW\lay{1}, \dots, \bW\lay{L})
+  = \sigma\bigl(\underbrace{\bW\lay{L}\cdots\bW\lay{1}}_{=\,\hat\bW}\,\bx\bigr)
+  = \sigma(\hat\bW\bx).
+\]
+A product of matrices is just another matrix, so a deep \emph{linear}
+network is no more powerful than a single layer --- it cannot even solve
+XOR. Depth only pays off with non-linear activations.
+
+\subsection{Backpropagation in DNNs}
+\label{sec:backprop-dnn}
+
+Without loss of generality, take a weight in the \emph{first} layer, the one
+furthest from the loss. The chain rule through all layers gives a product of
+Jacobians:
+\[
+  \pd{}{w\lay{1}_{ij}}\,\loss\bigl(\by, g(\bx; \bW\lay{1}, \dots, \bW\lay{L})\bigr)
+  = \underbrace{\pd{\loss(\by, \byhat)}{\byhat}\,\pd{\byhat}{\bs\lay{L}}}_{=:\,A}
+    \cdots
+    \underbrace{\pd{\bs\lay{l}}{\bs\lay{l-1}}}_{=:\,B}
+    \cdots
+    \underbrace{\pd{\bs\lay{1}}{w\lay{1}_{ij}}}_{=:\,C} .
+\]
+(Derivatives of scalars with respect to vectors are row vectors here, so
+the product is read left to right.) We treat the three kinds of factors in
+turn, after defining the layer-wise delta errors as the transposed
+derivative of the loss with respect to the pre-activations:
+\[
+  \bdelta\lay{l\mathsf{T}} \coloneqq \pd{\loss(\by, \byhat)}{\bs\lay{l}} .
+\]
+
+\paragraph{A --- the output layer}
+$A$ depends on the choice of loss and output activation. For the matched
+pairs of \cref{tab:loss-activation} (canonical links) it is simply
+\[
+  \bdelta\lay{L\mathsf{T}} = A = (\byhat - \by)\T .
+\]
+
+\paragraph{B --- from one layer to the one below}
+Since $\bs\lay{l} = \bW\lay{l} f(\bs\lay{l-1})$, the Jacobian of one layer's
+pre-activations with respect to the previous layer's is
+\[
+  \pd{\bs\lay{l}}{\bs\lay{l-1}} = \bW\lay{l}\,\diag\bigl(f'(\bs\lay{l-1})\bigr)
+  \eqdef \bJ\lay{l}.
+\]
+This gives the recursive formula for the deltas:
+\[
+  \bdelta\lay{l-1\mathsf{T}} = \pd{\loss}{\bs\lay{l}}\pd{\bs\lay{l}}{\bs\lay{l-1}}
+  = \bdelta\lay{l\mathsf{T}}\,\bW\lay{l}\diag\bigl(f'(\bs\lay{l-1})\bigr)
+  = \bdelta\lay{l\mathsf{T}}\bJ\lay{l},
+\]
+or, transposed and written element-wise,
+\[
+  \bdelta\lay{l-1} = f'(\bs\lay{l-1}) \odot \bigl(\bW\lay{l\mathsf{T}}\bdelta\lay{l}\bigr).
+\]
+The second form is the matrix version of
+$\delta_j = f'(s_j)\sum_i\delta_i w_{ij}$ from the MLP.
+
+\paragraph{C --- the weight itself}
+$\bs\lay{1} = \bW\lay{1}\ba\lay{0}$, and $w\lay{1}_{ij}$ only appears in
+component $i$:
+\[
+  \pd{\bs\lay{1}}{w\lay{1}_{ij}} = (0, \dots, 0, a\lay{0}_j, 0, \dots, 0)\T
+  \quad\text{(non-zero entry at position } i\text{)}.
+\]
+
+\paragraph{Putting it together}
+For any layer $l$,
+\[
+  \pd{\loss}{w\lay{l}_{ij}} = \pd{\loss}{\bs\lay{l}}\pd{\bs\lay{l}}{w\lay{l}_{ij}}
+  = \bigl(\bdelta\lay{l}\bigr)_i\,\bigl(\ba\lay{l-1}\bigr)_j,
+  \qquad\text{or as an outer product:}\qquad
+  \pd{\loss}{\bW\lay{l}} = \bdelta\lay{l}\,\ba\lay{l-1\mathsf{T}} .
+\]
+
+\begin{thmbox}[title={Backpropagation in deep networks}]
+\begin{enumerate}
+  \item Compute the deltas at the output: $\bdelta\lay{L}$ (e.g.\ $\byhat - \by$).
+  \item Backpropagate them through the network:
+    \[
+      \bdelta\lay{l-1\mathsf{T}} = \bdelta\lay{l\mathsf{T}}\,
+      \underbrace{\bW\lay{l}\diag\bigl(f'(\bs\lay{l-1})\bigr)}_{\bJ\lay{l}} .
+    \]
+  \item Compute the weight updates:
+    $\Delta\bW\lay{l} = -\eta\,\bdelta\lay{l}\,\ba\lay{l-1\mathsf{T}}$.
+\end{enumerate}
+\end{thmbox}
+
+\begin{notebox}[title={Shape check: $\bdelta\,\ba\T$, not $\ba\,\bdelta\T$}]
+The gradient with respect to $\bW\lay{l} \in \R^{n_l \times n_{l-1}}$ must
+have the same shape as $\bW\lay{l}$. Since $\bdelta\lay{l} \in \R^{n_l}$ and
+$\ba\lay{l-1} \in \R^{n_{l-1}}$, the outer product is
+$\bdelta\lay{l}\ba\lay{l-1\mathsf{T}}$ --- entry $(i,j)$ is
+$\delta_i a_j$. One slide writes $\ba\lay{l-1}\bdelta\lay{l\mathsf{T}}$, which
+is the transpose; the update rule on the following slide uses the correct
+$\bdelta\lay{l}(\ba\lay{l-1})\T$. When in doubt, check the shape.
+\end{notebox}
+
+\subsection{The Vanishing Gradient Problem}
+\label{sec:vgp}
+
+The recursion $\bdelta\lay{l-1\mathsf{T}} = \bdelta\lay{l\mathsf{T}}\bJ\lay{l}$
+reveals the central problem of deep networks. Unrolled from the output down
+to the first layer,
+\[
+  \bdelta\lay{1\mathsf{T}} = \bdelta\lay{L\mathsf{T}}\,\bJ\lay{L}\bJ\lay{L-1}\cdots\bJ\lay{2},
+\]
+the delta errors are multiplied by one Jacobian per layer. If the norms of
+all these Jacobians are bounded by some $k$, $\norm{\bJ\lay{l}} \le k$, then
+\[
+  \norm{\bdelta\lay{1}} \le k^{L-1}\,\norm{\bdelta\lay{L}} .
+\]
+The size of the error signal changes \emph{exponentially} with depth. For
+$k < 1$ it vanishes: the lower layers receive almost no gradient and do not
+learn.
+
+\begin{thmbox}[title={Vanishing and exploding gradients (Hochreiter, 1991)}]
+Because the deltas are multiplied by the Jacobian $\bJ\lay{l} =
+\bW\lay{l}\diag(f'(\bs\lay{l-1}))$ in every layer, their norm grows or
+shrinks exponentially across layers. Three regimes:
+\begin{itemize}
+  \item $\norm{\bdelta\lay{l-1}} < \norm{\bdelta\lay{l}}$: \textbf{vanishing
+    gradients.} The typical case for sigmoid networks: since
+    $|\sigma'(x)| \le 0.25$, $\norm{\diag(f'(\bs\lay{l-1}))} \le 0.25$, and
+    the deltas shrink in every layer unless the weights compensate.
+  \item $\norm{\bdelta\lay{l-1}} \approx \norm{\bdelta\lay{l}}$:
+    \textbf{stable gradients.} The ideal case; many algorithmic improvements
+    (e.g.\ initialization strategies, \cref{ch:initialization}) aim at
+    keeping this ratio close to one.
+  \item $\norm{\bdelta\lay{l-1}} > \norm{\bdelta\lay{l}}$: \textbf{exploding
+    gradients.} If the weight matrices have large norm, the deltas grow
+    through the layers; huge weight updates make learning unstable or cause
+    numerical overflows.
+\end{itemize}
+\end{thmbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[axis lines=left, width=0.72\linewidth, height=5.4cm,
+    ymode=log, xmin=0, xmax=20, ymin=1e-12, ymax=30,
+    xlabel={number of layers $l$ the delta passes}, ylabel={upper bound $k^{l}$},
+    label style={font=\small},
+    tick label style={font=\scriptsize, gray!70!black},
+    grid=major, grid style={gray!15},
+    axis line style={gray!70},
+    ytick={1e-12,1e-9,1e-6,1e-3,1},
+    legend style={font=\scriptsize, draw=none, at={(0.5,-0.32)}, anchor=north},
+    legend columns=2, legend cell align=left,
+    samples at={0,1,...,20}]
+  \addplot[very thick, figred, mark=*, mark size=1pt] {0.25^x};
+  \addlegendentry{$k = 0.25$ (sigmoid, $\norm{\bW} \le 1$)\quad}
+  \addplot[very thick, figamber, mark=*, mark size=1pt] {0.9^x};
+  \addlegendentry{$k = 0.9$}
+  \addplot[very thick, figgreen, mark=*, mark size=1pt] {1^x};
+  \addlegendentry{$k = 1$ (stable)\quad}
+  \addplot[very thick, figpurple, mark=*, mark size=1pt] {1.1^x};
+  \addlegendentry{$k = 1.1$ (exploding)}
+\end{axis}
+\end{tikzpicture}
+\caption{How much of the error signal survives $l$ layers, for different
+per-layer factors $k$ (log scale). With the sigmoid's factor $0.25$, ten
+layers already shrink the delta by a factor of about $4\cdot 10^{-6}$.}
+\label{fig:vgp}
+\end{figure}
+
+\begin{exbox}[title={How fast do gradients vanish?}]
+With sigmoid units and weight matrices of norm at most one, $k = 0.25$. The
+delta at the first layer of a network with $L$ layers is then at most
+$0.25^{L-1}$ times the output delta:
+\[
+  L = 5:\ 0.25^4 \approx 3.9\cdot 10^{-3}, \quad
+  L = 10:\ 0.25^9 \approx 3.8\cdot 10^{-6}, \quad
+  L = 20:\ 0.25^{19} \approx 3.6\cdot 10^{-12}.
+\]
+In a 20-layer sigmoid network, the first layers would learn about a
+trillion times more slowly than the last one.
+\end{exbox}
+
+\paragraph{Ameliorations for feed-forward networks (outlook)}
+The lecture names several remedies, each covered later:
+\begin{itemize}
+  \item \textbf{rectified linear units} --- $f'(x) = 1$ for all positive
+    inputs, so the activation function does not shrink the delta;
+  \item \textbf{initialization strategies} that keep the norm of the
+    Jacobians close to one (\cref{sec:tricks,ch:initialization});
+  \item \textbf{skip connections} (ResNets), which give the gradient a
+    shortcut around layers;
+  \item and more (e.g.\ normalization, \cref{ch:normalization}). For
+    recurrent networks, LSTM is the classic solution (\cref{ch:history}).
+\end{itemize}
+
+% ----------------------------------------------------------
+\section{Jacobian}
+\label{sec:jacobian}
+% ----------------------------------------------------------
+
+``The Jacobian of a neural network'' is an ambiguous term. Depending on what
+is differentiated with respect to what, it means one of three things:
+
+\begin{defbox}[title={Three Jacobians of a neural network}]
+\begin{enumerate}
+  \item \textbf{Parameter Jacobian} --- the derivative of the loss with
+    respect to the parameters,
+    $\displaystyle \pd{\loss(\by, g(\bx; \bw))}{\bw}$.
+    This is the gradient used to train the network by gradient descent
+    (computed by backpropagation).
+  \item \textbf{Input--output Jacobian} --- the derivative of the network
+    outputs with respect to the inputs,
+    $\displaystyle \pd{g(\bx; \bw)}{\bx} = \pd{\byhat}{\bx}$.
+    It tells how sensitive the prediction is to each input feature and can
+    be used to optimize the \emph{input} with respect to the output, by
+    gradient \emph{ascent} on $\bx$ with fixed weights. ``Deep Dream''
+    images are made this way: an image is changed so that it excites
+    certain units more and more (a horizon turns into towers and pagodas,
+    leaves into birds and insects).
+  \item \textbf{(Single-layer) Jacobian} --- the derivative of the outputs of
+    one layer with respect to that layer's inputs. For $\ba = f(\bW\bx)$:
+    \[
+      \bJ = \pd{\ba}{\bx} = \diag\bigl(f'(\bW\bx)\bigr)\,\bW .
+    \]
+    This is the quantity connected to the vanishing gradient problem; when
+    people say ``the Jacobian'' without further qualification, they usually
+    mean this one.
+\end{enumerate}
+\end{defbox}
+
+\begin{intbox}
+The single-layer Jacobian $\diag(f'(\bW\bx))\,\bW$ and the factor
+$\bJ\lay{l} = \bW\lay{l}\diag(f'(\bs\lay{l-1}))$ of the backprop recursion
+are built from the same two ingredients --- a weight matrix and the
+activation derivatives --- just chained in a different order (one goes from
+activations to activations, the other from pre-activations to
+pre-activations). Either way: backpropagation multiplies by one such matrix
+per layer, and its norm decides whether gradients vanish, stay stable or
+explode.
+\end{intbox}
+
+
+% ----------------------------------------------------------
+\section{Hessian}
+\label{sec:hessian}
+% ----------------------------------------------------------
+
+The Hessian is the matrix of second derivatives of the loss with respect to
+the weights, where all parameters of the network are written as one long
+vector $\bw$:
+\[
+  H_{ij} = \frac{\partial^2 \loss(\by, g(\bx; \bw))}{\partial w_i\,\partial w_j} .
+\]
+It describes the \emph{curvature} of the loss surface. Its main use is the
+second-order Taylor approximation of the error around a point $\bw_0$,
+with gradient $\bg = \grad_{\bw}R(\bw_0)$:
+\[
+  R(\bw) = R(\bw_0) + (\bw - \bw_0)\T\bg
+           + \frac12(\bw - \bw_0)\T\bH(\bw - \bw_0)
+           + \bigO{\norm{\bw - \bw_0}^3} .
+\]
+The lecture lists its applications (covered later): \textbf{optimization}
+(Newton-type methods --- with a question mark, see below), \textbf{pruning}
+(removing the weights whose removal increases the error least),
+\textbf{error bars} for predictions, and the \textbf{second-order Taylor
+approximation} itself.
+
+\begin{notebox}[title={Why not just use Newton's method for deep networks?}]
+For logistic regression, the Hessian is a $D \times D$ matrix and Newton's
+method (IRLS) is the standard (\cref{sec:logreg}). A deep network with $W$
+weights has a $W \times W$ Hessian: for a million weights that is $10^{12}$
+entries, and inverting it costs $\bigO{W^3}$. In addition, the loss of a deep
+network is non-convex, so the Hessian is not positive definite in general,
+and a Newton step can even go uphill. This is why first-order methods (SGD
+and its variants) dominate deep learning.
+\end{notebox}
+
+
+% ----------------------------------------------------------
+\section{Efficient Training: Basic Tricks of the Trade}
+\label{sec:tricks}
+% ----------------------------------------------------------
+
+The last section collects the practical knowledge needed to actually train
+an MLP or deep network: how to split the data, how to feed it to the
+network, how to prepare the inputs, how to initialize the weights and how to
+choose the learning rate and the network size.
+
+\subsection{Training, Validation and Test Set}
+
+\begin{defbox}[title={Training, validation and test set (``sloppy'' definitions)}]
+\begin{itemize}
+  \item \textbf{Training set} (e.g.\ 80\,\% of the data): the samples that
+    are presented to the network; the \emph{weights} are adjusted to fit
+    this set.
+  \item \textbf{Validation set} (e.g.\ 10\,\%): withheld from the network; it
+    is used to check the network during development, and the
+    \emph{architecture and hyperparameters} are adjusted on this set.
+  \item \textbf{Test set} (e.g.\ 10\,\%): withheld from the network
+    \emph{and} from architecture and hyperparameter selection; it is used
+    only to check the final trained network.
+\end{itemize}
+Precise definitions follow in \cref{ch:generalization}.
+\end{defbox}
+
+\begin{notebox}[title={Why a separate test set?}]
+Every decision made by looking at a data set (stopping epoch, learning
+rate, number of layers, \ldots) slightly fits the model to that data set.
+After tuning on the validation set, the validation error is therefore an
+\emph{optimistic} estimate of the error on new data. Only a test set that
+was never used for any decision gives an unbiased estimate.
+\end{notebox}
+
+\subsection{Online, Stochastic and Batch Training}
+
+\begin{itemize}
+  \item \textbf{Online learning:} a single sample is propagated through the
+    network, then the parameters are updated:
+    $\bw^{\text{new}} = \bw^{\text{old}} - \eta\,\grad_{\bw}\Remp(y, \bx, \bw)|_{\bw^{\text{old}}}$.
+  \item \textbf{Full-batch learning:} all training samples are propagated
+    through the network, then one update is performed:
+    $\bw^{\text{new}} = \bw^{\text{old}} - \eta\,\grad_{\bw}\Remp(\by, \bX, \bw)|_{\bw^{\text{old}}}$.
+  \item \textbf{Stochastic (mini-batch) learning:} a small random subset is
+    propagated, then the parameters are updated with the mini-batch estimate
+    $\tilde\grad_{\bw}$ of the full-batch gradient:
+    \[
+      \grad_{\bw}\Remp(\by, \bX, \bw)
+      = \frac1N\sum_{n=1}^{N}\grad_{\bw}\loss(y^n, g(\bx^n; \bw))
+      \;\approx\;
+      \frac1B\sum_{b=1}^{B}\grad_{\bw}\loss(y^{n_b}, g(\bx^{n_b}; \bw))
+      = \tilde\grad_{\bw}\Remp .
+    \]
+\end{itemize}
+
+\begin{intbox}
+Full-batch gradients are exact but expensive: one step costs a pass over the
+whole data set. Online updates are cheap but very noisy. Mini-batches are
+the compromise: the gradient estimate is good enough to make progress,
+many updates fit into one pass over the data, and a batch of, say, 32
+samples is processed in parallel on a GPU about as fast as a single one.
+The noise even helps a little to escape poor regions of the loss surface.
+\end{intbox}
+
+\subsection{Epochs, Batch Size and Learning Curves}
+
+Typically, mini-batches are drawn randomly \emph{without replacement} from
+the training set. When the training set is used up, a new \textbf{epoch}
+starts; one epoch means that every training sample has been propagated
+through the network once. With $N$ samples and batch size $B$, an epoch
+consists of about $N/B$ updates.
+
+Training is monitored with \textbf{learning curves}:
+\begin{itemize}
+  \item after each mini-batch: the loss on the training (mini-)batch,
+    optionally other metrics such as accuracy;
+  \item after each epoch (or after a fixed number of updates): the loss and
+    other metrics on the validation set.
+\end{itemize}
+The lecture's example is a DenseNet trained on CIFAR-100 for 300 epochs:
+training and test error drop quickly at first, then flatten out; at epoch 150
+both drop sharply once more (at that point the learning rate is decreased,
+a common schedule); afterwards the training error goes to almost zero while
+the test error stays at about $0.26$. The gap between the two curves is a
+first glimpse of \emph{overfitting} (\cref{ch:generalization}).
+
+\subsection{Normalizing Inputs and Outputs}
+
+\begin{itemize}
+  \item \textbf{Inputs should be normalized to zero mean and unit variance}:
+    compute mean $\mu_d$ and standard deviation $s_d$ of every feature $d$
+    \emph{on the training set}, and transform $x_d \mapsto (x_d - \mu_d)/s_d$.
+    Training is faster this way. With unnormalized inputs, pre-activations
+    can be large, sigmoid/tanh units start in their saturated region where
+    the gradient is small; with normalized inputs they start near zero,
+    where the gradient is large.
+  \item \textbf{Categorical features} are one-hot encoded (\cref{sec:softmax}).
+\end{itemize}
+
+\begin{notebox}[title={Use the training statistics everywhere}]
+The normalization constants $\mu_d$, $s_d$ are computed on the training set
+only and then applied unchanged to validation and test data (and to new
+data in deployment). Computing them on the full data set leaks information
+from the test set into training.
+\end{notebox}
+
+\subsection{Initialization}
+
+\begin{itemize}
+  \item Weights should be initialized randomly with \textbf{zero mean}, from
+    a Gaussian, uniform or truncated Gaussian distribution.
+  \item \textbf{Variance:} $2/J$ for ReLU activations and $1/J$ otherwise,
+    where $J$ is the number of inputs of the unit (its \emph{fan-in}, the
+    number of units in the layer below).
+\end{itemize}
+The scaling with $1/J$ keeps the variance of the pre-activations roughly
+constant from layer to layer --- which, by the argument of \cref{sec:vgp},
+also keeps the delta errors from vanishing or exploding at the start of
+training. The factor 2 for ReLU compensates for the fact that a ReLU sets
+about half of its inputs to zero. Details in \cref{ch:initialization}.
+
+\begin{notebox}[title={Why not initialize all weights with zero?}]
+If all weights of a layer start with the same value, all hidden units of
+the layer compute the same function and receive the same delta error ---
+they stay identical forever, and the layer behaves like a single unit. The
+random initialization is needed to \emph{break the symmetry}.
+\end{notebox}
+
+\subsection{Learning Rates}
+
+The learning rate is one of the most important hyperparameters. Typical
+values are $0.1$ or $0.01$; it is searched on a logarithmic grid
+$10^{-1}, 10^{-2}, 10^{-3}, 10^{-4}, \dots$ A useful heuristic: start
+training with a learning rate as high as possible without the network
+diverging, and decrease it later (as in the DenseNet learning curve above).
+
+\subsection{Number of Neurons and Hidden Layers}
+
+How large the network has to be depends on the complexity of the problem:
+more complex problems need more layers and more neurons. The lecture's
+\textbf{rule of thumb}: use as many layers and neurons as needed such that
+the network can \emph{overfit} the training data. Then add regularization
+(\cref{ch:regularization}) to prevent overfitting.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[axis lines=left, width=0.62\linewidth, height=5cm,
+    xmin=0, xmax=10, ymin=0, ymax=1.3, xtick=\empty, ytick=\empty,
+    xlabel={model complexity}, ylabel={error},
+    label style={font=\small}, samples=120, domain=0.35:9.6,
+    axis line style={-{Stealth[length=1.6mm]}}]
+  \addplot[very thick, accent] {0.08 + 0.9/(1+1.6*x)};
+  \node[font=\scriptsize, accent, anchor=south] at (axis cs:8.6,0.17) {training error};
+  \addplot[very thick, figred] {0.08 + 0.9/(1+1.6*x) + 0.012*x^2 - 0.02*x + 0.06};
+  \node[font=\scriptsize, figred, anchor=east] at (axis cs:7.6,0.75) {test error};
+  \draw[dashed, gray] (axis cs:2.8,0) -- (axis cs:2.8,1.02);
+  \node[font=\scriptsize, gray!70!black, align=center, anchor=south] at (axis cs:2.8,1.02) {best complexity};
+  \node[font=\scriptsize, gray!70!black, anchor=west] at (axis cs:0.2,0.05) {$\leftarrow$ underfitting};
+  \node[font=\scriptsize, gray!70!black, anchor=west] at (axis cs:3.2,0.05) {overfitting $\rightarrow$};
+\end{axis}
+\end{tikzpicture}
+\caption{Outlook on generalization (schematic). The training error keeps
+decreasing as the model becomes more complex, but the error on new (test)
+data first decreases and then increases again: too complex a model fits the
+noise of the training set. Chapter~\ref{ch:generalization} makes this
+precise.}
+\label{fig:generalization}
+\end{figure}
+
+
+% ----------------------------------------------------------
+\section{Excursion: Amari--Hopfield Networks}
+\label{sec:hopfield}
+% ----------------------------------------------------------
+
+The single-layer lecture closes with a different kind of network.
+Amari--Hopfield networks are \textbf{associative memory} systems: they store
+a set of patterns and, given a noisy or incomplete version of one of them,
+retrieve the complete pattern --- \emph{content-based retrieval}. They are
+similar to the Lenz--Ising models of physics, but learnable; Hopfield
+received the 2024 Nobel Prize in Physics for them (J.\,J.~Hopfield, 1982),
+and he was criticized by J.~Schmidhuber for not crediting S.-I.~Amari, who
+had described such networks in 1972.
+
+\begin{defbox}[title={Amari--Hopfield network}]
+\begin{itemize}
+  \item \textbf{Binary patterns:} inputs and outputs are vectors
+    $\bx = (x_1, \dots, x_D) \in \{-1, 1\}^D$; the outputs are fed back as
+    new inputs, so the network is \emph{recurrent}.
+  \item \textbf{Stored patterns:} $\bx^1, \dots, \bx^N$.
+  \item \textbf{Learning (Hebbian rule):}
+    \[
+      \bW = \frac1N\Bigl(\sum_{n=1}^{N}\bx^n\bx^{n\mathsf{T}}\Bigr) - \bI_D .
+    \]
+  \item \textbf{Retrieval (inference):} starting from a noisy pattern,
+    update
+    \[
+      \bx^{\text{new}} = \sign\bigl(\bW\bx^{\text{old}} - \bb\bigr).
+    \]
+  \item \textbf{Energy:} the network is energy-based, with
+    \[
+      E = -\frac12\bx\T\bW\bx + \bx\T\bb
+        = -\frac12\sum_{i=1}^{D}\sum_{j=1}^{D} w_{ij}x_i x_j + \sum_{i=1}^{D} b_i x_i .
+    \]
+    Stored patterns are (local) minima of the energy; retrieval runs
+    ``downhill''.
+\end{itemize}
+\end{defbox}
+
+\begin{intbox}
+The Hebbian rule is Hebb's ``fire together, wire together'' in formula
+form: $w_{ij}$ grows when units $i$ and $j$ have the same sign in many stored
+patterns ($x^n_i x^n_j = +1$) and shrinks when they have opposite signs.
+Since $x_i^2 = 1$, every outer product $\bx^n\bx^{n\mathsf{T}}$ has ones on
+the diagonal, so $\frac1N\sum_n\bx^n\bx^{n\mathsf{T}}$ has a diagonal of
+exactly one --- subtracting $\bI_D$ removes the self-connections. Each unit
+is then pushed towards the sign that the \emph{other} units ``vote'' for,
+given the correlations stored in $\bW$.
+\end{intbox}
+
+\begin{exbox}[title={Retrieving a pattern with one flipped bit}]
+Store two orthogonal patterns in a network with $D = 8$ units,
+\[
+  \bx^1 = (1, 1, 1, 1, -1, -1, -1, -1), \qquad
+  \bx^2 = (1, -1, 1, -1, 1, -1, 1, -1),
+\]
+with $\bW = \frac12(\bx^1\bx^{1\mathsf{T}} + \bx^2\bx^{2\mathsf{T}}) - \bI_8$
+and $\bb = \bm{0}$.
+Present $\bx^1$ with its first bit flipped:
+$\bx^{\text{old}} = (-1, 1, 1, 1, -1, -1, -1, -1)$.
+\begin{itemize}
+  \item $\bW\bx^{\text{old}} = (3, 3, 1, 3, -3, -1, -3, -1)$, so
+    $\sign(\bW\bx^{\text{old}}) = (1, 1, 1, 1, -1, -1, -1, -1) = \bx^1$: the
+    pattern is retrieved in one step.
+  \item The energy drops from $E = -6$ for the noisy pattern to $E = -12$ for
+    $\bx^1$ (and $\bx^1$, $\bx^2$ are both fixed points of the update).
+\end{itemize}
+The same happens for every single flipped bit of $\bx^1$.
+\end{exbox}
+
+
+% ----------------------------------------------------------
+\section{Chapter Checklist}
+% ----------------------------------------------------------
+
+What you should take away from this chapter:
+\begin{itemize}
+  \item the four single-layer networks (\cref{tab:single-layer}): model,
+    loss, and how the loss follows from maximum likelihood (Gaussian noise
+    $\to$ squared loss, Bernoulli $\to$ binary cross-entropy, categorical
+    $\to$ categorical cross-entropy);
+  \item the least-squares solution $\what = (\bX\T\bX)\inv\bX\T\by$, gradient
+    descent, and mini-batch SGD;
+  \item the perceptron learning rule, its geometric meaning, and the
+    convergence theorem with its conditions (linear separability; solution
+    not unique; no convergence on non-separable data);
+  \item $\sigma' = \sigma(1-\sigma) \le 0.25$; the gradient and Hessian of
+    logistic regression; Newton's method and IRLS; why one Newton step
+    solves linear regression;
+  \item softmax, one-hot encoding, and the common gradient form
+    (prediction $-$ target) $\times$ input;
+  \item why single-layer networks cannot solve XOR and how a hidden layer
+    with a non-linearity does; the universal approximation theorem;
+  \item the MLP quantities $s_i$, $a_i$, $f$; common activation functions
+    and their derivatives; matching output activations and losses;
+  \item backpropagation: the delta errors, the output and hidden-layer
+    formulas, $\partial\loss/\partial w_{ij} = \delta_i a_j$, the matrix
+    form $\bdelta\lay{l-1} = f'(\bs\lay{l-1}) \odot (\bW\lay{l\mathsf{T}}
+    \bdelta\lay{l})$ and $\partial\loss/\partial\bW\lay{l} =
+    \bdelta\lay{l}\ba\lay{l-1\mathsf{T}}$; its cost $\bigO{W}$;
+  \item why deep networks need non-linearities; the vanishing/exploding
+    gradient problem and its remedies;
+  \item the three meanings of ``Jacobian'', the Hessian and its uses;
+  \item the tricks of the trade: train/validation/test split, online vs.\
+    mini-batch vs.\ full-batch, epochs and learning curves, input
+    normalization, initialization variance $2/J$ or $1/J$, learning-rate
+    heuristics, sizing the network;
+  \item Amari--Hopfield networks: Hebbian rule, energy, retrieval.
+\end{itemize}
+
+
+% ==========================================================
+%  CHAPTERS 5--10 — OUTLINES
+%  Section lists follow the course overview from the first lecture
+%  and the forward references on the Chapter 4 slides. Replace
+%  \planned{...} blocks with real text once the slides of the
+%  corresponding units are available, and adapt the sections to them.
+% ==========================================================
+
+% ==========================================================
+%  CHAPTER 5 — GENERALIZATION ERROR, TEST SET AND CV
+% ==========================================================
+\chapter{Generalization Error, Test Set and Cross-Validation}
+\label{ch:generalization}
+
+Minimizing the empirical error is not the actual goal --- a network that
+memorizes its training data can still be useless on new data. This chapter
+makes precise what ``performing well on new data'' means, how to estimate it
+honestly, and how to use these estimates to choose models and
+hyperparameters.
+
+\planned{Slides not yet available. Expected structure below; adapt it to the
+slides.}
+
+\section{Empirical Error and Generalization Error}
+\planned{Data-generating distribution; expected loss (generalization error,
+risk) $\Rgen$ versus empirical error $\Remp$; why minimizing $\Remp$ is only
+a proxy.}
+
+\section{Overfitting and Underfitting}
+\planned{Model complexity, capacity; training versus test error
+(\cref{fig:generalization}); bias--variance decomposition if covered.}
+
+\section{Estimating the Generalization Error: Test Set}
+\planned{Precise definitions of training, validation and test set
+(refining \cref{sec:tricks}); unbiasedness of the test-set estimate;
+variance of the estimate and test-set size.}
+
+\section{Cross-Validation}
+\planned{$k$-fold cross-validation, leave-one-out; using CV for
+hyperparameter selection; nested CV; pitfalls (information leakage).}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 6 — CONVOLUTIONAL NEURAL NETWORKS
+% ==========================================================
+\chapter{Convolutional Neural Networks}
+\label{ch:cnn}
+
+Fully connected networks ignore the structure of their input: for them, an
+image is just a long vector, and a cat in the top-left corner has nothing to
+do with a cat in the bottom-right. Convolutional networks build the spatial
+structure into the architecture (\cref{sec:network-types}).
+
+\planned{Slides not yet available. Expected structure below; adapt it to the
+slides.}
+
+\section{Convolution and Cross-Correlation}
+\planned{Discrete convolution in 1D and 2D; kernels/filters; padding and
+stride; output-size formula; channels.}
+
+\section{Convolutional Layers}
+\planned{Local connectivity and weight sharing; number of parameters
+compared with a fully connected layer; feature maps; translation
+equivariance.}
+
+\section{Pooling}
+\planned{Max and average pooling; translation invariance; downsampling.}
+
+\section{CNN Architectures and Training}
+\planned{Typical layer stacks (convolution $\to$ non-linearity $\to$
+pooling, fully connected head); backpropagation through convolution and
+pooling; historical architectures (Neocognitron, LeNet, AlexNet) as
+covered.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 7 — LEARNING METHODS: BASIC ALGORITHMS
+% ==========================================================
+\chapter{Learning Methods: Basic Algorithms}
+\label{ch:learning}
+
+\Cref{ch:basic} trained everything with plain (stochastic) gradient descent
+and mentioned Newton's method. This chapter looks at the optimization
+algorithms actually used to train deep networks.
+
+\planned{Slides not yet available. Expected structure below; adapt it to the
+slides.}
+
+\section{Gradient Descent Revisited}
+\planned{Batch, mini-batch and online gradient descent
+(\cref{sec:tricks}); convergence and the role of the learning rate.}
+
+\section{Momentum and Adaptive Learning Rates}
+\planned{Momentum, Nesterov momentum; per-parameter learning rates
+(AdaGrad, RMSProp, Adam) as covered.}
+
+\section{Learning-Rate Schedules}
+\planned{Step decay (cf.\ the DenseNet learning curve in \cref{sec:tricks}),
+warm-up, cosine schedules as covered.}
+
+\section{Second-Order Methods}
+\planned{Newton's method (\cref{sec:logreg}), why it does not scale to deep
+networks (\cref{sec:hessian}), approximations if covered.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 8 — REGULARIZATION
+% ==========================================================
+\chapter{Regularization}
+\label{ch:regularization}
+
+The rule of thumb of \cref{sec:tricks} was: make the network large enough to
+overfit, then regularize. This chapter is about the second half of that
+sentence.
+
+\planned{Slides not yet available. Expected structure below; adapt it to the
+slides.}
+
+\section{Weight Decay ($L_2$ and $L_1$ Penalties)}
+\planned{Adding a penalty to the empirical error; probabilistic
+interpretation as a prior; effect on separable data (\cref{sec:logreg}).}
+
+\section{Early Stopping}
+\planned{Monitoring the validation loss (learning curves,
+\cref{sec:tricks}); stopping criterion.}
+
+\section{Dropout and Other Noise-Based Methods}
+\planned{Dropout at training and test time; data augmentation; other
+methods as covered.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 9 — INITIALIZATION
+% ==========================================================
+\chapter{Initialization}
+\label{ch:initialization}
+
+\Cref{sec:tricks} gave the recipe ``zero mean, variance $2/J$ for ReLU, $1/J$
+otherwise''. This chapter derives where these numbers come from.
+
+\planned{Slides not yet available. Expected structure below; adapt it to the
+slides.}
+
+\section{Why Initialization Matters}
+\planned{Symmetry breaking; connection to vanishing and exploding gradients
+(\cref{sec:vgp}).}
+
+\section{Variance-Preserving Initialization}
+\planned{Propagation of mean and variance through a layer; LeCun/Glorot
+(Xavier) initialization; He initialization for ReLU; forward and backward
+view.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 10 — NORMALIZATION
+% ==========================================================
+\chapter{Normalization}
+\label{ch:normalization}
+
+Normalizing the inputs speeds up training (\cref{sec:tricks}). Normalization
+methods apply the same idea to the hidden layers, so that activations stay
+well-scaled throughout a deep network.
+
+\planned{Slides not yet available. Expected structure below; adapt it to the
+slides.}
+
+\section{Input Normalization Revisited}
+\planned{Standardization, whitening; why it helps optimization.}
+
+\section{Batch Normalization and Layer Normalization}
+\planned{Normalizing pre-activations with mini-batch or per-sample
+statistics; learnable scale and shift; behaviour at training versus test
+time.}
+
+\section{Self-Normalizing Networks}
+\planned{SELU activation (\cref{tab:activations}) and its fixed point of
+zero mean and unit variance; requirements on initialization.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+\end{document}

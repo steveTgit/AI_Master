@@ -1,0 +1,2954 @@
+% ==========================================================
+%  MASTER SUMMARY TEMPLATE — AI / ML / MATHEMATICS
+%  Design Philosophy:
+%    1. Readable running text is the default. Prose over boxes.
+%    2. Boxes are used sparingly as visual landmarks for skimming.
+%    3. Visual hierarchy: chapter > section > subsection > prose.
+%    4. Every box is breakable — no orphaned whitespace at page ends.
+%    5. A single consistent accent color ties all structure together.
+% ==========================================================
+
+\documentclass[11pt, oneside]{book}
+
+
+% ══════════════════════════════════════════════════════════
+%  PAGE GEOMETRY
+% ══════════════════════════════════════════════════════════
+\usepackage[
+  a4paper,
+  top    = 2.6cm,
+  bottom = 2.1cm,
+  left   = 2.5cm,
+  right  = 2.5cm,
+  headheight = 15pt
+]{geometry}
+
+
+% ══════════════════════════════════════════════════════════
+%  TYPOGRAPHY
+% ══════════════════════════════════════════════════════════
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}         % Latin Modern: improved Computer Modern
+\usepackage{microtype}       % Microtypographic refinements (better justification,
+                             %   fewer overfull hboxes — invaluable for math text)
+
+% If inconsolata is not installed, simply remove this line.
+% It provides a crisper monospace font for code listings.
+\usepackage{inconsolata}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.62em}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICS
+% ══════════════════════════════════════════════════════════
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}        % Bold math symbols: \bm{\theta}
+\usepackage{bbm}       % Blackboard bold for indicator: \mathbbm{1}
+\usepackage{mathrsfs}  % Script letters: \mathscr{F}, \mathscr{H}
+\usepackage{nicefrac}  % Compact inline fractions: \nicefrac{1}{2}
+\usepackage{cancel}    % Strike-through in math: \cancel{x}
+
+
+% ══════════════════════════════════════════════════════════
+%  SCIENTIFIC NOTATION
+% ══════════════════════════════════════════════════════════
+% siunitx — consistent typesetting of numbers and SI units.
+%   Usage: \SI{1.5}{\micro\meter}  \SI{50}{\kilo\hertz}  \num{6.022e23}
+\usepackage{siunitx}
+\sisetup{per-mode = symbol}   % render "per unit" as e.g. m/s rather than m s^{-1}
+
+% mhchem — chemical formulas and reaction equations.
+%   Usage: \ce{H2O}   \ce{ATP -> ADP + P_i}   \ce{^{14}C}
+\usepackage[version=4]{mhchem}
+
+
+% ══════════════════════════════════════════════════════════
+%  FIGURES, TABLES, LISTS
+% ══════════════════════════════════════════════════════════
+\usepackage{graphicx}
+\usepackage{booktabs}         % \toprule, \midrule, \bottomrule
+\usepackage{array}            % Extended column types in tabular
+\usepackage{float}            % [H] float placement
+\usepackage{enumitem}
+
+\setlist[itemize]{topsep=3pt, itemsep=2pt, leftmargin=2.2em}
+\setlist[enumerate]{topsep=3pt, itemsep=2pt, leftmargin=2.4em}
+
+\usepackage{needspace}        % keep headings together with their first lines
+
+% ── Course addition: self-drawn figures (TikZ / pgfplots) ──
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc, fit, backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+
+% ══════════════════════════════════════════════════════════
+%  ALGORITHMS / PSEUDOCODE
+% ══════════════════════════════════════════════════════════
+% Remove this block if you do not need pseudocode.
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\bfseries}
+\SetCommentSty{textit}
+
+
+% ══════════════════════════════════════════════════════════
+%  COLORS  (a refined, academic palette)
+% ══════════════════════════════════════════════════════════
+\usepackage{xcolor}
+
+% Primary structural accent — deep navy used for headings, rules, ToC
+\definecolor{accent}{HTML}{1B3A5C}
+
+% Box accent colors: frame and background, designed to be legible but
+% unobtrusive so running text remains the visual focus.
+\definecolor{def@frame}{HTML}{1A5276}   \definecolor{def@bg}{HTML}{EBF5FB}
+\definecolor{thm@frame}{HTML}{922B21}   \definecolor{thm@bg}{HTML}{FDEDEC}
+\definecolor{ex@frame} {HTML}{1E8449}   \definecolor{ex@bg} {HTML}{EAFAF1}
+\definecolor{int@frame}{HTML}{9A6A00}   \definecolor{int@bg}{HTML}{FEF9E7}
+\definecolor{note@frame}{HTML}{5B2C6F}  \definecolor{note@bg}{HTML}{F5EEF8}
+
+
+% ══════════════════════════════════════════════════════════
+%  CODE LISTINGS
+% ══════════════════════════════════════════════════════════
+\usepackage{listings}
+\lstset{
+  basicstyle       = \ttfamily\small,
+  breaklines       = true,
+  numbers          = left,
+  numberstyle      = \tiny\color{gray!70},
+  frame            = tb,
+  framerule        = 0.4pt,
+  rulecolor        = \color{gray!35},
+  tabsize          = 2,
+  showstringspaces = false,
+  keywordstyle     = \color{def@frame}\bfseries,
+  commentstyle     = \color{gray!55!black}\itshape,
+  stringstyle      = \color{ex@frame!90!black},
+  backgroundcolor  = \color{gray!5},
+  xleftmargin      = 2em,
+  xrightmargin     = 0.4em,
+  aboveskip        = 0.8em,
+  belowskip        = 0.5em
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  CUSTOM BOXES  (tcolorbox)
+%
+%  KEY DESIGN DECISIONS:
+%  1. enhanced   — enables advanced tcolorbox features (borderline etc.)
+%  2. breakable  — box may split across a page break; eliminates the ugly
+%                  white gap that appears when a long box would overflow.
+%  3. Left-accent bar style — a thick colored stripe on the left margin.
+%                  This is legible, modern, and unobtrusive relative to
+%                  a full colored frame. The box background is a very
+%                  light tint, keeping the reading experience calm.
+%  4. sharp corners=west — left side is flat (squared), right is rounded.
+%                  This mirrors the visual logic of the left accent bar.
+%  5. parbox=false — allows display math to stretch properly inside boxes.
+% ══════════════════════════════════════════════════════════
+\usepackage[most]{tcolorbox}
+
+\tcbset{
+  enhanced,
+  breakable,
+  arc             = 2.5mm,
+  boxrule         = 0.5pt,
+  left            = 4.5mm,
+  right           = 4mm,
+  top             = 2.5mm,
+  bottom          = 2.5mm,
+  fonttitle       = \bfseries\small,
+  sharp corners   = west,
+  parbox          = false
+}
+
+\newtcolorbox{defbox}[1][]{
+  title  = {Definition},
+  colback = def@bg, colframe = def@frame,
+  borderline west = {3.5pt}{0pt}{def@frame},
+  #1
+}
+
+\newtcolorbox{thmbox}[1][]{
+  title  = {Theorem / Key Formula},
+  colback = thm@bg, colframe = thm@frame,
+  borderline west = {3.5pt}{0pt}{thm@frame},
+  #1
+}
+
+\newtcolorbox{exbox}[1][]{
+  title  = {Example},
+  colback = ex@bg, colframe = ex@frame,
+  borderline west = {3.5pt}{0pt}{ex@frame},
+  #1
+}
+
+\newtcolorbox{intbox}[1][]{
+  title  = {Intuition \& Mental Model},
+  colback = int@bg, colframe = int@frame,
+  borderline west = {3.5pt}{0pt}{int@frame},
+  #1
+}
+
+\newtcolorbox{notebox}[1][]{
+  title  = {Note},
+  colback = note@bg, colframe = note@frame,
+  borderline west = {3.5pt}{0pt}{note@frame},
+  #1
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  TABLE OF CONTENTS  (tocloft)
+%
+%  The [titles] option prevents tocloft from conflicting
+%  with titlesec's redefinition of chapter/section titles.
+% ══════════════════════════════════════════════════════════
+\usepackage[titles]{tocloft}
+
+% Chapter entries: accented, bold, with dots leading to page number
+\renewcommand{\cftchapfont}     {\bfseries\color{accent}}
+\renewcommand{\cftchappagefont} {\bfseries\color{accent}}
+\renewcommand{\cftchapleader}   {\bfseries\color{accent!40}\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip} {7pt}
+
+% Section entries: standard weight, small size
+\renewcommand{\cftsecfont}      {\small}
+\renewcommand{\cftsecpagefont}  {\small}
+\setlength{\cftsecindent}      {1.8em}
+\setlength{\cftbeforesecskip}  {1.5pt}
+
+% Subsection entries: muted gray to visually recede
+\renewcommand{\cftsubsecfont}      {\small\color{gray!65!black}}
+\renewcommand{\cftsubsecpagefont}  {\small\color{gray!65!black}}
+\setlength{\cftsubsecindent}      {3.4em}
+\setlength{\cftbeforesubsecskip}  {0.5pt}
+
+
+% ══════════════════════════════════════════════════════════
+%  CHAPTER & SECTION HEADINGS  (titlesec)
+%
+%  Chapter: large faded chapter number floated right, title
+%           left-aligned beneath it, then a double rule.
+%           The oversized ghost number is a quiet nod to
+%           modern textbook design without being gimmicky.
+%
+%  Section: accent-colored, with a thin rule beneath.
+%           The rule draws the eye without shouting.
+%
+%  Subsection: slightly smaller accent color, no rule — the
+%           rule at section level is already enough structure.
+% ══════════════════════════════════════════════════════════
+\usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{accent}\huge}
+  {\hfill\fontsize{68}{68}\selectfont\color{accent!13}\thechapter}
+  {-10pt}
+  {}
+  [{\vspace{4pt}%
+    {\color{accent}\rule{\linewidth}{1.6pt}}\\[-2pt]%
+    {\color{accent!35}\rule{\linewidth}{0.5pt}}}]
+\titlespacing*{\chapter}{0pt}{-28pt}{22pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}
+  {\thesection}
+  {0.8em}
+  {}
+  [{\vspace{1pt}\color{accent!45}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{3.8ex plus 1ex minus .2ex}{2.2ex plus .2ex}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{accent!80!black}}
+  {\thesubsection}
+  {0.7em}
+  {}
+\titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.4ex plus .2ex}
+
+% Run-in paragraph label — useful for named sub-items in a derivation.
+\titleformat{\paragraph}[runin]
+  {\normalfont\small\bfseries}
+  {}
+  {0em}
+  {}[.\enspace]
+\titlespacing{\paragraph}{0pt}{1.2ex plus .5ex minus .2ex}{0.5em}
+
+
+% ══════════════════════════════════════════════════════════
+%  HEADER & FOOTER
+% ══════════════════════════════════════════════════════════
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gray!70}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{gray!70}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Chapter-opening pages use LaTeX's 'plain' style — redefine it here
+% to match the rest of the document (page number at foot, no header line).
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\small\color{gray!70}\thepage}
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+
+% ══════════════════════════════════════════════════════════
+%  LINKS & REFERENCES
+% ══════════════════════════════════════════════════════════
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink, capitalize]{cleveref}
+
+
+% ══════════════════════════════════════════════════════════
+%  DOCUMENT METADATA  (fill in for each new subject)
+% ══════════════════════════════════════════════════════════
+\newcommand{\coursetitle}{Probabilistic Models}
+\newcommand{\documenttype}{Study Notes -- Working Draft}
+\newcommand{\authorname}{Stefan Eder}
+\newcommand{\basedon}{Based on the lecture \emph{Probabilistic Models} (G.~Widmer, JKU Linz), WS 2026/27}
+
+
+% ══════════════════════════════════════════════════════════
+%  MATHEMATICAL MACROS
+%  Organized by domain. Add your own at the end of each group.
+% ══════════════════════════════════════════════════════════
+
+% ── Number Sets & Spaces ──────────────────────────────────
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Q}{\mathbb{Q}}
+
+% ── Probability & Statistics ──────────────────────────────
+\newcommand{\E}{\mathbb{E}}              % Expectation
+\newcommand{\Prob}{\mathbb{P}}           % Probability measure
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Corr}{\mathrm{Corr}}
+\newcommand{\iid}{\overset{\mathrm{iid}}{\sim}}
+% Indicator function. Usage: \ind_{\{x > 0\}}
+\newcommand{\ind}{\mathbbm{1}}
+
+% ── Information Theory ────────────────────────────────────
+% KL divergence. Usage: \KL{q}{p}  →  D_KL(q ‖ p)
+\newcommand{\KL}[2]{D_{\mathrm{KL}}\!\left(#1 \,\|\, #2\right)}
+\newcommand{\Ent}{\mathrm{H}}            % Entropy:         \Ent(X)
+\newcommand{\MI}{\mathrm{I}}             % Mutual information: \MI(X;Y)
+
+% ── Calculus & Optimization ───────────────────────────────
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\grad}{\nabla}               % Gradient
+\newcommand{\hess}{\nabla^2}             % Hessian
+\newcommand{\lapl}{\Delta}               % Laplacian
+% Differential (upright d). Usage: \int f(x) \dd x
+\newcommand{\dd}{\,\mathrm{d}}
+% Partial derivatives. Usage: \pd{f}{x}  or  \pdd{f}{x}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+% ── Norms, Abs, Inner Products ────────────────────────────
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\normsq}[1]{\left\lVert #1 \right\rVert^2}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% ── Linear Algebra ────────────────────────────────────────
+\newcommand{\T}{^{\mathsf{T}}}           % Transpose:        \mathbf{A}\T
+\newcommand{\inv}{^{-1}}                 % Inverse:          A\inv
+\newcommand{\pinv}{^{\dagger}}           % Pseudo-inverse:   A\pinv
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\spanop}{\operatorname{span}}
+\newcommand{\eye}{\mathbf{I}}            % Identity matrix
+\newcommand{\zeros}{\mathbf{0}}
+\newcommand{\ones}{\mathbf{1}}
+
+% ── ML / AI Core Notation ────────────────────────────────
+\newcommand{\loss}{\mathcal{L}}          % Loss:          \loss(\params)
+\newcommand{\reg}{\mathcal{R}}           % Regularizer:   \reg(\params)
+\newcommand{\dataset}{\mathcal{D}}       % Dataset:       \dataset
+\newcommand{\params}{\boldsymbol{\theta}}   % Parameters
+\newcommand{\weights}{\mathbf{w}}
+\newcommand{\xvec}{\mathbf{x}}
+\newcommand{\yvec}{\mathbf{y}}
+\newcommand{\zvec}{\mathbf{z}}
+\newcommand{\hvec}{\mathbf{h}}           % Hidden state
+\newcommand{\feature}{\boldsymbol{\phi}} % Feature map
+
+% Activation functions
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\relu}{ReLU}
+\DeclareMathOperator{\sign}{sign}
+% sigmoid: just use \sigma (standard Greek letter)
+
+% ── Complexity ────────────────────────────────────────────
+\newcommand{\bigO}[1]{\mathcal{O}\!\left(#1\right)}
+\newcommand{\bigOm}[1]{\Omega\!\left(#1\right)}
+\newcommand{\bigTh}[1]{\Theta\!\left(#1\right)}
+
+% ── Common Distributions ──────────────────────────────────
+\newcommand{\Normal}{\mathcal{N}}
+\newcommand{\Uniform}{\mathcal{U}}
+\newcommand{\Bernoulli}{\mathrm{Ber}}
+\newcommand{\Categorical}{\mathrm{Cat}}
+\newcommand{\Dirichlet}{\mathrm{Dir}}
+\newcommand{\Binomial}{\mathrm{Bin}}
+
+% ── Miscellaneous ─────────────────────────────────────────
+\newcommand{\given}{\,\vert\,}           % Conditional: \Prob(A \given B)
+\newcommand{\st}{\;\text{s.t.}\;}        % "subject to"
+\newcommand{\eqdef}{\coloneqq}           % Definitional equality  :=
+\newcommand{\eqq}{\overset{?}{=}}        % "Does this equal?"
+
+
+
+% ══════════════════════════════════════════════════════════
+%  COURSE-SPECIFIC MACROS  (Probabilistic Models)
+%  Notation follows the lecture (Koller & Friedman style):
+%  calligraphic X = all variables, bold = sets, superscripts = values.
+% ══════════════════════════════════════════════════════════
+\newcommand{\Val}{\mathit{Val}}          % domain:  \Val(X)
+\newcommand{\Pa}{\mathrm{Pa}}            % parents: \Pa(X_i)
+\newcommand{\NonDesc}{\mathrm{NonDesc}}  % non-descendants
+\newcommand{\Desc}{\mathrm{Desc}}        % descendants
+\newcommand{\indep}{\perp}               % (X \indep Y \given Z)
+\newcommand{\nindep}{\not\perp}          % not independent
+\newcommand{\Xall}{\mathcal{X}}          % complete set of variables
+\newcommand{\bX}{\mathbf{X}}  \newcommand{\bY}{\mathbf{Y}}
+\newcommand{\bZ}{\mathbf{Z}}  \newcommand{\bE}{\mathbf{E}}
+\newcommand{\bx}{\mathbf{x}}  \newcommand{\by}{\mathbf{y}}
+\newcommand{\bz}{\mathbf{z}}  \newcommand{\be}{\mathbf{e}}
+\newcommand{\vn}[1]{\mathit{#1}}         % named variable/value: \vn{Flu}, \vn{flu}
+
+% ── Figure colours (aliases of the template palette) ──────
+\colorlet{figblue}{def@frame}
+\colorlet{figred}{thm@frame}
+\colorlet{figgreen}{ex@frame}
+\colorlet{figamber}{int@frame}
+\colorlet{figpurple}{note@frame}
+
+% ── TikZ styles for Bayesian-network diagrams ─────────────
+\tikzset{
+  bn/.style     = {ellipse, draw=accent, thick, fill=accent!6,
+                   minimum height=7mm, minimum width=17mm,
+                   inner sep=1.5pt, font=\small\itshape},
+  bnsmall/.style= {circle, draw=accent, thick, fill=accent!6,
+                   minimum size=7.5mm, inner sep=0pt, font=\small\itshape},
+  edge/.style   = {-{Stealth[length=2.3mm]}, thick, accent!85!black},
+  evid/.style   = {fill=gray!30},
+  qry/.style    = {draw=figred, very thick, fill=figred!8},
+  cpd/.style    = {font=\scriptsize, inner sep=1pt, fill=white},
+  cpdlink/.style= {gray!55, thin},
+}
+
+% ── Placeholders ──────────────────────────────────────────
+% Figure placeholder (same signature as in other course notes).
+% #1 height, #2 concept, #3 what the picture should show + search hint,
+% #4 caption, #5 label.  Replace with \includegraphics{figures/...}
+% once a suitable image is in figures/.
+\newcommand{\figureplaceholder}[5]{%
+\begin{figure}[htbp]
+\centering
+\begin{tcolorbox}[unbreakable,width=\linewidth,height=#1,colback=accent!3,
+  colframe=accent!30,boxrule=0.5pt,arc=2.5mm,sharp corners=all,
+  valign=center,halign=center,fontupper=\small]
+{\bfseries\color{accent}Figure to insert: #2}\par\medskip
+{\color{gray!75!black}#3}
+\end{tcolorbox}
+\caption{#4}\label{#5}
+\end{figure}}
+
+% Outline text for chapters that are not written yet.
+\newcommand{\planned}[1]{%
+  \par{\small\color{gray!70!black}\textit{Planned content:} #1}\par}
+
+% Keep section headings together with the start of their text.
+\let\originalsection\section
+\renewcommand{\section}{\Needspace{7\baselineskip}\originalsection}
+\let\originalsubsection\subsection
+\renewcommand{\subsection}{\Needspace{6\baselineskip}\originalsubsection}
+
+% ==========================================================
+%  BEGIN DOCUMENT
+% ==========================================================
+\begin{document}
+
+\frontmatter  % Roman-numeral page numbers for front matter
+
+
+% ──────────────────────────────────────────────────────────
+%  TITLE PAGE
+% ──────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{1.8cm}
+
+\begin{center}
+  {\color{accent}\rule{\linewidth}{1.8pt}}
+  \vspace{0.65cm}
+
+  {\fontsize{28}{34}\selectfont\bfseries\color{accent}\coursetitle\par}
+  \vspace{0.25cm}
+  {\large\color{gray!80!black}\documenttype\par}
+
+  \vspace{0.55cm}
+  {\color{accent!35}\rule{\linewidth}{0.5pt}}
+  \vspace{0.55cm}
+
+  {\large\authorname\par}
+  \vspace{0.2cm}
+  {\small\color{gray!70}\basedon\par}
+\end{center}
+
+\vspace{1.6cm}
+
+\begin{center}
+\begin{minipage}{0.84\textwidth}
+  \small\color{gray!80!black}
+  These notes try to make probabilistic models \emph{click}. Every idea is
+  introduced in plain words first, then as a formula, and whenever things get
+  abstract there is a small example with actual numbers. All worked numbers
+  were re-computed independently.
+  Use the notes as a study aid alongside the lecture slides, not as a
+  replacement for them.
+
+  \medskip
+  \textbf{Working draft:} Chapters 1--3 are written out. Chapters 4--8 are
+  still outlines and will be filled in as the lecture progresses.
+
+  \medskip
+  If you spot an error or a gap, please open an issue or pull request at
+  \textbf{github.com/steveTgit/AI\_Master} --- corrections are always welcome.
+
+  \medskip
+  \color{gray!60!black}
+  Good study materials should be shared, not gatekept.
+  If this helped you, take it as a reason to help the next colleague you see struggling with something.
+\end{minipage}
+\end{center}
+
+\vfill
+{\centering\small\color{gray!65} \today\par}
+\clearpage
+
+
+% ──────────────────────────────────────────────────────────
+%  TABLE OF CONTENTS
+% ──────────────────────────────────────────────────────────
+\setcounter{tocdepth}{2}  % Show: chapters, sections, subsections only
+
+\begingroup
+  \let\cleardoublepage\relax
+  \let\clearpage\relax
+  \tableofcontents
+\endgroup
+
+\mainmatter  % Switch to Arabic numerals
+
+
+
+
+% ==========================================================
+%  CHAPTER 1 — INTRODUCTION            (lecture part 1, VO 1)
+% ==========================================================
+\chapter{Introduction: Why Probabilistic Models?}
+\label{ch:intro}
+
+Almost everything interesting that an intelligent system does involves
+information that is incomplete, noisy, or simply wrong. A sensor flickers, a
+symptom has five possible causes, a microphone picks up the audience coughing.
+This course is about one systematic answer to the question \emph{how should a
+machine reason when it cannot be sure?} The answer: describe the world with
+probabilities, organise those probabilities with a graph, and let
+general-purpose algorithms do the reasoning.
+
+This first chapter sets the scene. We look at the kind of problems we want to
+solve, why logic alone does not get us there, and which three big problems the
+rest of the course is going to tackle.
+
+\section{Reasoning Under Uncertainty}
+
+The lecture opens with a handful of scenarios that look very different on the
+surface:
+
+\begin{itemize}
+  \item \textbf{Diagnosing a complex system.} A spacecraft (or one of its
+    subsystems) sends sensor signals that indicate errors --- ``Houston, we
+    have a problem''. Which fault most likely caused them? What would happen if
+    we tried a certain repair? Which repair should we actually do?
+  \item \textbf{Autonomous driving.} Given a road map and streams of GPS,
+    camera, radar and range-sensor data, drive a car through difficult terrain,
+    with other cars and obstacles around.
+  \item \textbf{Aircraft tracking.} From intermittent, sometimes occluded radar
+    or video signals: where will each aircraft be in 0.1, 1 or 10 seconds, how
+    many aircraft are there, and which one is which?
+  \item \textbf{Speech recognition.} Split an audio stream into words,
+    transcribe them, and use spoken commands to control devices.
+  \item \textbf{Real-time music following.} Listen to a live performance and
+    keep track of where the musicians currently are in the printed score ---
+    for example to turn pages automatically or to synchronise other events with
+    the music.
+\end{itemize}
+
+Underneath, all of them have the same structure. An autonomous system receives
+information about its environment, at regular or irregular intervals. From
+that information it has to identify objects, classify situations, make
+predictions and take decisions. And the information is incomplete, uncertain,
+noisy, sometimes wrong and occasionally contradictory.
+
+That last point is what breaks purely logical or deterministic approaches. Try
+writing down the rule ``muscle pain $\Rightarrow$ flu''. It is wrong for most
+people with muscle pain. Patch it with exceptions (``\ldots unless they went to
+the gym, unless they slept badly, unless \ldots'') and the list never ends.
+What we actually know is softer: \emph{muscle pain makes flu more likely}, and
+we would like to say \emph{how much} more likely. That is exactly what
+probabilities are for.
+
+Probabilistic graphical models give us four things at once. They
+\begin{itemize}
+  \item represent knowledge about the world \emph{and} about its uncertainty,
+  \item support inference: drawing conclusions and making decisions,
+  \item can be learned from example observations, and
+  \item technically, are graphical representations of \emph{factorised}
+    probability distributions.
+\end{itemize}
+The last point will only make sense after \cref{ch:bn}; by then it should feel
+obvious. The field sits where artificial intelligence, statistics, probability
+theory, machine learning and algorithms meet.
+
+\section{The Declarative Approach}
+
+There are two ways to build a system that solves problems. The
+\emph{procedural} way is to write a special-purpose algorithm for each problem.
+The \emph{declarative} way --- the classic AI philosophy, and the one this
+course follows --- is to
+\begin{enumerate}
+  \item build a \emph{model} of the problem or world you want to reason about,
+    and
+  \item write \emph{general inference algorithms} that work on any such model
+    and draw conclusions from it.
+\end{enumerate}
+
+This buys you a lot. Knowledge (the model) and reasoning (the algorithm) are
+cleanly separated. The model has a clear, well-defined meaning, independent of
+whatever algorithm happens to run on it. The inference algorithms are generic:
+they do not care which domain the model describes. And if the world changes,
+you only change the model, not the code.
+
+\begin{intbox}
+Think of a city map versus a set of written directions. Directions
+(procedural) get you along \emph{one} route; if a street is closed, they are
+useless. A map (declarative) answers \emph{any} routing question with one
+general skill --- reading a map --- and if a street closes, you update the map,
+not every set of directions. A probabilistic model is the map; inference
+algorithms are the map-reading skill.
+\end{intbox}
+
+\section{What Are Probabilistic Graphical Models?}
+
+A probabilistic graphical model is a formalism for describing the structure of
+a domain and for quantifying how uncertain we are about it. It is called
+\emph{probabilistic} because it represents a probability distribution, and
+\emph{graphical} because the dependencies between the variables are made
+explicit in a graph.
+
+Three questions run through the whole course:
+
+\paragraph{Representation (modelling)} How do we represent the relevant
+aspects of a world and the connections between them?
+
+\paragraph{Inference} Given incomplete, uncertain, noisy observations and the
+model, how do we reach conclusions about things we cannot observe, or about the
+future?
+
+\paragraph{Learning} How do we build models of complex worlds automatically
+from (lots of) observations?
+
+\Cref{tab:roadmap} shows how the chapters of these notes map to the lecture
+units. The course covers \emph{directed} models only: static Bayesian networks
+and temporal models (dynamic Bayesian networks, hidden Markov models and the
+Kalman filter). Undirected and semi-directed models (Markov networks, chain
+graphs) are not part of the course.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Chapter} & \textbf{Topic} & \textbf{Lecture units} \\
+\midrule
+\ref{ch:intro} & Introduction & VO 1 \\
+\ref{ch:prob}  & Fundamentals of probability: inference and independence & VO 1--2 \\
+\ref{ch:bn}    & Bayesian networks: representation and semantics & VO 3 \\
+\ref{ch:inference} & Inference in Bayesian networks: exact, approximate, MCMC & VO 4--5 \\
+\ref{ch:learning}  & Learning Bayesian networks: parameters and structure & VO 6--8 \\
+\ref{ch:dbn}   & Temporal models: dynamic Bayesian networks & VO 9 \\
+\ref{ch:hmm}   & Hidden Markov models: inference, learning, applications & VO 10--11 \\
+\ref{ch:kalman} & Continuous linear systems: the Kalman filter & video \\
+\bottomrule
+\end{tabular}
+\caption{Roadmap of the course. Representation, inference and learning first
+for static models (Chapters 3--5), then for models that evolve over time
+(Chapters 6--8).}
+\label{tab:roadmap}
+\end{table}
+
+\section{A First Example: A Tiny Diagnosis World}
+\label{sec:diagnosis-world}
+
+To make this concrete, consider a toy medical diagnosis setting. There are two
+possible diseases, \emph{flu} and \emph{hayfever}; two possible symptoms,
+(sinus) \emph{congestion} and \emph{muscle pain}; and the \emph{season}, which
+might also matter. We want a system that answers questions like:
+\begin{itemize}
+  \item How likely is it that a patient has the flu, given that it is fall and
+    she has a sinus congestion but no muscle pain?
+  \item How likely is it that a patient does \emph{not} have hayfever, given
+    that she has muscle pain and the flu?
+  \item In which season are people most likely to have a congestion but no
+    hayfever?
+\end{itemize}
+
+The probabilistic approach takes three steps. First, model every relevant
+entity as a \emph{random variable}. Second, model the relationships and
+influences between them as (conditional) probabilities. Third, treat question
+answering as \emph{computing conditional probabilities}, given whatever has
+been observed. Here, five variables are enough:
+\[
+\begin{array}{rcl}
+  \vn{Flu}, \;\vn{Hayfever}, \;\vn{Congestion}, \;\vn{MusclePain}
+    & \in & \{\vn{true}, \vn{false}\}, \\
+  \vn{Season} & \in & \{\vn{spring}, \vn{summer}, \vn{fall}, \vn{winter}\},
+\end{array}
+\]
+so the model is defined over
+$\Xall = \{\vn{Flu}, \vn{Hayfever}, \vn{Congestion}, \vn{MusclePain}, \vn{Season}\}$.
+
+Implicitly, we assume that the variables describe the state of the world (one
+specific patient) at one point in time, that this state is completely
+characterised by the values of the variables, that every variable always takes
+exactly one of its values, and that some of these values may be known to us
+while others are hidden.
+
+The second part of the model is the \emph{full joint distribution}: one
+probability for every possible combination of values. It is a table that sums
+to one and here has $2 \times 2 \times 2 \times 2 \times 4 = 64$ entries. The
+first few rows might look like this:
+\[
+\begin{array}{rcl}
+  P(\neg\vn{flu}, \neg\vn{hayfever}, \neg\vn{congestion}, \neg\vn{musclepain}, \vn{spring}) &=& 0.014 \\
+  P(\vn{flu}, \neg\vn{hayfever}, \neg\vn{congestion}, \neg\vn{musclepain}, \vn{spring}) &=& 0.003 \\
+  P(\neg\vn{flu}, \vn{hayfever}, \neg\vn{congestion}, \neg\vn{musclepain}, \vn{spring}) &=& 0.008 \\
+  \multicolumn{3}{c}{\vdots}
+\end{array}
+\]
+
+The good news, shown in \cref{ch:prob}: \emph{every} question of the type above
+is a conditional probability query, such as
+$P(\vn{Flu} = \vn{true} \given \vn{Season} = \vn{spring}, \vn{MusclePain} = \vn{false})$,
+and every such query can be answered from the full joint distribution with one
+universal algorithm. The bad news comes in three flavours:
+
+\begin{itemize}
+  \item \textbf{Representational complexity.} The joint table grows
+    exponentially with the number of variables. With 50 binary variables it
+    has about $10^{15}$ entries --- far too many to store.
+  \item \textbf{Computational complexity.} Answering a query exactly from the
+    table also takes exponential time.
+  \item \textbf{Modelling complexity.} Even if we could store the table, who
+    would give us all those numbers? Building a valid model of a complex world
+    by hand is hard.
+\end{itemize}
+
+The rest of the course is about fighting these three problems. Against the
+first, we study \emph{(conditional) independence}, use it to break the joint
+distribution into a product of small pieces (``factorise'' it), and draw the
+result as a compact graph that shows the (in)dependencies --- and often the
+causal structure --- of the domain (\cref{fig:diagnosis-net}). Against the
+second, we design algorithms that compute answers directly from the graph,
+optimise them, and develop fast approximate algorithms. Against the third, we
+\emph{learn} models from observations, which is where machine learning comes
+in. All of this needs a solid grip on basic probability theory, which is what
+\cref{ch:prob} is for.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  \node[bn] (S) at (0,0)       {Season};
+  \node[bn] (F) at (-1.9,-1.4) {Flu};
+  \node[bn] (H) at (1.9,-1.4)  {Hayfever};
+  \node[bn, minimum width=22mm] (M) at (-3.6,-2.8) {MusclePain};
+  \node[bn, minimum width=22mm] (C) at (0,-2.8)    {Congestion};
+  \draw[edge] (S) -- (F);
+  \draw[edge] (S) -- (H);
+  \draw[edge] (F) -- (M);
+  \draw[edge] (F) -- (C);
+  \draw[edge] (H) -- (C);
+\end{tikzpicture}
+\caption{A graphical model for the diagnosis world. The season influences both
+diseases; flu causes muscle pain and congestion; hayfever causes congestion.
+With this structure the joint distribution needs only 17 numbers instead of 63
+(we will count them in \cref{sec:compactness}).}
+\label{fig:diagnosis-net}
+\end{figure}
+
+
+% ==========================================================
+%  CHAPTER 2 — FUNDAMENTALS OF PROBABILITY   (part 2, VO 1--2)
+% ==========================================================
+\chapter{Fundamentals of Probability}
+\label{ch:prob}
+
+Everything later in the course is built from a surprisingly small toolbox:
+random variables, joint distributions, conditioning, a couple of rules for
+rewriting probabilities, and --- most importantly --- \emph{independence}. This
+chapter fixes the notation used in the lecture, refreshes the basics, and then
+makes two big points. First, \emph{any} probabilistic question can be answered
+from the full joint distribution with one simple algorithm, inference by
+enumeration. Second, that algorithm is hopelessly expensive unless we exploit
+(conditional) independencies --- which is the whole motivation for graphical
+models.
+
+If you are comfortable with probability, skim the first sections, but read
+\cref{sec:enumeration,sec:cond-indep} carefully: they are the foundation for
+everything that follows.
+
+% ----------------------------------------------------------
+\section{Random Variables and Events}
+% ----------------------------------------------------------
+
+\begin{defbox}[title={Random variable}]
+A \emph{random variable} $X$ is a variable with a fixed (finite or infinite)
+domain $\Val(X)$, the set of values it can take. It represents one aspect of
+the world (or of the system's internal state).
+\end{defbox}
+
+Random variables are the atomic building blocks of all our models. They come in
+three flavours:
+\begin{itemize}
+  \item \textbf{Boolean} variables take values in $\{\vn{false}, \vn{true}\}$
+    (or $\{0,1\}$).
+  \item \textbf{Discrete} (categorical) variables have a finite set of symbolic
+    values, e.g.\ $\Val(\vn{Season}) = \{\vn{spring}, \vn{summer}, \vn{fall},
+    \vn{winter}\}$.
+  \item \textbf{Continuous} variables take real values. Most real-world
+    sensors (temperature, sonar, radar, \ldots) produce these; we get to them
+    in \cref{sec:continuous}.
+\end{itemize}
+
+The running example of this chapter is the diagnosis world from
+\cref{sec:diagnosis-world}: two diseases (not directly observable), two
+symptoms (possibly observable) and the season (observable), with exactly one
+patient at a time. Notice the modelling choice: each disease and each symptom
+gets its \emph{own} Boolean variable. A single variable
+$\vn{Disease} \in \{\vn{flu}, \vn{hayfever}, \vn{none}\}$ would be unable to
+express a patient who has \emph{both} diseases.
+
+\begin{defbox}[title={Events and atomic events}]
+An \emph{event} is an assignment of values to some or all of the variables of
+the world. An \emph{atomic event} is an event in which \emph{every} variable
+has a value assigned.
+\end{defbox}
+
+An atomic event is one complete, fully specified state of the world. A general
+event fixes only some variables and therefore stands for the \emph{set} of all
+world states that agree on those values. In the diagnosis world:
+\begin{itemize}
+  \item $\vn{Season} = \vn{spring} \wedge \vn{MusclePain} = \vn{true}$ covers
+    all situations in which it is spring and the patient has muscle pain,
+    whatever her diseases or congestion;
+  \item $\vn{Congestion} = \vn{false}$ is an event too;
+  \item $\vn{Season} = \vn{fall} \wedge \vn{MusclePain} = \vn{true} \wedge
+    \vn{Congestion} = \vn{false} \wedge \vn{Hayfever} = \vn{false} \wedge
+    \vn{Flu} = \vn{false}$ is an atomic event.
+\end{itemize}
+Altogether there are $2 \times 2 \times 2 \times 2 \times 4 = 64$ atomic
+events. Events are what the system computes probabilities for.
+
+\begin{intbox}[unbreakable]
+Picture the 64 atomic events as the 64 cells of one big spreadsheet, each cell
+holding a probability. Every event is simply a \emph{selection of cells}, and
+its probability is the sum over the selected cells. Marginals, conditionals and
+queries later in this chapter are all just clever ways of selecting and summing
+cells.
+\end{intbox}
+
+\subsection{Notation}
+
+The lecture uses a fixed set of conventions (mostly those of Koller \&
+Friedman); \cref{tab:notation} collects them. It is worth learning them early
+--- the exam uses the same notation.
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Example} & \textbf{Meaning} \\
+\midrule
+$\Xall$ & the complete set of variables a model is defined over \\
+$A,\ X_i,\ E_j$ & a single random variable (e.g.\ $X_i \in \Xall$) \\
+$\bX, \bY, \bZ, \bE, \ldots$ & sets of random variables, e.g.\ $\bX = \{X_1, X_2, X_3\}$ \\
+$\Val(X)$ & domain of $X$: the set of values $X$ can take \\
+$x^0, x^1, \ldots$ & the values of $X$; $x^i$ is the $i$-th value in $\Val(X)$ \\
+$x^0,\ x^1$ (Boolean) & by convention $x^0 = \vn{false}$, $x^1 = \vn{true}$ \\
+$\bx, \be, \ldots$ & a joint assignment of values to a set, e.g.\ $\bE = \be$ \\
+$\Val(\bX)$ & all joint assignments to $\bX$: $\Val(X_1) \times \Val(X_2) \times \cdots$ \\
+$\bx\langle\bY\rangle$ & assignment $\bx$ restricted to the variables in $\bY \subset \bX$ \\
+$X_i^{(0)}, X_i^{(1)}, X_i^{(t)}$ & the template variable $X_i$ at time $t$ (temporal models, \cref{ch:dbn}) \\
+$\params$ & the set of parameters of a model \\
+$P(X = x^i)$ & a probability (value of the probability mass function) \\
+$P(x^i),\ P(x^i, y^j)$ & shorthand for $P(X = x^i)$ and $P(X = x^i, Y = y^j)$ \\
+$P(X, Y)$ & a probability distribution over the discrete variables $X, Y$ \\
+$p(x)$ & a probability \emph{density} function for a continuous $X$ \\
+\bottomrule
+\end{tabular}
+\caption{Notational conventions of the lecture. For named Boolean variables
+the slides also write $\vn{flu}$ for $\vn{Flu} = \vn{true}$ and
+$\neg\vn{flu}$ for $\vn{Flu} = \vn{false}$.}
+\label{tab:notation}
+\end{table}
+
+% ----------------------------------------------------------
+\section{Probability Distributions}
+% ----------------------------------------------------------
+
+\begin{defbox}[title={Probability distribution}]
+Let $S$ be a set of mutually exclusive atomic events. A \emph{probability
+distribution} over $S$ is a function $P: S \to \R$ with
+\begin{enumerate}
+  \item $P(\alpha) \geq 0$ for all $\alpha \in S$ \hfill (non-negativity)
+  \item $P(\Omega) = 1$, where $\Omega = \bigcup_{\alpha_i \in S} \alpha_i$ is
+    the disjunction of all possible events \hfill (normalisation)
+  \item if $\alpha, \beta \in S$ and $\alpha \cap \beta = \emptyset$, then
+    $P(\alpha \cup \beta) = P(\alpha) + P(\beta)$ \hfill (additivity)
+\end{enumerate}
+The \emph{probability} $P(\alpha)$ is the value the distribution assigns to the
+event $\alpha$. Here $\cap$ and $\cup$ denote logical AND and OR between
+events.
+\end{defbox}
+
+A tiny example with only two Boolean variables, $\vn{Flu}$ and $\vn{MP}$
+(muscle pain), has four atomic events, and one possible distribution over them
+is:
+\begin{center}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+$P(\vn{Flu}, \vn{MP})$ & $\vn{MP} = \vn{false}$ & $\vn{MP} = \vn{true}$ \\
+\midrule
+$\vn{Flu} = \vn{false}$ & 0.70 & 0.15 \\
+$\vn{Flu} = \vn{true}$  & 0.05 & 0.10 \\
+\bottomrule
+\end{tabular}
+\end{center}
+So the probability that a randomly chosen person has the flu \emph{and} muscle
+pain is $P(\vn{flu}, \vn{mp}) = 0.1$, and so on.
+
+\begin{notebox}[title={Probability or distribution? Look at the argument}]
+The same letter $P$ is used for two different kinds of objects:
+\begin{itemize}
+  \item if the argument is an \textbf{event} (values fixed), it is a
+    \emph{probability} --- a single number: $P(\vn{flu}) = 0.15$;
+  \item if the argument is a (set of) \textbf{random variable(s)}, it is a
+    \emph{distribution} --- a whole table of numbers:
+    $P(\vn{Flu}) = (0.85, 0.15)$.
+\end{itemize}
+Mixed cases follow the same rule. $P(\vn{Flu} \given \vn{mp})$ is one
+distribution over $\vn{Flu}$, whereas $P(\vn{Flu} \given \vn{MP})$ is a
+\emph{family} of distributions, one for every value of $\vn{MP}$.
+\end{notebox}
+
+\subsection{What does a probability mean?}
+
+What exactly ``$P(\alpha) = 0.3$'' means is a deep philosophical question.
+Intuitively, $P(\alpha)$ quantifies how confident we are that $\alpha$ is true
+or will happen: $P(\alpha) = 1$ means we are certain it will, $P(\alpha) = 0$
+that it will not. Everything in between needs an interpretation, and there are
+two main camps:
+\begin{itemize}
+  \item \textbf{Frequentist:} $P(\alpha)$ is the fraction of times $\alpha$
+    would occur if we repeated the experiment infinitely often. Fine for dice,
+    awkward for ``the probability of rain \emph{this afternoon} is 0.7'' ---
+    this afternoon happens only once.
+  \item \textbf{Subjectivist (Bayesian):} $P(\alpha)$ is a degree of belief
+    that $\alpha$ is true, or the degree to which the available evidence
+    supports $\alpha$.
+\end{itemize}
+The course adopts the subjectivist view: $P(x)$ is the \emph{system's degree of
+belief} that $x$ holds in the world. When we \emph{learn} probabilities from
+data (\cref{ch:learning}), we will happily fall back on frequencies.
+
+% ----------------------------------------------------------
+\section{Joint and Marginal Distributions}
+% ----------------------------------------------------------
+
+\begin{defbox}[title={Full joint and marginal distributions}]
+In a world described by the variables $\Xall$:
+\begin{itemize}
+  \item the \emph{full joint distribution} over $\Xall$ is the distribution
+    over all atomic events, i.e.\ it assigns a probability to every
+    combination of values of all variables;
+  \item a \emph{marginal distribution} over a subset $\bX \subset \Xall$
+    assigns probabilities to all value combinations of just the variables in
+    $\bX$;
+  \item the \emph{marginal distribution of a variable} $X \in \Xall$ is the
+    special case $\bX = \{X\}$.
+\end{itemize}
+\end{defbox}
+
+A few notational shortcuts: we write $P(X = x, Y = y)$ or just $P(x, y)$ for
+the probability of the conjunction $(X = x) \cap (Y = y)$; $P(\bX) =
+P(X_1, \ldots, X_k)$ for the joint distribution over a set; $P(\bX, \bY)$ for
+the joint over $\bX \cup \bY$; and $P(\bX \given \bY)$ for the distribution
+over $\bX$ conditioned on values of $\bY$ (next section).
+
+The workhorse example of the slides is a diagnosis world with three Boolean
+variables, $\Xall = \{\vn{Flu}, \vn{MP}, \vn{Fever}\}$, and this full joint
+distribution:
+\begin{equation}
+\label{eq:flu-mp-fever}
+\begin{array}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{\vn{mp}} & \multicolumn{2}{c}{\neg\vn{mp}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+P(\vn{Flu}, \vn{MP}, \vn{Fever}) & \vn{fever} & \neg\vn{fever} & \vn{fever} & \neg\vn{fever} \\
+\midrule
+\vn{flu}      & 0.15 & 0.10 & 0.10 & 0.03 \\
+\neg\vn{flu}  & 0.03 & 0.04 & 0.05 & 0.50 \\
+\bottomrule
+\end{array}
+\end{equation}
+All eight entries sum to 1, as they must.
+
+Marginals are obtained by \emph{summing out} everything you are not interested
+in. To get $P(\vn{flu})$, add up all cells in the $\vn{flu}$ row --- whatever
+the values of $\vn{MP}$ and $\vn{Fever}$:
+\[
+P(\vn{flu}) = \sum_{x, y} P(\vn{flu}, \vn{MP} = x, \vn{Fever} = y)
+= 0.15 + 0.10 + 0.10 + 0.03 = 0.38 .
+\]
+
+\begin{exbox}[title={All three marginals of table \eqref{eq:flu-mp-fever}}]
+\begin{align*}
+P(\neg\vn{flu}) &= 0.03 + 0.04 + 0.05 + 0.50 = 0.62
+  & P(\vn{Flu}) &= (0.62,\ 0.38) \\
+P(\neg\vn{mp}) &= 0.10 + 0.03 + 0.05 + 0.50 = 0.68
+  & P(\vn{MP}) &= (0.68,\ 0.32) \\
+P(\neg\vn{fever}) &= 0.10 + 0.04 + 0.03 + 0.50 = 0.67
+  & P(\vn{Fever}) &= (0.67,\ 0.33)
+\end{align*}
+Each distribution is written as $(P(x^0), P(x^1))$, i.e.\ \emph{false first}.
+\end{exbox}
+
+Why is summing allowed? The event $\vn{flu}$ is the disjunction ($\cup$) of all
+atomic events with $\vn{Flu} = \vn{true}$, and atomic events are mutually
+exclusive, so by additivity their probabilities simply add up. The same
+argument works for \emph{any} event: \emph{the probability of an event
+$\alpha$ is the sum over all atomic events (entries of the full joint) that
+match $\alpha$}, i.e.\ that agree with $\alpha$ on the variables $\alpha$ fixes.
+This one sentence is already the core of a general inference algorithm
+(\cref{sec:enumeration}).
+
+% ----------------------------------------------------------
+\section{Conditional Probability, the Chain Rule and Bayes' Rule}
+% ----------------------------------------------------------
+
+Most questions we ask a model have the form ``I have observed $\beta$ --- what
+is the probability of the (unobservable) thing $\alpha$ that I care about?''
+For instance: given that my patient has a congestion, how likely is hayfever,
+$P(\vn{Hayfever} = \vn{true} \given \vn{Congestion} = \vn{true})$? And if I
+also learn that she has muscle pain, how does that change my belief? Or, for a
+robot: given the current GPS and radar readings, what is the distribution over
+its possible locations and velocities?
+
+\begin{defbox}[title={Conditional probability}, unbreakable]
+For two events $\alpha, \beta$ with $P(\beta) > 0$, the \emph{conditional
+probability} of $\alpha$ given that $\beta$ is true is
+\[
+  P(\alpha \given \beta) = \frac{P(\alpha \cap \beta)}{P(\beta)} .
+\]
+\end{defbox}
+
+The picture behind this formula (\cref{fig:conditioning}): learning that
+$\beta$ is true rules out every world in which $\beta$ is false. What remains
+is the region $\beta$, and inside it the worlds where $\alpha$ also holds. We
+simply rescale so that the surviving region has total probability one.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  % left panel: the whole space
+  \def\betaE{(2.65,1.45) ellipse (1.45 and 0.95)}
+  \def\alphaE{(1.45,1.45) ellipse (1.05 and 0.75)}
+  \draw[accent, thick] (0,0) rectangle (4.6,2.9);
+  \node[anchor=north west] at (0.05,2.88) {$\Omega$};
+  \fill[figblue!12] \betaE;
+  \begin{scope} \clip \betaE; \fill[figblue!45] \alphaE; \end{scope}
+  \draw[figblue, thick] \betaE;
+  \draw[figred, thick] \alphaE;
+  \node[figred] at (0.75,1.45) {$\alpha$};
+  \node[figblue] at (3.55,1.45) {$\beta$};
+  \node[font=\scriptsize] at (1.95,1.45) {$\alpha\cap\beta$};
+  % arrow
+  \draw[-{Stealth[length=2.5mm]}, thick, accent] (4.9,1.45) -- (6.3,1.45)
+    node[midway, above, align=center, font=\scriptsize] {observe $\beta$};
+  % right panel: beta becomes the new universe
+  \begin{scope}[shift={(6.7,-0.35)}, scale=1.25]
+    \def\betaR{(1.75,1.45) ellipse (1.45 and 0.95)}
+    \def\alphaR{(0.55,1.45) ellipse (1.05 and 0.75)}
+    \fill[figblue!12] \betaR;
+    \begin{scope} \clip \betaR; \fill[figblue!45] \alphaR; \end{scope}
+    \draw[figblue, thick] \betaR;
+    \node[font=\scriptsize] at (1.05,1.45) {$\alpha\cap\beta$};
+    \node[figblue] at (2.65,1.45) {$\beta$};
+  \end{scope}
+  \node[align=center, font=\small] at (8.9,-0.25)
+    {$P(\alpha \given \beta) = \dfrac{P(\alpha\cap\beta)}{P(\beta)}$};
+\end{tikzpicture}
+\caption{Conditioning as zooming in. Observing $\beta$ throws away all worlds
+outside $\beta$; the region $\beta$ becomes the new universe and is rescaled
+to total probability one. $P(\alpha \given \beta)$ is the share of $\beta$
+that is also $\alpha$.}
+\label{fig:conditioning}
+\end{figure}
+
+Two consequences are worth stating explicitly. For a fixed event $\beta$ and
+some variables $\bX$, the conditional distribution $P(\bX \given \beta)$ has
+all properties of a proper distribution --- in particular it sums to one over
+all value combinations of $\bX$. And conditioning is an \emph{operation}: it
+takes a distribution $P(\bX)$ and returns a new one, $P(\bX \given \beta)$.
+
+In the two-variable table above, $P(\vn{flu}) = 0.05 + 0.10 = 0.15$, but
+\[
+P(\vn{flu} \given \vn{mp}) = \frac{P(\vn{flu}, \vn{mp})}{P(\vn{mp})}
+= \frac{0.10}{0.15 + 0.10} = 0.4 .
+\]
+Learning about muscle pain raises the belief in flu from 15\,\% to 40\,\%.
+
+\subsection{The chain rule}
+
+Rearranging the definition of conditional probability gives the
+\emph{product rule}, $P(\alpha \cap \beta) = P(\alpha \given \beta)\,P(\beta)$.
+Because $\cap$ is symmetric, we may just as well write
+$P(\alpha \cap \beta) = P(\alpha)\,P(\beta \given \alpha)$. Applying the
+product rule over and over to $n$ events gives the chain rule.
+
+\begin{thmbox}[title={Chain rule}, unbreakable]
+\begin{align*}
+P(\alpha_1, \ldots, \alpha_n)
+&= P(\alpha_1 \given \alpha_2, \ldots, \alpha_n)\, P(\alpha_2, \ldots, \alpha_n) \\
+&= P(\alpha_1 \given \alpha_2, \ldots, \alpha_n)\,
+  P(\alpha_2 \given \alpha_3, \ldots, \alpha_n) \cdots
+  P(\alpha_{n-1} \given \alpha_n)\, P(\alpha_n).
+\end{align*}
+Since conjunction is commutative and associative, any order works, e.g.
+\[
+P(\alpha_1, \ldots, \alpha_n) = P(\alpha_1)\,P(\alpha_2 \given \alpha_1) \cdots
+P(\alpha_n \given \alpha_1, \ldots, \alpha_{n-1}).
+\]
+It also works partially,
+\[
+P(\alpha_1, \ldots, \alpha_n) = P(\alpha_1, \ldots, \alpha_k)\,
+P(\alpha_{k+1}, \ldots, \alpha_n \given \alpha_1, \ldots, \alpha_k),
+\]
+and for whole distributions:
+\[
+P(X_1, \ldots, X_N) = P(X_1, \ldots, X_k)\,
+P(X_{k+1}, \ldots, X_N \given X_1, \ldots, X_k).
+\]
+\end{thmbox}
+
+The chain rule is \emph{always} true --- it makes no assumptions whatsoever. It
+just says you can tell the story of a joint event one piece at a time, each new
+piece conditioned on everything told so far. On its own it does not save
+anything: the last factor still conditions on all the other variables. The
+savings come later, when independence lets us shorten those conditioning sets
+(\cref{sec:cond-indep} and \cref{ch:bn}).
+
+\subsection{The law of total probability}
+
+\begin{thmbox}[title={Law of total probability}]
+For any event $\bX = \bx$ and any set of variables $\bY$:
+\[
+P(\bx) = \sum_{\by \in \Val(\bY)} P(\bx, \by)
+       = \sum_{\by \in \Val(\bY)} P(\bx \given \by)\, P(\by).
+\]
+The same holds for whole distributions and with extra conditioning:
+\[
+P(\bX) = \sum_{\by} P(\bX \given \by)\, P(\by), \qquad
+P(\bX \given \bZ) = \sum_{\by} P(\bX, \by \given \bZ)
+                  = \sum_{\by} P(\bX \given \by, \bZ)\, P(\by \given \bZ).
+\]
+\end{thmbox}
+
+The first form is exactly the ``summing out'' we used for marginals --- the law
+of total probability is what justifies marginalisation and, below, inference
+by enumeration.\footnote{The slides also list $P(\bx) = \sum_{\by}
+P(\bx)\,P(\by \given \bx)$. That is true but trivial, because
+$\sum_{\by} P(\by \given \bx) = 1$.} The second form is a \emph{case
+analysis}: split the world into the cases $\bY = \by$, compute the probability
+of $\bx$ in each case, and average, weighting each case by how likely it is.
+With the two-variable table:
+$P(\vn{mp}) = P(\vn{mp} \given \vn{flu})\,P(\vn{flu}) + P(\vn{mp} \given
+\neg\vn{flu})\,P(\neg\vn{flu}) = \tfrac{0.10}{0.15} \cdot 0.15 +
+\tfrac{0.15}{0.85} \cdot 0.85 = 0.25$.
+
+\subsection{Bayes' rule}
+
+Write the product rule both ways round, $P(\alpha \cap \beta) =
+P(\alpha \given \beta)\,P(\beta) = P(\beta \given \alpha)\,P(\alpha)$, and
+divide by $P(\beta)$:
+
+\begin{thmbox}[title={Bayes' rule}, unbreakable]
+\[
+P(\alpha \given \beta) = \frac{P(\beta \given \alpha)\, P(\alpha)}{P(\beta)} .
+\]
+It computes a conditional probability from the ``inverse'' conditional
+probability. In a diagnosis setting:
+\[
+\underbrace{P(\vn{Problem} \given \vn{Symptoms})}_{\text{posterior}}
+= \frac{\overbrace{P(\vn{Symptoms} \given \vn{Problem})}^{\text{likelihood}}
+        \;\overbrace{P(\vn{Problem})}^{\text{prior}}}
+       {\underbrace{P(\vn{Symptoms})}_{\text{evidence}}}
+\]
+with
+\[
+P(\vn{Symptoms}) = \sum_{p \in \Val(\vn{Problem})} P(\vn{Symptoms} \given p)\, P(p).
+\]
+\end{thmbox}
+
+Bayes' rule (after the Reverend Thomas Bayes, 1702--1761, whose essay was
+published posthumously in 1763) is one of the most fundamental tools in
+scientific data analysis and probabilistic reasoning. The reason is that
+knowledge usually comes in the ``causal'' direction --- how often does flu
+produce muscle pain? --- while questions come in the ``diagnostic'' direction:
+this person has muscle pain, so do they have flu? The names of the four parts:
+
+\begin{itemize}
+  \item \textbf{Prior} $P(\vn{Problem})$: belief in the problem \emph{before}
+    looking at the current case.
+  \item \textbf{Posterior} $P(\vn{Problem} \given \vn{Symptoms})$: belief
+    \emph{after} observing the symptoms.
+  \item \textbf{Likelihood} $P(\vn{Symptoms} \given \vn{Problem})$: how likely
+    the problem is to produce these symptoms.
+  \item \textbf{Evidence} $P(\vn{Symptoms})$: how likely these symptoms are at
+    all. By the law of total probability it is the sum above, so it can always
+    be computed from priors and likelihoods.
+\end{itemize}
+
+\begin{exbox}[title={Does the person with muscle pain have the flu?}, unbreakable]
+Suppose we know (or believe) that $P(\vn{mp} \given \vn{flu}) = 0.5$ (half of
+all flu patients have muscle pain), $P(\vn{flu}) = 0.004$ (0.4\,\% of the
+population has the flu at any time) and $P(\vn{mp}) = 0.1$ (10\,\% of people
+have muscle pain). Then
+\[
+P(\vn{flu} \given \vn{mp}) = \frac{P(\vn{mp} \given \vn{flu})\,P(\vn{flu})}{P(\vn{mp})}
+= \frac{0.5 \times 0.004}{0.1} = 0.02 .
+\]
+Only 2\,\%! Counting people makes this intuitive. Out of 100\,000 people, 400
+have the flu, and 200 of them have muscle pain. But 10\,000 people have muscle
+pain in total, so only $200 / 10\,000 = 2\,\%$ of those with muscle pain have
+the flu. The tiny prior dominates.
+\end{exbox}
+
+\begin{notebox}[title={Do not flip the conditional}, unbreakable]
+$P(\vn{mp} \given \vn{flu}) = 0.5$ but $P(\vn{flu} \given \vn{mp}) = 0.02$:
+the two directions can be wildly different, and confusing them is the classic
+mistake. Also note that a likelihood $P(\vn{Symptoms} \given \vn{Problem})$ is
+a distribution over \emph{symptoms}, not over problems: summing it over all
+problems does \emph{not} have to give one.
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Probabilistic Inference: Queries and Enumeration}
+\label{sec:enumeration}
+% ----------------------------------------------------------
+
+Here is the scenario for the rest of the chapter. The full joint distribution
+over $\Xall$ is the system's \emph{knowledge base}: its model of the world,
+assigning a probability to every possible state. The system's job is to
+compute, from this knowledge base and the observed values of some variables,
+the probability of any hypothesis we are interested in. Deriving the truth or
+probability of a hypothesis from a knowledge base and observations is called
+\emph{inference} or \emph{reasoning}. For us it almost always means computing
+(conditional) distributions over the variables of interest.
+
+\begin{defbox}[title={Probabilistic query}]
+A \emph{probabilistic query} asks for the conditional distribution
+\[
+  P(\bX \given \bE = \be), \quad\text{or } P(\bX \given \be) \text{ for short},
+\]
+for a set of \emph{query variables} $\bX \subseteq \Xall$, a set of
+\emph{evidence variables} $\bE \subseteq \Xall$ and their observed values $\be$.
+In words: given that we have observed $\be$, how probable is each value
+combination of $\bX$? All remaining variables are \emph{hidden}.
+\end{defbox}
+
+With table \eqref{eq:flu-mp-fever} we could ask for an event probability,
+$P(\vn{fever} \wedge \neg\vn{mp})$ (someone has a fever but no muscle pain); a
+marginal distribution, $P(\vn{Flu})$; or a conditional distribution,
+$P(\vn{Flu} \given \vn{fever}, \neg\vn{mp})$. All of them are answered the
+same way.
+
+\subsection{Inference by enumeration}
+
+Event probabilities are just sums of matching cells:
+\begin{align*}
+P(\neg\vn{fever}) &= \sum_{x, y} P(\neg\vn{fever}, \vn{MP} = x, \vn{Flu} = y)
+  = 0.10 + 0.03 + 0.04 + 0.50 = 0.67, \\
+P(\vn{fever} \wedge \neg\vn{mp}) &= \sum_{x \in \Val(\vn{Flu})}
+  P(\vn{fever}, \neg\vn{mp}, \vn{Flu} = x) = 0.10 + 0.05 = 0.15 .
+\end{align*}
+Conditional probabilities are a ratio of two such sums:
+\begin{align*}
+P(\vn{flu} \given \neg\vn{fever})
+&= \frac{P(\vn{flu} \wedge \neg\vn{fever})}{P(\neg\vn{fever})}
+= \frac{0.10 + 0.03}{0.10 + 0.03 + 0.04 + 0.50}
+= \frac{0.13}{0.67} \approx 0.194, \\
+P(\neg\vn{flu} \given \neg\vn{fever})
+&= \frac{P(\neg\vn{flu} \wedge \neg\vn{fever})}{P(\neg\vn{fever})}
+= \frac{0.04 + 0.50}{0.67} = \frac{0.54}{0.67} \approx 0.806 .
+\end{align*}
+
+Look at the denominators: both are $P(\neg\vn{fever}) = 0.67$, because the
+evidence probability does not depend on the value of the query variable. In
+general, when computing $P(X \given y)$ we would compute the same $P(y)$
+$|\Val(X)|$ times. There is a smarter way: $P(y)$ is just the constant that
+makes the result sum to one, a \emph{normalisation constant} $Z$, and we can
+get it for free afterwards by adding up the unnormalised numbers.
+
+\begin{thmbox}[title={Inference by enumeration}, unbreakable]
+To compute $P(\bX \given \be)$, let $\bZ = \Xall \setminus (\bX \cup \bE)$ be the
+hidden variables.
+\begin{enumerate}
+  \item \textbf{Sum out the hidden variables.} For every $\bx \in \Val(\bX)$,
+    \[ P(\bx, \be) = \sum_{\bz \in \Val(\bZ)} P(\bx, \be, \bz). \]
+  \item \textbf{Compute the normalisation constant} by adding up the results
+    of step 1 (law of total probability):
+    \[ Z = P(\be) = \sum_{\bx} P(\bx, \be). \]
+  \item \textbf{Renormalise:}
+    \[ P(\bX \given \be) = \frac{1}{Z}\, P(\bX, \be). \]
+\end{enumerate}
+\end{thmbox}
+
+\begin{exbox}[title={Two queries, step by step}]
+\textbf{Query} $P(\vn{Flu} \given \neg\vn{fever})$; the hidden variable is
+$\vn{MP}$. Vectors list $(\vn{flu}, \neg\vn{flu})$ top to bottom:
+\[
+P(\vn{Flu}, \neg\vn{fever}) = \sum_{x \in \{\vn{mp}, \neg\vn{mp}\}}
+P(\vn{Flu}, \neg\vn{fever}, x)
+= \begin{pmatrix} 0.10 + 0.03 \\ 0.04 + 0.50 \end{pmatrix}
+= \begin{pmatrix} 0.13 \\ 0.54 \end{pmatrix},
+\]
+\[
+Z = 0.13 + 0.54 = 0.67,
+\qquad P(\vn{Flu} \given \neg\vn{fever}) = \frac{1}{Z}
+\begin{pmatrix} 0.13 \\ 0.54 \end{pmatrix} \approx
+\begin{pmatrix} 0.194 \\ 0.806 \end{pmatrix}.
+\]
+\textbf{Query} $P(\vn{Flu} \given \vn{fever}, \neg\vn{mp})$; nothing is hidden,
+so step 1 just reads off two cells:
+\[
+P(\vn{Flu}, \vn{fever}, \neg\vn{mp}) = \begin{pmatrix} 0.10 \\ 0.05 \end{pmatrix},
+\quad Z = 0.15,
+\quad P(\vn{Flu} \given \vn{fever}, \neg\vn{mp}) \approx
+\begin{pmatrix} 0.667 \\ 0.333 \end{pmatrix}.
+\]
+A fever without muscle pain makes flu twice as likely as no flu.
+\end{exbox}
+
+\begin{notebox}[title={Always label the entries of a distribution}, unbreakable]
+The slides write the same result once as $P(\vn{Flu} \given \neg\vn{fever}) =
+\{0.806, 0.194\}$ (order $\neg\vn{flu}, \vn{flu}$) and once as $\{0.194,
+0.806\}$ (order $\vn{flu}, \neg\vn{flu}$). Neither is wrong, but an unlabeled
+vector is ambiguous. On the exam, either label the entries or stick to the
+convention $x^0$ (false) first.
+\end{notebox}
+
+Inference by enumeration is completely general: any query, any evidence, one
+algorithm. Its problem is cost. With $n$ variables of $d$ values each, the
+joint table has $d^n$ entries, and the sum in step 1 may have to touch almost
+all of them. Exponential space \emph{and} exponential time --- this is the
+first concrete appearance of the complexity problems from
+\cref{sec:diagnosis-world}, and the reason the next sections are about
+independence.
+
+\subsection{Warm-up: everything you can ask of a small table}
+
+The slides close this part with a self-test (motivated by a tutorial by Ali
+Taylan Cemgil). It introduces a few quantities --- maximum, mode and
+max-marginal --- that will come back when we look for the \emph{most likely}
+explanation of some evidence (\cref{ch:hmm}).
+
+\begin{exbox}[title={Self-test with $X_1, X_2 \in \{1, 2\}$}]
+\begin{center}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+$P(X_1, X_2)$ & $X_2 = 1$ & $X_2 = 2$ \\
+\midrule
+$X_1 = 1$ & 0.3 & 0.2 \\
+$X_1 = 2$ & 0.1 & 0.4 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+  \item \textbf{Marginals:} $P(X_1) = (0.5,\ 0.5)$ (row sums);
+    $P(X_2) = (0.4,\ 0.6)$ (column sums).
+  \item \textbf{Conditionals:} divide each column by its sum for
+    $P(X_1 \given X_2)$, each row by its sum for $P(X_2 \given X_1)$:
+    \[
+    \begin{array}{l|cc}
+    P(X_1 \given X_2) & X_2 = 1 & X_2 = 2 \\ \hline
+    X_1 = 1 & 0.75 & 0.33 \\
+    X_1 = 2 & 0.25 & 0.67
+    \end{array}
+    \qquad
+    \begin{array}{l|cc}
+    P(X_2 \given X_1) & X_2 = 1 & X_2 = 2 \\ \hline
+    X_1 = 1 & 0.6 & 0.4 \\
+    X_1 = 2 & 0.2 & 0.8
+    \end{array}
+    \]
+  \item \textbf{Joint vs.\ posterior:} $P(X_1, X_2 = 2) = (0.2,\ 0.4)$ is a
+    slice of the table and does \emph{not} sum to one; $P(X_1 \given X_2 = 2)
+    = (0.33,\ 0.67)$ is that slice, normalised.
+  \item \textbf{Evidence:} the normaliser of that slice, $P(X_2 = 2) =
+    \sum_{x_1} P(x_1, X_2 = 2) = 0.6$.
+  \item \textbf{Normalisation constant} of the whole table:
+    $P(\Omega) = \sum_{x_1}\sum_{x_2} P(x_1, x_2) = 1$.
+  \item \textbf{Max:} $\max_{x_1} P(x_1 \given X_2 = 1) = 0.75$ --- the
+    \emph{value} of the best probability.
+  \item \textbf{Mode:} $x_1^* = \argmax_{x_1} P(x_1 \given X_2 = 1) = 1$ ---
+    \emph{which} value is best.
+  \item \textbf{Max-marginal:} $\max_{x_1} P(x_1, X_2) = (0.3,\ 0.4)$, the
+    ``skyline'' of the table: for every $x_2$, the largest entry in its column.
+    Unlike a marginal it maximises instead of summing.
+  \item \textbf{Independent?} No: $P(X_1 = 1 \given X_2 = 1) = 0.75 \neq 0.5 =
+    P(X_1 = 1)$. Equivalently, $P(1, 1) = 0.3 \neq P(X_1 = 1)\,P(X_2 = 1) =
+    0.2$.
+\end{itemize}
+\end{exbox}
+
+% ----------------------------------------------------------
+\section{Independence}
+\label{sec:indep}
+% ----------------------------------------------------------
+
+Normally, learning that one event happened changes our belief in another:
+$P(\alpha \given \beta) \neq P(\alpha)$. Sometimes it does not. Toss two coins:
+whether the second one shows heads is not affected at all by what the first
+one showed. That is independence.
+
+\begin{defbox}[title={Independence of events}]
+Two events $\alpha$ and $\beta$ are \emph{independent} in $P$, written
+$(\alpha \indep \beta)$, if (equivalently)
+\[
+P(\alpha \given \beta) = P(\alpha), \qquad
+P(\beta \given \alpha) = P(\beta), \qquad
+P(\alpha \cap \beta) = P(\alpha)\,P(\beta).
+\]
+Independence is symmetric: $(\alpha \indep \beta) \Leftrightarrow (\beta \indep
+\alpha)$.
+\end{defbox}
+
+The slides leave the equivalence as an exercise; it is two lines (assuming
+$P(\alpha), P(\beta) > 0$). If $P(\alpha \given \beta) = P(\alpha)$, the
+product rule gives $P(\alpha \cap \beta) = P(\alpha \given \beta)\,P(\beta) =
+P(\alpha)\,P(\beta)$. If $P(\alpha \cap \beta) = P(\alpha)\,P(\beta)$, then
+$P(\beta \given \alpha) = P(\alpha \cap \beta)/P(\alpha) = P(\beta)$, and in
+the same way $P(\alpha \given \beta) = P(\alpha)$. The product form is
+symmetric in $\alpha$ and $\beta$, which proves the symmetry too.
+
+\begin{defbox}[title={Independence of random variables (and sets of them)}]
+Two sets of random variables $\bX$ and $\bY$ are \emph{independent}, written
+$(\bX \indep \bY)$, if for \emph{all} value combinations $\bx \in \Val(\bX)$,
+$\by \in \Val(\bY)$:
+\[
+P(\bx \given \by) = P(\bx) \quad\text{and}\quad P(\by \given \bx) = P(\by),
+\]
+in short $P(\bX \given \bY) = P(\bX)$ and $P(\bY \given \bX) = P(\bY)$.
+Consequence: $P(\bX, \bY) = P(\bX)\,P(\bY)$. Single variables are the special
+case $\bX = \{X\}$, $\bY = \{Y\}$.
+\end{defbox}
+
+Why does this matter so much? Because then every entry of the joint can be
+rebuilt from two smaller tables, $P(\bx, \by) = P(\bx)\,P(\by)$, so we only
+need to store distributions over $\bX$ and over $\bY$ separately instead of
+over $\bX \cup \bY$. Since table size grows exponentially with the number of
+variables, that is a big saving in space.
+
+The extreme case: $N$ independent coins $X_1, \ldots, X_N$. Then
+\[
+P(X_1, \ldots, X_N) = P(X_1)\,P(X_2) \cdots P(X_N).
+\]
+The joint has $2^N$
+entries, but each $P(X_i)$ has only two (and really only one number, since
+$P(\text{tails}) = 1 - P(\text{heads})$). Storing $2N$ --- or $N$ ---
+numbers instead of $2^N$ is an exponential reduction from $\bigO{2^N}$ to
+$\bigO{N}$.
+
+\begin{notebox}[title={Checking independence: one cell can only disprove it}, unbreakable]
+Variable independence must hold for \emph{every} combination of values. A
+single cell where $P(x, y) \neq P(x)\,P(y)$ proves dependence; a single cell
+where the product happens to match proves nothing. In table
+\eqref{eq:flu-mp-fever}, for example, $P(\vn{flu}, \vn{mp}) = 0.25$ but
+$P(\vn{flu})\,P(\vn{mp}) = 0.38 \times 0.32 \approx 0.12$, so $\vn{Flu}$ and
+$\vn{MP}$ are dependent --- as you would expect.
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Conditional Independence}
+\label{sec:cond-indep}
+% ----------------------------------------------------------
+
+Full independence is rare in interesting worlds; things \emph{are} connected.
+What is common is a weaker, and much more useful, property. Take
+\begin{center}
+$\alpha$ = ``patient Smith has a fever'', \quad
+$\beta$ = ``patient Smith has muscle pain'', \quad
+$\gamma$ = ``patient Smith has the flu''.
+\end{center}
+Fever and muscle pain are dependent: they often go together, so learning about
+muscle pain raises our expectation of fever, $P(\alpha \given \beta) >
+P(\alpha)$. But suppose we already \emph{know} that Smith has the flu. Then
+learning about her muscle pain tells us nothing new about the fever --- the
+fever is already ``explained'' by the flu: $P(\alpha \given \beta \cap \gamma)
+= P(\alpha \given \gamma)$.
+
+\begin{defbox}[title={Conditional independence}]
+Two events $\alpha, \beta$ are \emph{conditionally independent given} $\gamma$,
+written $(\alpha \indep \beta \given \gamma)$, if (equivalently)
+\[
+P(\alpha \given \beta \cap \gamma) = P(\alpha \given \gamma), \qquad
+P(\beta \given \alpha \cap \gamma) = P(\beta \given \gamma), \qquad
+P(\alpha \cap \beta \given \gamma) = P(\alpha \given \gamma)\,P(\beta \given \gamma).
+\]
+For sets of variables, $(\bX \indep \bY \given \bZ)$ if for all $\bx, \by, \bz$:
+$P(\bx \given \by, \bz) = P(\bx \given \bz)$ and $P(\by \given \bx, \bz) =
+P(\by \given \bz)$, in short $P(\bX \given \bY, \bZ) = P(\bX \given \bZ)$.
+Consequence: $P(\bX, \bY \given \bZ) = P(\bX \given \bZ)\,P(\bY \given \bZ)$.
+Conditional independence is symmetric as well.
+\end{defbox}
+
+The equivalence proof is the same as for plain independence, with
+``$\given \gamma$'' carried along everywhere. Now comes the step the entire
+course is built on:
+
+\begin{thmbox}[title={Factorising with conditional independence}]
+If $(\bX \indep \bY \given \bZ)$, the joint distribution splits into smaller
+pieces:
+\begin{align*}
+P(\bX, \bY, \bZ) &= P(\bX \given \bY, \bZ)\, P(\bY, \bZ)
+  && \text{chain rule} \\
+&= P(\bX \given \bY, \bZ)\, P(\bY \given \bZ)\, P(\bZ)
+  && \text{chain rule} \\
+&= P(\bX \given \bZ)\, P(\bY \given \bZ)\, P(\bZ)
+  && \text{conditional independence.}
+\end{align*}
+\end{thmbox}
+
+Make sure you understand these three lines --- they are the most fundamental
+idea in graphical models. The chain rule always works but leaves long
+conditioning sets; conditional independence lets us \emph{delete} variables
+from them. A Bayesian network (\cref{ch:bn}) is nothing but this trick applied
+systematically to every variable.
+
+\begin{exbox}[title={Fever and muscle pain, with numbers}, unbreakable]
+Build a joint over $\vn{Flu}, \vn{Fever}, \vn{MP}$ from the factorisation
+$P(\vn{Flu})\,P(\vn{Fever} \given \vn{Flu})\,P(\vn{MP} \given \vn{Flu})$ with
+\begin{gather*}
+P(\vn{flu}) = 0.1, \\
+P(\vn{fever} \given \vn{flu}) = 0.8,\quad P(\vn{fever} \given \neg\vn{flu}) = 0.1,\qquad
+P(\vn{mp} \given \vn{flu}) = 0.7,\quad P(\vn{mp} \given \neg\vn{flu}) = 0.2 .
+\end{gather*}
+\textbf{Marginally dependent.} By total probability $P(\vn{fever}) = 0.1 \cdot
+0.8 + 0.9 \cdot 0.1 = 0.17$, $P(\vn{mp}) = 0.1 \cdot 0.7 + 0.9 \cdot 0.2 =
+0.25$, and $P(\vn{fever}, \vn{mp}) = 0.1 \cdot 0.8 \cdot 0.7 + 0.9 \cdot 0.1
+\cdot 0.2 = 0.074$. Hence
+\[
+P(\vn{fever} \given \vn{mp}) = 0.074 / 0.25 = 0.296 \;>\; 0.17 = P(\vn{fever}).
+\]
+Muscle pain is evidence for flu, and flu is evidence for fever.\par
+\textbf{Conditionally independent.} Once flu is known, muscle pain adds
+nothing:
+\[
+P(\vn{fever} \given \vn{mp}, \vn{flu}) = 0.8 = P(\vn{fever} \given \vn{flu}).
+\]
+\textbf{Saving.} The factorised form needs $1 + 2 + 2 = 5$ numbers instead of
+the $2^3 - 1 = 7$ of a general joint. Tiny here, enormous for big models.
+\end{exbox}
+
+\begin{intbox}[unbreakable]
+Once you know the cause, its effects stop ``talking'' to each other. All of
+the correlation between fever and muscle pain was routed \emph{through} the
+flu; fixing the flu cuts that route. This is why causal stories are such a
+good guide to independencies: effects of a common cause are independent given
+that cause.
+\end{intbox}
+
+\begin{notebox}[title={Independence and conditional independence do not imply each other}]
+\begin{itemize}
+  \item \textbf{Dependent, but independent given $Z$:} fever and muscle pain
+    above (common cause flu).
+  \item \textbf{Independent, but dependent given $Z$:} toss two fair coins
+    independently and let $Z$ = ``both coins show the same face''. Given $Z$,
+    the first coin \emph{determines} the second, so they are dependent. We will
+    meet this pattern as ``explaining away'' in \cref{ch:bn}.
+\end{itemize}
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Continuous Random Variables}
+\label{sec:continuous}
+% ----------------------------------------------------------
+
+\subsection{Probabilities versus densities}
+
+So far every variable had a finite domain. Real applications, however, are
+full of continuous quantities: range sensors, temperature and pressure, GPS,
+camera pixels. And here a problem appears: each individual value has
+probability zero. Take $\Val(X) = [0, 1]$ and give every number the same
+probability. There are infinitely many numbers, so if that probability were
+any positive value, the total would be infinite. Hence $P(X = x) = 0$ for all
+$x$. (The same happens for non-uniform distributions.) We need a different
+object.
+
+\begin{defbox}[title={Probability density and cumulative distribution}, unbreakable]
+A function $p: \R \to \R$ is a \emph{probability density function} (PDF) for a
+continuous variable $X$ if $p(x) \geq 0$ for all $x \in \Val(X)$, $p(x) = 0$
+for all $x \notin \Val(X)$, and $\int_{-\infty}^{+\infty} p(x) \dd x = 1$.
+The \emph{cumulative distribution function} (CDF) is
+\[
+P(X \leq a) = \int_{-\infty}^{a} p(x) \dd x,
+\]
+so that
+\[
+P(a \leq X \leq b) = P(X \leq b) - P(X \leq a) = \int_{a}^{b} p(x) \dd x .
+\]
+\end{defbox}
+
+A PDF is \emph{not} a probability distribution, and $p(x)$ is \emph{not} a
+probability --- it can even be larger than one. Probabilities live on
+intervals and are computed by integrating the density. The best mental
+picture: $p(x)$ is probability \emph{per unit length}, the rate at which the
+CDF grows at $x$. For a small interval of width $\delta$,
+\[
+P(x \leq X \leq x + \delta) \approx p(x)\,\delta .
+\]
+
+\subsection{The uniform distribution}
+
+$X$ is \emph{uniformly distributed} on $[a, b]$, written $X \sim
+\mathit{Unif}[a, b]$, if
+\[
+p(x) = \begin{cases} \dfrac{1}{b - a} & a \leq x \leq b, \\[4pt]
+                     0 & \text{otherwise.} \end{cases}
+\]
+\Cref{fig:uniform} shows the PDF and the CDF. Note what happens if the
+interval is short: on $[0, 0.5]$ the density is $2$ everywhere. That is
+perfectly legal --- only the \emph{area} under a PDF has to be one.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  name=pdf, width=6.4cm, height=4.2cm, axis lines=left,
+  xmin=0, xmax=4.2, ymin=0, ymax=0.75,
+  xtick={1,3}, xticklabels={$a$,$b$},
+  ytick={0.5}, yticklabels={$\frac{1}{b-a}$},
+  xlabel={$x$}, ylabel={$p(x)$}, title={\small PDF},
+  ]
+  \addplot[figblue, very thick] coordinates {(0,0) (1,0)};
+  \addplot[figblue, very thick] coordinates {(1,0.5) (3,0.5)};
+  \addplot[figblue, very thick] coordinates {(3,0) (4.2,0)};
+  \draw[dashed, gray] (axis cs:1,0) -- (axis cs:1,0.5);
+  \draw[dashed, gray] (axis cs:3,0) -- (axis cs:3,0.5);
+\end{axis}
+\begin{axis}[
+  at={(pdf.east)}, anchor=west, xshift=1.6cm,
+  width=6.4cm, height=4.2cm, axis lines=left,
+  xmin=0, xmax=4.2, ymin=0, ymax=1.2,
+  xtick={1,3}, xticklabels={$a$,$b$}, ytick={1},
+  xlabel={$x$}, ylabel={$P(X \leq x)$}, title={\small CDF},
+  ]
+  \addplot[figblue, very thick] coordinates {(0,0) (1,0) (3,1) (4.2,1)};
+  \draw[dashed, gray] (axis cs:3,0) -- (axis cs:3,1);
+\end{axis}
+\end{tikzpicture}
+\caption{The uniform distribution on $[a, b]$. The CDF grows linearly from 0 to
+1 across the interval; its slope is the density.}
+\label{fig:uniform}
+\end{figure}
+
+\subsection{The normal (Gaussian) distribution}
+
+\begin{defbox}[title={Normal distribution}]
+$X$ has a \emph{normal (Gaussian) distribution} with mean $\mu$ and variance
+$\sigma^2$, written $X \sim \Normal(\mu, \sigma^2)$, if
+\[
+p(x) = \frac{1}{\sqrt{2\pi}\,\sigma}\; e^{-\frac{(x - \mu)^2}{2\sigma^2}} .
+\]
+\end{defbox}
+
+The mean $\mu$ says where the bell is centred; the standard deviation $\sigma$
+says how wide it is (\cref{fig:gaussians}). A handy rule of thumb: about
+68\,\% of the probability mass lies within $\mu \pm \sigma$, about 95\,\%
+within $\mu \pm 2\sigma$. Gaussians are everywhere in this course's temporal
+part, because sums of many small random disturbances tend to look Gaussian and
+because they are mathematically very convenient (\cref{ch:kalman}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=11cm, height=5cm, axis lines=left,
+  xmin=-10, xmax=10, ymin=0, ymax=0.45,
+  xlabel={$x$}, ylabel={$p(x)$},
+  every axis plot/.append style={very thick, samples=200, smooth},
+  ytick={0,0.1,0.2,0.3,0.4}]
+  \addplot[figblue, domain=-10:10]  {exp(-(x)^2/2)/sqrt(2*pi)};
+  \addplot[figred, domain=-10:10]   {exp(-(x-5)^2/(2*4))/(sqrt(2*pi)*2)};
+  \addplot[figgreen, domain=-10:10] {exp(-(x)^2/(2*16))/(sqrt(2*pi)*4)};
+  \node[figblue, anchor=west]  at (axis cs:0.9,0.36)  {$\Normal(0, 1)$};
+  \node[figred, anchor=south]  at (axis cs:5,0.205)   {$\Normal(5, 2^2)$};
+  \node[figgreen, anchor=south] at (axis cs:-6.5,0.07) {$\Normal(0, 4^2)$};
+\end{axis}
+\end{tikzpicture}
+\caption{Three Gaussian densities. Wider bells are lower, because the area
+under each curve is always one.}
+\label{fig:gaussians}
+\end{figure}
+
+\subsection{The multivariate Gaussian}
+
+\begin{defbox}[title={Multivariate normal distribution}]
+$N$ variables $\bX = \{X_1, \ldots, X_N\}$ have a \emph{joint (multivariate)
+normal distribution} with mean vector $\bm{\mu}$ and covariance matrix
+$\Sigma$, written $\bX \sim \Normal(\bm{\mu}, \Sigma)$, if
+\[
+p(\bx) = \frac{1}{(2\pi)^{N/2}\,\abs{\Sigma}^{1/2}}\;
+\exp\!\Big[-\tfrac{1}{2}(\bx - \bm{\mu})\T\, \Sigma^{-1}\, (\bx - \bm{\mu})\Big],
+\]
+where $\bm{\mu} = (\mu_{X_1}, \ldots, \mu_{X_N})$, $\Sigma$ is the $N \times N$
+covariance matrix with $\Sigma_{ij} = \sigma_{ij}$ the covariance between
+$X_i$ and $X_j$, and $\abs{\Sigma}$ is its determinant.
+\end{defbox}
+
+In two dimensions the density is a ``hill'' whose contour lines are ellipses
+(\cref{fig:gauss2d}). If $X$ and $Y$ are uncorrelated ($\sigma_{XY} = 0$), the
+ellipses are aligned with the axes. If they are positively correlated
+($\sigma_{XY} > 0$), the ellipses tilt: large $x$ tends to come with large
+$y$. The slides call $\sigma_{ij}$ the ``pairwise correlation''; strictly it
+is the \emph{covariance} --- the correlation coefficient is the covariance
+divided by $\sigma_i \sigma_j$ --- but both are zero or non-zero together.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small]
+  \foreach \dx/\rot/\ra/\rb/\lab in {0/0/1.15/0.85/{$\sigma_{XY} = 0$},
+                                     6/35/1.45/0.6/{$\sigma_{XY} > 0$}} {
+    \begin{scope}[xshift=\dx cm]
+      \draw[-{Stealth[length=2mm]}, gray] (-2,0) -- (2.1,0) node[right] {$x$};
+      \draw[-{Stealth[length=2mm]}, gray] (0,-1.7) -- (0,1.8) node[above] {$y$};
+      \foreach \s/\op in {0.45/70, 0.85/45, 1.25/25} {
+        \draw[figblue, thick, rotate=\rot, opacity=1]
+          (0,0) ellipse ({\s*\ra} and {\s*\rb});
+      }
+      \fill[figred] (0,0) circle (1.6pt);
+      \node at (0,-2.2) {\lab};
+    \end{scope}
+  }
+\end{tikzpicture}
+\caption{Contour lines of two 2-D Gaussians centred at $\bm{\mu} = \zeros$.
+Left: uncorrelated variables, axis-aligned ellipses. Right: positively
+correlated variables, tilted ellipses.}
+\label{fig:gauss2d}
+\end{figure}
+
+\begin{notebox}[title={Uncorrelated vs.\ independent}, unbreakable]
+For a \emph{joint Gaussian}, uncorrelated means independent: if $\Sigma$ is
+diagonal, the density factorises into a product of one-dimensional Gaussians.
+For general distributions this is false --- zero correlation only rules out a
+\emph{linear} relationship.
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Chapter Checklist}
+% ----------------------------------------------------------
+
+After this chapter you should be able to:
+\begin{itemize}
+  \item read the lecture's notation, and tell a probability from a
+    distribution by looking at the argument of $P(\cdot)$;
+  \item compute marginals, conditionals and event probabilities from a joint
+    table, and use the chain rule, the law of total probability and Bayes'
+    rule;
+  \item state the probabilistic query $P(\bX \given \be)$ and answer it by
+    enumeration, including the normalisation trick;
+  \item define (conditional) independence for events and for sets of
+    variables, check it in a table, and explain why it makes representations
+    smaller;
+  \item explain the difference between a density and a probability, and work
+    with uniform and (multivariate) Gaussian densities.
+\end{itemize}
+
+
+% ==========================================================
+%  CHAPTER 3 — BAYESIAN NETWORKS: REPRESENTATION   (part 3, VO 3)
+% ==========================================================
+\chapter[Bayesian Networks: Representation and Semantics]{Bayesian Networks:\\ Representation and Semantics}
+\label{ch:bn}
+
+\Cref{ch:prob} ended with a promise and a problem. The promise: any query can
+be answered from the full joint distribution. The problem: the full joint is
+exponentially large. We also saw the way out --- conditional independence lets
+us write the joint as a product of small pieces. A \emph{Bayesian network}
+(BN) is the data structure that does this systematically: a directed acyclic
+graph that tells us \emph{which} small pieces we need, plus one small table
+per variable that holds the numbers.
+
+This chapter introduces BNs through one running example, the \emph{student
+network}. We first play with it intuitively (which kinds of reasoning does it
+support?), then make its meaning precise in two equivalent ways --- as a set of
+independence statements and as a factorised joint distribution --- and finally
+look at how compact it is, how to build one, and how to handle continuous
+variables.
+
+% ----------------------------------------------------------
+\section{A Running Example: The Student Network}
+% ----------------------------------------------------------
+
+\subsection{The story}
+
+The example comes from Koller \& Friedman, with a small twist by the lecturer.
+A company wants to hire a college graduate. It is looking for genuinely
+interested and motivated people, but motivation cannot be tested directly.
+Instead, applicants hand in their SAT score (a standardised US university
+admission test) and their grade in a relevant university course. The company
+wants to use these two pieces of evidence to estimate whether an applicant is
+highly motivated. Our job: turn this into a quantitative model that algorithms
+can compute with.
+
+\paragraph{Step 1: variables} Three concepts matter for the decision, each
+modelled as a discrete random variable with a deliberately coarse domain:
+\[
+\begin{array}{lll}
+\text{Interest/Motivation } (I) & \Val(I) = \{\vn{lo}, \vn{hi}\} & = \{i^0, i^1\} \\
+\text{SAT score } (S)           & \Val(S) = \{\vn{lo}, \vn{hi}\} & = \{s^0, s^1\} \\
+\text{Grade } (G)               & \Val(G) = \{A, B, C\}          & = \{g^1, g^2, g^3\}
+\end{array}
+\]
+Careful with the grade: $g^1$ is the \emph{best} grade (A) and $g^3$ the worst
+(C).
+
+\paragraph{Step 2: dependency structure} The SAT score depends (among other
+things) on motivation, and so does the course grade. The story then grows a
+little. The grade also depends on how \emph{difficult} the course was. And the
+student asks the professor for a recommendation \emph{letter}, which the
+professor writes based on the course grade only --- there are too many
+students to remember anyone personally. Two more variables:
+\[
+\begin{array}{lll}
+\text{Difficulty } (D) & \Val(D) = \{\vn{easy}, \vn{hard}\}  & = \{d^0, d^1\} \\
+\text{Letter } (L)     & \Val(L) = \{\vn{weak}, \vn{strong}\} & = \{l^0, l^1\}
+\end{array}
+\]
+Drawing an arrow from each cause to its effect gives the graph in
+\cref{fig:student}: $D \to G \leftarrow I$, $I \to S$, $G \to L$.
+
+\paragraph{Step 3: uncertainty} None of these relationships is deterministic.
+Motivation influences the SAT score but is not the only factor (and some SAT
+tests are easier than others). Motivation and difficulty do not uniquely
+determine the grade. An absent-minded professor might write a strong letter
+despite a poor grade. We model all of this with probabilities: every variable
+gets a \emph{conditional probability distribution} (CPD) given its parents.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  % network
+  \node[bn] (D) at (-1.9, 0)   {Difficulty};
+  \node[bn] (I) at ( 1.9, 0)   {Interest};
+  \node[bn] (G) at (-0.7,-1.9) {Grade};
+  \node[bn] (S) at ( 3.1,-1.9) {SAT};
+  \node[bn] (L) at (-0.7,-3.8) {Letter};
+  \draw[edge] (D) -- (G);
+  \draw[edge] (I) -- (G);
+  \draw[edge] (I) -- (S);
+  \draw[edge] (G) -- (L);
+  % CPDs
+  \node[cpd, anchor=south east,
+        label={[font=\scriptsize\bfseries]above:$P(D)$}] (tD) at (-3.2,0.3)
+    {\begin{tabular}{cc}\toprule $d^0$ & $d^1$\\\midrule 0.6 & 0.4\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=south west,
+        label={[font=\scriptsize\bfseries]above:$P(I)$}] (tI) at (3.2,0.3)
+    {\begin{tabular}{cc}\toprule $i^0$ & $i^1$\\\midrule 0.7 & 0.3\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=east,
+        label={[font=\scriptsize\bfseries]above:$P(G \given I, D)$}] (tG) at (-2.3,-2.3)
+    {\begin{tabular}{lccc}\toprule
+       & $g^1$ & $g^2$ & $g^3$\\\midrule
+     $i^0, d^0$ & 0.3  & 0.4  & 0.3 \\
+     $i^0, d^1$ & 0.05 & 0.25 & 0.7 \\
+     $i^1, d^0$ & 0.9  & 0.08 & 0.02 \\
+     $i^1, d^1$ & 0.5  & 0.3  & 0.2 \\\bottomrule\end{tabular}};
+  \node[cpd, anchor=west,
+        label={[font=\scriptsize\bfseries]above:$P(S \given I)$}] (tS) at (4.3,-2.0)
+    {\begin{tabular}{lcc}\toprule
+       & $s^0$ & $s^1$\\\midrule
+     $i^0$ & 0.95 & 0.05 \\
+     $i^1$ & 0.2  & 0.8 \\\bottomrule\end{tabular}};
+  \node[cpd, anchor=west,
+        label={[font=\scriptsize\bfseries]above:$P(L \given G)$}] (tL) at (0.6,-4.3)
+    {\begin{tabular}{lcc}\toprule
+       & $l^0$ & $l^1$\\\midrule
+     $g^1$ & 0.1  & 0.9 \\
+     $g^2$ & 0.4  & 0.6 \\
+     $g^3$ & 0.99 & 0.01 \\\bottomrule\end{tabular}};
+  \draw[cpdlink] (tD) -- (D);
+  \draw[cpdlink] (tI) -- (I);
+  \draw[cpdlink] (tG) -- (G);
+  \draw[cpdlink] (tS) -- (S);
+  \draw[cpdlink] (tL) -- (L);
+\end{tikzpicture}
+\caption{The student network with its conditional probability distributions
+(numbers from the lecture, after Koller \& Friedman). Each row of each table
+is a probability distribution over the child, for one combination of parent
+values.}
+\label{fig:student}
+\end{figure}
+
+\subsection{How to read a CPD}
+
+Variables without parents ($D$ and $I$) get an ordinary, unconditional
+distribution. $P(I) = (0.7, 0.3)$ says that a random student is highly
+motivated with probability $P(i^1) = 0.3$. Variables with parents get one
+distribution \emph{per combination of parent values}. In $P(S \given I)$, the
+row for $i^1$ says that a motivated student gets a low SAT score with
+probability $P(s^0 \given i^1) = 0.2$ and a high one with probability $0.8$.
+$P(G \given I, D)$ has four rows because its two parents have
+$2 \times 2 = 4$ value combinations.
+
+\begin{notebox}[title={Rows sum to one, columns do not}, unbreakable]
+Every \emph{row} of a CPD is a distribution over the child and must sum to
+one: $0.3 + 0.4 + 0.3 = 1$ for $(i^0, d^0)$. A \emph{column}, like the $g^1$
+column $(0.3, 0.05, 0.9, 0.5)$, is a list of probabilities of the same child
+value under different conditions and has no reason to sum to anything in
+particular.
+\end{notebox}
+
+In the rest of the chapter we will see that this little picture is a lot more
+than a sketch. Its structure supports different patterns of reasoning, it
+captures all the independencies of the story, it is a compact representation
+of the full joint distribution over all five variables --- precisely
+\emph{because} of those independencies --- and therefore it can answer any
+probabilistic query.
+
+% ----------------------------------------------------------
+\section{Reasoning Patterns}
+\label{sec:reasoning-patterns}
+% ----------------------------------------------------------
+
+Remember the probabilistic query $P(\bX \given \be)$ from
+\cref{sec:enumeration}: given the observed values $\be$ of the evidence
+variables, what is the distribution over the query variables? Let us ask the
+student network a sequence of such queries about a student called Joe and
+watch how the answers move. For now, simply take the numbers as given; they
+all follow from the CPDs in \cref{fig:student} (we compute two of them by hand
+in \cref{sec:bn-event-probs}, and \cref{ch:inference} shows how to compute
+such queries efficiently). \Cref{tab:joe} collects them.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{What we know about Joe} & \textbf{Query} & \textbf{Answer} & \textbf{Pattern} \\
+\midrule
+nothing                         & $P(l^1)$                   & $0.502$ & --- \\
+not motivated                   & $P(l^1 \given i^0)$        & $0.389$ & causal \\
+not motivated, easy course      & $P(l^1 \given i^0, d^0)$   & $0.513$ & causal \\
+\midrule
+nothing                         & $P(i^1)$                   & $0.3$   & --- \\
+grade C                         & $P(i^1 \given g^3)$        & $0.079$ & evidential \\
+grade C                         & $P(d^1 \given g^3)$        & $0.63$  & evidential \\
+\midrule
+grade C, high SAT               & $P(i^1 \given g^3, s^1)$   & $0.578$ & intercausal \\
+grade C, high SAT               & $P(d^1 \given g^3, s^1)$   & $0.76$  & intercausal (explaining away) \\
+\bottomrule
+\end{tabular}
+\caption{Queries about Joe in the student network (rounded; all values
+re-computed from the CPDs). For comparison, the priors are $P(d^1) = 0.4$ and
+$P(i^1) = 0.3$.}
+\label{tab:joe}
+\end{table}
+
+\paragraph{Causal reasoning (prediction)} Knowing nothing about Joe, his chance
+of a strong letter is about $0.502$. When we learn that he is not very
+motivated ($i^0$), it drops to $0.389$: unmotivated students tend to get worse
+grades, and worse grades mean weaker letters. When we \emph{also} learn that
+the course was easy ($d^0$), it rises again to $0.513$, because an easy course
+makes a good grade likely despite his low motivation. Reasoning from causes to
+effects --- ``downwards'' in the network --- is called \emph{causal reasoning}
+or \emph{prediction}.
+
+\paragraph{Evidential reasoning (explanation)} The prior probability that Joe
+is highly motivated is $P(i^1) = 0.3$, read directly from the model. Now we
+learn that he got a C ($g^3$). His probability of being motivated drops to
+$0.079$. At the same time, the probability that the course was hard rises from
+$0.4$ to $0.63$: a C is also evidence for a hard course. Reasoning from
+observed effects to their possible causes --- ``upwards'' --- is called
+\emph{evidential reasoning} or \emph{explanation}.
+
+\paragraph{Intercausal reasoning} Besides the C, Joe now hands in his SAT
+score, and surprisingly it is high ($s^1$). The probability that he is
+motivated jumps from $0.079$ to $0.578$. Why does the SAT outweigh the poor
+grade? Look at the CPDs: unmotivated students almost never get high SAT scores
+($P(s^1 \given i^0) = 0.05$), while motivated students can still get a C
+(especially in hard courses). But something else happens too: $P(d^1 \given
+g^3, s^1) = 0.76$, up from $0.63$. The SAT score tells us about motivation,
+and motivation --- \emph{together with the known grade} --- tells us about
+difficulty. One cause of the grade (interest) gives us information about
+another cause of the grade (difficulty). A poor grade can be due to low
+motivation or to a hard course; once we learn that Joe is probably motivated,
+the hard course becomes the more plausible explanation. This is
+\emph{intercausal reasoning}; its best-known special case is called
+\emph{explaining away}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    flow/.style={-{Stealth[length=2.4mm]}, very thick, dashed, figamber},
+    lab/.style={font=\small, align=center}]
+  % (a) causal
+  \begin{scope}
+    \node[bnsmall, evid] (D) at (-0.8, 0)   {D};
+    \node[bnsmall, evid] (I) at ( 0.8, 0)   {I};
+    \node[bnsmall]       (G) at ( 0,  -1.3) {G};
+    \node[bnsmall, qry]  (L) at ( 0,  -2.6) {L};
+    \draw[edge] (D) -- (G); \draw[edge] (I) -- (G); \draw[edge] (G) -- (L);
+    \draw[flow] (1.45,-0.2) to[bend left=25] (0.65,-2.6);
+    \node[lab] at (0.2,-3.55) {(a) causal\\ $P(l^1 \given i^0, d^0)$};
+  \end{scope}
+  % (b) evidential
+  \begin{scope}[xshift=4.6cm]
+    \node[bnsmall, qry]  (D) at (-0.8, 0)   {D};
+    \node[bnsmall, qry]  (I) at ( 0.8, 0)   {I};
+    \node[bnsmall, evid] (G) at ( 0,  -1.3) {G};
+    \node[bnsmall]       (L) at ( 0,  -2.6) {L};
+    \draw[edge] (D) -- (G); \draw[edge] (I) -- (G); \draw[edge] (G) -- (L);
+    \draw[flow] (0.75,-1.6) to[bend right=35] (1.45,0.2);
+    \node[lab] at (0.2,-3.55) {(b) evidential\\ $P(i^1 \given g^3)$, $P(d^1 \given g^3)$};
+  \end{scope}
+  % (c) intercausal
+  \begin{scope}[xshift=9.4cm]
+    \node[bnsmall, qry]  (D) at (-0.8, 0)   {D};
+    \node[bnsmall]       (I) at ( 0.8, 0)   {I};
+    \node[bnsmall, evid] (G) at ( 0,  -1.3) {G};
+    \node[bnsmall, evid] (S) at ( 1.9, -1.3) {S};
+    \draw[edge] (D) -- (G); \draw[edge] (I) -- (G); \draw[edge] (I) -- (S);
+    \draw[flow] (S.north) to[bend right=30] (I.east);
+    \draw[flow] (I.south) .. controls (0.5,-2.6) and (-0.5,-2.6) .. (D.south);
+    \node[lab] at (0.4,-3.55) {(c) intercausal\\ $P(d^1 \given g^3, s^1)$};
+  \end{scope}
+\end{tikzpicture}
+\caption{The three reasoning patterns. Grey nodes are observed, red-framed
+nodes are queried, and the dashed arrows show the direction in which
+information flows. In (c), information about $I$ reaches $D$ only through the
+\emph{observed} common effect $G$.}
+\label{fig:reasoning-patterns}
+\end{figure}
+
+\begin{intbox}[unbreakable]
+The textbook picture of explaining away: your lawn is wet in the morning. Rain
+or the sprinkler? Both are plausible. Then you see that the sprinkler was on.
+The wet lawn is now \emph{explained}, so rain becomes \emph{less} likely,
+although rain and sprinkler have nothing to do with each other. The two causes
+were independent \emph{until} we observed their common effect. The student
+example is the mirror image: evidence makes one explanation of the C (low
+motivation) \emph{less} likely, so the other one (a hard course) becomes
+\emph{more} likely. Same mechanism: two causes of an observed effect compete
+to explain it. This is the ``independent, but dependent given $Z$'' case from
+\cref{sec:cond-indep}.
+\end{intbox}
+
+The remarkable thing is that we did not need a special algorithm for each
+pattern. All of them --- including explaining away --- fall out of one
+uniform inference procedure applied to the same model. A BN reasoner derives
+\emph{every} consequence of \emph{any} combination of observations. Nor do we
+need a notion of cause and effect for this to work: the arrows only describe
+how the model is \emph{built}; information flows along them in both
+directions. In principle, dependencies can even be modelled in any direction,
+as long as the numbers are right --- although causal models are usually much
+simpler (\cref{sec:building}).
+
+% ----------------------------------------------------------
+\section{Semantics I: The Independencies Encoded by the Graph}
+\label{sec:bn-indep}
+% ----------------------------------------------------------
+
+We claimed that a BN is a model of the full joint distribution, and we know
+from \cref{ch:prob} that independencies are what make a compact
+representation possible. So let us first figure out which independencies the
+student graph expresses. Recall the definition:
+$(\bX \indep \bY \given \bZ)$ means $P(\bx \given \by, \bz) = P(\bx \given \bz)$
+for all values, equivalently $P(\bX, \bY \given \bZ) = P(\bX \given \bZ)\,
+P(\bY \given \bZ)$ --- the joint over $\bX, \bY, \bZ$ factorises.
+
+\subsection{An intuitive analysis}
+
+\paragraph{Letter} According to the model, the letter depends \emph{only} on
+the grade. If we know the grade and the professor's habits (the CPD of $L$),
+we can predict the letter, and learning anything else --- motivation, SAT,
+difficulty --- changes nothing:
+$(L \indep D, I, S \given G)$. But $L$ is \emph{not} independent of the other
+variables if the grade is unknown: then motivation and difficulty do tell us
+something about the letter, via the grade (that was causal reasoning). So
+$(L \indep D, I, S \given G)$ but $(L \nindep D, I, S)$.
+
+\paragraph{SAT} Motivation is the only direct influence on the SAT score. Once
+we know Joe's motivation, his grade, the course difficulty or the letter tell
+us nothing more about his SAT: $(S \indep D, G, L \given I)$. Without knowing
+$I$, however, a good grade or letter does make a high SAT more likely:
+$(S \nindep G, L)$.
+
+\paragraph{Grade} The grade depends directly only on interest and difficulty.
+Is it therefore independent of everything else given those two,
+$(G \indep L, S \given I, D)$? \textbf{No!} Consider a strong student in a
+hard course ($i^1, d^1$). The chance of an A is medium: $P(g^1 \given i^1, d^1)
+= 0.5$. If we now learn that the student got a strong letter ($l^1$), our
+belief in an A goes up: $P(g^1 \given i^1, d^1, l^1) \approx 0.712$. The
+letter is an \emph{effect} of the grade, so observing it is evidence about the
+grade, even when both parents are known: $(G \nindep L \given I, D)$.
+
+What about $G$ and $S$? If we know motivation and difficulty, we have certain
+expectations about the grade. Learning the SAT score could only change them by
+changing our belief about motivation --- but motivation is already known. So
+$(G \indep S \given I, D)$.
+
+\paragraph{Difficulty and interest} These have no parents. Each of them can be
+influenced by information about its descendants (evidential or intercausal
+reasoning). But with no information about anything else, $I$ tells us nothing
+about $D$, and vice versa; by the same argument $S$ tells us nothing about
+$D$: $(D \indep I, S)$.
+
+\subsection{The general pattern: local independencies}
+
+All of these findings follow one rule. A variable's parents ``shield'' it from
+the influence of everything further up in the network. Given its parents, a
+variable is independent of all variables that are \emph{not its descendants}.
+Information about its descendants, however, can still change our belief about
+it, through evidential reasoning.
+
+\begin{defbox}[title={Bayesian network structure (part I of the definition)}]
+A \emph{Bayesian network structure} $\mathcal{G}$ is a directed acyclic graph
+(DAG) whose nodes represent random variables $\Xall = \{X_1, \ldots, X_n\}$.
+The graph encodes the following \emph{local independencies}:
+\[
+  (X_i \indep \NonDesc(X_i) \given \Pa(X_i)) \qquad\text{for all } X_i \in \Xall,
+\]
+where $\Pa(X_i)$ are the parents of $X_i$ in $\mathcal{G}$ and
+$\NonDesc(X_i)$ are the variables that are not descendants of $X_i$.
+In words: \emph{every variable is conditionally independent of its
+non-descendants, given its parents.}
+\end{defbox}
+
+\Cref{fig:local-markov} illustrates the definition for $G$, and
+\cref{tab:local-indep} lists the local independencies of all five variables.
+They match the intuitive analysis exactly. All of them were also verified
+numerically against the joint distribution defined by the CPDs.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  \node[bn, fill=figblue!22] (D) at (-1.9, 0)   {Difficulty};
+  \node[bn, fill=figblue!22] (I) at ( 1.9, 0)   {Interest};
+  \node[bn, fill=accent!35, very thick] (G) at (-0.7,-1.7) {Grade};
+  \node[bn, fill=figgreen!20] (S) at ( 3.1,-1.7) {SAT};
+  \node[bn, fill=figred!12, dashed] (L) at (-0.7,-3.4) {Letter};
+  \draw[edge] (D) -- (G); \draw[edge] (I) -- (G);
+  \draw[edge] (I) -- (S); \draw[edge] (G) -- (L);
+  % legend
+  \begin{scope}[shift={(5.6,-0.2)}, font=\small]
+    \node[draw=accent, fill=figblue!22, minimum size=3mm, inner sep=0pt] at (0,0) {};
+    \node[anchor=west] at (0.25,0) {parents $\Pa(G) = \{D, I\}$};
+    \node[draw=accent, fill=figgreen!20, minimum size=3mm, inner sep=0pt] at (0,-0.6) {};
+    \node[anchor=west] at (0.25,-0.6) {other non-descendants: $S$};
+    \node[draw=accent, dashed, fill=figred!12, minimum size=3mm, inner sep=0pt] at (0,-1.2) {};
+    \node[anchor=west] at (0.25,-1.2) {descendants: $L$};
+    \node[anchor=west, align=left] at (-0.15,-2.1)
+      {$\Rightarrow\ (G \indep S \given D, I)$, \ but\ $(G \nindep L \given D, I)$};
+  \end{scope}
+\end{tikzpicture}
+\caption{The local independence of $G$. Given its parents, $G$ is independent
+of its other non-descendants, but not of its descendant $L$.}
+\label{fig:local-markov}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Variable} & $\Pa$ & \textbf{Descendants} & \textbf{Non-desc.\ (besides parents)} & \textbf{Local independence} \\
+\midrule
+$D$ & ---       & $G, L$    & $I, S$    & $(D \indep I, S)$ \\
+$I$ & ---       & $G, S, L$ & $D$       & $(I \indep D)$ \\
+$G$ & $D, I$    & $L$       & $S$       & $(G \indep S \given D, I)$ \\
+$S$ & $I$       & ---       & $D, G, L$ & $(S \indep D, G, L \given I)$ \\
+$L$ & $G$       & ---       & $D, I, S$ & $(L \indep D, I, S \given G)$ \\
+\bottomrule
+\end{tabular}
+\caption{Local independencies of the student network. Conditioning on the
+parents is included in each statement; for a root node there is nothing to
+condition on.}
+\label{tab:local-indep}
+\end{table}
+
+\begin{notebox}[title={Two things to watch out for}]
+\begin{itemize}
+  \item \textbf{Descendants are excluded for a reason.} Observing a child (or
+    grandchild) is evidence about its ancestors. This is exactly why
+    $(G \nindep L \given I, D)$. A common mistake is to say ``a node is
+    independent of everything given its parents'' --- it is independent only
+    of its \emph{non-descendants}.
+  \item \textbf{The list is not complete.} The local independencies are the
+    ones the definition guarantees, but a graph usually implies
+    \emph{additional} ones that follow from them. Finding all of them requires
+    a full independence analysis of the graph (``d-separation''), which the
+    lecture lists under advanced topics.
+\end{itemize}
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Semantics II: A Factorised Joint Distribution}
+\label{sec:factorisation}
+% ----------------------------------------------------------
+
+How do the CPDs relate to the overall joint distribution $P$ over $\Xall$?
+The answer: if the graph correctly represents the conditional independencies
+of $P$, then $P$ can be rebuilt as a product of the local CPDs. The argument is
+short and worth knowing.
+
+\paragraph{Sketch of proof} Order the variables $X_1, \ldots, X_n$
+\emph{topologically} with respect to the graph: every variable comes after all
+of its parents (``top to bottom''; for the student network, e.g.\
+$D, I, G, S, L$). Such an ordering always exists in an acyclic graph. Now apply
+the chain rule in this order:
+\[
+P(X_1, \ldots, X_n) = P(X_1)\, P(X_2 \given X_1)\, P(X_3 \given X_1, X_2) \cdots
+= \prod_{i=1}^{n} P(X_i \given X_1, \ldots, X_{i-1}).
+\]
+Because of the topological ordering, the predecessors $\{X_1, \ldots,
+X_{i-1}\}$ contain all parents of $X_i$, possibly some other non-descendants,
+and \emph{no} descendants. By the local independence $(X_i \indep
+\NonDesc(X_i) \given \Pa(X_i))$, everything except the parents can be dropped
+from each factor:
+\[
+P(X_i \given X_1, \ldots, X_{i-1}) = P(X_i \given \Pa(X_i)).
+\]
+
+\begin{thmbox}[title={Chain rule for Bayesian networks}, unbreakable]
+\[
+P(X_1, \ldots, X_n) = \prod_{i=1}^{n} P(X_i \given X_1, \ldots, X_{i-1})
+                    = \prod_{i=1}^{n} P(X_i \given \Pa(X_i)).
+\]
+The CPDs jointly define a full probability distribution over $\Xall$; every
+entry of the joint is a product of one entry from each CPD.
+\end{thmbox}
+
+\begin{defbox}[title={Bayesian network (part II of the definition)}]
+A \emph{Bayesian network} $\mathcal{B}$ is a BN structure $\mathcal{G}$ in
+which every node $X_i$ is associated with a CPD $P(X_i \given \Pa(X_i))$. The
+network represents the joint distribution
+\[
+P(X_1, \ldots, X_n) = \prod_{i=1}^{n} P(X_i \given \Pa(X_i)).
+\]
+We say that $P$ \emph{factorises over} $\mathcal{G}$. A BN is a
+\emph{factorised representation} of the joint distribution, and each CPD
+$P(X_i \given \Pa(X_i))$ is called a \emph{factor}.
+\end{defbox}
+
+\begin{intbox}[unbreakable]
+A BN can be read in two ways, and they describe the same object. Read as a
+graph, it is a list of independence statements (``given its parents, each
+variable ignores its non-descendants''). Read as a formula, it is a recipe for
+the joint distribution (``multiply one number from each table''). The proof
+above is the bridge: the independencies are exactly what allows the chain rule
+to collapse into the short product.
+\end{intbox}
+
+For the student network, the factorisation reads
+\[
+P(D, I, G, S, L) = P(D)\, P(I)\, P(G \given D, I)\, P(S \given I)\, P(L \given G).
+\]
+
+\begin{exbox}[title={One entry of the joint}, unbreakable]
+What is the probability that a random student is not very motivated, takes an
+easy AI course, gets a B in it, has a low SAT score --- and still gets a
+strong letter? Pick the matching entry from each CPD in \cref{fig:student}:
+\begin{align*}
+P(d^0, i^0, g^2, s^0, l^1)
+&= P(d^0)\, P(i^0)\, P(g^2 \given d^0, i^0)\, P(s^0 \given i^0)\, P(l^1 \given g^2) \\
+&= 0.6 \times 0.7 \times 0.4 \times 0.95 \times 0.6 = 0.09576 \approx 9.6\,\%.
+\end{align*}
+\end{exbox}
+
+\subsection{Computing event probabilities from a BN}
+\label{sec:bn-event-probs}
+
+Since a BN \emph{is} a full joint distribution, everything from
+\cref{sec:enumeration} carries over: the probability of an event is the sum of
+all matching joint entries, and each joint entry is a product of CPD entries.
+Usually you do not even need to write out the whole joint --- summing in a
+clever order is enough. Here are two of the numbers from \cref{tab:joe}.
+
+\begin{exbox}[title={The prior probability of a strong letter, $P(l^1)$}]
+First get the marginal of $G$ by summing over its parents (law of total
+probability, using $P(d, i) = P(d)\,P(i)$ since $D \indep I$):
+\begin{align*}
+P(g^1) &= \textstyle\sum_{i,d} P(i)\,P(d)\,P(g^1 \given i, d) \\
+ &= 0.7\!\cdot\!0.6\!\cdot\!0.3 + 0.7\!\cdot\!0.4\!\cdot\!0.05
+ + 0.3\!\cdot\!0.6\!\cdot\!0.9 + 0.3\!\cdot\!0.4\!\cdot\!0.5 = 0.362, \\
+P(g^2) &= 0.42\!\cdot\!0.4 + 0.28\!\cdot\!0.25 + 0.18\!\cdot\!0.08
+ + 0.12\!\cdot\!0.3 = 0.2884, \\
+P(g^3) &= 1 - 0.362 - 0.2884 = 0.3496 .
+\end{align*}
+Then sum over the grade:
+\[
+P(l^1) = \sum_{g} P(g)\, P(l^1 \given g)
+= 0.362 \cdot 0.9 + 0.2884 \cdot 0.6 + 0.3496 \cdot 0.01 \approx 0.502 .
+\]
+\end{exbox}
+
+\begin{exbox}[title={Evidential reasoning by hand, $P(i^1 \given g^3)$}]
+Bayes' rule with $P(g^3 \given i) = \sum_d P(d)\,P(g^3 \given i, d)$:
+\begin{align*}
+P(g^3 \given i^1) &= 0.6 \cdot 0.02 + 0.4 \cdot 0.2 = 0.092, \qquad
+P(g^3 \given i^0) = 0.6 \cdot 0.3 + 0.4 \cdot 0.7 = 0.46, \\
+P(i^1 \given g^3) &= \frac{P(g^3 \given i^1)\, P(i^1)}
+  {P(g^3 \given i^1)\, P(i^1) + P(g^3 \given i^0)\, P(i^0)}
+ = \frac{0.092 \cdot 0.3}{0.092 \cdot 0.3 + 0.46 \cdot 0.7}
+ = \frac{0.0276}{0.3496} \approx 0.079 .
+\end{align*}
+Note that the denominator is again $P(g^3) = 0.3496$.
+\end{exbox}
+
+Doing this by hand gets tedious quickly, and the order in which we sum things
+matters a lot for the effort. Organising these computations efficiently is
+the topic of \cref{ch:inference}.
+
+% ----------------------------------------------------------
+\section{Compactness}
+\label{sec:compactness}
+% ----------------------------------------------------------
+
+Recall the cost of the explicit joint. For $N$ Boolean variables the full
+joint has $2^N$ entries, and specifying it takes $2^N - 1$ \emph{independent
+parameters} --- the last entry is redundant because everything must sum to
+one. Even for moderately sized worlds, a table like that is out of the
+question.
+
+Now consider a \emph{sparsely connected} BN over the same $N$ Boolean
+variables, in which every variable has at most $k \ll N$ parents. Each row of a
+CPD needs one number: the probability of $x_i^0$; the probability of $x_i^1$
+is one minus that. A variable with $k$ parents has $2^k$ rows (one per parent
+configuration), so its CPD needs $2^k$ numbers, and all CPDs together need at
+most $N \cdot 2^k$ numbers. For fixed $k$ that is \emph{linear} in $N$: an
+exponential reduction from $\bigO{2^N}$ to $\bigO{N}$.
+
+\begin{thmbox}[title={Counting independent parameters}]
+For variables with arbitrary finite domains,
+\[
+\#\text{params}(\text{full joint}) = \prod_{i=1}^{n} \abs{\Val(X_i)} - 1,
+\]
+\[
+\#\text{params}(\text{BN}) = \sum_{i=1}^{n}
+  \Big(\abs{\Val(X_i)} - 1\Big) \prod_{Y \in \Pa(X_i)} \abs{\Val(Y)} .
+\]
+Each CPD contributes (number of rows) $\times$ (number of child values $- 1$).
+For Boolean variables with at most $k$ parents: $\leq N \cdot 2^k$.
+\end{thmbox}
+
+\begin{exbox}[title={Counting parameters in the examples}]
+\textbf{Student network.} There are $2 \cdot 2 \cdot 3 \cdot 2 \cdot 2 = 48$
+atomic events, so the explicit joint needs $47$ parameters. The BN needs
+\[
+\underbrace{1}_{D} + \underbrace{1}_{I} + \underbrace{4 \cdot 2}_{G} +
+\underbrace{3 \cdot 1}_{L} + \underbrace{2 \cdot 1}_{S} = 15 .
+\]
+\textbf{Ten independent coins.} $2^{10} - 1 = 1023$ parameters for the
+explicit joint; as a BN with no edges, $10 \times 1 = 10$.\par
+\textbf{A realistic diagnosis model.} A technical system with 50 Boolean
+component variables (ok/defective), each depending directly on at most 5
+others: $2^{50} - 1 \approx 10^{15}$ parameters for the joint, but at most
+$50 \times 2^5 = 1600$ for the BN.\par
+\textbf{The diagnosis world of \cref{fig:diagnosis-net}.} $64 - 1 = 63$ for the
+joint. As a BN: $\vn{Season}$ has 4 values (3 parameters), $\vn{Flu}$ and
+$\vn{Hayfever}$ each have 4 rows (4 each), $\vn{MusclePain}$ has 2 rows (2),
+$\vn{Congestion}$ has 4 rows (4): $3 + 4 + 4 + 2 + 4 = 17$.
+\end{exbox}
+
+\begin{notebox}[title={Subtract one per row, not one per table}, unbreakable]
+In a CPD, \emph{every row} is its own distribution, so every row has one
+redundant entry. A CPD for a three-valued child with two Boolean parents has
+$4 \times 3 = 12$ entries but $4 \times 2 = 8$ independent parameters --- not
+$11$. For the full joint, which is a single distribution, you subtract one in
+total.
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Building a Bayesian Network}
+\label{sec:building}
+% ----------------------------------------------------------
+
+Constructing a BN means doing three things:
+\begin{enumerate}
+  \item \textbf{Choose the variables and their domains.} This is always the
+    system designer's job.
+  \item \textbf{Specify the structure.} Either by hand, with the designer and a
+    domain expert working together (\emph{knowledge engineering}), or
+    automatically by learning it from example situations (\emph{machine
+    learning}, \cref{ch:learning}).
+  \item \textbf{Specify the CPDs.} Usually learned from data; in realistic
+    models there are far too many numbers to elicit by hand.
+\end{enumerate}
+
+One piece of advice matters a lot: \textbf{model in the direction of
+causality}. Causal models are usually simpler, sparser and more intuitive than
+models built ``backwards''. The slides leave it as an exercise to check this
+for the student network; here is the solution.
+
+\begin{exbox}[title={The student network, built backwards}]
+Suppose we insist on the anti-causal ordering $L, G, S, D, I$ and, for each
+variable, choose as parents the smallest set of its predecessors that makes it
+independent of the remaining predecessors (so that the local independencies
+hold). Using the true distribution of the student network:
+\begin{itemize}
+  \item $L$: no predecessors, no parents.
+  \item $G$: depends on $L$, so $\Pa(G) = \{L\}$.
+  \item $S$: given $G$ it is independent of $L$, so $\Pa(S) = \{G\}$.
+  \item $D$: independent of $L$ given $G, S$ --- but \emph{not} independent of
+    $S$ given $G$ (explaining away: given the grade, $S$ tells us about $I$,
+    which tells us about $D$). So $\Pa(D) = \{G, S\}$.
+  \item $I$: independent of $L$ given the rest, but depends on $G$, $S$ and
+    $D$: $\Pa(I) = \{G, S, D\}$.
+\end{itemize}
+The result (\cref{fig:anticausal}) has 7 edges instead of 4 and needs
+$1 + 2 \cdot 2 + 3 \cdot 1 + 6 \cdot 1 + 12 \cdot 1 = 26$ parameters instead of
+15. It represents the same distribution, but it is bigger and much harder to
+interpret --- try to explain to a domain expert what $P(I \given G, S, D)$
+means! (All independence claims were checked numerically.)
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  % causal
+  \begin{scope}
+    \node[bnsmall] (D) at (-0.9, 0)   {D};
+    \node[bnsmall] (I) at ( 0.9, 0)   {I};
+    \node[bnsmall] (G) at ( 0,  -1.3) {G};
+    \node[bnsmall] (S) at ( 1.8, -1.3) {S};
+    \node[bnsmall] (L) at ( 0,  -2.6) {L};
+    \draw[edge] (D) -- (G); \draw[edge] (I) -- (G);
+    \draw[edge] (I) -- (S); \draw[edge] (G) -- (L);
+    \node[font=\small, align=center] at (0.45,-3.5) {causal order\\ 4 edges, 15 parameters};
+  \end{scope}
+  % anti-causal
+  \begin{scope}[xshift=4.3cm, yshift=-1.3cm]
+    \node[bnsmall] (L) at (0,   0) {L};
+    \node[bnsmall] (G) at (1.6, 0) {G};
+    \node[bnsmall] (S) at (3.2, 0) {S};
+    \node[bnsmall] (D) at (4.8, 0) {D};
+    \node[bnsmall] (I) at (6.4, 0) {I};
+    \draw[edge] (L) -- (G);
+    \draw[edge] (G) -- (S);
+    \draw[edge] (S) -- (D);
+    \draw[edge] (D) -- (I);
+    \draw[edge] (G) to[bend left=40] (D);
+    \draw[edge] (G) to[bend left=50] (I);
+    \draw[edge] (S) to[bend right=40] (I);
+    \node[font=\small, align=center] at (3.2,-2.2) {anti-causal order $L, G, S, D, I$\\ 7 edges, 26 parameters};
+  \end{scope}
+\end{tikzpicture}
+\caption{The same distribution with two different structures. Building the
+network against the direction of causality forces extra edges.}
+\label{fig:anticausal}
+\end{figure}
+
+\subsection{Two larger examples}
+
+\Cref{fig:car} shows a simplified BN for car diagnosis (originally from
+lecture slides by Stuart Russell). The colours show the different roles that
+variables play in a diagnostic model: the \emph{problem} to be explained (the
+car won't start), \emph{tests} whose values can be obtained (lights, gauges,
+dipstick), possible \emph{diagnoses} that are not directly observable (dead
+battery, no oil, broken starter, \ldots), and \emph{auxiliary} variables. The
+auxiliary nodes, such as ``battery flat'' or ``no charging'', do not
+correspond to anything we would test or repair. They exist to make the model
+more structured and compact: many causes act on the tests \emph{through} a
+flat battery, so they only need one shared intermediate node instead of
+separate edges to every test.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    car/.style={ellipse, draw=accent, thick, font=\scriptsize, align=center,
+                minimum width=17mm, minimum height=8.5mm, inner sep=0.5pt},
+    test/.style={car, fill=figgreen!22},
+    diag/.style={car, fill=figamber!30, very thick},
+    aux/.style={car, fill=gray!22},
+    prob/.style={car, fill=figred!30, very thick},
+    cedge/.style={-{Stealth[length=2mm]}, semithick, accent!85!black}]
+  \node[test] (age)  at (-5.6, 0)    {battery\\age};
+  \node[diag] (alt)  at (-2.4, 0)    {alternator\\broken};
+  \node[diag] (fan)  at ( 0.0, 0)    {fanbelt\\broken};
+  \node[diag] (dead) at (-4.6,-1.45) {battery\\dead};
+  \node[aux]  (chg)  at (-1.2,-1.45) {no\\charging};
+  \node[test] (mtr)  at (-6.0,-2.9)  {battery\\meter};
+  \node[aux]  (flat) at (-3.2,-2.9)  {battery\\flat};
+  \node[diag] (oil)  at (-0.9,-2.9)  {no oil};
+  \node[diag] (gas)  at ( 1.3,-2.9)  {no gas};
+  \node[diag] (fuel) at ( 3.5,-2.9)  {fuel line\\blocked};
+  \node[diag] (strt) at ( 5.7,-2.9)  {starter\\broken};
+  \node[test] (lgt)  at (-5.4,-4.6)  {lights};
+  \node[test] (oill) at (-3.0,-4.6)  {oil light};
+  \node[test] (gg)   at (-0.8,-4.6)  {gas gauge};
+  \node[prob] (wont) at ( 1.6,-4.6)  {car won't\\start};
+  \node[test] (dip)  at ( 4.0,-4.6)  {dipstick};
+  \foreach \a/\b in {age/dead, alt/chg, fan/chg, dead/mtr, dead/flat, chg/flat,
+                     flat/lgt, flat/oill, flat/gg, flat/wont,
+                     oil/oill, oil/wont, oil/dip, gas/gg, gas/wont,
+                     fuel/wont, strt/wont}
+    \draw[cedge] (\a) -- (\b);
+  % legend
+  \begin{scope}[shift={(-4.4,-5.75)}, font=\scriptsize]
+    \foreach \st/\txt/\x/\y in {prob/problem to explain (observed)/0/0,
+                                test/test (can be observed)/5.4/0,
+                                diag/diagnosis (hidden)/0/-0.5,
+                                aux/auxiliary (keeps the model compact)/5.4/-0.5} {
+      \node[\st, minimum width=6mm, minimum height=3.2mm, inner sep=0pt] at (\x,\y) {};
+      \node[anchor=west] at (\x+0.4,\y) {\txt};
+    }
+  \end{scope}
+\end{tikzpicture}
+\caption{A simplified Bayesian network for car diagnosis (after S.~Russell).
+Arrows point from causes to effects; ``car won't start'' is the problem to be
+explained.}
+\label{fig:car}
+\end{figure}
+
+The second example is a real one: the ALARM network for monitoring patients
+in an intensive care unit (Beinlich et al., 1989), with 37 variables. Despite
+its size, every variable depends directly on only a few others, which is
+exactly what keeps the model small enough to specify and to compute with.
+
+\figureplaceholder{5.5cm}{The ALARM network for ICU monitoring}{A Bayesian
+network with 37 variables for monitoring ventilated patients
+(e.g.\ HYPOVOLEMIA, LVFAILURE, SAO2, HR, BP, VENTLUNG). Any clean rendering of
+the full graph works.\par\smallskip
+\textit{Search hint:} ``ALARM Bayesian network Beinlich 1989'' --- e.g.\ the
+graph on the bnlearn repository page for the ALARM network.}{The ALARM network
+(Beinlich et al., 1989): a realistic medical Bayesian network with 37
+variables, each with only a few parents.}{fig:alarm}
+
+% ----------------------------------------------------------
+\section{Continuous Variables}
+\label{sec:bn-continuous}
+% ----------------------------------------------------------
+
+So far all variables were discrete, which let us write every CPD
+$P(X \given \Pa(X))$ as a table. But many systems involve continuous
+quantities --- the position and velocity of an aircraft or a robot, and our
+measurements of them --- which are best modelled by real-valued variables.
+There are two ways to deal with them.
+
+\paragraph{Solution 1: discretisation} Split the domain of the variable into a
+fixed number of intervals and represent each value by the label of its
+interval. The advantage is that all of our machinery applies unchanged. The
+disadvantages are the information lost in the approximation and, above all,
+complexity. For reasonably accurate robot tracking we might need 1000
+intervals per position coordinate, i.e.\ $1000 \times 1000 = 10^6$ different
+$(x, y)$ positions. Now imagine a CPD with that as a parent.
+
+\paragraph{Solution 2: continuous variables with continuous CPDs} Allow
+$\Val(X) \subseteq \R$ and model CPDs as density functions $p(X \given
+\Pa(X))$. This raises two questions: how do we model the distribution of a
+continuous variable, and how do we define $p(X \given \Pa(X))$ when the
+parents are continuous, too? Take $X \to Y$ with both continuous. The CPD
+$p(Y \given X)$ must contain one distribution $p(Y \given x)$ for
+\emph{every} value $x$ --- infinitely many. We cannot list them.
+
+The trick is to pick a \emph{parametric} family of densities and to make its
+parameters a \emph{function} of the parent values. Then a few numbers describe
+all the infinitely many conditional distributions at once. The most important
+special case:
+
+\begin{defbox}[title={Linear Gaussian model}]
+Let $Y$ be a continuous variable with continuous parents $X_1, \ldots, X_k$.
+$Y$ has a \emph{linear Gaussian model} if there are parameters
+$\beta_0, \beta_1, \ldots, \beta_k$ and $\sigma^2$ such that
+\[
+p(Y \given x_1, \ldots, x_k) = \Normal(\beta_0 + \beta_1 x_1 + \cdots + \beta_k x_k;\ \sigma^2),
+\]
+or in vector notation $p(Y \given \bx) = \Normal(\beta_0 + \bm{\beta}\T \bx;\ \sigma^2)$.
+A \emph{linear Gaussian Bayesian network} is a BN in which all variables are
+continuous and all of them have linear Gaussian models.
+\end{defbox}
+
+So every distribution over a single variable is a Gaussian; the \emph{mean} of
+the child is a linear function of the parents; and the \emph{variance} is
+fixed --- it does not depend on the parents. For example, $p(Y \given x) =
+\Normal(3.5x - 0.9;\ 1.0)$: whatever $x$ is, $Y$ is spread around $3.5x - 0.9$
+with variance one. An equivalent and often more intuitive way to say this: $Y$
+is a linear function of its parents plus Gaussian noise,
+\[
+y = \beta_0 + \beta_1 x_1 + \cdots + \beta_k x_k + \epsilon,
+\qquad \epsilon \sim \Normal(0, \sigma^2).
+\]
+\Cref{fig:linear-gaussian} shows what this looks like for one parent.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=1.15, font=\small]
+  \draw[-{Stealth[length=2mm]}, gray] (0,0) -- (4.6,0) node[right] {$x$ (parent)};
+  \draw[-{Stealth[length=2mm]}, gray] (0,0) -- (0,4.4) node[above] {$y$ (child)};
+  % samples
+  \foreach \p in {(0.32,1.11), (0.53,1.38), (0.86,1.22), (1.10,1.56), (1.28,1.52),
+                  (1.53,1.87), (1.84,2.14), (2.06,2.11), (2.37,2.87), (2.58,2.54),
+                  (2.93,3.51), (3.07,3.22), (3.29,3.42), (3.65,3.69), (3.80,3.27),
+                  (4.08,3.65)}
+    \fill[gray!60] \p circle (1.3pt);
+  % mean line
+  \draw[figblue, very thick] (0.1,0.68) -- (4.3,4.04)
+    node[right, align=left] {mean\\ $\beta_0 + \beta_1 x$};
+  % gaussian slices
+  \foreach \xx in {1, 2.2, 3.4} {
+    \pgfmathsetmacro{\ymean}{0.6 + 0.8*\xx}
+    \draw[gray, dashed] (\xx, 0) -- (\xx, \ymean);
+    \draw[figred, thick, domain=-1:1, samples=60, smooth]
+      plot ({\xx + 0.75*exp(-(\x)^2/(2*0.09))}, {\ymean + \x});
+  }
+  \node[figred, anchor=west, align=left] at (0.25,4.0)
+    {$p(Y \given x) = \Normal(\beta_0 + \beta_1 x;\ \sigma^2)$};
+\end{tikzpicture}
+\caption{A linear Gaussian CPD with one parent. For every parent value $x$ the
+child is Gaussian (red curves); the mean moves along a straight line, while the
+width stays the same everywhere. Grey dots are samples from the model.}
+\label{fig:linear-gaussian}
+\end{figure}
+
+\begin{exbox}[title={A bicycle on a straight road}]
+A cyclist rides along a straight road; once per second we model her position
+$X^{(t)}$ (in m) and her velocity $V^{(t)}$ (in m/s). Ideally,
+$X^{(t+1)} = X^{(t)} + V^{(t)}$: at metre 510.4 with a speed of 5\,m/s, she
+should be at metre 515.4 one second later. But real motion is never perfectly
+precise, so it is more realistic to say that the next position is normally
+distributed around that value:
+\[
+p(X^{(t+1)} \given x^{(t)}, v^{(t)}) = \Normal(x^{(t)} + v^{(t)};\ 0.8).
+\]
+This is a linear Gaussian model with $\beta_0 = 0$, $\beta_1 = \beta_2 = 1$ and
+$\sigma^2 = 0.8$. (The slides say ``variance 0.8 meters''; strictly a variance
+is measured in m$^2$ --- the standard deviation is $\sqrt{0.8} \approx
+0.89$\,m.)
+\end{exbox}
+
+Gaussian distributions, linear dependencies and a fixed variance are fairly
+severe restrictions. Some processes satisfy them and some do not. But they are
+reasonably good models of many physical phenomena, and --- the real selling
+point --- they support simple and elegant reasoning algorithms. We will meet
+a concrete one for a restricted family of such models in the chapter on the
+Kalman filter (\cref{ch:kalman}).
+
+\paragraph{Beyond this chapter} The lecture explicitly leaves out a full
+analysis of independence in BN graphs, algorithms that construct a graph for a
+given set of independencies, and other kinds of local models (context-specific
+CPDs, tree and rule CPDs, hybrid discrete--continuous models, logistic models,
+\ldots).
+
+% ----------------------------------------------------------
+\section{Chapter Checklist}
+% ----------------------------------------------------------
+
+What you should take away from this chapter (following the lecture's own
+list):
+\begin{itemize}
+  \item the probabilistic query, and the typical reasoning patterns: causal,
+    evidential and intercausal (explaining away);
+  \item the definition of a Bayesian network, in both parts: the graph with
+    its local independencies, and the CPDs with the factorised distribution;
+  \item which independencies a BN encodes ---
+    $(X_i \indep \NonDesc(X_i) \given \Pa(X_i))$ --- and why descendants are
+    excluded;
+  \item the chain rule for Bayesian networks and its proof via a topological
+    ordering;
+  \item how to compute event probabilities from a BN;
+  \item the notion of independent (non-redundant) parameters, and how a BN
+    makes the representation of the full joint compact;
+  \item the basic idea of linear Gaussian models (details follow with the
+    Kalman filter).
+\end{itemize}
+
+
+% ==========================================================
+%  CHAPTERS 4--8 — OUTLINES
+%  Section lists follow the lecture titles in the course schedule
+%  and the standard treatment in Koller & Friedman / Russell & Norvig.
+%  Replace \planned{...} blocks with real text once the slides of the
+%  corresponding units are available, and adapt the sections to them.
+% ==========================================================
+
+% ==========================================================
+%  CHAPTER 4 — INFERENCE IN BAYESIAN NETWORKS   (VO 4--5)
+% ==========================================================
+\chapter{Inference in Bayesian Networks}
+\label{ch:inference}
+
+\Cref{ch:bn} showed that a Bayesian network \emph{is} a full joint
+distribution, so every query can in principle be answered by enumeration ---
+multiply CPD entries, sum over the hidden variables, normalise. In practice
+that is exponential in the number of variables. This chapter is about doing it
+smarter: first exactly, by organising the sums cleverly, and then
+approximately, by \emph{sampling} from the network when exact inference is too
+expensive.
+
+\planned{Lecture units VO~4 (``Bayes Nets: Exact \& Approximate Inference
+(1)'') and VO~5 (``Bayes Nets: Approximate Inference and MCMC''). The
+section list below is the expected structure; adapt it to the slides.}
+
+\section{Exact Inference by Enumeration in a Bayesian Network}
+\planned{Recap of the probabilistic query; enumeration with the factorised
+joint; pushing sums inwards; the student network as a worked example
+(re-using the numbers of \cref{tab:joe}); cost of naive enumeration.}
+
+\section{Variable Elimination}
+\planned{Factors and factor operations (product, summing out, reduction by
+evidence); the variable-elimination algorithm; worked example; the effect of
+the elimination order on cost; intermediate factor sizes. Figure (TikZ, to be
+drawn): a small elimination example showing which factors are created.}
+
+\section{The Complexity of Exact Inference}
+\planned{Exact inference is NP-hard in general; polytrees (singly connected
+networks) allow inference in linear time; why loops make it hard; motivation
+for approximate methods.}
+
+\section{Approximate Inference by Stochastic Sampling}
+\planned{The idea: estimate probabilities from frequencies in samples. Prior
+(forward) sampling in topological order; rejection sampling for conditional
+queries and its weakness with unlikely evidence; likelihood weighting;
+consistency and convergence of the estimates.}
+
+\section{Markov Chain Monte Carlo and Gibbs Sampling}
+\planned{Markov chains over complete states; Gibbs sampling: resample one
+variable at a time given its Markov blanket; stationary distribution; burn-in
+and mixing; comparison with likelihood weighting. Figure (TikZ, to be drawn):
+a chain of complete assignments where each step resamples one variable.}
+
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 5 — LEARNING BAYESIAN NETWORKS   (VO 6--8)
+% ==========================================================
+\chapter{Learning Bayesian Networks}
+\label{ch:learning}
+
+So far somebody handed us the graph and all the CPDs. In reality, the numbers
+--- and often the structure --- have to come from data. This chapter addresses
+the third of the complexity problems from \cref{ch:intro}, modelling
+complexity: given a set of observations, find the parameters (and maybe the
+structure) of a Bayesian network that explains them well. Two schools of
+parameter estimation appear --- maximum likelihood and Bayesian --- followed by
+the question of how to avoid overfitting and how to search over structures.
+
+\planned{Lecture units VO~6 (``Learning (1): General Issues \& ML Parameter
+Learning''), VO~7 (``Learning (2): Bayesian Parameter Learning'') and VO~8
+(``Learning (3): Overfitting, Regularisation, Structure Learning''). Expected
+structure below; adapt it to the slides.}
+
+\section{The Learning Problem}
+\planned{What is given and what is learned (parameters vs.\ structure);
+complete vs.\ incomplete data; the i.i.d.\ assumption; goals of learning
+(density estimation, prediction, knowledge discovery).}
+
+\section{Maximum-Likelihood Parameter Learning}
+\planned{The likelihood function; ML estimation for a single Bernoulli/
+multinomial variable (``counting''); decomposition of the BN likelihood into
+independent per-CPD problems; sufficient statistics; worked example with a
+small data table; the zero-count problem.}
+
+\section{Bayesian Parameter Learning}
+\planned{Parameters as random variables; prior, posterior and predictive
+distribution; Beta and Dirichlet priors; conjugacy; pseudo-counts and their
+intuition; MAP vs.\ full Bayesian prediction; worked coin example. Figure
+(pgfplots, to be drawn): Beta priors and how the posterior sharpens with
+data.}
+
+
+\section{Overfitting and Regularisation}
+\planned{Why maximum likelihood overfits, especially for CPDs with many
+parents and little data; priors as regularisers; the bias--variance view;
+model complexity.}
+
+\section{Structure Learning}
+\planned{Score-based structure learning: likelihood score (and why it always
+prefers more edges), penalised scores (BIC/MDL), Bayesian score; local search
+over graphs (add/delete/reverse an edge); decomposability of scores.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 6 — TEMPORAL MODELS: DYNAMIC BAYESIAN NETWORKS   (VO 9)
+% ==========================================================
+\chapter[Temporal Models: Dynamic Bayesian Networks]{Temporal Models:\\ Dynamic Bayesian Networks}
+\label{ch:dbn}
+
+Many of the examples from \cref{ch:intro} --- tracking aircraft, driving a car,
+following music --- are about a world that \emph{changes over time}. We
+observe it step by step and want to keep our beliefs up to date. Dynamic
+Bayesian networks extend the BN idea to such processes: the same small
+``template'' of variables is repeated for every time step, with edges inside a
+time slice and from one slice to the next.
+
+\planned{Lecture unit VO~9 (``Dynamic Bayes Nets and State-Observation
+Models''). Expected structure below; adapt it to the slides.}
+
+\section{Template Variables and Time Slices}
+\planned{Discrete time, template variables $X_i^{(t)}$ (see
+\cref{tab:notation}); the Markov assumption; stationarity
+(time-invariant transition model); the two-slice representation (2-TBN) and
+unrolling it over $T$ steps.}
+
+\section{State-Observation Models}
+\planned{Hidden state and observations; transition model $P(\bX^{(t+1)} \given
+\bX^{(t)})$ and sensor/observation model $P(\bY^{(t)} \given \bX^{(t)})$;
+examples (robot localisation, the bicycle of \cref{sec:bn-continuous}).
+Figure (TikZ, to be drawn): an unrolled state-observation chain.}
+
+\section{Inference Tasks over Time}
+\planned{Filtering (belief state), prediction, smoothing, most likely
+explanation; the recursive forward update (predict, then condition on the new
+observation); why naive unrolling becomes expensive.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 7 — HIDDEN MARKOV MODELS   (VO 10--11)
+% ==========================================================
+\chapter{Hidden Markov Models}
+\label{ch:hmm}
+
+A hidden Markov model is the simplest interesting state-observation model: a
+single discrete hidden state that evolves as a Markov chain, and an
+observation emitted at every step. Despite (or because of) this simplicity,
+HMMs power speech recognition, gene finding and --- close to the lecturer's
+research --- following a live music performance in a score. This chapter
+covers the classic inference algorithms, learning the parameters from data,
+and applications.
+
+\planned{Lecture units VO~10 (``Hidden Markov Models (1): Inference'') and
+VO~11 (``Hidden Markov Models (2): Learning and Applications''). Expected
+structure below; adapt it to the slides.}
+
+\section{The HMM as a Dynamic Bayesian Network}
+\planned{States, observations, initial distribution $\pi$, transition matrix
+$A$, emission probabilities $B$; the HMM as a special DBN; a small running
+example. Figure (TikZ, to be drawn): HMM unrolled over time, plus the state
+transition diagram.}
+
+\section{Filtering and Likelihood: The Forward Algorithm}
+\planned{Forward messages $\alpha_t$; recursion and normalisation; computing
+the likelihood of an observation sequence; complexity $\bigO{T N^2}$
+instead of $\bigO{N^T}$.}
+
+\section{Smoothing: The Forward--Backward Algorithm}
+\planned{Backward messages $\beta_t$; combining forward and backward messages
+into posteriors over past states.}
+
+\section{The Most Likely State Sequence: Viterbi}
+\planned{Max instead of sum (compare the max-marginal of
+\cref{sec:enumeration}); dynamic programming over the trellis; backtracking;
+worked example. Figure (TikZ, to be drawn): Viterbi trellis with the best path
+highlighted.}
+
+\section{Learning HMMs: Baum--Welch}
+\planned{Supervised (counting) vs.\ unsupervised learning; the EM idea;
+expected counts from forward--backward; re-estimation formulas; local optima.}
+
+\section{Applications}
+\planned{Speech recognition; real-time music tracking / score following; other
+applications mentioned in the lecture.}
+
+\figureplaceholder{4.5cm}{Real-time score following}{An image of a score
+follower in action: a live audio signal aligned to the sheet music, with the
+current position highlighted (as in the lecture's video of real-time music
+following).\par\smallskip
+\textit{Search hint:} ``automatic score following live performance'' or
+``real-time music tracking score alignment''; screenshots of the JKU
+Computational Perception group's demos fit well.}{An HMM-based score follower
+tracks a live performance in the printed score.}{fig:score-following}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+% ==========================================================
+%  CHAPTER 8 — THE KALMAN FILTER   (video lecture)
+% ==========================================================
+\chapter[Continuous Linear Systems: The Kalman Filter]{Continuous Linear Systems:\\ The Kalman Filter}
+\label{ch:kalman}
+
+What an HMM does for a discrete hidden state, the Kalman filter does for a
+continuous one --- provided the world is \emph{linear} and \emph{Gaussian}.
+This is exactly the linear Gaussian setting previewed in
+\cref{sec:bn-continuous}, and it is what makes the bicycle example tractable:
+if the belief about the current state is Gaussian and all dependencies are
+linear Gaussian, then the belief stays Gaussian forever, and filtering reduces
+to updating a mean and a covariance.
+
+\planned{Video lecture ``Modelling Continuous Linear Systems: The Kalman
+Filter''. Expected structure below; adapt it to the video.}
+
+\section{Linear Gaussian State-Space Models}
+\planned{Continuous state and observation variables; linear Gaussian
+transition and sensor models (connection to \cref{sec:bn-continuous});
+the bicycle/robot tracking example.}
+
+\section{The Predict--Update Cycle}
+\planned{Prediction step (the belief spreads out); update step (conditioning
+on the observation sharpens it); the Kalman gain as a weighting between
+prediction and measurement; the 1-D case in detail, then the matrix form.
+Figure (pgfplots, to be drawn): prior, prediction, measurement and posterior
+Gaussians in 1-D.}
+
+\section{Properties and Limitations}
+\planned{Why Gaussians stay Gaussian; optimality under the model assumptions;
+what goes wrong for non-linear or multi-modal problems; extensions if covered
+in the video.}
+
+\section{Chapter Checklist}
+\planned{To be written together with the chapter.}
+
+
+\end{document}

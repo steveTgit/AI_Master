@@ -596,19 +596,18 @@ Multiple answers are possible.
   \choice The mean squared error is defined as $\mathrm{mse}(\hat w)=(\hat w-w)^\top(\hat w-w)$.
 \end{itemize}
 \closequestion
-\begin{answer}{A, E, F}
+\begin{answer}{A, E, F, G}
   \yes{A} Independence lets the joint density factorize: $\mathcal{L}=\prod_i p(x_i;w)$.
   \no{B} Same \emph{argmax} (the logarithm is strictly monotone), but the \emph{values} differ: $\ln\mathcal{L}(\hat w)\neq\mathcal{L}(\hat w)$ in general.
   \no{C} The model class is assumed to be \emph{known and fixed}; only its parameters are estimated from the data.
   \no{D} ML \emph{is} asymptotically consistent (and unbiased and efficient) --- the ``not consistent'' spoils the statement.
   \yes{E} Bias--variance decomposition: $\mathrm{mse}(\hat w)=\Var(\hat w)+\mathrm{bias}^2(\hat w)$.
   \yes{F} That is the definition of unbiasedness.
-  \no{G} A likelihood is not, in general, the probability of the observed data. More
-  precisely, $\mathcal L(w;x)=p(x\mid w)$ is the probability mass or density at the
-  observed $x$, viewed as a function of the parameter $w$. It need not sum or integrate
-  to $1$ over $w$; for continuous data, moreover, $P(X=x)=0$ even when
-  $f(x\mid w)>0$. Therefore the wording ``the probability that the model produces the
-  data'' is false.
+  \yes{G} This matches the lecture's definition verbatim: the likelihood
+  $\mathcal L(\{x\};w)=p(\{x\};w)$ is ``the probability that the model produces the
+  observed data.'' (Measure-theoretic caveat: for continuous data this is a
+  \emph{density}, not a probability --- $P(X=x)=0$ pointwise. The exam grades by the
+  lecture's wording, so tick it.)
   \no{H} The expectation is missing: $\mathrm{mse}(\hat w)=\E\bigl[(\hat w-w)^\top(\hat w-w)\bigr]$; without it, the expression is a random variable, not an error measure.
 \end{answer}
 
@@ -1829,12 +1828,15 @@ Multiple answers are possible.
   \choice Similarity-based clustering does not require objects to be represented via feature vectors.
 \end{itemize}
 \closequestion
-\begin{answer}{A, H}
+\begin{answer}{A, E, H}
   \yes{A} Affinity propagation selects \emph{exemplars} --- actual data points --- as cluster centers.
   \no{B} Clustering is unsupervised --- it is neither regression nor classification (both are supervised).
   \no{C} \emph{Fuzzy} $k$-means is exactly the variant with continuous (soft) memberships; only plain $k$-means is binary.
   \no{D} Assignment goes to the largest \emph{posterior} (responsibility), which also accounts for how well the component explains the observation --- not the prior alone.
-  \no{E} Removing the longest edges of a minimal spanning tree reproduces \emph{single-linkage} (bottom-up) clusters; top-down (divisive) clustering instead splits clusters recursively.
+  \yes{E} This is exactly the lecture's description of divisive (top-down) clustering:
+  build the minimal spanning tree, remove the largest edge to split the data into two
+  clusters, and recurse. (The resulting partitions coincide with single-linkage cuts,
+  but the \emph{procedure} --- start with one cluster, split repeatedly --- is top-down.)
   \no{F} MAP includes the prior term, so the two optima and their values differ in general.
   \no{G} Agglomerative clustering fuses the two \emph{closest} clusters.
   \yes{H} It only needs pairwise similarities --- objects never have to live in a vector space.
