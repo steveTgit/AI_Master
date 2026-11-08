@@ -45,6 +45,7 @@
 %  MATHEMATICS
 % ══════════════════════════════════════════════════════════
 \usepackage{amsmath, amssymb, amsthm, mathtools}
+\allowdisplaybreaks[1]          % let long align* blocks break across pages
 \usepackage{bm}        % Bold math symbols: \bm{\theta}
 \usepackage{bbm}       % Blackboard bold for indicator: \mathbbm{1}
 \usepackage{mathrsfs}  % Script letters: \mathscr{F}, \mathscr{H}
@@ -423,6 +424,10 @@
 \newcommand{\Pa}{\mathrm{Pa}}            % parents: \Pa(X_i)
 \newcommand{\NonDesc}{\mathrm{NonDesc}}  % non-descendants
 \newcommand{\Desc}{\mathrm{Desc}}        % descendants
+\newcommand{\pa}{\mathrm{pa}}            % parent values: \pa(X_i)
+\newcommand{\Ch}{\mathrm{Ch}}            % children
+\newcommand{\Mb}{\mathrm{Mb}}            % Markov blanket (set)
+\newcommand{\mb}{\mathrm{mb}}            % Markov blanket (values)
 \newcommand{\indep}{\perp}               % (X \indep Y \given Z)
 \newcommand{\nindep}{\not\perp}          % not independent
 \newcommand{\Xall}{\mathcal{X}}          % complete set of variables
@@ -451,6 +456,56 @@
   qry/.style    = {draw=figred, very thick, fill=figred!8},
   cpd/.style    = {font=\scriptsize, inner sep=1pt, fill=white},
   cpdlink/.style= {gray!55, thin},
+}
+
+% The student network with all CPDs (chapter 3); reused in chapter 4 so the
+% numbers are at hand where they are needed.
+\newcommand{\studentnetworkpic}{%
+\begin{tikzpicture}
+  % network
+  \node[bn] (D) at (-1.9, 0)   {Difficulty};
+  \node[bn] (I) at ( 1.9, 0)   {Interest};
+  \node[bn] (G) at (-0.7,-1.9) {Grade};
+  \node[bn] (S) at ( 3.1,-1.9) {SAT};
+  \node[bn] (L) at (-0.7,-3.8) {Letter};
+  \draw[edge] (D) -- (G);
+  \draw[edge] (I) -- (G);
+  \draw[edge] (I) -- (S);
+  \draw[edge] (G) -- (L);
+  % CPDs
+  \node[cpd, anchor=south east,
+        label={[font=\scriptsize\bfseries]above:$P(D)$}] (tD) at (-3.2,0.3)
+    {\begin{tabular}{cc}\toprule $d^0$ & $d^1$\\\midrule 0.6 & 0.4\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=south west,
+        label={[font=\scriptsize\bfseries]above:$P(I)$}] (tI) at (3.2,0.3)
+    {\begin{tabular}{cc}\toprule $i^0$ & $i^1$\\\midrule 0.7 & 0.3\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=east,
+        label={[font=\scriptsize\bfseries]above:$P(G \given I, D)$}] (tG) at (-2.3,-2.3)
+    {\begin{tabular}{lccc}\toprule
+       & $g^1$ & $g^2$ & $g^3$\\\midrule
+     $i^0, d^0$ & 0.3  & 0.4  & 0.3 \\
+     $i^0, d^1$ & 0.05 & 0.25 & 0.7 \\
+     $i^1, d^0$ & 0.9  & 0.08 & 0.02 \\
+     $i^1, d^1$ & 0.5  & 0.3  & 0.2 \\\bottomrule\end{tabular}};
+  \node[cpd, anchor=west,
+        label={[font=\scriptsize\bfseries]above:$P(S \given I)$}] (tS) at (4.3,-2.0)
+    {\begin{tabular}{lcc}\toprule
+       & $s^0$ & $s^1$\\\midrule
+     $i^0$ & 0.95 & 0.05 \\
+     $i^1$ & 0.2  & 0.8 \\\bottomrule\end{tabular}};
+  \node[cpd, anchor=west,
+        label={[font=\scriptsize\bfseries]above:$P(L \given G)$}] (tL) at (0.6,-4.3)
+    {\begin{tabular}{lcc}\toprule
+       & $l^0$ & $l^1$\\\midrule
+     $g^1$ & 0.1  & 0.9 \\
+     $g^2$ & 0.4  & 0.6 \\
+     $g^3$ & 0.99 & 0.01 \\\bottomrule\end{tabular}};
+  \draw[cpdlink] (tD) -- (D);
+  \draw[cpdlink] (tI) -- (I);
+  \draw[cpdlink] (tG) -- (G);
+  \draw[cpdlink] (tS) -- (S);
+  \draw[cpdlink] (tL) -- (L);
+\end{tikzpicture}%
 }
 
 % ── Placeholders ──────────────────────────────────────────
@@ -524,7 +579,7 @@
   replacement for them.
 
   \medskip
-  \textbf{Working draft:} Chapters 1--3 are written out. Chapters 4--8 are
+  \textbf{Working draft:} Chapters 1--4 are written out. Chapters 5--8 are
   still outlines and will be filled in as the lecture progresses.
 
   \medskip
@@ -1243,7 +1298,9 @@ this person has muscle pain, so do they have flu? The names of the four parts:
   \item \textbf{Posterior} $P(\vn{Problem} \given \vn{Symptoms})$: belief
     \emph{after} observing the symptoms.
   \item \textbf{Likelihood} $P(\vn{Symptoms} \given \vn{Problem})$: how likely
-    the problem is to produce these symptoms.
+    each possible problem is to produce the symptoms we \emph{observed} ---
+    read as a function of the problem, with the symptoms fixed. Careful: this
+    is \emph{not} a distribution over problems (\cref{sec:likelihood}).
   \item \textbf{Evidence} $P(\vn{Symptoms})$: how likely these symptoms are at
     all. By the law of total probability it is the sum above, so it can always
     be computed from priors and likelihoods.
@@ -1267,10 +1324,200 @@ the flu. The tiny prior dominates.
 \begin{notebox}[title={Do not flip the conditional}, unbreakable]
 $P(\vn{mp} \given \vn{flu}) = 0.5$ but $P(\vn{flu} \given \vn{mp}) = 0.02$:
 the two directions can be wildly different, and confusing them is the classic
-mistake. Also note that a likelihood $P(\vn{Symptoms} \given \vn{Problem})$ is
-a distribution over \emph{symptoms}, not over problems: summing it over all
-problems does \emph{not} have to give one.
+mistake. The likelihood has a second trap: it looks like a distribution but is
+read the ``wrong way round'' --- see the next subsection.
 \end{notebox}
+
+\subsection{The likelihood: same formula, different reading}
+\label{sec:likelihood}
+
+Prior, posterior and likelihood all \emph{look} like probabilities, $P(\cdot
+\given \cdot)$. The notation, however, does not tell you which argument is
+\emph{varying}. For the posterior that matches the usual reading of a
+conditional probability; for the likelihood it does not. This is the most
+common source of confusion around Bayes' rule, so let us take it apart.
+
+\paragraph{What is fixed is what you know} Which argument is fixed is
+\emph{not} decided by its side of the conditioning bar. It is decided by what
+has been observed: observed quantities are fixed, the thing you ask about
+varies. The lecture's notation makes this visible if you look closely:
+lowercase means a fixed value, uppercase means a variable that runs over all
+its values. $P(\vn{fever} \given \vn{Problem})$ is a list of numbers, one per
+problem; $P(\vn{Fever} \given \vn{flu})$ is a list of numbers, one per value
+of $\vn{Fever}$.
+
+\paragraph{One table, two ways to read it} Take three possible problems and one
+symptom, with the conditional probabilities shown in
+\cref{fig:likelihood-table}. This table is what a doctor (or a Bayesian
+network, \cref{ch:bn}) knows in the \emph{causal} direction: ``if someone
+has the flu, how likely is a fever?''
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[cell/.style={minimum width=1.55cm, minimum height=0.62cm, font=\small}]
+  % highlights
+  \fill[figblue!16]  (1.45,-0.93) rectangle (4.55,-0.31);
+  \fill[figgreen!22] (1.50,-2.17) rectangle (2.98,-0.31);
+  \draw[figblue, thick]  (1.45,-0.93) rectangle (4.55,-0.31);
+  \draw[figgreen!70!black, thick] (1.50,-2.17) rectangle (2.98,-0.31);
+  % header
+  \node[cell, font=\small\bfseries] at (0.55, 0)     {};
+  \node[cell] at (2.24, 0)     {$\vn{fever}$};
+  \node[cell] at (3.80, 0)     {$\neg\vn{fever}$};
+  \draw[accent] (-0.3,-0.3) -- (4.6,-0.3);
+  % rows
+  \node[cell, anchor=east] at (1.35,-0.62) {$\vn{flu}$};
+  \node[cell, anchor=east] at (1.35,-1.24) {$\vn{cold}$};
+  \node[cell, anchor=east] at (1.35,-1.86) {$\vn{allergy}$};
+  \node[cell] at (2.24,-0.62) {0.9};  \node[cell] at (3.80,-0.62) {0.1};
+  \node[cell] at (2.24,-1.24) {0.2};  \node[cell] at (3.80,-1.24) {0.8};
+  \node[cell] at (2.24,-1.86) {0.01}; \node[cell] at (3.80,-1.86) {0.99};
+  \node[font=\scriptsize, gray!70!black] at (2.2,0.55) {$P(\vn{Fever} \given \vn{Problem})$};
+  % annotations
+  \draw[-{Stealth[length=2mm]}, figblue, thick] (4.65,-0.62) -- (5.3,-0.62);
+  \node[anchor=west, align=left, font=\small, text=figblue!80!black] at (5.35,-0.62)
+    {\textbf{row}: fix the problem ($\vn{flu}$), vary the symptom\\
+     $P(\vn{Fever} \given \vn{flu}) = (0.9,\ 0.1)$ --- sums to 1\\
+     a distribution over \emph{symptoms}};
+  \draw[-{Stealth[length=2mm]}, figgreen!70!black, thick] (2.24,-2.25) -- (2.24,-2.85);
+  \node[anchor=north west, align=left, font=\small, text=figgreen!55!black] at (0.3,-2.9)
+    {\textbf{column}: fix the observed symptom ($\vn{fever}$), vary the problem\\
+     $P(\vn{fever} \given \vn{Problem}) = (0.9,\ 0.2,\ 0.01)$ --- sums to 1.11\\
+     the \emph{likelihood}: a function of the problem, \emph{not} a distribution over problems};
+\end{tikzpicture}
+\caption{The same table read along a row and down a column. Every row sums to
+one, because each row is a distribution over the symptom. A column takes one
+number from each of three different rows, so there is no reason for it to sum
+to one.}
+\label{fig:likelihood-table}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Along a row} (fix the problem, vary the symptom):
+    $P(\vn{Fever} \given \vn{flu}) = (0.9, 0.1)$. A proper distribution over
+    the symptom, summing to one. This is how the model is \emph{built}: what
+    does a flu produce?
+  \item \textbf{Down a column} (fix the observed symptom, vary the problem):
+    $P(\vn{fever} \given \vn{Problem}) = (0.9, 0.2, 0.01)$. This is the
+    \emph{likelihood}: for each candidate problem, how well does it explain
+    what we saw? It sums to $1.11$ --- and could just as well sum to $0.3$ or
+    $2.5$, because its three numbers come from three different rows.
+\end{itemize}
+
+\begin{defbox}[title={Likelihood function}]
+Let $\be$ be the observed evidence and $\theta$ the unknown we ask about (a
+problem, a cause, a parameter). The \emph{likelihood function} is
+\[
+\mathcal{L}(\theta) = P(\be \given \theta), \qquad \text{read as a function of } \theta \text{ with } \be \text{ fixed.}
+\]
+It measures how well each value of $\theta$ explains the observation. It is
+\emph{not} a probability distribution over $\theta$ and in general does not sum
+(or integrate) to one over $\theta$. Many books write $\mathcal{L}(\theta)$ or
+$\mathcal{L}(\theta; \be)$ precisely to make the free argument visible.
+\end{defbox}
+
+\begin{intbox}[title={Which side is free?}, unbreakable]
+\textbf{Free variable left of the bar} $\Rightarrow$ a probability
+distribution over it, sums to one: the prior $P(\vn{Problem})$, the posterior
+$P(\vn{Problem} \given \vn{fever})$, a CPD row $P(\vn{Fever} \given
+\vn{flu})$.\par
+\textbf{Free variable right of the bar} $\Rightarrow$ a likelihood function,
+no reason to sum to one: $P(\vn{fever} \given \vn{Problem})$.\par\smallskip
+Read the likelihood aloud as a list of questions, one per candidate: ``If it
+were the flu, how probable would this fever be? If it were a cold? If it were an
+allergy?''
+\end{intbox}
+
+\paragraph{Bayes' rule as a statement about functions of the problem} With the
+symptom observed, every term in Bayes' rule is a function of the
+\emph{problem} --- except one:
+\[
+\underbrace{P(\vn{Problem} \given \vn{fever})}_{\text{distribution over problems}}
+= \frac{\overbrace{P(\vn{fever} \given \vn{Problem})}^{\text{likelihood: function of the problem}}
+        \;\cdot\; \overbrace{P(\vn{Problem})}^{\text{distribution over problems}}}
+       {\underbrace{P(\vn{fever})}_{\text{one number}}} .
+\]
+The denominator contains no free problem variable: $P(\vn{fever}) =
+\sum_{p} P(\vn{fever} \given p)\, P(p)$ sums the problem out. That is why it is
+a \emph{constant}. Strictly speaking, $P(\vn{Fever})$ is a distribution over
+the symptom as well, but we only ever read off the entry for the symptom we
+actually observed. ``Constant'' means: it does not depend on what we are asking
+about (with a different observation, it would be a different number). It is
+simply the sum of the numerators, the number that makes the posterior sum to
+one.
+
+\begin{exbox}[title={Fever: likelihood and posterior disagree}]
+Among patients who come to a doctor with some complaint, suppose $P(\vn{flu}) =
+0.1$, $P(\vn{cold}) = 0.6$, $P(\vn{allergy}) = 0.3$. A patient has a fever.
+\begin{center}
+\small
+\begin{tabular}{@{}lccc@{\qquad}l@{}}
+\toprule
+& $\vn{flu}$ & $\vn{cold}$ & $\vn{allergy}$ & sum \\
+\midrule
+prior $P(\vn{Problem})$ & 0.1 & 0.6 & 0.3 & 1 \\
+likelihood $P(\vn{fever} \given \vn{Problem})$ & 0.9 & 0.2 & 0.01 & 1.11 \\
+prior $\times$ likelihood & 0.09 & 0.12 & 0.003 & $0.213 = P(\vn{fever})$ \\
+posterior $P(\vn{Problem} \given \vn{fever})$ & 0.423 & 0.563 & 0.014 & 1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The \emph{likelihood} says: the flu explains a fever best ($0.9$ versus $0.2$).
+The \emph{posterior} says: the patient most likely has a cold ($0.563$ versus
+$0.423$), because colds are six times as common. The likelihood answers
+``which problem explains the symptom best?''; the posterior answers ``which
+problem does the patient most likely have?''. Picking the value with the
+highest likelihood is called \emph{maximum likelihood}; picking the one with
+the highest posterior is \emph{MAP} (\cref{ch:inference}). They differ
+whenever the prior is not flat.
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/bayes-diagnosis-bars.png}
+\caption{Bayes' rule for the fever example as four functions of the problem.
+Prior (a) times likelihood (b) gives (c); dividing by its sum, $P(\vn{fever})
+= 0.213$, gives the posterior (d). Only (a) and (d) are distributions over the
+problem.}
+\label{fig:bayes-bars}
+\end{figure}
+
+\paragraph{The same thing with a continuous unknown} A coin with unknown bias
+$\theta = P(\text{heads})$ is tossed $n = 10$ times and shows $k = 7$ heads.
+The probability of $k$ heads is the binomial formula
+\[
+P(k \given \theta) = \binom{10}{k}\, \theta^k (1-\theta)^{10-k}.
+\]
+One formula, two readings (\cref{fig:likelihood-coin}):
+\begin{itemize}
+  \item \textbf{Fix $\theta = 0.7$, vary $k$:} the probabilities of
+    $0, 1, \ldots, 10$ heads for this coin. A distribution over
+    \emph{outcomes}; the bars sum to one.
+  \item \textbf{Fix the observed $k = 7$, vary $\theta$:} how well does each
+    possible bias explain seven heads? That is the likelihood
+    $\mathcal{L}(\theta) = 120\, \theta^7 (1-\theta)^3$. It peaks at $\theta =
+    0.7$ (the maximum-likelihood estimate), but the area under the curve is
+    $1/11$, not $1$. (In fact the area is $1/(n+1)$ for every $k$.)
+\end{itemize}
+Multiply the likelihood by a prior over $\theta$ --- here a gentle bump around
+$0.5$, $p(\theta) \propto \theta(1-\theta)$ --- and normalise: the posterior
+$p(\theta \given k = 7) \propto \theta^8 (1-\theta)^4$ peaks at $8/12 \approx
+0.67$, between the prior's favourite ($0.5$) and the likelihood's favourite
+($0.7$). Learning parameters like $\theta$ from data is the topic of
+\cref{ch:learning}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/likelihood-coin.png}
+\caption{One formula, $P(k \given \theta)$, read two ways. (a) For a fixed
+coin, a distribution over the number of heads. (b) For the fixed observation
+$k = 7$, the likelihood as a function of the bias; its area is $1/11$. (c)
+Prior times likelihood, normalised, gives the posterior, which lands between
+the two (the likelihood is rescaled here to area one so that the curves can be
+compared).}
+\label{fig:likelihood-coin}
+\end{figure}
+
 
 % ----------------------------------------------------------
 \section{Probabilistic Inference: Queries and Enumeration}
@@ -1518,9 +1765,11 @@ $\vn{MP}$ are dependent --- as you would expect.
 Full independence is rare in interesting worlds; things \emph{are} connected.
 What is common is a weaker, and much more useful, property. Take
 \begin{center}
-$\alpha$ = ``patient Smith has a fever'', \quad
-$\beta$ = ``patient Smith has muscle pain'', \quad
-$\gamma$ = ``patient Smith has the flu''.
+\begin{tabular}{@{}r@{\ \ }l@{}}
+$\alpha$ = & ``patient Smith has a fever'', \\
+$\beta$ = & ``patient Smith has muscle pain'', \\
+$\gamma$ = & ``patient Smith has the flu''.
+\end{tabular}
 \end{center}
 Fever and muscle pain are dependent: they often go together, so learning about
 muscle pain raises our expectation of fever, $P(\alpha \given \beta) >
@@ -1528,6 +1777,55 @@ P(\alpha)$. But suppose we already \emph{know} that Smith has the flu. Then
 learning about her muscle pain tells us nothing new about the fever --- the
 fever is already ``explained'' by the flu: $P(\alpha \given \beta \cap \gamma)
 = P(\alpha \given \gamma)$.
+
+\Cref{fig:ci-flu} draws the situation as a tiny graph --- a sneak preview of
+the Bayesian networks of \cref{ch:bn}, where arrows point from causes to their
+effects. The flu causes both symptoms. As long as we do not know whether Smith
+has the flu, the two symptoms are linked \emph{through} it: muscle pain makes
+the flu more likely, and the flu in turn makes a fever more likely. Once the
+flu is known (shaded node), that path is blocked: whatever the muscle pain
+could tell us about the flu, we already know, so it has nothing left to say
+about the fever.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    flow/.style={{Stealth[length=2mm]}-{Stealth[length=2mm]}, very thick, dashed, figgreen!80!black},
+    stopflow/.style={-, very thick, dashed, figred},
+    ann/.style={font=\small, align=center}]
+  % ---------- (a) flu unknown ----------
+  \node[bn] (F)  at (0, 0)      {Flu};
+  \node[bn] (Fe) at (-2.1,-2.4) {Fever};
+  \node[bn] (M)  at ( 2.1,-2.4) {MusclePain};
+  \draw[edge] (F) -- (Fe);
+  \draw[edge] (F) -- (M);
+  \draw[flow] ([xshift=5mm]Fe.north) to[out=60, in=180] (0,-1.05) to[out=0, in=120] ([xshift=-5mm]M.north);
+  \node[ann, text=figgreen!60!black] at (0,-1.6) {\scriptsize information\\[-2pt]\scriptsize flows via Flu};
+  \node[font=\small\bfseries, text=accent] at (0, 0.85) {(a) Flu unknown};
+  \node[ann] at (0,-3.5) {Fever and muscle pain are \emph{dependent}:\\
+    $P(\alpha \given \beta) > P(\alpha)$};
+  % ---------- (b) flu observed ----------
+  \begin{scope}[xshift=7.6cm]
+    \node[bn, evid] (F2)  at (0, 0)      {Flu};
+    \node[bn] (Fe2) at (-2.1,-2.4) {Fever};
+    \node[bn] (M2)  at ( 2.1,-2.4) {MusclePain};
+    \draw[edge] (F2) -- (Fe2);
+    \draw[edge] (F2) -- (M2);
+    \draw[stopflow] ([xshift=-5mm]M2.north) to[out=120, in=0] (0.3,-1.05);
+    \draw[stopflow] ([xshift=5mm]Fe2.north) to[out=60, in=180] (-0.3,-1.05);
+    \node[text=figred, font=\Large\bfseries] at (0,-1.05) {$\times$};
+    \node[ann, text=figred] at (0,-1.6) {\scriptsize blocked\\[-2pt]\scriptsize at Flu};
+    \node[font=\small\bfseries, text=accent] at (0, 0.85) {(b) Flu observed};
+    \node[ann] at (0,-3.5) {Fever and muscle pain are \emph{independent given Flu}:\\
+      $P(\alpha \given \beta \cap \gamma) = P(\alpha \given \gamma)$};
+  \end{scope}
+\end{tikzpicture}
+\caption{The flu is a common cause of fever and muscle pain. (a) Without
+knowing about the flu, one symptom tells us something about the other, via
+the flu. (b) Once the flu is known (shaded), the connection is cut: the
+symptoms are conditionally independent given the flu.}
+\label{fig:ci-flu}
+\end{figure}
 
 \begin{defbox}[title={Conditional independence}]
 Two events $\alpha, \beta$ are \emph{conditionally independent given} $\gamma$,
@@ -1879,51 +2177,7 @@ gets a \emph{conditional probability distribution} (CPD) given its parents.
 
 \begin{figure}[htbp]
 \centering
-\begin{tikzpicture}
-  % network
-  \node[bn] (D) at (-1.9, 0)   {Difficulty};
-  \node[bn] (I) at ( 1.9, 0)   {Interest};
-  \node[bn] (G) at (-0.7,-1.9) {Grade};
-  \node[bn] (S) at ( 3.1,-1.9) {SAT};
-  \node[bn] (L) at (-0.7,-3.8) {Letter};
-  \draw[edge] (D) -- (G);
-  \draw[edge] (I) -- (G);
-  \draw[edge] (I) -- (S);
-  \draw[edge] (G) -- (L);
-  % CPDs
-  \node[cpd, anchor=south east,
-        label={[font=\scriptsize\bfseries]above:$P(D)$}] (tD) at (-3.2,0.3)
-    {\begin{tabular}{cc}\toprule $d^0$ & $d^1$\\\midrule 0.6 & 0.4\\\bottomrule\end{tabular}};
-  \node[cpd, anchor=south west,
-        label={[font=\scriptsize\bfseries]above:$P(I)$}] (tI) at (3.2,0.3)
-    {\begin{tabular}{cc}\toprule $i^0$ & $i^1$\\\midrule 0.7 & 0.3\\\bottomrule\end{tabular}};
-  \node[cpd, anchor=east,
-        label={[font=\scriptsize\bfseries]above:$P(G \given I, D)$}] (tG) at (-2.3,-2.3)
-    {\begin{tabular}{lccc}\toprule
-       & $g^1$ & $g^2$ & $g^3$\\\midrule
-     $i^0, d^0$ & 0.3  & 0.4  & 0.3 \\
-     $i^0, d^1$ & 0.05 & 0.25 & 0.7 \\
-     $i^1, d^0$ & 0.9  & 0.08 & 0.02 \\
-     $i^1, d^1$ & 0.5  & 0.3  & 0.2 \\\bottomrule\end{tabular}};
-  \node[cpd, anchor=west,
-        label={[font=\scriptsize\bfseries]above:$P(S \given I)$}] (tS) at (4.3,-2.0)
-    {\begin{tabular}{lcc}\toprule
-       & $s^0$ & $s^1$\\\midrule
-     $i^0$ & 0.95 & 0.05 \\
-     $i^1$ & 0.2  & 0.8 \\\bottomrule\end{tabular}};
-  \node[cpd, anchor=west,
-        label={[font=\scriptsize\bfseries]above:$P(L \given G)$}] (tL) at (0.6,-4.3)
-    {\begin{tabular}{lcc}\toprule
-       & $l^0$ & $l^1$\\\midrule
-     $g^1$ & 0.1  & 0.9 \\
-     $g^2$ & 0.4  & 0.6 \\
-     $g^3$ & 0.99 & 0.01 \\\bottomrule\end{tabular}};
-  \draw[cpdlink] (tD) -- (D);
-  \draw[cpdlink] (tI) -- (I);
-  \draw[cpdlink] (tG) -- (G);
-  \draw[cpdlink] (tS) -- (S);
-  \draw[cpdlink] (tL) -- (L);
-\end{tikzpicture}
+\studentnetworkpic
 \caption{The student network with its conditional probability distributions
 (numbers from the lecture, after Koller \& Friedman). Each row of each table
 is a probability distribution over the child, for one combination of parent
@@ -2706,15 +2960,8 @@ list):
 
 
 % ==========================================================
-%  CHAPTERS 4--8 — OUTLINES
-%  Section lists follow the lecture titles in the course schedule
-%  and the standard treatment in Koller & Friedman / Russell & Norvig.
-%  Replace \planned{...} blocks with real text once the slides of the
-%  corresponding units are available, and adapt the sections to them.
-% ==========================================================
-
-% ==========================================================
-%  CHAPTER 4 — INFERENCE IN BAYESIAN NETWORKS   (VO 4--5)
+%  CHAPTER 4 — INFERENCE IN BAYESIAN NETWORKS   (VO 4--5,
+%  slide sets 4a "Exact Inference" and 4b "Approximate Inference")
 % ==========================================================
 \chapter{Inference in Bayesian Networks}
 \label{ch:inference}
@@ -2722,47 +2969,2302 @@ list):
 \Cref{ch:bn} showed that a Bayesian network \emph{is} a full joint
 distribution, so every query can in principle be answered by enumeration ---
 multiply CPD entries, sum over the hidden variables, normalise. In practice
-that is exponential in the number of variables. This chapter is about doing it
-smarter: first exactly, by organising the sums cleverly, and then
-approximately, by \emph{sampling} from the network when exact inference is too
+that is exponential in the number of variables. This chapter is about what to
+do instead, and it comes in two halves that match the two slide sets of the
+lecture.
+
+\textbf{Part 1, exact inference (slides 4a).} We first write enumeration down
+properly for BNs and see exactly where the exponential cost comes from. Then
+we notice that naive enumeration computes the same small sums over and over
+again, and fix that with \emph{variable elimination}: push the sums inwards,
+compute each piece once, store it, reuse it. Same answer, often dramatically
+less work --- but, sadly, still exponential in the worst case.
+
+\textbf{Part 2, approximate inference (slides 4b).} When exact inference is
+hopeless, we stop computing and start \emph{simulating}: we let the network
+generate random examples (``samples'') and count. We build this up step by
+step --- forward sampling, rejection sampling, likelihood weighting --- then
+zoom out to the general principle behind the last one, \emph{importance
+sampling}, and finally meet a cleverer family of methods, \emph{Markov chain
+Monte Carlo}, with Gibbs sampling as the main example.
+
+\begin{intbox}[unbreakable]
+Imagine someone asks you: ``In this dice game, how often do you win?'' There
+are two honest ways to answer. You can sit down with pen and paper and go
+through every possible sequence of throws, adding up the probabilities of the
+winning ones --- that is \emph{exact inference}. Or you can play the game
+10\,000 times and count how often you win --- that is \emph{sampling}. The
+first gives the exact number but may take forever if the game is complicated.
+The second is quick and simple, but only approximately right, and it gets more
+accurate the more you play. This chapter is about both strategies, and about
+how to play the game cleverly when the event you care about is rare.
+\end{intbox}
+
+% ----------------------------------------------------------
+\section{The Probabilistic Query, Revisited}
+\label{sec:query-revisited}
+% ----------------------------------------------------------
+
+Everything in this chapter answers one kind of question, the
+\emph{probabilistic query} from \cref{sec:enumeration}: compute
+$P(\bX \given \be)$, the distribution over the query variables $\bX$ given the
+observed values $\be$ of the evidence variables $\bE$. All other variables are
+hidden; we call them $\bZ = \Xall \setminus (\bX \cup \bE)$.
+
+Two special cases come up often. Sometimes we only care about one particular
+value combination, $P(\bX = \bx \given \be)$ --- ``how likely is it that Joe
+is motivated?''. And sometimes we only want the single most likely answer,
+\[
+\bx^* = \argmax_{\bx}\, P(\bX = \bx \given \be),
+\]
+which is called a \emph{MAP query} (\emph{maximum a posteriori}). Both are
+easy once we have the full conditional distribution $P(\bX \given \be)$: read
+off one entry, or pick the largest one. So the full distribution is what the
+algorithms compute.
+
+\begin{notebox}[title={MAP of a set $\neq$ set of individual MAPs}]
+For a MAP query over \emph{several} variables, you have to maximise over their
+\emph{joint} values. Taking the most likely value of each variable separately
+can give the wrong answer. Small example with two binary variables:
+\begin{center}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+$P(A, B)$ & $b^0$ & $b^1$ \\
+\midrule
+$a^0$ & \textbf{0.35} & 0.05 \\
+$a^1$ & 0.30 & 0.30 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Individually, $a^1$ is more likely than $a^0$ ($0.6$ vs.\ $0.4$) and $b^0$ is
+more likely than $b^1$ ($0.65$ vs.\ $0.35$). But the most likely
+\emph{combination} is $(a^0, b^0)$ with $0.35$, not $(a^1, b^0)$ with $0.30$.
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Exact Inference by Enumeration in a Bayesian Network}
+\label{sec:bn-enumeration}
+% ----------------------------------------------------------
+
+The recipe is exactly the one from \cref{sec:enumeration} --- sum out the
+hidden variables, normalise --- with one new ingredient: we never store the
+joint table. Whenever we need an entry $P(\bx, \be, \bz)$, we compute it on
+the fly as a product of CPD entries (chain rule for BNs, \cref{sec:factorisation}).
+
+\begin{thmbox}[title={Inference by enumeration in a Bayesian network}, unbreakable]
+To compute $P(\bX \given \be)$ with hidden variables $\bZ$:
+\begin{enumerate}
+  \item For every value combination $\bx$ of the query variables, sum the
+    factorised joint over all hidden value combinations:
+    \[
+    P(\bx, \be) = \sum_{\bz \in \Val(\bZ)} P(\bx, \be, \bz)
+               = \sum_{\bz} \;\prod_{i=1}^{n} P(x_i \given \pa(X_i)),
+    \]
+    where in each product, $x_i$ and $\pa(X_i)$ are the values that $\bx, \be,
+    \bz$ assign to $X_i$ and its parents.
+  \item Normalisation constant: $Z = P(\be) = \sum_{\bx} P(\bx, \be)$.
+  \item Renormalise: $P(\bX \given \be) = \frac{1}{Z}\, P(\bX, \be)$.
+\end{enumerate}
+\end{thmbox}
+
+Lowercase $\pa(X_i)$ denotes the \emph{values} of the parents in the current
+assignment; uppercase $\Pa(X_i)$ is the \emph{set} of parent variables.
+
+\subsection{A worked example: explaining away, computed}
+\label{sec:enum-example}
+
+The student network is the running example of this whole chapter. Its CPDs
+were introduced in \cref{fig:student}, many pages back, so here they are
+again (\cref{fig:student-recap1}); all numbers below come from these tables.
+
+\begin{figure}[!htbp]
+\centering
+\studentnetworkpic
+\caption{The student network with its CPDs --- a copy of \cref{fig:student}, repeated here so you do not have to flip back.}
+\label{fig:student-recap1}
+\end{figure}
+
+In \cref{tab:joe} we claimed that after Joe's C and his high SAT score, the
+probability of a hard course rises to $0.76$. Let us finally compute it. The
+query is $P(D \given g^3, s^1)$; the hidden variables are $I$ and $L$. For
+$d^0$ we need the sum over the four combinations of $i$ and $l$:
+\begin{align*}
+P(d^0, g^3, s^1)
+&= \sum_{i}\sum_{l} P(d^0)\, P(i)\, P(g^3 \given d^0, i)\, P(s^1 \given i)\, P(l \given g^3) \\
+&= 0.6\cdot 0.7\cdot 0.3\cdot 0.05 \cdot \mathbf{0.99}
+ + 0.6\cdot 0.7\cdot 0.3\cdot 0.05 \cdot \mathbf{0.01} \\
+&\quad + 0.6\cdot 0.3\cdot 0.02\cdot 0.8 \cdot \mathbf{0.99}
+ + 0.6\cdot 0.3\cdot 0.02\cdot 0.8 \cdot \mathbf{0.01} \\
+&= 0.006237 + 0.000063 + 0.0028512 + 0.0000288 = 0.00918 .
+\end{align*}
+The same for $d^1$, now with $P(d^1) = 0.4$ and the CPD row for hard courses:
+\begin{align*}
+P(d^1, g^3, s^1)
+&= 0.4\cdot 0.7\cdot 0.7\cdot 0.05 \cdot (0.99 + 0.01)
+ + 0.4\cdot 0.3\cdot 0.2\cdot 0.8 \cdot (0.99 + 0.01) \\
+&= 0.0098 + 0.0192 = 0.029 .
+\end{align*}
+Normalise:
+\[
+Z = P(g^3, s^1) = 0.00918 + 0.029 = 0.03818, \qquad
+P(D \given g^3, s^1) = \frac{1}{Z}
+\begin{pmatrix} 0.00918 \\ 0.029 \end{pmatrix}
+\approx \begin{pmatrix} 0.240 \\ 0.760 \end{pmatrix}
+\begin{matrix} \leftarrow d^0 \\ \leftarrow d^1 \end{matrix}
+\]
+Given a C and a high SAT score, the course was hard with probability about
+76\,\% (up from the prior $0.4$) --- the explaining-away effect of
+\cref{sec:reasoning-patterns}, now with the arithmetic behind it.
+
+Look at the bold numbers in the first sum: the terms come in pairs that differ
+\emph{only} in $P(l^0 \given g^3) = 0.99$ versus $P(l^1 \given g^3) = 0.01$, and
+those two always add up to $1$. That is no coincidence. We are summing a CPD
+row over all values of its own child --- and every CPD row sums to one. The
+letter is unobserved and has no descendants, so it simply cannot influence
+the answer. Naive enumeration does not know this and dutifully doubles its
+work. Keep this observation in mind; variable elimination will make it
+explicit (\cref{sec:ve-example}).
+
+\subsection{How expensive is this?}
+\label{sec:enum-complexity}
+
+Take a BN over $N$ binary variables and a query with only a few query and
+evidence variables. Then almost all variables are hidden, $|\bZ| = k \approx
+N$, and the sum in step~1 has $2^k \approx 2^N$ terms, each a product of $N$
+CPD entries. Enumeration costs $\mathcal{O}(N \cdot 2^N)$ time --- the same
+exponential blow-up as with the explicit joint table, only now in time rather
+than space.
+
+\begin{exbox}[title={What ``exponential'' means in seconds}]
+A network with 50 binary variables, one query variable and two evidence
+variables leaves 47 hidden variables, i.e.\ $2^{47} \approx 1.4 \cdot 10^{14}$
+terms per query value. A computer that evaluates a billion terms per second
+needs about \textbf{39 hours} --- for a single number. With 100 variables (97
+hidden) it would need about $5 \cdot 10^{12}$ \emph{years}, a few hundred
+times the age of the universe.
+\end{exbox}
+
+\begin{thmbox}[title={Complexity of exact inference}, unbreakable]
+\textbf{Bad news.} Exact inference in graphical models is \emph{NP-hard}: in
+the worst case, it requires exponential time (unless P $=$ NP).\par
+\textbf{Good news.} Many real-world networks are far from the worst case. For
+sparsely connected networks (few parents per variable), optimised algorithms
+such as variable elimination are often quite efficient.
+\end{thmbox}
+
+% ----------------------------------------------------------
+\section{Variable Elimination}
+\label{sec:ve}
+% ----------------------------------------------------------
+
+\subsection{The waste in naive enumeration}
+
+Look again at the four terms of $P(d^0, g^3, s^1)$:
+\begin{align*}
+&\underbrace{0.6 \times 0.7 \times 0.3 \times 0.05}_{\text{same}} \times 0.99
++ \underbrace{0.6 \times 0.7 \times 0.3 \times 0.05}_{\text{same}} \times 0.01 \\
+{}+{} &\underbrace{0.6 \times 0.3 \times 0.02 \times 0.8}_{\text{same}} \times 0.99
++ \underbrace{0.6 \times 0.3 \times 0.02 \times 0.8}_{\text{same}} \times 0.01 .
+\end{align*}
+The same partial products are computed again and again. In a small network
+this is a minor annoyance; in a big one, the same sub-expression can be
+recomputed an \emph{exponential} number of times. The cure is the
+distributive law you learned in school, $ab + ac = a(b + c)$:
+pull common factors out of the sum, compute what remains once, and reuse it.
+
+\begin{intbox}[unbreakable]
+The distributive law is the whole trick of this section. Compare
+\[
+\sum_{a}\sum_{b} f(a)\, g(b)
+\qquad\text{and}\qquad
+\Big(\sum_{a} f(a)\Big)\Big(\sum_{b} g(b)\Big).
+\]
+Both give the same number. With $k$ values per variable, the left version
+needs $k^2$ multiplications; the right one needs $2(k-1)$ additions and a
+single multiplication. Variable elimination is nothing but applying this
+systematically: every time a factor does not depend on the variable we are
+summing over, pull it out of that sum.
+\end{intbox}
+
+\subsection{A simple example: a chain}
+\label{sec:ve-chain}
+
+The lecture demonstrates the idea on the simplest possible network, a chain
+$A \to B \to C \to D$ where each variable has $k$ values, and the task of
+computing the marginal $P(D)$. Naive enumeration writes
+\[
+P(D) = \sum_{c}\sum_{b}\sum_{a} P(a, b, c, D)
+     = \sum_{c}\sum_{b}\sum_{a} P(a)\, P(b \given a)\, P(c \given b)\, P(D \given c).
+\]
+Evaluated literally, this computes $\sum_a P(a) P(b \given a) = P(b)$ again
+for every value of $c$ and $d$, and $\sum_b P(b) P(c \given b) = P(c)$ again
+for every value of $d$. Wasteful. Instead, go through the chain once, from
+top to bottom, and store each intermediate result:
+\begin{enumerate}
+  \item $P(A)$: given by $A$'s CPD. Cost $\bigO{1}$.
+  \item $P(B) = \sum_{a} P(a)\, P(B \given a)$: for each of the $k$ values of
+    $B$, $k$ multiplications and $k-1$ additions. Cost $\bigO{k^2}$.
+  \item $P(C) = \sum_{b} P(b)\, P(C \given b)$, using the stored $P(B)$.
+    Cost $\bigO{k^2}$.
+  \item $P(D) = \sum_{c} P(c)\, P(D \given c)$, using the stored $P(C)$.
+    Cost $\bigO{k^2}$.
+\end{enumerate}
+For a chain $X_1 \to \cdots \to X_N$, the recursion $P(X_{i+1}) = \sum_{x_i}
+P(x_i)\, P(X_{i+1} \given x_i)$ costs $\bigO{k^2}$ per step and
+$\bigO{N k^2}$ in total --- \emph{linear} in $N$, although the joint
+distribution has $k^N$ entries.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    msg/.style={-{Stealth[length=2mm]}, thick, figgreen, dashed},
+    mlab/.style={font=\scriptsize, figgreen!80!black, align=center}]
+  \node[bnsmall] (A) at (0,0)    {A};
+  \node[bnsmall] (B) at (3.8,0)  {B};
+  \node[bnsmall] (C) at (7.6,0)  {C};
+  \node[bnsmall] (D) at (11.4,0) {D};
+  \draw[edge] (A) -- (B); \draw[edge] (B) -- (C); \draw[edge] (C) -- (D);
+  \node[cpd, above=2mm of A] {$P(\text{yes}) = 0.7$};
+  \node[cpd, above=2mm of B] {correct: 0.9, \ flip: 0.1};
+  \node[cpd, above=2mm of C] {correct: 0.9, \ flip: 0.1};
+  \node[cpd, above=2mm of D] {correct: 0.9, \ flip: 0.1};
+  \draw[msg] (0.35,-0.6) to[bend right=18] node[mlab, below=1pt] {$P(B) = (0.66,\ 0.34)$} (3.45,-0.6);
+  \draw[msg] (4.15,-0.6) to[bend right=18] node[mlab, below=1pt] {$P(C) = (0.628,\ 0.372)$} (7.25,-0.6);
+  \draw[msg] (7.95,-0.6) to[bend right=18] node[mlab, below=1pt] {$P(D) = (0.6024,\ 0.3976)$} (11.05,-0.6);
+\end{tikzpicture}
+\caption{The telephone game as a chain network. Each step passes one small
+table (green) to the next variable; nothing is ever recomputed. Values are
+listed as (yes, no).}
+\label{fig:telephone}
+\end{figure}
+
+\begin{exbox}[title={The telephone game (``Stille Post'')}]
+Four children pass a yes/no message along a row (\cref{fig:telephone}). The
+first one, $A$, thinks of ``yes'' with probability $0.7$. Every child passes
+the message on correctly with probability $0.9$ and flips it with
+probability $0.1$. What does the last child, $D$, hear?
+\begin{align*}
+P(b^{\text{yes}}) &= 0.7 \cdot 0.9 + 0.3 \cdot 0.1 = 0.66, \\
+P(c^{\text{yes}}) &= 0.66 \cdot 0.9 + 0.34 \cdot 0.1 = 0.628, \\
+P(d^{\text{yes}}) &= 0.628 \cdot 0.9 + 0.372 \cdot 0.1 = 0.6024 .
+\end{align*}
+Three tiny steps, each re-using the previous result. Naive enumeration would
+instead add up all $2^3 = 8$ ``paths'' $(a, b, c)$ for each value of $D$.
+With a row of 30 children, that becomes $2^{29} \approx 5 \cdot 10^8$ paths
+--- versus 29 tiny steps. (And as a bonus, the numbers show the message
+slowly drifting towards a 50/50 coin flip as it travels.)
+\end{exbox}
+
+\subsection{What we really did: push the sums in, cache, repeat}
+
+Here is the same computation written as algebra, because this view
+generalises. Start from the full sum and \emph{push the summation over $A$ as
+far inwards as possible} --- past every factor that does not mention $A$:
+\[
+P(D) = \sum_{c}\sum_{b}\sum_{a} P(a)\, P(b \given a)\, P(c \given b)\, P(D \given c)
+     = \sum_{c}\sum_{b} P(c \given b)\, P(D \given c) \underbrace{\sum_{a} P(a)\, P(b \given a)}_{\eqdef\ \tau_A(b)} .
+\]
+The inner sum depends only on $b$. Compute it once for each value of $B$ and
+store the results as a table $\tau_A(B)$ --- we say we have \emph{summed out}
+or \emph{eliminated} $A$. Then replace the sum by a table lookup:
+\[
+P(D) = \sum_{c}\sum_{b} P(c \given b)\, P(D \given c)\, \tau_A(b)
+     = \sum_{c} P(D \given c) \underbrace{\sum_{b} P(c \given b)\, \tau_A(b)}_{\eqdef\ \tau_B(c)}
+     = \sum_{c} P(D \given c)\, \tau_B(c).
+\]
+Same story: push in the sum over $B$, compute and store $\tau_B(C)$, look it
+up. What is left is a single sum per value of $D$. (Here $\tau_A(B)$ happens
+to be $P(B)$ and $\tau_B(C)$ is $P(C)$; in general the stored tables need not
+be probability distributions at all.)
+
+Two ingredients make this work. \textbf{Sparse connectivity:} because of the
+network structure, many sub-expressions of the big sum depend only on a few
+variables, so their results fit into small tables. \textbf{Caching:} by
+computing each such sub-expression once and storing it, we avoid computing it
+exponentially many times. Doing sums ``inside out'' and storing intermediate
+results is a form of \emph{dynamic programming} --- the same principle that
+will power the forward algorithm for HMMs (\cref{ch:hmm}).
+
+\begin{defbox}[title={Factor}]
+A \emph{factor} $\tau(\mathbf{U})$ over a set of variables $\mathbf{U}$ is a
+table that assigns a non-negative number to every value combination of
+$\mathbf{U}$. CPDs are factors; so are the intermediate tables produced during
+elimination. A factor does \emph{not} have to sum to one, and a factor over the
+empty set ($\mathbf{U} = \emptyset$) is just a single number.
+\end{defbox}
+
+\subsection{The general algorithm}
+
+In a general network, things are less tidy than in a chain. A variable
+usually appears in several CPDs, the stored intermediate factors become
+multi-dimensional, and it is not obvious in which order to eliminate the
+variables. The algorithm itself, however, is just the chain recipe applied
+over and over.
+
+\begin{thmbox}[title={Variable elimination (VE) for Bayesian networks}]
+\textbf{Given:} a BN over $\Xall = \bX \cup \bE \cup \bZ$, a query
+$P(\bX \given \bE = \be)$, and an ordering $Z_1, \ldots, Z_k$ of the hidden
+variables. Start from $P(\bX, \be) = \sum_{\bz} \prod_i P(x_i \given
+\pa(X_i))$ with the evidence values plugged in.\par
+\textbf{For $i = 1, \ldots, k$ (eliminate $Z_i$):} push the summation over
+$Z_i$ as far inwards as possible. Then
+\begin{enumerate}
+  \item let $\mathbf{U}$ be all variables that appear in this inner sum, except
+    $Z_i$;
+  \item compute the product of the factors in the inner sum for all value
+    combinations of $\{Z_i\} \cup \mathbf{U}$ $\Rightarrow$ a temporary table $T$;
+  \item sum $T$ over $Z_i$: for each combination $\mathbf{u}$, add up the
+    entries for all values $z_i$;
+  \item store the result as a new factor $\tau_{Z_i}(\mathbf{U})$, which
+    replaces the inner sum.
+\end{enumerate}
+\textbf{Finally:} multiply the remaining factors $\Rightarrow$ a table
+$P(\bX, \be)$; renormalise it to get $P(\bX \given \be)$.
+\end{thmbox}
+
+\subsection{Worked example: \texorpdfstring{$P(I \given g^3)$}{P(I | g3)} by variable elimination}
+\label{sec:ve-example}
+
+The lecture's example: how motivated is Joe, given only his C? The variable
+sets are $\bX = \{I\}$, $\bE = \{G\}$ with $\be = g^3$, and $\bZ = \{D, L,
+S\}$, eliminated in the order $D, L, S$. Starting point, with the evidence
+plugged in:
+\[
+P(I, g^3) = \sum_{D}\sum_{L}\sum_{S} P(D)\, P(I)\, P(g^3 \given D, I)\, P(L \given g^3)\, P(S \given I).
+\]
+
+\begin{exbox}[title={Step 1: eliminate $D$}]
+Only $P(D)$ and $P(g^3 \given D, I)$ mention $D$, so push the sum over $D$ in
+front of exactly those two:
+\[
+P(I, g^3) = \sum_{L}\sum_{S} P(I)\, P(L \given g^3)\, P(S \given I)
+  \underbrace{\sum_{D} P(D)\, P(g^3 \given D, I)}_{T \text{ summed over } D} ,
+\qquad \mathbf{U} = \{I\}.
+\]
+Compute $T$ for all combinations of $D$ and $I$, then sum out $D$:
+\begin{center}
+\small
+\begin{tabular}{@{}ccl@{\qquad}cl@{}}
+\toprule
+$D$ & $I$ & $T = P(D)\,P(g^3 \given D, I)$ & $I$ & $\tau_D(I) = \sum_D T$ \\
+\midrule
+$d^0$ & $i^0$ & $0.6 \times 0.3 = 0.18$   & $i^0$ & $0.18 + 0.28 = 0.46$ \\
+$d^0$ & $i^1$ & $0.6 \times 0.02 = 0.012$ & $i^1$ & $0.012 + 0.08 = 0.092$ \\
+$d^1$ & $i^0$ & $0.4 \times 0.7 = 0.28$   &       & \\
+$d^1$ & $i^1$ & $0.4 \times 0.2 = 0.08$   &       & \\
+\bottomrule
+\end{tabular}
+\end{center}
+New target: $P(I, g^3) = \sum_L \sum_S P(I)\, P(L \given g^3)\, P(S \given I)\, \tau_D(I)$.
+\end{exbox}
+
+\begin{exbox}[title={Step 2: eliminate $L$}]
+Only $P(L \given g^3)$ mentions $L$, so $\mathbf{U} = \emptyset$:
+\[
+\tau_L = \sum_{L} P(L \given g^3) = 0.99 + 0.01 = 1.0 .
+\]
+A factor without arguments --- a constant. New target:
+\[
+P(I, g^3) = \sum_S P(I)\, P(S \given I)\, \tau_D(I)\, \tau_L .
+\]
+\end{exbox}
+
+\begin{exbox}[title={Step 3: eliminate $S$}]
+Only $P(S \given I)$ mentions $S$, so $\mathbf{U} = \{I\}$:
+\[
+\tau_S(i^0) = 0.95 + 0.05 = 1.0, \qquad \tau_S(i^1) = 0.2 + 0.8 = 1.0 .
+\]
+\end{exbox}
+
+\begin{exbox}[title={Finally: multiply and normalise}]
+\[
+P(I, g^3) = P(I)\, \tau_D(I)\, \tau_L\, \tau_S(I)
+= \begin{pmatrix} 0.7 \times 0.46 \times 1 \times 1.0 \\ 0.3 \times 0.092 \times 1 \times 1.0 \end{pmatrix}
+= \begin{pmatrix} 0.322 \\ 0.0276 \end{pmatrix},
+\]
+\[
+Z = 0.322 + 0.0276 = 0.3496, \qquad
+P(I \given g^3) \approx \begin{pmatrix} 0.921 \\ 0.079 \end{pmatrix}
+\begin{matrix} \leftarrow i^0 \\ \leftarrow i^1 \end{matrix}
+\]
+Joe is highly motivated with probability about $7.9\,\%$ --- the same number we
+got with Bayes' rule in \cref{sec:bn-event-probs}, and $Z = 0.3496 = P(g^3)$
+also matches.
+\end{exbox}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}clll@{}}
+\toprule
+\textbf{Step} & \textbf{Factors that mention the variable} & \textbf{New factor} & \textbf{Largest table} \\
+\midrule
+eliminate $D$ & $P(D)$, $P(g^3 \given D, I)$ & $\tau_D(I) = (0.46,\ 0.092)$ & $T(D, I)$: 4 entries \\
+eliminate $L$ & $P(L \given g^3)$             & $\tau_L = 1$                 & 2 entries \\
+eliminate $S$ & $P(S \given I)$               & $\tau_S(I) = (1,\ 1)$        & $T(S, I)$: 4 entries \\
+multiply      & $P(I)$, $\tau_D$, $\tau_L$, $\tau_S$ & $P(I, g^3) = (0.322,\ 0.0276)$ & 2 entries \\
+\bottomrule
+\end{tabular}
+\caption{Bookkeeping for $P(I \given g^3)$ with elimination order $D, L, S$.
+No table ever has more than 4 entries, while the full joint has 48.}
+\label{tab:ve-bookkeeping}
+\end{table}
+
+\begin{notebox}[title={Shortcut: unobserved leaves contribute nothing}]
+Steps 2 and 3 produced factors that are identically one. As noticed in
+\cref{sec:enum-example}, summing a CPD over its own child always gives one. So
+a variable that is neither queried nor observed and has no children (a
+``barren'' leaf) can be deleted from the network before inference starts ---
+and after deleting it, its parent may become such a leaf, too. For $P(I
+\given g^3)$ we could have thrown away $L$ and $S$ right away and worked with
+$D$, $I$, $G$ only. (Not on the slides, but it follows directly from the
+algorithm and saves a lot of work in exercises.) Careful: this does
+\emph{not} work for observed leaves --- the observed $G$ above clearly
+matters.
+\end{notebox}
+
+\subsection{Why the elimination order matters}
+
+VE gives the correct answer for every elimination order, but the
+\emph{cost} can differ enormously, because the order decides how big the
+intermediate tables get. A small but extreme example
+(\cref{fig:hub}): a disease $D$ with $n$ symptoms $S_1, \ldots, S_n$, each a
+child of $D$, and the query $P(S_1)$.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  \node[bnsmall] (D) at (0,0) {D};
+  \foreach \i/\ang in {1/200, 2/235, 3/270, 4/305} {
+    \node[bnsmall] (S\i) at (\ang:1.9) {$S_{\i}$};
+    \draw[edge] (D) -- (S\i);
+  }
+  \node at (340:1.9) {$\cdots$};
+  \node[bnsmall] (Sn) at (15:1.9) {$S_n$};
+  \draw[edge] (D) -- (Sn);
+  \node[font=\small, align=left, anchor=west] at (2.9,0.2)
+    {\textbf{Bad order} ($D$ first): the inner sum contains $P(D)$ and all\\
+     $P(S_j \given D)$ $\Rightarrow$ $T(D, S_1, \ldots, S_n)$ with $2^{n+1}$ entries.\\[3pt]
+     \textbf{Good order} ($S_2, \ldots, S_n$, then $D$): every $\tau_{S_j}(D)$\\
+     has 2 entries (all ones), and $\tau_D(S_1)$ has 2 entries.};
+\end{tikzpicture}
+\caption{A ``hub'' network. For $n = 20$ binary symptoms, eliminating $D$
+first creates a table with $2^{21} \approx 2$ million entries; the good order
+never needs more than four.}
+\label{fig:hub}
+\end{figure}
+
+If we eliminate $D$ first, the inner sum $\sum_D P(D) \prod_j P(S_j \given
+D)$ involves \emph{all} symptoms at once, and the resulting factor
+$\tau_D(S_1, \ldots, S_n)$ has $2^n$ entries --- we have rebuilt a big chunk
+of the joint distribution. If we first eliminate $S_2, \ldots, S_n$, each of
+them only touches its own CPD, every new factor is a two-entry table over
+$D$, and the work stays tiny. Same network, same query, same answer ---
+exponential versus linear effort, decided only by the order.
+
+\subsection{The complexity of variable elimination}
+
+\begin{thmbox}[title={Cost of variable elimination}, unbreakable]
+For a BN with $N$ variables, let $M$ be the maximum number of entries in any
+intermediate table created during VE. Then VE performs $\bigO{N \cdot M}$
+arithmetic operations.
+\end{thmbox}
+
+That looks great, but it moves the problem rather than solving it: the
+intermediate factors --- and therefore $M$ --- can grow exponentially, since
+a factor over $|\mathbf{U}|$ variables has exponentially many entries in
+$|\mathbf{U}|$. How large $M$ gets depends on the structure of the network and
+on the elimination order. A systematic analysis of this (and the search for
+good orders, which is itself a hard problem) is beyond this course.
+
+In short, VE turns ``exponential in the number of variables'' into ``exponential in the
+size of the biggest intermediate table''. In sparse networks with a good
+order, the biggest table is small and inference is fast (the chain: $M = k$).
+In densely connected networks, some intermediate table will inevitably
+involve many variables at once, and we are back to exponential cost. Exact
+inference is feasible in very sparse networks --- if we find a good order ---
+but remains intractable in general.
+
+\paragraph{Beyond this course} Exact inference is a large field. Not treated
+in the lecture: methods for finding good elimination orders, conditioning,
+and entire classes of alternative algorithms such as clique trees, factor
+graphs, and message-passing / belief-update algorithms.
+
+% ----------------------------------------------------------
+\section{Why Approximate Inference?}
+\label{sec:why-approx}
+% ----------------------------------------------------------
+
+Let us take stock. Exact inference is NP-hard. Variable elimination makes it
+efficient for some sparse networks, but for many real-world problems exact
+inference is simply impossible. The way out is to settle for an
+\emph{approximate} answer that can be computed with a tractable amount of
+effort. There are two big families of approximate methods:
+\begin{itemize}
+  \item \textbf{Optimisation-based methods} (``variational inference''): pick
+    a class $\mathcal{Q}$ of ``easy'' distributions in which exact inference is
+    cheap, search for the member $Q \in \mathcal{Q}$ that is closest to the
+    real distribution $P$, and do exact inference in $Q$ instead.
+  \item \textbf{Stochastic sampling methods} (``particle-based methods''):
+    forget about computing; generate random example events according to $P$
+    and estimate probabilities by counting.
+\end{itemize}
+This course covers only the second family. The basic idea fits in one
+sentence: instead of computing a distribution exactly, approximate it by a
+limited set of points drawn at random from it --- the \emph{samples} or
+\emph{particles} --- and estimate any desired probability from them. For the
+student network, a set of samples is just a list of complete student
+``profiles'', such as $(d^1, i^0, g^2, s^1, l^0)$, $(d^1, i^1, g^1, s^0,
+l^1)$, \ldots
+
+\begin{intbox}[unbreakable]
+Sampling is how opinion polls work. Nobody asks all 9 million Austrians whom
+they will vote for. A pollster asks 1000 randomly chosen people and reports
+the fractions, with an error of about $\pm 3$ percentage points. The
+remarkable part: that error depends on how many people were asked, not on how
+many people there are. Sampling-based inference profits from the same effect.
+The joint distribution may have $2^{100}$ entries, but the accuracy of our
+estimate of a probability depends (mainly) on the number of samples, not on
+the size of the table.
+\end{intbox}
+
+% ----------------------------------------------------------
+\section{Sampling from a Bayesian Network}
+\label{sec:forward-sampling}
+% ----------------------------------------------------------
+
+\subsection{What does ``sampling from \texorpdfstring{$P$}{P}'' actually mean?}
+
+A probability distribution $P$ is a \emph{description}: it tells you how
+probable each outcome is. A \emph{sampler} for $P$ is a \emph{machine} that
+produces outcomes, one at a time, at random --- and in such a way that each
+outcome $\bx$ comes out with probability exactly $P(\bx)$. Frequent outcomes
+under $P$ are produced often; rare ones rarely. ``Sampling from $P$'' means
+running such a machine: generating random events the way the world described
+by $P$ would generate them, if it could.
+
+The precise requirement: if we generate $M$ samples and let $\hat P$ be the
+\emph{empirical distribution} (the relative frequency with which each event
+occurs among them), then $\hat P$ must converge to $P$ as $M \to \infty$. A
+sampling algorithm with this property is called \emph{consistent}.
+
+\begin{intbox}[title={Evaluating vs.\ sampling --- two very different skills}, unbreakable]
+Keep these two apart; it will save a lot of confusion later.
+\begin{itemize}
+  \item \textbf{Evaluating} $P$: someone hands you an outcome $\bx$, and you
+    return the number $P(\bx)$. In a BN this is trivial for a complete
+    assignment: multiply one entry from each CPD (\cref{sec:factorisation}).
+  \item \textbf{Sampling} from $P$: nobody hands you anything. You have to
+    \emph{produce} outcomes yourself, each with the right frequency.
+\end{itemize}
+Being able to do the first does not mean you can do the second. Compare: it
+is easy to \emph{check} whether a filled-in Sudoku is correct; it is much
+harder to \emph{produce} one. This distinction is the key to understanding
+importance sampling (\cref{sec:importance-sampling}).
+\end{intbox}
+
+\subsection{Sampling a single variable}
+
+All we have to start with is a random number generator. Two cases are easy.
+
+\paragraph{Uniform on $[0, 1]$} That is exactly what a standard
+pseudo-random number generator produces.
+
+\paragraph{Discrete (categorical) distribution} Let $\Val(X) = \{x_1,
+\ldots, x_k\}$ with probabilities $\theta_1, \ldots, \theta_k$. Partition the
+interval $[0, 1]$ into $k$ consecutive pieces of lengths $\theta_1, \ldots,
+\theta_k$:
+\[
+[0, \theta_1),\ [\theta_1, \theta_1 + \theta_2),\ \ldots,\
+\Big[\textstyle\sum_{i=1}^{k-1} \theta_i,\ 1\Big].
+\]
+Draw a uniform random number $u \in [0, 1]$; if it lands in the $i$-th piece,
+output $x_i$. Since $u$ lands in a piece with probability equal to its
+length, $x_i$ comes out with probability $\theta_i$ --- exactly right.
+Finding the piece with binary search over the cumulative sums takes
+$\bigO{\log k}$ time. \Cref{fig:interval-sampling} shows this for one row of
+the grade CPD.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=12cm, y=1cm, font=\small]
+  \fill[figgreen!25] (0,0) rectangle (0.05,0.6);
+  \fill[figblue!20]  (0.05,0) rectangle (0.30,0.6);
+  \fill[figamber!25] (0.30,0) rectangle (1,0.6);
+  \draw[accent, thick] (0,0) rectangle (1,0.6);
+  \draw[accent, thick] (0.05,0) -- (0.05,0.6);
+  \draw[accent, thick] (0.30,0) -- (0.30,0.6);
+  \node at (0.025,0.3) {\scriptsize$g^1$};
+  \node at (0.175,0.3) {$g^2$};
+  \node at (0.65,0.3) {$g^3$};
+  \foreach \x/\l in {0/0, 0.05/0.05, 0.30/0.30, 1/1}
+    \node[below, font=\scriptsize] at (\x,0) {\l};
+  \draw[-{Stealth[length=2.4mm]}, figred, very thick] (0.63,1.35) -- (0.63,0.65);
+  \node[figred, above] at (0.63,1.35) {$u = 0.63$ \ $\Rightarrow$ \ sample $g^3$};
+  \node[anchor=west, font=\scriptsize, gray!70!black] at (0,1.1)
+    {lengths $= P(G \given d^1, i^0) = (0.05,\ 0.25,\ 0.7)$};
+\end{tikzpicture}
+\caption{Sampling $G$ from $P(G \given d^1, i^0)$ with one uniform random
+number. Each value owns a piece of $[0, 1]$ as long as its probability.}
+\label{fig:interval-sampling}
+\end{figure}
+
+\paragraph{Everything else can be tricky} For other distributions,
+especially continuous ones, there may be no easy recipe. In one dimension
+you could in principle use the same idea with the cumulative distribution
+function, but that requires integrating the density over the whole space and
+inverting the result --- for a strange-looking density, neither is available
+in closed form. And for the distributions we really care about, posteriors
+$P(\bY \given \be)$ in a BN, the problem is even more basic: to build the
+pieces of $[0, 1]$ you would need the numbers $P(\by \given \be)$ for all
+$\by$ --- which is the answer to the inference problem we are trying to
+solve. A chicken-and-egg situation that we will meet again.
+
+\subsection{Forward sampling}
+
+For a BN \emph{without} evidence there is a beautifully simple sampler:
+sample the variables one by one, from the top of the network downwards, each
+from its CPD given the parent values already sampled.
+
+\begin{thmbox}[title={Forward sampling}, unbreakable]
+\textbf{Given:} a BN $\mathcal{B}$ over $\Xall$.
+\textbf{Produces:} one random atomic event $\bx$, distributed according to
+$P_{\mathcal{B}}$.
+\begin{enumerate}
+  \item Choose a topological ordering $X_1, \ldots, X_N$ (parents before
+    children).
+  \item For $i = 1, \ldots, N$: sample a value $x_i$ from $P(X_i \given
+    \pa(X_i))$, using the parent values sampled before.
+\end{enumerate}
+\end{thmbox}
+
+Forward sampling walks through exactly these tables, from the top of the
+network to the bottom (\cref{fig:student-recap2}).
+
+\begin{figure}[!htbp]
+\centering
+\studentnetworkpic
+\caption{The student network again (copy of \cref{fig:student}). Forward sampling uses one row of each table: the row selected by the parent values sampled before.}
+\label{fig:student-recap2}
+\end{figure}
+
+\begin{exbox}[title={One forward sample from the student network}]
+Topological order $D, I, G, S, L$. To make it concrete, here are the uniform
+random numbers $u$ that drive each step (interval method):
+\begin{center}
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Var.} & \textbf{Distribution used} & \textbf{Pieces of $[0,1]$} & $u$ & \textbf{Result} \\
+\midrule
+$D$ & $P(D) = (0.6,\ 0.4)$ & $d^0\!: [0, 0.6)$, $d^1\!: [0.6, 1]$ & 0.71 & $d^1$ \\
+$I$ & $P(I) = (0.7,\ 0.3)$ & $i^0\!: [0, 0.7)$, $i^1\!: [0.7, 1]$ & 0.22 & $i^0$ \\
+$G$ & $P(G \given d^1, i^0) = (0.05,\ 0.25,\ 0.7)$ & see \cref{fig:interval-sampling} & 0.63 & $g^3$ \\
+$S$ & $P(S \given i^0) = (0.95,\ 0.05)$ & $s^0\!: [0, 0.95)$, $s^1\!: [0.95, 1]$ & 0.40 & $s^0$ \\
+$L$ & $P(L \given g^3) = (0.99,\ 0.01)$ & $l^0\!: [0, 0.99)$, $l^1\!: [0.99, 1]$ & 0.995 & $l^1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Result: the sample $(d^1, i^0, g^3, s^0, l^1)$ --- the one on the slides. Note
+that its last step was a big surprise: a strong letter after a C happens only
+1\,\% of the time. The probability of this whole event is $0.4 \cdot 0.7
+\cdot 0.7 \cdot 0.95 \cdot 0.01 \approx 0.0019$. Samples like this are rare
+--- which is exactly how it should be.
+\end{exbox}
+
+\paragraph{Why forward sampling is consistent} Let $P_S(x_1, \ldots, x_n)$ be
+the probability that the algorithm produces a specific event. Each $X_i$ is
+sampled from $P(X_i \given \pa(X_i))$, and each step uses fresh randomness,
+depending on the earlier steps only through the parent values. So the
+probability of producing the whole event is the product of the step
+probabilities,
+\[
+P_S(x_1, \ldots, x_n) = \prod_{i=1}^{n} P(x_i \given \pa(X_i)) = P_{\mathcal{B}}(x_1, \ldots, x_n),
+\]
+which is the chain rule for BNs. The sampling distribution \emph{is} the
+network's distribution.
+
+\paragraph{Cost} With $n$ variables, at most $k$ parents per variable and at
+most $d$ values per variable: looking up the right CPD row costs $\bigO{k}$,
+sampling from it $\bigO{\log d}$ (binary search), so one complete sample
+costs $\bigO{n k \log d}$. Cheap.
+
+\subsection{Estimating probabilities by counting}
+
+With a sampler in hand, estimating a probability is just counting. Generate a
+set $\dataset$ of $M$ samples by forward sampling, count the number $K$ of
+samples that match the event of interest, and use the relative frequency:
+\[
+\hat P_{\dataset}(\text{event}) = \frac{K}{M}.
+\]
+This works for atomic events, $P(x_1, \ldots, x_n)$, and equally for any
+partial event $P(x_1, \ldots, x_k)$ over a subset of the variables --- a
+sample matches if it has the right values on those variables, whatever the
+others are. In principle we can estimate the entire joint distribution this
+way.
+
+\begin{exbox}[title={Counting in practice}]
+The slides use invented counts for illustration ($K = 27$ and $K = 199$ out of
+$M = 1000$). Here is what a real run with $M = 1000$ forward samples gave:
+\begin{itemize}
+  \item $P(i^0, l^1)$: $K = 285$ samples have $I = i^0$ and $L = l^1$, so
+    $\hat P(i^0, l^1) = 0.285$. The true value is $0.272$. Not bad.
+  \item $P(l^1)$: $K = 512$, $\hat P(l^1) = 0.512$; true value $0.502$.
+  \item The atomic event $(d^1, i^0, g^3, s^0, l^1)$ from above: $K = 0$, so
+    $\hat P = 0$. The true value is $0.0019$, so we expected about two hits,
+    and got none. Rare events need \emph{many} samples.
+\end{itemize}
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/forward-sampling-convergence.png}
+\caption{Three independent runs of forward sampling, estimating $P(l^1)$ from
+the first $M$ samples. Early estimates jump around wildly; as $M$ grows, all
+runs settle on the true value. The grey band shows the typical spread,
+$\pm 2\sqrt{p(1-p)/M}$.}
+\label{fig:forward-convergence}
+\end{figure}
+
+\paragraph{How accurate is a frequency?} Not on the slides, but worth knowing. A frequency estimate $K/M$ of a
+probability $p$ has standard deviation $\sqrt{p(1-p)/M}$
+(\cref{fig:forward-convergence}). For $p \approx 0.5$ and $M = 1000$ that is
+about $0.016$ --- the poll's ``$\pm 3$ points'' at two standard deviations. To
+halve the error you need four times as many samples. For \emph{rare} events
+the \emph{relative} error is what hurts: it is about $\sqrt{(1-p)/(pM)}$,
+which for $p = 0.0019$ and $M = 1000$ is roughly $72\,\%$. Remember this
+number when we condition on unlikely evidence in a moment.
+
+% ----------------------------------------------------------
+\section{Conditional Queries I: Rejection Sampling}
+\label{sec:rejection}
+% ----------------------------------------------------------
+
+Forward sampling answers questions without evidence. But what we really want
+are probabilistic queries $P(\bX \given \be)$, i.e.\ $P(\bx \given \be)$ for all
+value combinations $\bx$. The simplest idea: generate samples as before,
+\emph{throw away} every sample that contradicts the evidence, and count among
+the rest.
+
+Why that is correct: by definition, $P(\bx \given \be) = P(\bx, \be) /
+P(\be)$, and we can estimate both numerator and denominator by counting:
+\[
+\hat P(\bx \given \be) = \frac{N(\bx, \be)/M}{N(\be)/M} = \frac{N(\bx, \be)}{N(\be)},
+\]
+where $N(\bx, \be)$ is the number of samples with values $(\bx, \be)$, $N(\be)$
+the number of samples with evidence $\be$, and $M$ the total number of samples.
+
+\begin{thmbox}[title={Rejection sampling}, unbreakable]
+\textbf{Given:} a BN $\mathcal{B}$ and a query $P(\bX \given \be)$.
+\begin{enumerate}
+  \item \textbf{Sample:} generate a set $\dataset$ of $M$ events by forward
+    sampling.
+  \item \textbf{Reject:} discard all samples that are not compatible with the
+    evidence $\be$. The remaining set $\dataset_{\be} \subseteq \dataset$
+    represents the distribution $P(\Xall \given \be)$.
+  \item \textbf{Estimate:} for each $\bx$, count the number $K$ of samples in
+    $\dataset_{\be}$ that match $\bx$, and set $\hat P(\bx \given \be) = K /
+    |\dataset_{\be}|$.
+\end{enumerate}
+\end{thmbox}
+
+\begin{exbox}[title={Rejection sampling for $P(i^1 \given g^2, s^1, l^0)$}]
+\textbf{The slides' version:} of $M = 1000$ samples, 916 are inconsistent
+with $G = g^2 \wedge S = s^1 \wedge L = l^0$ and get rejected; of the remaining
+84, $K = 31$ have $I = i^1$, so $\hat P(i^1 \given g^2, s^1, l^0) = 31/84
+\approx 0.369$.\par\smallskip
+\textbf{Reality check:} those counts are made up to show the mechanics. The
+true answer is $0.772$, and the evidence has probability $P(g^2, s^1, l^0) =
+0.0209$, so of 1000 samples only about 21 survive. Three real runs with
+$M = 1000$ kept 24, 14 and 28 samples and produced the estimates $0.75$,
+$0.64$ and $0.89$. Correct on average, but with only $\approx 20$ useful
+samples the estimates are very noisy.
+\end{exbox}
+
+\paragraph{Pros} Extremely simple, and consistent: in the limit it produces
+the correct answer.
+
+\paragraph{Cons} Wasteful. The expected number of samples that survive is
+$M \cdot P(\be)$. With $P(\be) = 0.001$ you would need to generate 100\,000
+samples to keep 100. And it gets worse quickly: every additional observed
+variable multiplies $P(\be)$ by another factor below one, so the probability
+of the evidence typically decreases \emph{exponentially} with the number of
+evidence variables $|\bE|$. With a dozen observations, almost every sample
+gets thrown away.
+
+\begin{intbox}[unbreakable]
+The source of the problem: we want samples from the \emph{posterior}
+$P(\Xall \given \be)$, but we draw them from the \emph{prior} $P(\Xall)$ --- the
+distribution of the world before looking at the evidence. The two can be very
+different, and rejection is a brute-force way of fixing the mismatch after
+the fact. All the following methods try to sample from something
+\emph{closer to the posterior} in the first place.
+\end{intbox}
+
+% ----------------------------------------------------------
+\section{Conditional Queries II: Likelihood Weighting}
+\label{sec:lw}
+% ----------------------------------------------------------
+
+\subsection{Motivation, and a tempting mistake}
+
+Consider the query $P(L \given d^1, s^1)$. Forward sampling starts with $D$,
+and 60\,\% of the time it draws $d^0$. From that moment on, the sample is
+doomed --- whatever happens next, it will be rejected. Overall, 89\,\% of all
+samples are thrown away here ($P(d^1, s^1) = 0.11$). Why not simply
+\emph{set} the evidence variables to their observed values and sample only the
+others?
+
+Here is the naive version of that idea: set $D = d^1$ and $S = s^1$, sample
+$I$ from its prior, then $G$ and $L$ as usual. Every sample has the right
+evidence values --- but the result is wrong. About 30\,\% of the samples have
+$I = i^1$, because $I$ is sampled from its prior $P(I)$. Yet among students
+with a high SAT score, motivated ones are much more common: $P(i^1 \given s^1)
+= 0.873 \gg 0.3 = P(i^1)$. The naive algorithm samples $I$ \emph{before} it
+looks at $S$, so it never learns about the evidence $s^1$. Concretely, it
+would estimate $P(l^1 \given d^1, s^1) \approx 0.331$ instead of the true
+$0.577$.
+
+\subsection{The intuition: weight each sample by how well it explains the evidence}
+
+Think about what plain forward sampling would do with those samples. A sample
+that starts with $i^1$ goes on to produce $s^1$ in $80\,\%$ of the cases
+($P(s^1 \given i^1) = 0.8$); one that starts with $i^0$ produces $s^1$ in only
+$5\,\%$ of the cases. So among the samples that rejection sampling would
+\emph{keep}, the $i^1$-samples are overrepresented by a factor of
+$0.8/0.05 = 16$.
+
+Likelihood weighting simulates this effect without throwing anything away:
+it clamps the evidence and attaches a \emph{weight} to each sample. A sample
+with $i^1$ and the fixed evidence $s^1$ counts as $0.8$ of a sample; one with
+$i^0$ and $s^1$ counts as only $0.05$ of a sample. In general, each evidence
+variable $E_j$ contributes the factor $P(e_j \given \pa(E_j))$ --- how likely
+that observation is, given the sampled values of its parents --- and since
+the variables are sampled independently, the weight of the whole sample is
+the product of these factors.
+
+\begin{thmbox}[title={Likelihood weighting (LW)}]
+\textbf{Drawing one weighted sample (\textsc{Sample-LW}).} Given a BN and
+fixed evidence $\bE = \be$:
+\begin{enumerate}
+  \item Choose a topological ordering $X_1, \ldots, X_N$; set $w \leftarrow 1$.
+  \item For $i = 1, \ldots, N$:
+  \begin{itemize}
+    \item if $X_i$ is an evidence variable $E_j$: set $X_i = e_j$ and update
+      $w \leftarrow w \cdot P(e_j \given \pa(X_i))$;
+    \item otherwise: sample $x_i$ from $P(X_i \given \pa(X_i))$, as in
+      forward sampling.
+  \end{itemize}
+  \item Return the weighted sample $\langle (\by, \be),\ w \rangle$.
+\end{enumerate}
+\textbf{Answering the query.} Generate a set $\dataset_{\be}$ of weighted
+samples (all consistent with $\be$). For each $\bx$, let $\dataset_{\be}^{\bx}$
+be the samples that match $\bx$, and estimate
+\[
+\hat P(\bx \given \be) = \frac{\sum_{s \in \dataset_{\be}^{\bx}} w[s]}{\sum_{s \in \dataset_{\be}} w[s]} .
+\]
+\end{thmbox}
+
+\begin{exbox}[title={One weighted sample for $P(I \given g^3, s^1)$ (from the slides)}]
+Order $D, I, G, S, L$; start with $w = 1$.
+\begin{enumerate}
+  \item Sample $D$ from $(0.6, 0.4)$ $\Rightarrow$ suppose $d^1$.
+  \item Sample $I$ from $(0.7, 0.3)$ $\Rightarrow$ suppose $i^0$.
+  \item $G$ is evidence: set $G = g^3$, $w \leftarrow 1 \cdot P(g^3 \given d^1, i^0) = 0.7$.
+  \item $S$ is evidence: set $S = s^1$, $w \leftarrow 0.7 \cdot P(s^1 \given i^0) = 0.035$.
+  \item Sample $L$ from $P(L \given g^3) = (0.99, 0.01)$ $\Rightarrow$ suppose $l^1$.
+\end{enumerate}
+Result: $\langle (d^1, i^0, g^3, s^1, l^1),\ 0.035 \rangle$. The C fits a hard
+course and an unmotivated student well ($0.7$), but a high SAT score does
+not fit an unmotivated student at all ($0.05$) --- so this sample counts for
+little.
+\end{exbox}
+
+\begin{exbox}[title={A complete mini-run: $P(I \given s^1)$ with 10 weighted samples}]
+To see the estimate formula at work, here is a real run of LW with only ten
+samples for the query $P(I \given s^1)$. The only evidence is $S$, whose
+weight is $P(s^1 \given i)$: $0.8$ for $i^1$ and $0.05$ for $i^0$.
+\begin{center}
+\small
+\begin{tabular}{@{}c@{\quad}ccccc@{\quad}c@{}}
+\toprule
+\# & $D$ & $I$ & $G$ & $S$ & $L$ & $w$ \\
+\midrule
+1  & $d^1$ & $\mathbf{i^1}$ & $g^2$ & $s^1$ & $l^0$ & 0.8  \\
+2  & $d^1$ & $i^0$ & $g^3$ & $s^1$ & $l^0$ & 0.05 \\
+3  & $d^0$ & $i^0$ & $g^1$ & $s^1$ & $l^1$ & 0.05 \\
+4  & $d^0$ & $\mathbf{i^1}$ & $g^1$ & $s^1$ & $l^1$ & 0.8  \\
+5  & $d^0$ & $i^0$ & $g^2$ & $s^1$ & $l^0$ & 0.05 \\
+6  & $d^0$ & $i^0$ & $g^3$ & $s^1$ & $l^0$ & 0.05 \\
+7  & $d^0$ & $i^0$ & $g^1$ & $s^1$ & $l^1$ & 0.05 \\
+8  & $d^0$ & $i^0$ & $g^1$ & $s^1$ & $l^1$ & 0.05 \\
+9  & $d^0$ & $\mathbf{i^1}$ & $g^1$ & $s^1$ & $l^1$ & 0.8  \\
+10 & $d^1$ & $i^0$ & $g^3$ & $s^1$ & $l^0$ & 0.05 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Only 3 of the 10 samples have $i^1$ (sampled from the prior, as expected),
+but they carry almost all the weight:
+\[
+\hat P(i^1 \given s^1) = \frac{3 \times 0.8}{3 \times 0.8 + 7 \times 0.05}
+= \frac{2.4}{2.75} \approx 0.873 .
+\]
+That is exactly the true value $P(i^1 \given s^1) = 0.873$ --- partly luck,
+because this run happened to contain exactly 30\,\% $i^1$-samples. With 2 or
+4 of them we would have obtained $0.80$ or $0.91$.
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/likelihood-weighting-bars.png}
+\caption{What LW does in the mini-run. (a) $I$ is sampled from its prior.
+(b) Each sample is weighted by how well it explains the evidence $s^1$.
+(c) Frequency times weight, normalised, is exactly the posterior
+$P(I \given s^1)$. This picture is a special case of importance sampling
+(\cref{sec:importance-sampling}).}
+\label{fig:lw-bars}
+\end{figure}
+
+\subsection{Why likelihood weighting is correct}
+
+Write $\Xall = \bY \cup \bE$: the $\bY$ are sampled, the $\bE = \be$ are
+fixed. The probability that \textsc{Sample-LW} produces the sample $(\by,
+\be)$ is the product of the probabilities of the sampling steps (the evidence
+steps happen with probability one):
+\[
+P_{LW}(\by, \be) = \prod_{Y_i \in \bY} P(y_i \given \pa(Y_i)) \cdot \prod_{E_i \in \bE} 1.0 .
+\]
+The weight of that sample is
+\[
+w(\by, \be) = \prod_{E_i \in \bE} P(e_i \given \pa(E_i)).
+\]
+A sample influences the final estimate in two ways: through how often it
+appears, and through its weight. Multiply the two:
+\begin{align*}
+P_{LW}(\by, \be) \cdot w(\by, \be)
+&= \prod_{Y_i \in \bY} P(y_i \given \pa(Y_i)) \prod_{E_i \in \bE} P(e_i \given \pa(E_i)) \\
+&= \prod_{X_i \in \Xall} P(x_i \given \pa(X_i)) = P(\by, \be) \;\propto\; P(\by \given \be).
+\end{align*}
+So in total, every complete assignment contributes in proportion to its
+posterior probability --- exactly what we want. The normalisation in the
+estimate formula takes care of the unknown constant $P(\be)$.
+
+\begin{notebox}[title={Bonus: LW also estimates $P(\be)$}]
+Not on the slides, but a nice consequence of the computation above: the
+\emph{average} weight $\frac{1}{M}\sum_m w[m]$ is an estimate of the
+probability of the evidence $P(\be)$. In the three runs for $P(i^1 \given
+g^2, s^1, l^0)$ with $M = 1000$, the average weights were $0.0199$, $0.0205$
+and $0.0218$; the true value is $0.0209$.
+\end{notebox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/rejection-vs-likelihood-weighting.png}
+\caption{Rejection sampling (red) versus likelihood weighting (green) for
+$P(i^1 \given g^2, s^1, l^0)$, three runs each, as a function of the number of
+generated samples. Rejection sampling keeps only about 2\,\% of its samples,
+so it stays at its first lucky or unlucky guess for a long time; LW uses
+every sample and settles much sooner.}
+\label{fig:rs-vs-lw}
+\end{figure}
+
+\subsection{Pros, cons, and an extreme example}
+
+\paragraph{Pros} LW is consistent, and much less wasteful than rejection
+sampling: every sample it generates is consistent with the evidence
+(\cref{fig:rs-vs-lw}).
+
+\paragraph{Cons} The evidence influences the sampling only of variables
+\emph{below} the evidence (more precisely, its descendants). Variables above
+it --- in general, all non-descendants of the evidence --- are still sampled
+from their priors, ignoring what we observed. In the example, $I$ is sampled
+without knowing that $S = s^1$. Consequently, many samples are almost
+irrelevant for the given evidence, which LW correctly reflects in tiny
+weights, and only a few samples that are typical for the evidence remain to
+carry the estimate. This is particularly bad when most evidence sits
+``downstream'' in the network --- which is the normal case in causally
+directed networks, where we observe effects (symptoms, test results) and ask
+about causes.
+
+\begin{exbox}[title={An extreme example: rain in Death Valley}]
+A two-node model of the climate in Death Valley: $\vn{Rain} \to
+\vn{WetGrass}$, with
+\[
+P(\vn{rain}) = 0.0001, \qquad P(\vn{wet} \given \vn{rain}) = 1.0, \qquad
+P(\vn{wet} \given \neg\vn{rain}) = 0.00005 .
+\]
+Query: $P(\vn{Rain} \given \vn{wet})$. By Bayes' rule, the true answer is
+\[
+P(\vn{rain} \given \vn{wet}) = \frac{0.0001 \cdot 1.0}{0.0001 \cdot 1.0 + 0.9999 \cdot 0.00005} \approx 0.667 .
+\]
+Wet grass in Death Valley is most likely due to rain: wet grass \emph{without}
+rain is only half as likely as rain itself. Now run LW. It samples $\vn{Rain}$ from the
+prior first and produces thousands of samples $(\neg\vn{rain}, \vn{wet})$,
+each correctly weighted $0.00005$, before it happens to draw a single
+$(\vn{rain}, \vn{wet})$, which would get weight $1.0$. On average you need
+10\,000 samples for one $\vn{rain}$.\par\smallskip
+With $M = 5000$ samples: in about \textbf{61\,\%} of all runs there is not a
+single $\vn{rain}$-sample, and LW confidently reports
+$\hat P(\vn{rain} \given \vn{wet}) = 0$. In about 30\,\% of runs there is
+exactly one, and the estimate is $1/(1 + 4999 \cdot 0.00005) \approx 0.80$.
+Neither is close to $0.667$. Correct in the limit --- useless in practice.
+\end{exbox}
+
+% ----------------------------------------------------------
+\section{Interlude: Why Sampling Is Hard --- and Two Ways Around It}
+\label{sec:why-sampling-hard}
+% ----------------------------------------------------------
+
+Before we generalise likelihood weighting, let us step back. Three questions
+come up naturally at this point, and answering them makes everything that
+follows much easier to place. Not all of this is on the slides, but it is the
+glue between them.
+\begin{enumerate}
+  \item If evaluating $P$ at a point is easy, why not simply evaluate it
+    \emph{everywhere} --- on a fine grid --- and be done?
+  \item Why do we need anything about the \emph{whole} distribution, if we
+    only care about a few points?
+  \item If we can evaluate the unnormalised posterior $\tilde P$ (prior times
+    likelihood) anywhere, don't we already know where its mass is? Why can't
+    we just sample from it?
+\end{enumerate}
+
+\subsection{Sampling, once more}
+
+Recall the distinction from \cref{sec:forward-sampling}. \emph{Evaluating}
+$P$ means: you choose an $\bx$, you get back the number $P(\bx)$.
+\emph{Sampling} from $P$ means the reverse: you get back \emph{values} $\bx$ ---
+points on the $x$-axis, not probabilities --- produced at random so that each
+one turns up with frequency $P(\bx)$. A die samples: it spits out numbers. The
+statement ``each face has probability $1/6$'' is the evaluation. With a set of
+samples, any probability is estimated by counting, any expectation by
+averaging.
+
+\subsection{Why not just evaluate everywhere?}
+
+In one dimension, that is exactly what you should do. Take a density on
+$[0, 1]$, evaluate it at 1000 grid points, and you have an excellent picture of
+it. You can even turn the grid into a sampler: add up the values to get the
+cumulative distribution and use the interval method of
+\cref{fig:interval-sampling} with 1000 pieces. Nobody would use importance
+sampling or MCMC for a well-behaved one-dimensional problem. (The 1-D example
+in \cref{fig:is-idea} is one-dimensional only so that we can draw it.)
+
+The problem is \emph{dimension}. A grid with 1000 points per axis has
+$1000^d$ points in $d$ dimensions:
+\begin{center}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+dimensions $d$ & 1 & 2 & 3 & 10 \\
+grid points    & $10^3$ & $10^6$ & $10^9$ & $10^{30}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Every single evaluation is cheap; there are just far too many of them. In a
+Bayesian network each variable is one dimension, and the ``grid'' over 50
+binary variables has $2^{50} \approx 10^{15}$ points. Evaluating $\tilde P$ at
+all of them and adding up is nothing but \emph{inference by enumeration}
+(\cref{sec:bn-enumeration}) --- the method we already rejected as too
 expensive.
 
-\planned{Lecture units VO~4 (``Bayes Nets: Exact \& Approximate Inference
-(1)'') and VO~5 (``Bayes Nets: Approximate Inference and MCMC''). The
-section list below is the expected structure; adapt it to the slides.}
+It gets worse. In high dimensions, almost all the probability mass sits in a
+tiny region of the space, so almost all grid points are wasted on places where
+$P$ is practically zero. If the mass occupies, say, a tenth of the range of each
+axis, then the fraction of grid points that land in it is $0.1^d$ --- one in
+$10^{10}$ for $d = 10$. \Cref{fig:grid-vs-samples} shows the effect already in
+two dimensions.
 
-\section{Exact Inference by Enumeration in a Bayesian Network}
-\planned{Recap of the probabilistic query; enumeration with the factorised
-joint; pushing sums inwards; the student network as a worked example
-(re-using the numbers of \cref{tab:joe}); cost of naive enumeration.}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/grid-vs-samples.png}
+\caption{A narrow, tilted distribution on the unit square. (a) A $20 \times 20$
+grid spends 374 of its 400 evaluations where $P$ is practically zero; the 26
+red points carry 99\,\% of the grid's mass. (b) 400 samples drawn from $P$
+itself all land where the mass is. In $d$ dimensions the useful fraction of the
+grid shrinks exponentially; the samples stay useful.}
+\label{fig:grid-vs-samples}
+\end{figure}
 
-\section{Variable Elimination}
-\planned{Factors and factor operations (product, summing out, reduction by
-evidence); the variable-elimination algorithm; worked example; the effect of
-the elimination order on cost; intermediate factor sizes. Figure (TikZ, to be
-drawn): a small elimination example showing which factors are created.}
+\subsection{Why we need sums over huge sets, not single points}
 
-\section{The Complexity of Exact Inference}
-\planned{Exact inference is NP-hard in general; polytrees (singly connected
-networks) allow inference in linear time; why loops make it hard; motivation
-for approximate methods.}
+``But I only care about a few points!'' --- unfortunately not. A ``point'' in a
+BN is a \emph{complete} assignment of all variables, such as $(d^1, i^1, g^3,
+s^1, l^0)$. Our questions almost never concern a single complete assignment.
+``Is Joe motivated, given his C?'' means
+\[
+P(i^1, g^3) = \sum_{d}\sum_{s}\sum_{l} \tilde P(d, i^1, g^3, s, l),
+\]
+a sum over \emph{all} points with $I = i^1$ and $G = g^3$, whatever the other
+variables are. In the student network that is $2 \cdot 2 \cdot 2 = 8$ points
+--- trivial. In a network with 100 binary variables and one evidence variable,
+each of the two sets ($i^1$ versus $i^0$) has $2^{98}$ points.
 
-\section{Approximate Inference by Stochastic Sampling}
-\planned{The idea: estimate probabilities from frequencies in samples. Prior
-(forward) sampling in topological order; rejection sampling for conditional
-queries and its weakness with unlikely evidence; likelihood weighting;
-consistency and convergence of the estimates.}
+You are right about one thing: for two \emph{single} points, the ratio
+$P(\bx_1 \given \be) / P(\bx_2 \given \be) = \tilde P(\bx_1)/\tilde P(\bx_2)$
+needs no normalisation at all --- the unknown constant cancels. So the real
+problem is not the normaliser as such, but \emph{summing over huge sets of
+points}. The normaliser $P(\be)$ is the sum over everything; $P(i^1, \be)$ is
+the sum over a subset. Same problem, same cost. Where the space is small, this
+problem disappears: in Death Valley there are only two points,
+$\tilde P(\vn{rain}, \vn{wet}) = 0.0001$ and $\tilde P(\neg\vn{rain}, \vn{wet})
+= 0.00005$, and normalising them gives $P(\vn{rain} \given \vn{wet}) = 2/3$
+directly.
 
-\section{Markov Chain Monte Carlo and Gibbs Sampling}
-\planned{Markov chains over complete states; Gibbs sampling: resample one
-variable at a time given its Markov blanket; stationary distribution; burn-in
-and mixing; comparison with likelihood weighting. Figure (TikZ, to be drawn):
-a chain of complete assignments where each step resamples one variable.}
+\subsection{Why samples escape the curse of dimensionality}
+
+A frequency estimate from $M$ samples has an error of about
+$\sqrt{p(1-p)/M}$ (\cref{sec:forward-sampling}) --- and nothing in this
+formula depends on the number of dimensions. 10\,000 samples estimate a
+probability to within about $\pm 1$ percentage point, whether the space has
+$2^5$ or $2^{500}$ points. That is the opinion-poll effect from
+\cref{sec:why-approx}. Moreover, samples \emph{from $P$} automatically land
+where the mass is (\cref{fig:grid-vs-samples}b), so none of them is wasted.
+This is why we want samples --- ideally from the posterior itself.
+
+\subsection{Why we cannot just sample from \texorpdfstring{$\tilde P$}{P~}}
+
+To produce values $\bx$ that turn up with frequency $\tilde P(\bx)/Z$, you need
+to know \emph{how much of the total mass lies where}: the normaliser $Z$ and,
+for the interval method, the cumulative sums. Those are exactly the sums over
+the whole space that we cannot compute. Knowing the formula for $\tilde P$ is
+not the same as knowing where its mass is.
+
+\begin{intbox}[title={The altimeter in the dark}, unbreakable]
+You stand in a hilly landscape at night with an altimeter. Wherever you stand,
+you can read off the height --- that is evaluating $\tilde P$. But you have no
+map. To know where the mountains are, you would have to walk everywhere ---
+that is the grid. Knowing the \emph{formula} for $\tilde P$ is like owning the
+altimeter: it answers ``how high is it \emph{here}?'', never ``where is it
+high?''.
+\end{intbox}
+
+Some distributions come with a ready-made sampling recipe that exploits their
+structure and never needs those global sums: the uniform distribution, the
+Gaussian, a categorical distribution, and --- importantly --- a Bayesian
+network \emph{without evidence}, via forward sampling. Forward sampling works
+because every CPD is already a normalised distribution and we go top-down: at
+each step we know the exact distribution of the next variable.
+
+The posterior $P(\bY \given \be) \propto \text{prior} \times \text{likelihood}$
+has no such recipe. Multiplying in the likelihood of the evidence breaks the
+top-down construction. To sample $D$ at the top of the student network
+correctly, we would already need to know how each value of $D$ changes the
+probability of the evidence further down, $P(\be \given d)$ --- a sum over all
+the variables in between, i.e.\ inference again.
+
+\subsection{Two ways around it}
+
+Both remaining methods of this chapter combine the two things we \emph{can}
+do --- sample from something easy, and evaluate $\tilde P$ pointwise --- in
+different ways.
+
+\paragraph{Importance sampling (\cref{sec:importance-sampling})} Let an easy
+\emph{global} distribution $Q$ decide \emph{where} to look: it supplies the
+$x$-values. Evaluate $\tilde P$ only at those points, and correct with the
+weight $\tilde P/Q$. A grid is in fact a (non-random) special case with a
+uniform $Q$; importance sampling improves on it by letting $Q$ put the points
+roughly where the mass of $P$ is. The obvious question --- where does a good
+$Q$ come from, without knowing $P$? --- is answered in
+\cref{sec:where-q}.
+
+\paragraph{MCMC (\cref{sec:mcmc})} Give up on a global $Q$ and use $\tilde P$
+directly, but only \emph{locally}: walk through the space step by step, always
+comparing the height at a proposed nearby point with the height where you
+stand. The ratio $\tilde P(\bx')/\tilde P(\bx)$ needs no normaliser. Walking
+with the altimeter, the walker spends most of its time where it is high ---
+in exactly the right proportions, as we will see.
+
+% ----------------------------------------------------------
+\section{The General Idea: Importance Sampling}
+\label{sec:importance-sampling}
+% ----------------------------------------------------------
+
+Likelihood weighting is one instance of a much more general and very widely
+used idea, \emph{importance sampling}. It shows up everywhere --- in
+statistics, physics, computer graphics, reinforcement learning (off-policy Monte Carlo
+methods use it) --- so it is worth understanding properly.
+
+\subsection{The setting}
+
+We would like to draw samples from some distribution $P$, the \emph{target
+distribution}. But sampling from $P$ directly is impossible, or undesirable
+(as with the prior in rejection sampling: possible, but wasteful). What we
+\emph{can} do is evaluate $P$ pointwise: for any given $\bx$, compute $P(\bx)$
+--- or at least a number proportional to it.
+
+The idea of importance sampling:
+\begin{enumerate}
+  \item Draw the samples from a different, ``easier'' distribution $Q$, the
+    \emph{proposal distribution}.
+  \item Correct for the difference between $Q$ and $P$ by attaching a weight
+    to each sample: \textbf{high weights where $Q$ under-represents $P$}
+    (produces too few samples), \textbf{low weights where $Q$ over-represents
+    $P$} (produces too many).
+\end{enumerate}
+The correct weight of a sample $\bx$ drawn from $Q$ turns out to be simply
+\[
+w(\bx) = \frac{P(\bx)}{Q(\bx)} .
+\]
+
+\subsection{``Wait --- if we cannot sample from \texorpdfstring{$P$}{P}, how can we compute \texorpdfstring{$P(\bx)$}{P(x)} for the weight?''}
+\label{sec:is-confusion}
+
+This is \emph{the} natural question, and the source of most confusion about
+importance sampling. It looks as if the weights need exactly the information
+we do not have. They do not, for two reasons.
+
+\paragraph{Reason 1: evaluating is not sampling} Recall the distinction from
+\cref{sec:forward-sampling}. To compute a weight we only need to
+\emph{evaluate} $P$ at one specific point --- the sample that $Q$ just gave
+us. That is often easy. What is hard is \emph{producing} points with the right
+frequencies, because that needs a global picture of $P$ (in 1-D: the
+cumulative distribution, an integral over everything). Importance sampling
+outsources the hard global part to $Q$ and uses $P$ only locally, one point at
+a time.
+
+\paragraph{Reason 2: we only need $P$ up to a constant} In practice we often
+cannot even evaluate $P$ itself, only an \emph{unnormalised} version $\tilde
+P(\bx) = c \cdot P(\bx)$ with an unknown constant $c$. That is enough. If we
+use the weights $\tilde w(\bx) = \tilde P(\bx)/Q(\bx)$ and \emph{normalise}
+them at the end (divide by their sum), the unknown $c$ appears in the
+numerator and in the denominator and cancels.
+
+\begin{exbox}[title={Both reasons at once, in a Bayesian network}]
+Our target is the posterior $P(\by \given \be)$. Can we sample from it
+directly? No --- to build the ``pieces of $[0,1]$'' we would need all values of
+$P(\by \given \be)$, i.e.\ the solution of the query. Can we evaluate it for a
+\emph{given} $\by$? Almost:
+\[
+P(\by \given \be) = \frac{P(\by, \be)}{P(\be)}
+= \frac{\overbrace{\textstyle\prod_i P(x_i \given \pa(X_i))}^{\text{easy: 5 numbers from the CPDs}}}{\underbrace{P(\be)}_{\text{unknown --- that's the hard part}}} .
+\]
+The numerator is a product of CPD entries: for $(d^1, i^1, g^3, s^1, l^0)$
+it is $0.4 \cdot 0.3 \cdot 0.2 \cdot 0.8 \cdot 0.99$, done. The denominator
+$P(\be)$ is unknown --- but it is the \emph{same} constant for every sample.
+So $\tilde P(\by) = P(\by, \be)$ is a perfectly good unnormalised target, and
+the normalisation at the end divides the constant away. This is precisely
+what likelihood weighting does.
+\end{exbox}
+
+\begin{intbox}[title={The dart-throwing picture}, unbreakable]
+Suppose you want to pick random spots in Austria in proportion to
+\emph{population density} --- many spots in Vienna, few in the Alps. You have
+a density map: point at any spot and it tells you how densely populated it is
+(evaluating $P$). But you have no machine that spits out spots in proportion
+to density (sampling from $P$); to build one you would have to sum up the
+whole map first.\par\smallskip
+Importance sampling says: throw darts \emph{uniformly} over the country
+($Q$ = uniform --- trivially easy), and give every dart a weight equal to the
+density where it landed, divided by how likely the dart was to land there.
+A dart in central Vienna gets a huge weight, a dart on a glacier almost none.
+The weighted darts now behave like darts thrown in proportion to population.
+And if the map shows only \emph{relative} density (darker = more people) and
+nobody tells you Austria's total population --- no problem, you normalise the
+weights at the end.
+\end{intbox}
+
+\subsection{Why the weight is \texorpdfstring{$P/Q$}{P/Q}}
+
+The slides skip the proof as ``simple''; here it is, because it really is one
+line. Almost everything we estimate is an expectation: the probability of an
+event $A$ is the expectation of its indicator, $P(A) = \E_P[\ind\{X \in A\}]$.
+Now multiply and divide by $Q$ inside the sum:
+\[
+\E_P[f(X)] = \sum_{\bx} P(\bx)\, f(\bx)
+= \sum_{\bx} Q(\bx)\, \frac{P(\bx)}{Q(\bx)}\, f(\bx)
+= \E_Q\big[w(X)\, f(X)\big], \qquad w(\bx) = \frac{P(\bx)}{Q(\bx)} .
+\]
+An expectation under $P$ is the same as an expectation under $Q$ of the
+weighted quantity --- and expectations under $Q$ we can estimate by averaging
+over samples from $Q$.
+
+\paragraph{Intuition from the slides} If at some point $\bx$ the target
+probability is $n$ times higher than the proposal probability, then $P$ would
+generate $n$ times as many samples around $\bx$ as $Q$ does. So each
+$Q$-sample at $\bx$ must be ``upweighted'' to count for $n$ samples of $P$.
+
+\begin{thmbox}[title={Importance sampling estimate (self-normalised)}, unbreakable]
+Draw $\bx[1], \ldots, \bx[M]$ from the proposal $Q$. Compute the weights
+$\tilde w[m] = \tilde P(\bx[m]) / Q(\bx[m])$, where $\tilde P = c \cdot P$ may
+be unnormalised. Then
+\[
+\hat P(A) = \frac{\sum_{m} \tilde w[m]\, \ind\{\bx[m] \in A\}}{\sum_{m} \tilde w[m]},
+\qquad\text{and in general}\qquad
+\hat\E_P[f] = \frac{\sum_m \tilde w[m]\, f(\bx[m])}{\sum_m \tilde w[m]} .
+\]
+The unknown constant $c$ cancels. Requirement: $Q(\bx) > 0$ wherever
+$P(\bx) > 0$ --- the proposal must be able to produce every outcome the
+target can.
+\end{thmbox}
+
+\subsection{Importance sampling in pictures}
+
+\Cref{fig:is-idea} shows the whole procedure for a continuous variable. The
+target is the strange-looking unnormalised density
+\[
+\tilde P(x) = e^{-(x - 1.5)^2/12.5}\, \big(1.15 + \sin(1.6x)\big)^2 .
+\]
+You can evaluate it on a pocket calculator for any $x$. But there is no
+textbook recipe for sampling from it, and we do not even know its
+normalising constant. As proposal we use a broad Gaussian, $Q = \Normal(0,
+3.5^2)$, which every statistics library can sample from.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/importance-sampling-idea.png}
+\caption{Importance sampling step by step. (a) The target $P$ (shown
+normalised, for plotting only) and the easy proposal $Q$. (b) Samples drawn
+from $Q$ crowd around $0$ --- not where $P$ has its mass. (c) Each sample gets
+the weight $\tilde P(x)/Q(x)$ (stem height, normalised). Samples on $P$'s
+peaks get big weights, samples where $Q$ is high but $P$ is low get almost
+nothing. (d) With many samples, the weighted histogram reproduces $P$ ---
+although not a single sample was drawn from $P$.}
+\label{fig:is-idea}
+\end{figure}
+
+\begin{exbox}[title={Three weights by hand}]
+Take three samples that $Q$ might produce and compute their weights:
+\begin{center}
+\small
+\begin{tabular}{@{}rcccl@{}}
+\toprule
+$x$ & $\tilde P(x)$ & $Q(x)$ & $\tilde w = \tilde P(x)/Q(x)$ & normalised \\
+\midrule
+$-5.0$ & $0.0009$ & $0.0411$ & $0.021$ & $0.0003$ \\
+$1.0$  & $4.529$  & $0.1094$ & $41.4$  & $0.497$ \\
+$5.0$  & $1.718$  & $0.0411$ & $41.8$  & $0.502$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+At $x = -5$, $Q$ produces plenty of samples but $P$ is practically zero:
+weight almost nothing. Interesting are the other two. $x = 1$ sits on the
+\emph{highest} peak of $P$, $x = 5$ on a smaller one~--- yet both get the same
+weight. Why? Because $Q$ produces values near $x = 1$ about 2.7 times as
+often as values near $x = 5$, so $x = 1$ is already well represented by
+sheer numbers. The weight measures how much $P$ \emph{exceeds what $Q$
+already delivers}, not how large $P$ is.
+\end{exbox}
+
+\subsection{When importance sampling goes wrong}
+
+Importance sampling is always correct in the limit, as long as $Q > 0$
+wherever $P > 0$. How \emph{fast} it gets there depends entirely on how
+similar $Q$ is to $P$. If $Q$ rarely produces samples in a region where $P$
+has a lot of mass, those regions are represented by a handful of samples with
+enormous weights --- or by none at all. \Cref{fig:is-bad} shows what happens
+with a narrow proposal centred on the wrong spot: the right-hand bump of $P$
+holds 26\,\% of the probability mass, but among 20\,000 samples from $Q$ not a
+single one lands there, so the estimate of $P(X > 3)$ is exactly $0$.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/importance-sampling-bad-proposal.png}
+\caption{A bad proposal. (a) $Q$ covers only the left part of $P$. (b) The
+weighted histogram of 20\,000 samples misses the right bump completely. In
+theory, $Q > 0$ everywhere, so we would get there eventually --- after an
+astronomical number of samples.}
+\label{fig:is-bad}
+\end{figure}
+
+\paragraph{How many samples are you really using?} A handy diagnostic (not on the slides): the \emph{effective sample size}
+\[
+\mathrm{ESS} = \frac{\big(\sum_m w[m]\big)^2}{\sum_m w[m]^2}
+\]
+equals $M$ if all weights are equal and drops towards $1$ if a single sample
+dominates. For the good proposal in \cref{fig:is-idea}, 20\,000 samples are
+worth about $8400$ samples from $P$; for the bad one in \cref{fig:is-bad},
+only about $170$. Death Valley is the same disease in a discrete setting:
+almost all weights are $0.00005$, and the few samples that matter are
+missing.
+
+\subsection{Where does a good proposal come from?}
+\label{sec:where-q}
+
+This sounds like a catch-22: a good $Q$ should put its samples where $P$ has
+its mass --- but finding out where the mass is was the whole problem. Two
+observations defuse it.
+
+\paragraph{The perfect proposal is useless, so we never aim for it} If $Q = P$,
+all weights are equal and importance sampling turns into plain sampling from
+$P$ --- the thing we cannot do. What we need is a $Q$ that satisfies two
+requirements at once: (1) it has a sampling recipe, and (2) it is
+\emph{roughly} similar to $P$, using only knowledge that is cheap to get. It
+does not have to be good; it has to be good \emph{enough} that the weights do
+not degenerate.
+
+\paragraph{Why not take $Q = \text{prior} \times \text{likelihood}$?} Because
+that \emph{is} $\tilde P$ itself, and we cannot sample from it
+(\cref{sec:why-sampling-hard}). But you can split it: put the part you can
+sample from into $Q$ and the rest into the weight,
+\[
+\tilde P = \underbrace{\text{prior}}_{\to\ Q \text{ (forward sampling works)}}
+\times \underbrace{\text{likelihood of the evidence}}_{\to\ \text{weight}},
+\]
+\[
+w = \frac{\tilde P}{Q} = \frac{\text{prior} \times \text{likelihood}}{\text{prior}} = \text{likelihood}.
+\]
+That is exactly likelihood weighting, as the next subsection shows formally.
+It is the natural first choice whenever the prior is easy to sample from,
+and it works well when the evidence does not move the posterior too far from
+the prior.
+
+\paragraph{Other common recipes} (beyond the lecture, for orientation)
+\begin{itemize}
+  \item \textbf{A Gaussian around the peak.} \emph{Finding} the highest point of
+    $\tilde P$ is an optimisation problem: walk uphill with the altimeter,
+    using only local evaluations (or gradients). That is far easier than
+    integrating over the whole space. Then place a Gaussian (or, safer, a
+    distribution with heavier tails) around that peak, with a width that
+    matches the curvature there, and use it as $Q$.
+  \item \textbf{Adaptive proposals.} Start with a broad $Q$, draw a batch of
+    weighted samples, fit a new $Q$ to them (e.g.\ mean and covariance of the
+    weighted samples), and repeat. Each round, $Q$ moves closer to $P$.
+  \item \textbf{Give up on a global $Q$.} If $P$ has a complicated shape in many
+    dimensions, no simple $Q$ will match it everywhere, and the weights
+    degenerate. Then MCMC (\cref{sec:mcmc}) is usually the better tool.
+\end{itemize}
+
+\subsection{Likelihood weighting as an instance of importance sampling}
+
+Now back to Bayesian networks. Given a query $P(\bX \given \be)$,
+\textsc{Sample-LW} sets the evidence variables to their observed values,
+samples the rest in topological order, and weights the sample by
+$\prod_i P(e_i \given \pa(E_i))$. Which distribution is it actually sampling
+from? The answer is a modified network.
+
+\begin{defbox}[title={Mutilated network}]
+Let $\mathcal{B}$ be a BN and $\bE = \be$ fixed evidence. The \emph{mutilated
+network} $\mathcal{B}_{\bE = \be}$ is obtained from $\mathcal{B}$ by
+\begin{itemize}
+  \item removing all incoming edges of the evidence variables (they have no
+    parents in $\mathcal{B}_{\bE = \be}$),
+  \item giving each evidence variable $E_i$ the CPD that puts probability
+    $1.0$ on $e_i$ and $0$ on all other values,
+  \item keeping the parents and CPDs of all other variables unchanged.
+\end{itemize}
+\end{defbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  \node[bn] (D) at (-1.9, 0)   {Difficulty};
+  \node[bn, evid] (I) at ( 1.9, 0)   {Interest};
+  \node[bn, evid] (G) at (-0.7,-1.9) {Grade};
+  \node[bn] (S) at ( 3.1,-1.9) {SAT};
+  \node[bn] (L) at (-0.7,-3.8) {Letter};
+  \draw[gray!45, thick, dashed] (D) -- node[pos=0.55, font=\large, figred] {$\times$} (G);
+  \draw[gray!45, thick, dashed] (I) -- node[pos=0.55, font=\large, figred] {$\times$} (G);
+  \draw[edge] (I) -- (S);
+  \draw[edge] (G) -- (L);
+  \node[cpd, anchor=south east, label={[font=\scriptsize\bfseries]above:$P(D)$}] (tD) at (-3.2,0.3)
+    {\begin{tabular}{cc}\toprule $d^0$ & $d^1$\\\midrule 0.6 & 0.4\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=south west, label={[font=\scriptsize\bfseries]above:new CPD of $I$}] (tI) at (3.2,0.3)
+    {\begin{tabular}{cc}\toprule $i^0$ & $i^1$\\\midrule 0 & \textbf{1}\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=east, label={[font=\scriptsize\bfseries]above:new CPD of $G$}] (tG) at (-2.4,-2.2)
+    {\begin{tabular}{ccc}\toprule $g^1$ & $g^2$ & $g^3$\\\midrule 0 & \textbf{1} & 0\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=west, label={[font=\scriptsize\bfseries]above:$P(S \given I)$}] (tS) at (4.3,-2.0)
+    {\begin{tabular}{lcc}\toprule & $s^0$ & $s^1$\\\midrule $i^0$ & 0.95 & 0.05 \\ $i^1$ & 0.2 & 0.8\\\bottomrule\end{tabular}};
+  \node[cpd, anchor=west, label={[font=\scriptsize\bfseries]above:$P(L \given G)$}] (tL) at (0.6,-4.3)
+    {\begin{tabular}{lcc}\toprule & $l^0$ & $l^1$\\\midrule $g^1$ & 0.1 & 0.9 \\ $g^2$ & 0.4 & 0.6 \\ $g^3$ & 0.99 & 0.01\\\bottomrule\end{tabular}};
+  \draw[cpdlink] (tD) -- (D); \draw[cpdlink] (tI) -- (I); \draw[cpdlink] (tG) -- (G);
+  \draw[cpdlink] (tS) -- (S); \draw[cpdlink] (tL) -- (L);
+\end{tikzpicture}
+\caption{The mutilated network $\mathcal{B}_{I = i^1, G = g^2}$ for the query
+$P(D \given i^1, g^2)$. The edges into the evidence variable $G$ are cut, and
+the evidence variables get deterministic CPDs. $D$ is now sampled as if $G$
+had never been observed.}
+\label{fig:mutilated}
+\end{figure}
+
+For the query $P(D \given i^1, g^2)$ (\cref{fig:mutilated}), the distribution
+that \textsc{Sample-LW} actually samples from is
+\[
+P_{\mathcal{B}_{I = i^1, G = g^2}}(D, S, L) = P(D) \cdot P(S \given i^1) \cdot P(L \given g^2)
+= \prod_{Y_i \in \Xall \setminus \bE} P(y_i \given \pa(Y_i)) .
+\]
+
+\begin{thmbox}[title={Likelihood weighting is importance sampling}, unbreakable]
+Let $\langle \bx, w(\bx) \rangle$ be a weighted sample generated by
+\textsc{Sample-LW}. Then $\bx$ is distributed according to the mutilated
+network $\mathcal{B}_{\bE = \be}$, and
+\[
+w(\bx) = \prod_{E_i \in \bE} P(e_i \given \pa(E_i))
+= \frac{\prod_{X_i \in \Xall} P(x_i \given \pa(X_i))}{\prod_{Y_i \in \Xall \setminus \bE} P(y_i \given \pa(Y_i))}
+= \frac{P_{\mathcal{B}}(\bx)}{P_{\mathcal{B}_{\bE = \be}}(\bx)}
+= \frac{\tilde P(\bx)}{Q(\bx)} .
+\]
+\end{thmbox}
+
+In words: instead of sampling from the full joint $P_{\mathcal{B}}(\Xall)$ ---
+which is ``correct'' but gives us lots of useless samples with the wrong
+evidence values --- \textsc{Sample-LW} samples from $P_{\mathcal{B}_{\bE =
+\be}}$, which is guaranteed to agree with the evidence. That is the proposal
+$Q$. The target is $P_{\mathcal{B}}(\by, \be)$, the posterior up to the
+constant $P(\be)$. And the LW weight is exactly the importance weight
+$\tilde P / Q$. \Cref{fig:lw-bars} was a picture of exactly this.
+
+\paragraph{The problem with LW, revisited} In this light, LW's weakness is
+simply a bad proposal. The mutilated network does not reflect the influence
+of the evidence on the \emph{non-descendants} of the evidence variables: in
+\cref{fig:mutilated}, $D$ is sampled without taking into account that $G =
+g^2$. It gets worse the more evidence lies downstream. In the extreme case of
+the query $P(D \given l^0)$, the mutilated network is the original network
+with only $L$ clamped; every other variable is sampled from its prior, and the
+weights $P(l^0 \given g)$ must do all the work of shifting $P(d^1)$ from $0.4$
+to the posterior $0.538$. Extremely low weights for many samples, and only a
+few samples typical for the evidence --- exactly the situation of
+\cref{fig:is-bad}.
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{5.6cm}>{\raggedright\arraybackslash}p{5.6cm}@{}}
+\toprule
+& \textbf{Samples from \ldots} & \textbf{\ldots and fixes the mismatch by} \\
+\midrule
+\textbf{Ideal} & the posterior $P_{\mathcal{B}}(\bY \given \be)$ & nothing to fix --- but we cannot do this directly \\
+\textbf{Rejection sampling} & the full joint $P_{\mathcal{B}}(\Xall)$ (correct, but most samples have the wrong evidence) & throwing away samples, keeping a fraction $P(\be)$ \\
+\textbf{Likelihood weighting} & the mutilated network $P_{\mathcal{B}_{\bE=\be}}$ (right evidence, but possibly very wrong elsewhere) & weights, which can be tiny \\
+\bottomrule
+\end{tabular}
+\caption{The dilemma so far. Can we sample (almost) directly from the
+posterior --- without computing it, which would mean solving the query?}
+\label{tab:dilemma}
+\end{table}
+
+% ----------------------------------------------------------
+\section{Markov Chain Monte Carlo (MCMC)}
+\label{sec:mcmc}
+% ----------------------------------------------------------
+
+\subsection{The idea}
+
+Our real target is the posterior $P_{\mathcal{B}}(\bY \given \be)$. If we
+could sample from it directly, every sample would have the correct evidence
+and would be equally relevant --- no rejection, no weights. MCMC gets there by
+a detour. Instead of drawing independent samples, it constructs a
+\emph{sequence} of samples $\bx^{(0)}, \bx^{(1)}, \bx^{(2)}, \ldots$ in which
+\begin{itemize}
+  \item $\bx^{(0)}$ is drawn from some initial proposal $Q^{(0)}$ (for
+    example the mutilated network $\mathcal{B}_{\bE = \be}$), and
+  \item the distribution $Q^{(t+1)}$ of the next sample depends on the current
+    sample $\bx^{(t)}$, and is constructed to be \emph{closer} to the target
+    than $Q^{(t)}$.
+\end{itemize}
+Implicitly, this builds a sequence of proposal distributions $Q^{(0)},
+Q^{(1)}, Q^{(2)}, \ldots$ that converges to the target $P(\bY \given \be)$.
+Later samples are ``almost'' drawn from the posterior, and no weighting is
+necessary. (Because each step depends only on the current sample, the
+sequence is a \emph{Markov chain} --- hence the name; details in
+\cref{sec:markov-chains}.)
+
+\subsection{Gibbs sampling}
+\label{sec:gibbs}
+
+The simplest MCMC algorithm. Start with a sample that has the right evidence
+values, for example one drawn from the mutilated network (\textsc{Sample-LW},
+ignoring the weight). Then keep ``repairing'' it: go through the non-evidence
+variables one at a time and re-sample each one, \emph{given the current
+values of all other variables}. Because every re-sampling step looks at the
+neighbours' current values --- including the evidence --- information can
+``flow'' through the network from the evidence to every other variable,
+upwards as well as downwards.
+
+\begin{thmbox}[title={Gibbs sampling}, unbreakable]
+\textbf{Given:} a query $P(\bX \given \be)$; write $\Xall = \bY \cup \bE$.
+\begin{enumerate}
+  \item Sample an initial state $\bx^{(0)} = (\by^{(0)}, \be)$ from the
+    mutilated network $\mathcal{B}_{\bE = \be}$.
+  \item For $t = 1, \ldots, T$:
+  \begin{itemize}
+    \item $\bx^{(t)} \leftarrow \bx^{(t-1)}$;
+    \item for each $Y_i \in \bY$: re-sample $y_i^{(t)}$ from $P(Y_i \given
+      \bx^{(t)}_{-y_i})$ and write it into $\bx^{(t)}$.
+  \end{itemize}
+  \item Return $\bx^{(0)}, \bx^{(1)}, \ldots, \bx^{(T)}$.
+\end{enumerate}
+Here $\bx_{-y_i}$ denotes the current values of all variables except $Y_i$.
+\end{thmbox}
+
+Three questions immediately come up: What does this \emph{re-sampling
+distribution} $P(Y_i \given \bx_{-y_i})$ look like? Can we compute it
+efficiently, so that we can sample from it? And why should this procedure
+make sense at all? We take them in order.
+
+\subsection{The re-sampling distribution and the Markov blanket}
+
+Take the slides' example, query $P(I \given s^1, l^0)$, current sample
+$(d^1, i^0, g^2, s^1, l^0)$, and we want to re-sample $G$ from $P(G \given d^1,
+i^0, s^1, l^0)$. By the definition of conditional probability and the
+factorisation,
+\begin{align*}
+P(G \given d^1, i^0, s^1, l^0)
+&= \frac{P(G, d^1, i^0, s^1, l^0)}{\sum_{g} P(g, d^1, i^0, s^1, l^0)}
+ = \frac{P(d^1)\, P(i^0)\, P(G \given d^1, i^0)\, P(s^1 \given i^0)\, P(l^0 \given G)}
+        {\sum_g P(d^1)\, P(i^0)\, P(g \given d^1, i^0)\, P(s^1 \given i^0)\, P(l^0 \given g)} \\
+&= \frac{\cancel{P(d^1)\, P(i^0)\, P(s^1 \given i^0)}\; P(G \given d^1, i^0)\, P(l^0 \given G)}
+        {\cancel{P(d^1)\, P(i^0)\, P(s^1 \given i^0)}\; \sum_g P(g \given d^1, i^0)\, P(l^0 \given g)}
+ = \frac{1}{Z}\, P(G \given d^1, i^0)\, P(l^0 \given G) .
+\end{align*}
+All CPDs that do not mention $G$ cancel. What is left is the CPD of $G$
+itself and the CPD of its child $L$ --- \emph{the product of all CPDs in the
+network that involve $G$}, normalised.
+
+\begin{defbox}[title={Markov blanket}]
+The \emph{Markov blanket} $\Mb(A)$ of a variable $A$ in a Bayesian network is
+the set consisting of $A$'s parents, its children, and its children's other
+parents.
+\end{defbox}
+
+\begin{thmbox}[title={Gibbs re-sampling distribution}, unbreakable]
+For a variable $Y$, given the values of all other variables,
+\[
+P(Y \given \bx_{-y}) = P(Y \given \mb(Y))
+= \frac{1}{Z}\; P(Y \given \pa(Y)) \prod_{C \in \Ch(Y)} P(c \given \pa(C)),
+\]
+where $\Ch(Y)$ are the children of $Y$ and $\mb(Y)$ the current values of the
+Markov blanket. The normaliser $Z$ is a sum over the values of $Y$ only.
+\end{thmbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+  \node[bn, fill=figblue!22] (D) at (-1.9, 0)   {Difficulty};
+  \node[bn, fill=accent!35, very thick] (I) at ( 1.9, 0)   {Interest};
+  \node[bn, fill=figgreen!22] (G) at (-0.7,-1.7) {Grade};
+  \node[bn, fill=figgreen!22] (S) at ( 3.1,-1.7) {SAT};
+  \node[bn] (L) at (-0.7,-3.4) {Letter};
+  \draw[edge] (D) -- (G); \draw[edge] (I) -- (G);
+  \draw[edge] (I) -- (S); \draw[edge] (G) -- (L);
+  \begin{scope}[shift={(5.4,-0.4)}, font=\small]
+    \node[draw=accent, fill=figgreen!22, minimum size=3mm, inner sep=0pt] at (0,0) {};
+    \node[anchor=west] at (0.25,0) {children of $I$: $G$, $S$};
+    \node[draw=accent, fill=figblue!22, minimum size=3mm, inner sep=0pt] at (0,-0.6) {};
+    \node[anchor=west] at (0.25,-0.6) {children's other parents: $D$};
+    \node[anchor=west, align=left] at (-0.15,-1.5)
+      {$\Mb(I) = \{G, S, D\}$ \quad ($I$ has no parents)\\[2pt]
+       $P(I \given \mb(I)) \propto P(I)\, P(g \given d, I)\, P(s \given I)$};
+  \end{scope}
+\end{tikzpicture}
+\caption{The Markov blanket of $I$. Once $G$, $S$ and $D$ are known, the
+letter $L$ carries no further information about $I$.}
+\label{fig:markov-blanket}
+\end{figure}
+
+\begin{intbox}[unbreakable]
+Why the children's \emph{other} parents? Because of explaining away
+(\cref{sec:reasoning-patterns}). If we know the grade, the difficulty of the
+course tells us something about motivation: a C in an easy course says
+``unmotivated'' much more loudly than a C in a hard one. So $D$ belongs in
+$I$'s blanket, even though there is no edge between them. Everything outside
+the blanket is shielded off: given its Markov blanket, a variable is
+independent of all other variables in the network.
+\end{intbox}
+
+Since Markov blankets are usually small, all re-sampling distributions can be
+pre-computed and stored as small tables before sampling starts.
+
+For the numbers in the following example you need all five CPDs once more
+(\cref{fig:student-recap3}).
+
+\begin{figure}[!htbp]
+\centering
+\studentnetworkpic
+\caption{The student network again (copy of \cref{fig:student}), for the Gibbs example below. Each re-sampling distribution multiplies the CPD of the variable with the CPDs of its children, read at the current values.}
+\label{fig:student-recap3}
+\end{figure}
+
+\begin{exbox}[title={One full Gibbs iteration for $P(I \given s^1, l^0)$, with real numbers}]
+Start: $\bx^{(0)} = (d^1, i^0, g^2, s^1, l^0)$. The non-evidence variables are
+re-sampled in the order $G, I, D$ (as on the slides). The slides just say
+``suppose we get \ldots''; here are the distributions those draws come from.
+\begin{enumerate}
+  \item \textbf{Re-sample $G$} from $P(G \given d^1, i^0, l^0) \propto
+    P(G \given d^1, i^0)\, P(l^0 \given G)$:
+    \[
+    (0.05 \cdot 0.1,\ 0.25 \cdot 0.4,\ 0.7 \cdot 0.99) = (0.005,\ 0.1,\ 0.693)
+    \ \xrightarrow{\ /0.798\ }\ (0.006,\ 0.125,\ 0.868).
+    \]
+    The weak letter makes a C very likely. Suppose we get $g^3$.
+  \item \textbf{Re-sample $I$} from $P(I \given d^1, g^3, s^1) \propto
+    P(I)\, P(g^3 \given d^1, I)\, P(s^1 \given I)$:
+    \[
+    (0.7 \cdot 0.7 \cdot 0.05,\ 0.3 \cdot 0.2 \cdot 0.8) = (0.0245,\ 0.048)
+    \ \xrightarrow{\ \text{normalise}\ }\ (0.338,\ 0.662).
+    \]
+    Suppose we get $i^1$.
+  \item \textbf{Re-sample $D$} from $P(D \given i^1, g^3) \propto P(D)\,
+    P(g^3 \given D, i^1)$:
+    \[
+    (0.6 \cdot 0.02,\ 0.4 \cdot 0.2) = (0.012,\ 0.08)
+    \ \xrightarrow{\ \text{normalise}\ }\ (0.130,\ 0.870).
+    \]
+    A motivated student with a C? Probably a hard course. Suppose we get $d^1$.
+\end{enumerate}
+New sample: $\bx^{(1)} = (d^1, i^1, g^3, s^1, l^0)$. Notice how the
+evidence $l^0$ reached $I$ in a single sweep: $l^0$ pushed $G$ towards $g^3$,
+and the C, together with the high SAT score, then shaped the distribution of
+$I$.
+\end{exbox}
+
+\begin{thmbox}[title={Probabilistic inference with Gibbs sampling}, unbreakable]
+\begin{enumerate}
+  \item Generate a set $\dataset_{\be}$ of $M$ samples with Gibbs sampling
+    (after a burn-in phase, \cref{sec:mcmc-practice}).
+  \item Take $\dataset_{\be}$ as a direct approximation of the target
+    $P(\bY \given \be)$.
+  \item For each $\bx$, count the number $K$ of samples matching $\bx$ and
+    estimate $\hat P(\bx \given \be) = K / |\dataset_{\be}| = K/M$.
+\end{enumerate}
+No weights, no rejections: every sample counts fully.
+\end{thmbox}
+
+\subsection{Why Gibbs sampling works}
+
+\paragraph{Intuitively} In the example, the first sample $(d^1, i^0, g^2,
+s^1, l^0)$ came from the mutilated network, so $G$ was sampled without
+knowing about $l^0$. Re-sampling $G$ from $P(G \given d^1, i^0, s^1, l^0)$ now
+takes this downstream evidence into account, so the new sample is a bit
+closer to the target. Next, $I$ is re-sampled using $G$, $D$ and $S$, then
+$D$ using $G$ and $I$. Information from the evidence propagates through the
+sampling process, and the sampling distribution becomes more and more similar
+to the target $P(\bY \given \be)$. \Cref{fig:gibbs}(a) shows this happening:
+starting from a point mass on $\bx^{(0)}$, the exact distribution of the
+$t$-th sample reaches the posterior after about four sweeps.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/gibbs-convergence.png}
+\caption{Gibbs sampling for the query $P(\cdot \given s^1, l^0)$, starting
+from $\bx^{(0)} = (d^1, i^0, g^2, s^1, l^0)$. (a) The exact distribution
+$Q^{(t)}$ of the $t$-th sample (computed, not simulated): after a few sweeps
+the probabilities of $i^1$, $g^3$ and $d^1$ sit on the true posterior values
+(dotted lines). (b) A single simulated chain: the running estimate of
+$P(i^1 \given s^1, l^0)$ wanders for a while (the first samples are strongly
+correlated) and then settles near the true value $0.723$.}
+\label{fig:gibbs}
+\end{figure}
+
+\paragraph{Formally} Gibbs sampling is an MCMC algorithm whose
+\emph{stationary distribution} is the posterior $P(\bY \given \be)$. To make
+sense of that, we need a little bit about Markov chains.
+
+\subsection{Markov chains and stationary distributions}
+\label{sec:markov-chains}
+
+\begin{defbox}[title={Markov chain}]
+A \emph{Markov chain} is a model of a discrete-time random process that at
+every time $t = 0, 1, 2, \ldots$ is in exactly one state $s^{(t)}$ from a set
+$S$ of possible states, and that satisfies the \emph{Markov property}: the
+distribution of the next state depends only on the current state,
+\[
+P(S^{(t+1)} \given s^{(t)}, s^{(t-1)}, s^{(t-2)}, \ldots) = P(S^{(t+1)} \given s^{(t)}).
+\]
+Formally, a Markov chain is defined by a state space $S = \{s_1, \ldots,
+s_N\}$ and a \emph{transition model} $\mathcal{T}$ that gives, for each pair
+of states, the probability of moving from $s$ to $s'$:
+$\mathcal{T}(s \to s') = P(S^{(t+1)} = s' \given S^{(t)} = s)$.
+\end{defbox}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    st/.style={circle, draw=accent, thick, fill=accent!6, minimum size=7.5mm,
+               inner sep=0pt, font=\small},
+    tr/.style={-{Stealth[length=1.8mm]}, semithick, accent!85!black},
+    pl/.style={font=\scriptsize, inner sep=1pt}]
+  \foreach \k [count=\j from 0] in {-4,-3,-2,-1,0,+1,+2,+3,+4} {
+    \node[st] (s\j) at (1.7*\j, 0) {$\k$};
+  }
+  \foreach \j/\stay in {0/0.75, 1/0.5, 2/0.5, 3/0.5, 4/0.5, 5/0.5, 6/0.5, 7/0.5, 8/0.75} {
+    \draw[tr] (s\j) edge[loop above, looseness=6] node[pl, above] {\stay} (s\j);
+  }
+  \foreach \j [evaluate=\j as \n using int(\j+1)] in {0,...,7} {
+    \draw[tr] (s\j) to[bend left=25] node[pl, above] {0.25} (s\n);
+    \draw[tr] (s\n) to[bend left=25] node[pl, below] {0.25} (s\j);
+  }
+\end{tikzpicture}
+\caption{The grasshopper Markov chain. At each step the grasshopper stays
+with probability $0.5$ and jumps one position left or right with probability
+$0.25$ each; jumps off the ends are blocked, so the end positions keep it with
+probability $0.75$.}
+\label{fig:grasshopper}
+\end{figure}
+
+\begin{exbox}[title={The grasshopper chain}]
+Nine states, the integers $-4, \ldots, +4$ (\cref{fig:grasshopper}). A
+grasshopper starts at $0$. At every time step it stays where it is with
+probability $0.5$ and jumps left or right with probability $0.25$ each. The
+ends are blocked: jumping left from $-4$ leads back to $-4$, jumping right
+from $+4$ back to $+4$. How does its position evolve? Treat the position at
+time $t$ as a random variable $S^{(t)}$:
+\begin{align*}
+P(S^{(0)}) &= (0,\ 0,\ 0,\ 0,\ 1,\ 0,\ 0,\ 0,\ 0), \\
+P(S^{(1)}) &= (0,\ 0,\ 0,\ 0.25,\ 0.5,\ 0.25,\ 0,\ 0,\ 0), \\
+P(S^{(2)}) &= (0,\ 0,\ 0.0625,\ 0.25,\ 0.375,\ 0.25,\ 0.0625,\ 0,\ 0), \\
+&\ \,\vdots \\
+P(S^{(50)}) &\approx (\tfrac19,\ \tfrac19,\ \tfrac19,\ \tfrac19,\ \tfrac19,\ \tfrac19,\ \tfrac19,\ \tfrac19,\ \tfrac19).
+\end{align*}
+For example, $P(S^{(2)} = 0) = 0.25 \cdot 0.25 + 0.5 \cdot 0.5 + 0.25 \cdot
+0.25 = 0.375$: come back from $-1$, stay twice, or come back from $+1$. The
+distribution spreads out and converges to the uniform distribution --- and
+once there, it stays there (\cref{fig:grasshopper-dist}).
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/grasshopper-distributions.png}
+\caption{Distribution of the grasshopper's position over time. It starts as a
+spike at $0$, spreads out, and converges to the uniform distribution
+$\nicefrac{1}{9}$ (dashed line), regardless of where it started.}
+\label{fig:grasshopper-dist}
+\end{figure}
+
+The limit distribution has a name. A distribution $\pi$ over the states is
+\emph{stationary} for the chain if one more step does not change it:
+\[
+\pi(s') = \sum_{s} \pi(s)\, \mathcal{T}(s \to s') \qquad \text{for all } s'.
+\]
+The uniform distribution is the stationary distribution of the grasshopper
+chain. You can check it by hand: for an inner state, probability flows in from
+the left neighbour ($\tfrac19 \cdot 0.25$), from itself ($\tfrac19 \cdot 0.5$)
+and from the right neighbour ($\tfrac19 \cdot 0.25$), which adds up to
+$\tfrac19$ again. For the end state $-4$: $\tfrac19 \cdot 0.75$ (stay) $+
+\tfrac19 \cdot 0.25$ (from $-3$) $= \tfrac19$. Nothing changes.
+
+\begin{intbox}[unbreakable]
+Shuffling a deck of cards is a Markov chain. The states are the $52!$
+possible orders of the deck; each riffle shuffle moves from the current order
+to a new one, depending only on the current order. The stationary
+distribution is uniform (every order equally likely) --- that is what
+``well shuffled'' means. And it is known that about seven riffle shuffles are
+enough to get close to it, no matter how the deck was sorted at the start.
+MCMC turns this around: we \emph{design} the shuffling rule so that its
+stationary distribution is the distribution we want to sample from, shuffle
+for a while, and then read off samples.
+\end{intbox}
+
+\subsection{Gibbs sampling as an MCMC algorithm}
+
+Gibbs sampling produces exactly such a chain:
+\begin{itemize}
+  \item the \textbf{states} are all possible value assignments to the network
+    variables (all atomic events, all samples we could generate),
+    $S = \Val(\Xall)$ --- with the evidence variables fixed;
+  \item we start in one of them, $\bx^{(0)}$, drawn from
+    $\mathcal{B}_{\bE = \be}$;
+  \item the next sample depends only on the current one;
+  \item the \textbf{transition model} is the re-sampling distribution: writing
+    a state as $(y_i, \bx_{-y_i})$, the step that re-samples $Y_i$ is
+    \[
+    \mathcal{T}_i\big((y_i, \bx_{-y_i}) \to (y'_i, \bx_{-y_i})\big) = P(y'_i \given \bx_{-y_i}).
+    \]
+\end{itemize}
+It can be proven that the stationary distribution of this chain is exactly the
+posterior $P(\bY \given \be)$ (the lecture omits the proof). So if we run the
+chain long enough before we start using the samples, they closely
+approximate the target. For the student example, \cref{fig:gibbs}(a) confirms
+it numerically: the stationary distribution of the Gibbs chain gives $P(i^1)
+= 0.7226$, which is exactly the posterior $P(i^1 \given s^1, l^0)$ computed by
+enumeration.
+
+\paragraph{Why the posterior is stationary, in one line} Not a full proof, but the heart of it. Suppose the current sample $\bx$ is
+already distributed according to the posterior $\pi = P(\cdot \given \be)$.
+Now re-sample one variable $Y_i$ from $\pi(Y_i \given \bx_{-y_i})$. The new
+sample has distribution
+$\pi(\bx_{-y_i}) \cdot \pi(y'_i \given \bx_{-y_i}) = \pi(y'_i, \bx_{-y_i})$
+--- which is $\pi$ again. Re-sampling a variable from its correct conditional
+cannot destroy a distribution that is already correct.
+
+\subsection{Metropolis--Hastings}
+\label{sec:mh}
+
+Gibbs sampling is one way of building a Markov chain with a desired
+stationary distribution. The general MCMC recipe is: given a target $P^*$
+(e.g.\ the posterior), construct a Markov chain over the space of possible
+samples whose distributions $P^{(0)}, P^{(1)}, P^{(2)}, \ldots$ converge to
+$P^*$; draw a sequence of samples from the chain; estimate the target by
+counting relative frequencies. The central problem is how to construct a
+transition model that is guaranteed to converge to $P^*$ and that we can
+actually compute and sample from.
+
+The \emph{Metropolis--Hastings algorithm} is a general method for this, for
+\emph{any} desired stationary distribution. Unlike Gibbs sampling, it does not
+assume that we can sample from the ideal transition model directly. Instead,
+it uses a proposal distribution $\mathcal{T}^Q$ (as in importance sampling)
+that suggests a next state $\bx'$, and replaces importance weights by
+\emph{acceptance probabilities} $A(\bx \to \bx')$: the proposed state is
+accepted with probability $A$; otherwise the chain stays where it is. The
+core of the algorithm is an analytic formula for $A$ that makes the resulting
+chain have exactly $P^*$ as its stationary distribution. Formulating M--H for
+Bayesian networks is relatively straightforward, but not discussed further in
+the lecture.
+
+That is all the lecture asks for. The rest of this subsection goes beyond the
+slides; it is here because M--H is the clearest way to see how ``walking with
+the altimeter'' (\cref{sec:why-sampling-hard}) actually produces samples
+from the right distribution.
+
+\paragraph{One step of Metropolis--Hastings} Suppose the chain currently sits at
+$\bx$.
+\begin{enumerate}
+  \item \textbf{Propose} a new point $\bx'$ from the proposal distribution
+    $\mathcal{T}^Q(\bx \to \bx')$, typically a random point near $\bx$.
+  \item \textbf{Compare heights:} compute the acceptance probability
+    \[
+    A(\bx \to \bx') = \min\!\left(1,\ \frac{\tilde P(\bx')\; \mathcal{T}^Q(\bx' \to \bx)}{\tilde P(\bx)\; \mathcal{T}^Q(\bx \to \bx')}\right).
+    \]
+    For the usual \emph{symmetric} proposals (going from $\bx$ to $\bx'$ is as
+    likely as going back), the $\mathcal{T}^Q$ terms cancel and
+    $A = \min\big(1,\ \tilde P(\bx')/\tilde P(\bx)\big)$.
+  \item \textbf{Accept or stay:} with probability $A$, move to $\bx'$.
+    Otherwise stay at $\bx$ --- and record $\bx$ \emph{again} as the next
+    sample.
+\end{enumerate}
+In words: \emph{uphill moves are always accepted; downhill moves are accepted
+with probability equal to how much lower the new point is.} Only the ratio
+$\tilde P(\bx')/\tilde P(\bx)$ appears, so the unknown normaliser cancels ---
+the same trick as in self-normalised importance sampling
+(\cref{sec:is-confusion}). No gradients are needed, only evaluations of
+$\tilde P$.
+
+\begin{exbox}[title={Three proposals from the same point}]
+The chain stands at a point with $\tilde P(\bx) = 0.8$ (symmetric proposal).
+\begin{itemize}
+  \item Proposal with $\tilde P(\bx') = 1.2$: ratio $1.5$, so $A = 1$ --- move.
+  \item Proposal with $\tilde P(\bx') = 0.4$: ratio $0.5$, so move with
+    probability 50\,\%; otherwise the next sample is $\bx$ again.
+  \item Proposal with $\tilde P(\bx') = 0.008$: ratio $0.01$, so this deep
+    step down is taken only once in a hundred tries.
+\end{itemize}
+\end{exbox}
+
+Two details matter. First, unlike a hill-climbing optimiser, M--H also
+walks \emph{downhill} --- otherwise it would park on the highest peak and
+never describe the shape around it. Second, the ``stay and count again'' rule
+is essential: high points are left reluctantly, so they collect many repeated
+samples. That is how the time spent at a point becomes proportional to its
+probability.
+
+\paragraph{Why the proportions come out right} Take two neighbouring points,
+$A$ with $\tilde P = 2$ and $B$ with $\tilde P = 1$, and suppose each is
+proposed from the other equally often. Proposals from $B$ to $A$ are always
+accepted; proposals from $A$ to $B$ only half of the time. The traffic in both
+directions balances exactly when the chain spends twice as much time at $A$
+as at $B$ --- which is precisely the ratio $\tilde P(A)/\tilde P(B)$. The
+acceptance rule enforces this balance (called \emph{detailed balance},
+$P^*(\bx)\,\mathcal{T}(\bx \to \bx') = P^*(\bx')\,\mathcal{T}(\bx' \to \bx)$)
+between \emph{every} pair of points, and a chain with this property has $P^*$
+as its stationary distribution.
+
+\paragraph{Where does the ``neighbour'' come from?} The proposal
+$\mathcal{T}^Q$ is a free design choice. Any proposal works in principle, as
+long as the chain can eventually reach every state; the choice only affects
+how \emph{fast} the chain explores.
+\begin{itemize}
+  \item \textbf{Gaussian random walk} (the default for continuous variables):
+    $\bx' = \bx + \sigma\bm{\epsilon}$ with $\bm{\epsilon} \sim
+    \Normal(\mathbf{0}, \eye)$. It depends only on the Euclidean distance from
+    $\bx$ --- not a hard ``ball'' around the current point, but a Gaussian
+    cloud: mostly close by, occasionally further away. It is symmetric, so the
+    simple acceptance rule applies.
+  \item \textbf{The step size $\sigma$} is the main tuning knob
+    (\cref{fig:mh-steps}). Too small: almost every step is accepted, but the
+    chain crawls and consecutive samples are nearly identical. Too large:
+    almost every proposal lands somewhere improbable and is rejected, so the
+    chain stands still for long stretches. A common rule of thumb is to tune
+    $\sigma$ until roughly 25--45\,\% of proposals are accepted (about 44\,\%
+    is optimal in one dimension, about 23\,\% in many dimensions).
+  \item \textbf{Shape matters, too.} If the variables live on very different
+    scales or are strongly correlated (a long, tilted hill as in
+    \cref{fig:grid-vs-samples}), one $\sigma$ for all directions is either
+    too big for the narrow direction or too small for the long one. Then one
+    uses a separate scale per variable, or a full covariance for
+    $\bm{\epsilon}$, often estimated from a pilot run.
+  \item \textbf{Discrete variables} (such as BN nodes): a neighbour is the
+    current assignment with one variable --- or a small block of variables ---
+    changed to another value.
+  \item \textbf{Asymmetric proposals} are allowed; the factor
+    $\mathcal{T}^Q(\bx' \to \bx)/\mathcal{T}^Q(\bx \to \bx')$ in $A$
+    corrects for them. Gradient-based methods (Langevin, Hamiltonian Monte
+    Carlo) use this freedom to propose points \emph{uphill} on purpose.
+\end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/mh-step-sizes.png}
+\caption{Random-walk Metropolis--Hastings on a standard normal target (green
+band: $\pm 2$), 500 steps each. Tiny steps: almost everything is accepted, but
+the chain drifts slowly. Huge steps: almost everything is rejected, and the
+chain sits still (flat stretches). A well-tuned step size explores the whole
+distribution quickly.}
+\label{fig:mh-steps}
+\end{figure}
+
+\paragraph{Two special cases worth knowing} \emph{Gibbs sampling} is M--H with
+the proposal ``re-draw one variable from its exact conditional
+distribution''; plugging this into the formula gives $A = 1$, so every
+proposal is accepted. And if the proposal does not depend on the current point
+at all, $\mathcal{T}^Q(\bx \to \bx') = Q(\bx')$ (an ``independence
+sampler''), the acceptance ratio becomes a ratio of importance weights,
+$w(\bx')/w(\bx)$ with $w = \tilde P/Q$ --- importance sampling and MCMC are
+closer relatives than they first appear.
+
+\paragraph{A bit of history} Metropolis--Hastings comes from statistical
+physics. It was developed in the early 1950s by a group of physicists at the
+Los Alamos National Laboratory --- among the authors of the original paper
+(Metropolis, Rosenbluth, Rosenbluth, Teller \& Teller, 1953) is Edward Teller,
+often called the ``father of the hydrogen bomb''. It was first used to
+approximate the Boltzmann distribution and generalised by W.~K.~Hastings in
+1970.
+
+\subsection{Using MCMC in practice}
+\label{sec:mcmc-practice}
+
+Two of the many practical questions:
+
+\paragraph{1. How long to wait before collecting samples?} The early samples
+still reflect the starting point, not the target, so we let the chain run for
+a while and discard them --- the \emph{burn-in} time. How long depends on how
+fast the chain converges to $P^*$:
+
+\begin{defbox}[title={Mixing time}]
+Let $\mathcal{T}$ be a Markov chain, and let $T_\epsilon$ be the smallest $T$
+such that, for \emph{any} starting distribution $P^{(0)}$,
+$D(P^{(T)}, P^*) \leq \epsilon$, where $D$ is some distance between
+distributions. Then $T_\epsilon$ is the $\epsilon$-\emph{mixing time} of the
+chain.
+\end{defbox}
+
+The mixing time can be extremely long, cannot be calculated analytically, and
+is hard to analyse or even estimate. In the student example it is tiny (a
+handful of sweeps, \cref{fig:gibbs}a); in a big network with strong
+dependencies, a chain can get stuck in one region of the state space for a
+very long time.
+
+\paragraph{2. How to get (nearly) independent samples?} Consecutive samples of
+a chain are strongly correlated: the next sample differs from the current one
+in at most a few variables. In \cref{fig:gibbs}(b), the first ten samples all
+have $I = i^1$. Treating them as independent samples overstates how much
+information we have --- a thousand correlated samples may be worth far fewer
+independent ones (the slides call the resulting estimates biased). The pragmatic fix: after
+collecting a sample $\bx^{(t)}$, skip $d$ steps and collect $\bx^{(t+d)}$ next.
+This alleviates the problem somewhat, but a good $d$ again depends on the
+mixing time. The lecture's honest conclusion: in practice, wait as long as
+your time budget permits before collecting samples, and choose $d$ as large
+as you can afford.
+
+\subsection{Many hills: when MCMC gets stuck}
+\label{sec:mcmc-multimodal}
+
+The mixing-time problem has a very concrete face: a target with several hills
+separated by deep valleys. (This subsection goes beyond the slides.)
+
+\paragraph{In theory, the walker crosses every valley} Downhill moves always have
+a positive probability, so as long as every state can be reached, the chain
+\emph{will} eventually visit every hill, and the convergence guarantee holds.
+
+\paragraph{In practice, it may not happen in your lifetime} Crossing a valley
+needs many unlikely downhill steps in a row, and their probabilities
+multiply. Ten consecutive steps that are each accepted with probability
+$0.1$ happen with probability $0.1^{10} = 10^{-10}$. In
+\cref{fig:two-hills}(a), the density in the middle of the valley is about
+$6 \cdot 10^{-6}$ times the peak height; a random-walk M--H chain started on
+the left hill does not leave it in 3000 steps, and its samples would tell us,
+with complete confidence, that the right hill does not exist.
+
+\begin{exbox}[title={The same problem in a Bayesian network}]
+Two binary variables $A \to B$ with $P(a^1) = 0.5$ and a nearly
+deterministic link, $P(b = a) = 0.999$. The states $(a^0, b^0)$ and $(a^1,
+b^1)$ are both likely; $(a^0, b^1)$ and $(a^1, b^0)$ are almost impossible.
+Gibbs sampling changes one variable at a time, so to move from $(a^0, b^0)$ to
+$(a^1, b^1)$ it must pass through an almost impossible state. Re-sampling $A$
+given $b^0$:
+\[
+P(a^1 \given b^0) = \frac{0.5 \cdot 0.001}{0.5 \cdot 0.001 + 0.5 \cdot 0.999} = 0.001 .
+\]
+So the chain switches between the two likely states only about once every
+1000 sweeps. With a link of $0.999\,999$ it would be once in a million.
+Strong (near-deterministic) dependencies are the classic way to make Gibbs
+sampling crawl.
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/mcmc-two-hills.png}
+\caption{A target with two equally large hills. (a) Random-walk M--H started on
+the left hill explores it nicely but never finds the right one. (b) Its trace:
+3000 steps, all on the left. (c) Parallel tempering (four chains with
+$\beta = 1, 0.3, 0.1, 0.03$; shown is the $\beta = 1$ chain) switches between
+the hills more than 200 times and spends about 40\,\% / 60\,\% of its time on
+the right / left hill --- close to the correct 50\,/\,50 after only 3000
+steps.}
+\label{fig:two-hills}
+\end{figure}
+
+\paragraph{What people do about it}
+\begin{itemize}
+  \item \textbf{Run several chains} from very different starting points and
+    compare them. If they disagree (one says ``left hill'', another ``right
+    hill''), none of them has mixed yet. This does not fix the problem, but it
+    reveals it --- a single chain cannot know what it has never seen.
+  \item \textbf{Move several things at once.} Update strongly coupled
+    variables together (\emph{block Gibbs}: re-sample $A$ and $B$ jointly in
+    the example above, and the problem disappears), or mix small local steps
+    with occasional big jumps.
+  \item \textbf{Flatten the landscape (tempering).} Run additional chains on
+    the flattened target $\tilde P^{\beta}$ with $0 < \beta < 1$: raising to a
+    small power makes the valleys shallow. In \cref{fig:two-hills}, for
+    $\beta = 0.03$ the valley is only about 30\,\% lower than the peaks, so
+    that chain wanders between the hills freely. Every now and then,
+    neighbouring chains propose to swap their current states (accepted with an
+    M--H-type rule). The ``hot'' chains find new hills, the swaps pass them
+    down, and the $\beta = 1$ chain --- the only one whose samples are used ---
+    can jump between hills it could never walk between
+    (\cref{fig:two-hills}c). This is \emph{parallel tempering}.
+  \item \textbf{Use gradients: Hamiltonian Monte Carlo (HMC).} Treat
+    $-\log \tilde P$ as a landscape and roll a ball through it with momentum,
+    simulating the physics for a while before proposing the end point. This
+    produces long-distance proposals that are still accepted with high
+    probability, which makes HMC excellent in high dimensions and for long,
+    tilted hills (it is the workhorse of modern probabilistic programming,
+    e.g.\ Stan, and of Bayesian inference for Gaussian-process
+    hyperparameters). But a ball that does not have enough energy still cannot
+    roll over a high ridge, so HMC does not fundamentally solve the
+    many-hills problem --- and it needs continuous variables and gradients, so
+    it is not applicable to discrete BNs.
+\end{itemize}
+
+\paragraph{Two reality checks} First, a hill with \emph{little} mass hardly
+matters: missing it changes the estimates only a little. The dangerous case is
+a hill with a lot of mass that is cut off by deep valleys. Second, no method
+can \emph{guarantee} to find such a hill --- inference is NP-hard, after all.
+Importance sampling has exactly the same blind spot: a proposal that does not
+cover a hill never sees it (\cref{fig:is-bad}).
+
+\paragraph{Beyond this course} Collapsed particles (sample only part of each
+assignment and represent the rest in closed form), deterministic search for
+high-probability states, and optimisation-based approximate inference over
+clique trees, factor graphs or region graphs --- a large field with a lot of
+literature.
+
+% ----------------------------------------------------------
+\section{Overview: Which Method Does What?}
+% ----------------------------------------------------------
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{5.4cm}@{}}
+\toprule
+\textbf{Method} & \textbf{Samples from} & \textbf{Correction} & \textbf{Main weakness} \\
+\midrule
+Enumeration & --- (exact) & --- & $\mathcal{O}(2^N)$ terms; recomputes the same sums \\
+Variable elimination & --- (exact) & --- & intermediate factors can be exponentially large; order matters \\
+\midrule
+Forward sampling & $P_{\mathcal{B}}(\Xall)$ & --- & only for queries without evidence; rare events need many samples \\
+Rejection sampling & $P_{\mathcal{B}}(\Xall)$ & discard samples & keeps only a fraction $P(\be)$, which shrinks exponentially with $|\bE|$ \\
+Likelihood weighting & $P_{\mathcal{B}_{\bE = \be}}$ & weights $\prod P(e_i \given \pa(E_i))$ & evidence does not steer non-descendants; tiny weights \\
+Importance sampling & any proposal $Q$ & weights $\tilde P/Q$ & only as good as $Q$ is similar to $P$ \\
+Gibbs sampling & Markov chain $\to P(\bY \given \be)$ & --- & burn-in, correlated samples, unknown mixing time \\
+\bottomrule
+\end{tabular}
+\caption{The inference methods of this chapter at a glance. All sampling
+methods are consistent: with enough samples, they converge to the right
+answer.}
+\label{tab:inference-overview}
+\end{table}
+
+\subsection{Importance sampling vs.\ MCMC}
+
+The two families are not rivals so much as two answers to the same problem
+(\cref{sec:why-sampling-hard}): both approximate sums over $\tilde P$, both
+only ever evaluate $\tilde P$ pointwise (so the normaliser never matters),
+and both use a proposal plus a correction. They differ in \emph{where} the
+proposal comes from.
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{5.6cm}>{\raggedright\arraybackslash}p{5.6cm}@{}}
+\toprule
+& \textbf{Importance sampling} & \textbf{MCMC} \\
+\midrule
+Proposal & one fixed, \emph{global} $Q$ & \emph{local}, around the current point \\
+Correction & weights $\tilde P/Q$ & accept/reject (Gibbs: none needed) \\
+Samples & independent, weighted & dependent (correlated), unweighted \\
+Needs & a good $Q$ in advance & only evaluations of $\tilde P$ (or conditionals) \\
+Strengths & simple, fully parallel, estimates $P(\be)$ for free, easy to diagnose via the weights (ESS) & scales to high dimensions, adapts to the shape of $P$ automatically \\
+Weaknesses & in high dimensions a fixed $Q$ rarely fits $P$ everywhere, so the weights degenerate & burn-in, correlated samples, can get stuck between hills \\
+\bottomrule
+\end{tabular}
+\caption{Importance sampling and MCMC side by side.}
+\label{tab:is-vs-mcmc}
+\end{table}
+
+\paragraph{Rule of thumb} Few dimensions and a reasonable $Q$ at hand (or a
+prior that is easy to sample, with evidence that does not shift things too
+much): importance sampling --- or, in one to three dimensions, simply a grid.
+Many dimensions and a complicated shape: MCMC. In practice the two are often
+combined: MCMC moves inside importance-sampling schemes, importance weights
+inside MCMC (the independence sampler of \cref{sec:mh}), and \emph{particle
+filters} --- importance sampling plus resampling, repeated over time --- for
+the temporal models of the later chapters.
 
 
+% ----------------------------------------------------------
 \section{Chapter Checklist}
-\planned{To be written together with the chapter.}
+% ----------------------------------------------------------
 
+What you should take away from this chapter (following the lecture's own
+lists for parts 4a and 4b):
+\begin{itemize}
+  \item the probabilistic query, including MAP queries, and the general
+    inference-by-enumeration algorithm for BNs;
+  \item why exact inference is expensive: $\mathcal{O}(2^N)$ terms for enumeration,
+    and NP-hardness in general;
+  \item the basic strategy of variable elimination: push sums inwards, compute
+    each intermediate factor once, cache and reuse it (dynamic programming),
+    and why the chain can be done in $\bigO{N k^2}$;
+  \item that even with such optimisations, exact inference is intractable in
+    general --- and that this is only a small part of a large field of
+    inference algorithms;
+  \item the basic idea of approximate reasoning via sampling, and what it means
+    to sample from a distribution;
+  \item how to sample a value from a discrete distribution, and how to sample
+    complete events from a BN (forward sampling);
+  \item how to use samples to estimate (conditional) distributions: rejection
+    sampling and likelihood weighting, and their weaknesses;
+  \item the general idea of importance sampling: target, proposal, weights
+    $P/Q$ --- and why we can compute the weights without being able to sample
+    from $P$;
+  \item the general idea of MCMC algorithms, Markov chains and stationary
+    distributions;
+  \item Gibbs sampling: the re-sampling distribution, the Markov blanket, and
+    why Gibbs sampling is an MCMC method;
+  \item that there is something called the Metropolis--Hastings algorithm, and
+    what it is for;
+  \item the practical issues of MCMC: burn-in, mixing time, correlated
+    samples;
+  \item \emph{beyond the lecture, for understanding:} why grids and enumeration
+    fail in high dimensions while samples do not, how a Metropolis--Hastings
+    step works (proposal, acceptance, step size), and why MCMC can get stuck
+    between hills.
+\end{itemize}
+
+
+% ==========================================================
+%  CHAPTERS 5--8 — OUTLINES
+%  Section lists follow the lecture titles in the course schedule
+%  and the standard treatment in Koller & Friedman / Russell & Norvig.
+%  Replace \planned{...} blocks with real text once the slides of the
+%  corresponding units are available, and adapt the sections to them.
+% ==========================================================
 
 % ==========================================================
 %  CHAPTER 5 — LEARNING BAYESIAN NETWORKS   (VO 6--8)
