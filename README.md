@@ -48,7 +48,7 @@ The summaries are written in a consistent visual style: one accent color, typed 
 | [LSTM & Transformers](courses/lstm_and_transformers/) | [PDF](courses/lstm_and_transformers/summary.pdf) | — | draft (chapters 0–6, 9–10) |
 | [ML Supervised Techniques](courses/ml-supervised-techniques/) | [PDF](courses/ml-supervised-techniques/summary.pdf) | [PDF](courses/ml-supervised-techniques/exams.pdf) | draft |
 | [ML Unsupervised Techniques](courses/ml-unsupervised-techniques/) | [PDF](courses/ml-unsupervised-techniques/summary.pdf) | [PDF](courses/ml-unsupervised-techniques/exams.pdf) | reviewed |
-| [Probabilistic Models](courses/probabilistic-models/) | [PDF](courses/probabilistic-models/summary.pdf) | — | draft (chapters 1–4) |
+| [Probabilistic Models](courses/probabilistic-models/) | [PDF](courses/probabilistic-models/summary.pdf) | — | draft (chapters 1–5) |
 | [Reinforcement Learning](courses/reinforcement-learning/) | [PDF](courses/reinforcement-learning/summary.pdf) | [PDF](courses/reinforcement-learning/exams.pdf) | reviewed |
 | [Robopsychology](courses/robopsychology/) | [PDF](courses/robopsychology/summary.pdf) | — | reviewed |
 | [Structural Bioinformatics](courses/structural-bioinformatics/) | [PDF](courses/structural-bioinformatics/summary.pdf) | — | draft |

@@ -275,11 +275,13 @@
 \titlespacing*{\subsection}{0pt}{2.6ex plus 1ex minus .2ex}{1.4ex plus .2ex}
 
 % Run-in paragraph label — useful for named sub-items in a derivation.
+\makeatletter
 \titleformat{\paragraph}[runin]
   {\normalfont\small\bfseries}
   {}
   {0em}
-  {}[.\enspace]
+  {}[\@addpunct{.}\enspace]   % no extra period after "?" or "!"
+\makeatother
 \titlespacing{\paragraph}{0pt}{1.2ex plus .5ex minus .2ex}{0.5em}
 
 
@@ -579,8 +581,9 @@
   replacement for them.
 
   \medskip
-  \textbf{Working draft:} Chapters 1--4 are written out. Chapters 5--8 are
-  still outlines and will be filled in as the lecture progresses.
+  \textbf{Working draft:} Chapters 1--5 are written out (except structure
+  learning in Chapter~5, slide set 5b). Chapters 6--8 are still outlines and
+  will be filled in as the lecture progresses.
 
   \medskip
   If you spot an error or a gap, please open an issue or pull request at
@@ -5259,64 +5262,1085 @@ lists for parts 4a and 4b):
 
 
 % ==========================================================
-%  CHAPTERS 5--8 — OUTLINES
+%  CHAPTER 5 — LEARNING BAYESIAN NETWORKS
+%  (slide sets 5 "Learning Bayesian Networks" and 5a "Parameter Learning";
+%   5b "Structure Learning" still to come)
+% ==========================================================
+\chapter{Learning Bayesian Networks}
+\label{ch:learning}
+
+So far somebody always handed us the graph \emph{and} all the CPDs. In
+reality, the numbers --- and often the structure, too --- have to come from
+data. This chapter addresses the modelling-complexity problem from
+\cref{ch:intro}: given a set of observations, find a Bayesian network that
+explains them well.
+
+The chapter follows the lecture's slide sets. \textbf{Part 5} sets the stage:
+learning as optimisation, the likelihood as the thing to optimise, and the
+central danger of \emph{overfitting} with its two faces, bias and variance.
+\textbf{Part 5a} then does parameter learning for a \emph{fixed} graph: first
+maximum likelihood (which turns out to be ``just count''), its weaknesses,
+smoothing, Gaussians, and finally the Bayesian alternative, where we learn a
+whole distribution over the parameters instead of a single number.
+Structure learning (part 5b) will follow.
+
+% ----------------------------------------------------------
+\section{The Learning Problem}
+\label{sec:learning-problem}
+% ----------------------------------------------------------
+
+Building a network by hand, as we did with the student network, requires an
+expert who knows the domain well enough to draw the arrows and to put numbers
+into every CPD. Often that is impossible: experts are not available or too
+expensive, or the problem is not understood well enough, or it is simply too
+big. What we often \emph{do} have is a pile of examples collected from the
+world:
+\begin{itemize}
+  \item \textbf{medical diagnosis}: a database of patient records --- histories,
+    symptoms, tests performed, diagnoses, treatments, outcomes;
+  \item \textbf{speech recognition}: recordings of speech annotated with the
+    words that were spoken, sentence boundaries, and so on.
+\end{itemize}
+The goal of \emph{automatic model learning} is to construct, from such
+examples, a structured model of the hidden distribution that most likely
+produced them.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    box/.style={draw=accent, thick, rounded corners=2mm, fill=accent!5,
+                minimum height=2.6cm, text width=3.6cm, align=center, font=\small},
+    flow/.style={-{Stealth[length=2.5mm]}, very thick, accent!80!black},
+    lab/.style={font=\scriptsize, align=center, text=gray!30!black}]
+  \node[box] (W) at (0,0) {\textbf{The world}\\[3pt]
+     true distribution $P^*$\\ from a true network\\ $\mathcal{M}^* = (\mathcal{G}^*, \params^*)$\\[3pt]
+     \textcolor{gray!70!black}{\scriptsize unknown to us}};
+  \node[box] (D) at (5.2,0) {\textbf{Training data} $\dataset$\\[3pt]
+     \scriptsize
+     \begin{tabular}{@{}ccccc@{}}
+     $d^1$ & $i^0$ & $g^2$ & $s^1$ & $l^0$ \\
+     $d^1$ & $i^1$ & $g^1$ & $s^0$ & $l^1$ \\
+     $d^0$ & $i^0$ & $g^3$ & $s^0$ & $l^1$ \\
+     \multicolumn{5}{c}{$\vdots$}
+     \end{tabular}\\[2pt]
+     \small $M$ examples};
+  \node[box] (L) at (10.4,0) {\textbf{Learned model}\\[3pt]
+     $\tilde{\mathcal{M}} = (\tilde{\mathcal{G}}, \tilde\params)$\\[3pt]
+     with $P_{\tilde{\mathcal{M}}} \approx P^*$\\ and a graph that reflects\\ the real (in)dependencies};
+  \draw[flow] (W) -- node[lab, above] {sampled\\i.i.d.} (D);
+  \draw[flow] (D) -- node[lab, above] {learning\\algorithm} (L);
+\end{tikzpicture}
+\caption{The learning setting. A true but unknown distribution generates the
+training examples independently; the learner sees only the examples and tries
+to reconstruct a model close to the truth.}
+\label{fig:learning-setting}
+\end{figure}
+
+\paragraph{The general setting} (\cref{fig:learning-setting})
+\begin{itemize}
+  \item The world is governed by some true but unknown distribution $P^*$,
+    corresponding to some true but unknown network $\mathcal{M}^* =
+    (\mathcal{G}^*, \params^*)$ --- a graph and its parameters.
+  \item We are given a \emph{training set} $\dataset = \{\bx[1], \ldots,
+    \bx[M]\}$ of $M$ events (complete assignments of all variables) coming from
+    $P^*$.
+  \item The training examples are sampled \emph{independently} from the
+    \emph{same} $P^*$: they are \emph{independent and identically distributed}
+    (\emph{i.i.d.}). In words: the training examples are representative of the
+    world.
+\end{itemize}
+\textbf{Task:} learn a model $\tilde{\mathcal{M}}$ (from some family of
+models) whose distribution $P_{\tilde{\mathcal{M}}}$ approximates $P^*$, and
+whose graph $\tilde{\mathcal{G}}$ reflects the true (in)dependencies in the
+world. Variants: we may want to learn only the parameters $\tilde\params$ for a
+given structure, or both structure and parameters; and we may want a single
+model or a whole spectrum of models (for example a probability distribution
+over models).
+
+\begin{intbox}[unbreakable]
+The i.i.d.\ assumption is easy to violate without noticing. Patient records
+from a single children's hospital are not representative of all patients
+(not \emph{identically} distributed with the population we care about).
+Measurements taken on consecutive days are not \emph{independent} --- today's
+weather says a lot about tomorrow's. When the assumption fails, a learned
+model may describe the data perfectly and still describe the world badly.
+\end{intbox}
+
+\begin{notebox}[title={Notation in this chapter}]
+The dataset is written $\dataset$ (calligraphic), so that it does not collide
+with the variable $D$ (difficulty) of the student network. $M$ always counts
+the training examples, $\bx[m]$ is the $m$-th example, and a model is written
+$\mathcal{M}$ (or $\mathcal{M}_{\params}$ when we want to stress its
+parameters $\params$). The lecture writes the likelihood as $L(\mathcal{M} :
+\dataset)$ --- with a \emph{colon}, more on that in a moment.
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Learning as Optimisation: The Likelihood}
+\label{sec:learning-likelihood}
+% ----------------------------------------------------------
+
+What model do we want to learn? ``The correct one'' is not an answer we can
+check --- we never see $P^*$. A workable answer is: \emph{one that agrees well
+with the observed events $\dataset$}, because the observations are all the
+information we have. This turns learning into optimisation:
+\begin{enumerate}
+  \item define an \emph{objective function} $F(\mathcal{M}, \dataset)$ that
+    measures how good a model $\mathcal{M}$ is with respect to the training
+    data;
+  \item develop an algorithm that finds the model maximising it,
+    \[
+    \tilde{\mathcal{M}} = \argmax_{\mathcal{M}}\, F(\mathcal{M}, \dataset).
+    \]
+\end{enumerate}
+Learning is a \emph{search} through a huge space of possible structures and
+parameter settings for the model with the highest score.
+
+\begin{defbox}[title={Likelihood of a model}]
+The \emph{likelihood} of a model $\mathcal{M}$ relative to a dataset
+$\dataset$ is the probability that the model assigns to the data:
+\[
+L(\mathcal{M} : \dataset) = P_{\mathcal{M}}(\dataset).
+\]
+In words, it is
+\begin{itemize}
+  \item the probability of getting exactly the instances in $\dataset$ if we
+    drew $M = |\dataset|$ samples from $P_{\mathcal{M}}$;
+  \item the probability that $\mathcal{M}$ would generate exactly these
+    observations if asked to generate $M$ samples;
+  \item the degree to which $\mathcal{M}$ ``fits'' or ``explains'' the data.
+\end{itemize}
+\end{defbox}
+
+The colon in $L(\mathcal{M} : \dataset)$ is a deliberate piece of notation:
+it marks the model as the thing that \emph{varies} and the data as the thing
+that is \emph{fixed}. This is exactly the ``which side is free?'' issue of
+\cref{sec:likelihood}: as a function of the data, $P_{\mathcal{M}}(\dataset)$
+is a probability; as a function of the model, with the data fixed, it is a
+likelihood --- and that is how we use it here.
+
+\begin{thmbox}[title={Likelihood of i.i.d.\ data}, unbreakable]
+If the examples $\dataset = \{\bx[1], \ldots, \bx[M]\}$ are i.i.d., the
+likelihood is the product of the probabilities of the individual examples:
+\[
+L(\mathcal{M} : \dataset) = P_{\mathcal{M}}(\dataset) = \prod_{m=1}^{M} P_{\mathcal{M}}(\bx[m]).
+\]
+\end{thmbox}
+
+Independence is what turns the probability of the whole dataset into a
+product (\cref{sec:indep}), and for a Bayesian network each factor
+$P_{\mathcal{M}}(\bx[m])$ is itself a product of CPD entries
+(\cref{sec:factorisation}). So for a given model and dataset, the likelihood is
+easy to calculate.
+
+\paragraph{The log-likelihood} Every factor is a number below one, often far
+below, so the product becomes minuscule. A thousand coin tosses with
+probability about $0.5$ each give a likelihood around $2^{-1000} \approx
+10^{-301}$, right at the edge of what a computer's floating-point numbers can
+represent; a few more tosses and the result \emph{underflows} to exactly zero.
+The fix is to take logarithms.
+
+\begin{defbox}[title={Log-likelihood}]
+\[
+\ell(\mathcal{M} : \dataset) = \log L(\mathcal{M} : \dataset)
+= \log \prod_{m=1}^{M} P_{\mathcal{M}}(\bx[m])
+= \sum_{m=1}^{M} \log P_{\mathcal{M}}(\bx[m]).
+\]
+\end{defbox}
+Products become sums, and since the logarithm is strictly increasing, the
+log-likelihood is maximal exactly where the likelihood is maximal. We lose
+nothing by optimising $\ell$ instead of $L$ --- and it is usually also much
+easier to differentiate, as we will see.
+
+% ----------------------------------------------------------
+\section{Overfitting, Generalisation and the Bias--Variance Trade-off}
+\label{sec:overfitting}
+% ----------------------------------------------------------
+
+\subsection{Overfitting versus generalisation}
+
+Maximising the likelihood sounds like a perfectly sensible goal. Here is why
+it is not enough on its own. Suppose we want to learn a distribution over 20
+binary variables. That space has $2^{20} \approx 10^6$ possible atomic events.
+Our training set has 1000 different instances. If we allow \emph{any}
+distribution over this space, the model with the highest likelihood is the
+one that
+\begin{itemize}
+  \item assigns probability $0.001$ to each of the 1000 observed instances, and
+  \item assigns probability $0$ to all the other $2^{20} - 1000$ events.
+\end{itemize}
+This model reproduces the training data perfectly --- and considers
+everything it has not seen \emph{impossible}. It is useless for the actual
+purpose of a model: answering questions about \emph{new} situations.
+
+\begin{defbox}[title={Generalisation and overfitting}]
+\textbf{Generalisation:} a training set usually does not contain all possible
+situations, but the purpose of a learned model is to answer queries about new
+ones. So the model must be more general than a summary of the training set.\par
+\textbf{Overfitting:} the model with the highest (log-)likelihood is generally
+one that fits the training data exactly. It assigns high probability to the
+seen examples and low or zero probability to everything else, which makes it
+useless for new situations. If we permit arbitrarily complex models and
+maximise the likelihood, we \emph{will} get a model that overfits.
+\end{defbox}
+
+\begin{intbox}[unbreakable]
+Think of a student who prepares for an exam by memorising last year's exam
+paper word by word. On last year's paper, the score would be perfect --- that
+is maximum likelihood on the training data. On this year's paper, the student
+is lost. Learning means extracting the regularities that will still hold for
+the next example, not memorising the examples.
+\end{intbox}
+
+\begin{exbox}[title={Overfitting in the student network, with numbers}]
+Take the eight student records from the slides (they are listed in
+\cref{tab:student-rows} below). Compute their likelihood under two models:
+the \emph{true} student network of \cref{ch:bn}, and the model whose CPDs are
+fitted to exactly these eight rows by maximum likelihood (we will see in
+\cref{sec:ml-student} how that is done).
+\begin{center}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+model & likelihood of the 8 rows & log-likelihood \\
+\midrule
+true network $\mathcal{M}^*$ & $1.7 \cdot 10^{-19}$ & $-43.2$ \\
+ML model fitted to the 8 rows & $5.2 \cdot 10^{-9}$ & $-19.1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The fitted model explains these eight rows about \emph{31 billion times} better
+than the true model does. Yet it is a terrible model of the world: it claims,
+for example, that a highly motivated student never gets a high SAT score.
+High likelihood on the training data is not the same as being right.
+\end{exbox}
+
+\subsection{Overfitting and model complexity}
+
+There is a general relation between overfitting and model complexity, where
+\emph{complexity} means the number of parameters needed to specify a model:
+\begin{itemize}
+  \item fitting a training set with perfect precision requires complex models,
+    so overfitting models are usually complex models;
+  \item reducing model complexity reduces the model's ability to describe the
+    data precisely --- and thereby \emph{enforces} generalisation.
+\end{itemize}
+For Bayesian networks, complexity is directly tied to the edges of the graph.
+More parents per variable mean more rows in the CPDs and more numbers to learn.
+Fewer parents introduce stronger independencies, and a network with
+independencies simply \emph{cannot} represent distributions in which those
+independencies do not hold. Constraining the structure of a BN reduces the
+space of distributions it can represent.
+
+\begin{exbox}[title={Exercise from the slides: do overfitting models have to be complex?}]
+A world with three binary variables $A$, $B$, $C$ and the training set
+\begin{center}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+& $A$ & $B$ & $C$ \\
+\midrule
+$\bx[1]$ & 1 & 0 & 0 \\
+$\bx[2]$ & 0 & 1 & 0 \\
+$\bx[3]$ & 0 & 0 & 1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Task:} build a BN over $A, B, C$ that assigns probability $1/3$ to each
+of the three examples and $0$ to the other five events in $\{0,1\}^3$ --- i.e.\
+a perfectly ``memorising'' model. Can it be done without a fully connected
+network?\par\smallskip
+\textbf{Answer: no.} Fitting each candidate structure by maximum likelihood
+gives:
+\begin{center}
+\small
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+structure & edges & $P(100)$ & $P(010)$ & $P(001)$ & $P(000)$ & $P(101)$ \\
+\midrule
+chain $A \to B \to C$ (or a fork) & 2 & $1/6$ & $1/3$ & $1/6$ & $\mathbf{1/6}$ & $\mathbf{1/6}$ \\
+v-structure $A \to C \leftarrow B$ & 2 & $2/9$ & $2/9$ & $4/9$ & 0 & 0 \\
+fully connected & 3 & $\mathbf{1/3}$ & $\mathbf{1/3}$ & $\mathbf{1/3}$ & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+(Other two-edge networks give the same patterns with the roles of the
+variables swapped.) Why must every two-edge network fail? With an edge
+missing between two variables, the network asserts that they are independent
+--- either marginally (v-structure) or given the third variable (chain,
+fork). But in this data, every pair is dependent in both senses: $P(a^1, b^1)
+= 0 \neq P(a^1)P(b^1) = 1/9$, and given $C = 0$, $A = 1$ forces $B = 0$.
+Memorising three points exactly needs the full $2^3 - 1 = 7$ parameters ---
+the same as an unrestricted joint table. \emph{Overfitting models are complex
+models.}
+\end{exbox}
+
+\subsection{Bias and variance}
+\label{sec:bias-variance}
+
+To avoid overfitting, we force the learner to generalise by putting
+constraints on the class of models it may choose from:
+\begin{itemize}
+  \item \textbf{hard constraints:} strictly restrict the model class --- only
+    certain structures, at most $k$ parents per variable, and so on;
+  \item \textbf{soft constraints:} add a \emph{regularisation} term to the
+    objective function that penalises complex models.
+\end{itemize}
+This comes at a price, and the price has a name.
+
+\begin{defbox}[title={Bias and variance}]
+\textbf{Bias:} the error that comes from restricting the expressivity of the
+model class. Models from a constrained class may simply be unable to describe
+the target distribution $P^*$ precisely, no matter how much data we have.\par
+\textbf{Variance:} the error that comes from permitting a highly expressive
+model class. A large space of complex models is more likely to contain a model
+close to $P^*$ (low bias). But a limited training set cannot reliably pick the
+right one: many candidates have similar likelihood, small changes in the data
+can radically change which model wins, and running the learner on different
+training sets from the same $P^*$ produces wildly different, overfitting
+models.
+\end{defbox}
+
+\begin{thmbox}[title={The bias--variance trade-off}, unbreakable]
+\begin{itemize}
+  \item Restricting to simple models makes the hypothesis space smaller:
+    higher risk of bias, but less risk of finding an overfitting model.
+  \item Permitting complex models reduces the risk of bias but introduces
+    variance: there may be many models that fit the data ``by chance''.
+\end{itemize}
+Finding a good place on this continuum for a given problem and dataset is the
+job of the system designer. There is no theoretical decision guide --- and a
+large part of machine learning is about exactly this trade-off.
+\end{thmbox}
+
+\begin{intbox}[unbreakable]
+Back to the exam. One student learns a single rule, ``when in doubt, answer
+C'': very consistent from exam to exam, but systematically wrong on many
+questions --- \emph{bias}. Another memorises last year's paper word by word:
+the result depends entirely on which paper they happened to memorise ---
+\emph{variance}. The good student learns a moderate number of real rules.
+\Cref{fig:bias-variance} (\cref{sec:smoothing}) shows the same three
+characters as Bayesian networks, measured on the student network.
+\end{intbox}
+
+% ----------------------------------------------------------
+\section{A Map of Learning Tasks}
+% ----------------------------------------------------------
+
+Learning problems for graphical models come in several flavours:
+\begin{itemize}
+  \item \textbf{Parameter learning} for a fixed, given structure --- either by
+    \emph{maximum-likelihood} estimation or by \emph{Bayesian} estimation
+    (\cref{sec:ml-estimation,sec:bayes-estimation}, slide set 5a);
+  \item \textbf{Structure learning}: learning both the graph and its parameters
+    (\cref{sec:structure-learning}, slide set 5b);
+  \item an additional level of difficulty: \textbf{learning from incomplete
+    observations}, where some variables are not observed in the data. The
+    course treats this for one special class of models, hidden Markov models
+    (\cref{ch:hmm}).
+\end{itemize}
+
+% ----------------------------------------------------------
+\section{Maximum-Likelihood Parameter Estimation}
+\label{sec:ml-estimation}
+% ----------------------------------------------------------
+
+From now on the graph is \emph{given}; only the numbers in the CPDs have to be
+learned. This is a very practical situation: sketching which variable
+influences which is relatively easy in many domains, but getting precise
+numbers from experts is much harder --- while collecting many observations
+may be easy. Parameter learning is also a building block of structure
+learning and of learning from incomplete data.
+
+\begin{thmbox}[title={Maximum-likelihood (ML) parameter estimation}, unbreakable]
+\textbf{Given:} the structure $\mathcal{G}$ of a Bayesian network and a
+dataset $\dataset = \{\bx[1], \ldots, \bx[M]\}$ of i.i.d.\ examples.\par
+\textbf{Find:} parameters $\hat\params$ (one vector holding all numbers of all
+CPDs) such that
+\[
+\hat\params = \argmax_{\params \in \Theta} L(\mathcal{M}_{\params} : \dataset)
+            = \argmax_{\params \in \Theta} P(\dataset \given \mathcal{M}_{\params}).
+\]
+In words: out of the infinitely many possible parametrisations $\Theta$, pick
+the numbers that make the observed data most probable.
+\end{thmbox}
+
+For the student network, that means: find numbers for the five tables $P(D)$,
+$P(I)$, $P(G \given D, I)$, $P(S \given I)$, $P(L \given G)$ such that
+$\prod_m P_{\mathcal{M}_{\params}}(\bx[m])$ becomes maximal, for a dataset like
+the one in \cref{tab:student-rows}. We build up to this in small steps: one
+binary variable, one categorical variable, one conditional distribution,
+and then the whole network.
+
+\subsection{A single binary variable: the thumbtack}
+\label{sec:thumbtack}
+
+\paragraph{The story} A thumbtack (drawing pin) is tossed $N$ times and lands
+either on its head (``heads'', point up) or on its side (``tails''). What does
+that tell us about its general behaviour --- which probability distribution
+best explains the observations? Unlike a fair coin, a thumbtack is probably not
+50:50. (Fun fact from the slides: real coins are not quite fair either. A
+flipped coin lands with the same side up as it started about 51\,\% of the
+time, for purely physical reasons --- Diaconis, Holmes \& Montgomery, 2007.)
+
+\paragraph{As a model} One binary variable $T$ (``toss''), whose distribution
+is determined by a single parameter
+\[
+\theta = P(\vn{heads}), \qquad P(\vn{tails}) = 1 - \theta .
+\]
+This is a \emph{Bernoulli distribution}. Task: after $N$ tosses with $k$
+heads, estimate $\theta$ by maximum likelihood.
+
+\begin{exbox}[title={ML estimate for $\dataset = \{h, t, t, h, h\}$}]
+Five tosses, three heads. Each toss contributes $\theta$ (heads) or
+$1 - \theta$ (tails), and they are independent:
+\[
+L(\theta : \dataset) = \theta \cdot (1-\theta) \cdot (1-\theta) \cdot \theta \cdot \theta
+= \theta^3 (1-\theta)^2 \qquad \big(\text{in general: } \theta^k (1-\theta)^{N-k}\big).
+\]
+This function has exactly one maximum (\cref{fig:thumbtack}). Take the
+log-likelihood, which has the same maximum and is easier to differentiate:
+\[
+\ell(\theta : \dataset) = 3 \log\theta + 2 \log(1-\theta), \qquad
+\frac{\partial \ell}{\partial \theta} = \frac{3}{\theta} - \frac{2}{1-\theta}.
+\]
+Set the derivative to zero: $3(1-\theta) = 2\theta$, so $\hat\theta = 3/5 =
+0.6$. Given these five observations, the most likely value for $\theta$ is
+$0.6$ --- the fraction of heads.
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/thumbtack-likelihood.png}
+\caption{Likelihood and log-likelihood of $\theta$ for three heads and two
+tails. The log changes the shape but not the location of the maximum. Note
+that (a) is a likelihood in the sense of \cref{sec:likelihood}: the area under
+the curve is not one.}
+\label{fig:thumbtack}
+\end{figure}
+
+The same calculation for general $k$ heads in $N$ tosses: $\ell(\theta) =
+k\log\theta + (N-k)\log(1-\theta)$, derivative $k/\theta - (N-k)/(1-\theta) =
+0$, hence $\hat\theta = k/N$.
+
+\subsection{Categorical distributions}
+
+\begin{thmbox}[title={ML estimates for discrete distributions}, unbreakable]
+Let $N[x]$ be the number of occurrences of the value $x$ in $\dataset$.
+\begin{itemize}
+  \item \textbf{Bernoulli} (binary $X$ with values $x^0, x^1$):
+    \[
+    \hat\theta = \hat P(x^0) = \frac{N[x^0]}{N[x^0] + N[x^1]} = \frac{N[x^0]}{|\dataset|}.
+    \]
+  \item \textbf{Categorical} ($X$ with values $x^0, \ldots, x^k$):
+    \[
+    \hat\theta_i = \hat P(x^i) = \frac{N[x^i]}{\sum_j N[x^j]} = \frac{N[x^i]}{|\dataset|}.
+    \]
+\end{itemize}
+\end{thmbox}
+
+The proof for the categorical case is slightly harder, because the parameters
+must sum to one (that constraint is handled with Lagrange multipliers). The
+answer, however, is what you would have guessed: \emph{the ML estimate of a
+discrete probability is the relative frequency of the event in the data}.
+Trivial? Perhaps --- but we have now \emph{proven} in what sense relative
+frequencies are optimal estimators: they maximise the likelihood. We will soon
+see that there are other sensible answers.
+
+\subsection{Conditional distributions}
+
+The obvious extension to a CPD: to estimate the distribution of $X$ for one
+particular combination $\mathbf{u}$ of parent values, collect all examples in
+which the parents have exactly these values, and count within that subset.
+
+\begin{thmbox}[title={ML estimate of a conditional distribution}, unbreakable]
+\[
+\hat\theta_{x \given \mathbf{u}} = \hat P(x \given \mathbf{u}) = \frac{N[x, \mathbf{u}]}{N[\mathbf{u}]},
+\]
+where $N[x, \mathbf{u}]$ is the number of examples with $X = x$ and parents
+$= \mathbf{u}$, and $N[\mathbf{u}] = \sum_{x'} N[x', \mathbf{u}]$ is the number
+of examples with parents $= \mathbf{u}$.
+\end{thmbox}
+
+This is exactly what we did all along in approximate inference: rejection
+sampling estimated $P(\bx \given \be)$ by keeping the samples that match $\be$
+and counting (\cref{sec:rejection}).
+
+\subsection{The whole network: one small counting problem per CPD row}
+
+The central question: a Bayesian network has many CPDs with many rows. How do
+we choose all these numbers \emph{jointly} so that the whole network --- a
+full joint distribution --- has maximal likelihood? The beautiful answer: we
+do not need to think about them jointly at all.
+
+\begin{thmbox}[title={Decomposition of the likelihood; ML learning for BNs}, unbreakable]
+The parameters that maximise the likelihood of the complete network are
+exactly the parameters that individually maximise the likelihood of each
+variable given its parents. So the ML problem can be solved for each variable
+separately --- in fact for each CPD row separately:\par\smallskip
+\textbf{For each} variable $X$ with parents $\mathbf{U}$, \textbf{for each}
+parent assignment $\mathbf{u}$, set the CPD row to
+\[
+\hat\theta_{X \given \mathbf{u}} = \hat P(X \given \mathbf{u}) = \frac{N[X, \mathbf{u}]}{N[\mathbf{u}]},
+\]
+i.e.\ count how often each value of $X$ co-occurs with the parent values
+$\mathbf{u}$ in $\dataset$, and normalise.
+\end{thmbox}
+
+\paragraph{Why it decomposes} The slides call the proof ``rather trivial and
+too boring'', but it is short enough to see why. Write the log-likelihood of
+the data and plug in the BN factorisation:
+\[
+\ell(\params : \dataset) = \sum_{m=1}^{M} \log \prod_{i} P(x_i[m] \given \pa_i[m])
+= \sum_{i} \underbrace{\sum_{m=1}^{M} \log P(x_i[m] \given \pa_i[m])}_{\text{depends only on the CPD of } X_i} .
+\]
+The total is a sum of separate terms, one per variable, and no parameter
+appears in two terms. Maximising a sum of terms that share no parameters means
+maximising each term on its own. Inside one CPD, the same argument splits the
+term further by parent value: the examples with $\mathbf{u}$ only touch the row
+for $\mathbf{u}$. Each row is then a small categorical problem, solved by
+counting.
+
+\subsection{Worked example: the student network from eight rows}
+\label{sec:ml-student}
+
+The slides' training set, eight student records:
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+\# & $D$ & $I$ & $G$ & $S$ & $L$ \\
+\midrule
+1 & $d^1$ & $i^0$ & $g^2$ & $s^1$ & $l^0$ \\
+2 & $d^1$ & $i^1$ & $g^1$ & $s^0$ & $l^1$ \\
+3 & $d^0$ & $i^0$ & $g^3$ & $s^0$ & $l^1$ \\
+4 & $d^1$ & $i^0$ & $g^1$ & $s^1$ & $l^1$ \\
+5 & $d^1$ & $i^0$ & $g^2$ & $s^1$ & $l^0$ \\
+6 & $d^0$ & $i^1$ & $g^1$ & $s^0$ & $l^1$ \\
+7 & $d^0$ & $i^0$ & $g^1$ & $s^0$ & $l^1$ \\
+8 & $d^0$ & $i^0$ & $g^2$ & $s^1$ & $l^0$ \\
+\bottomrule
+\end{tabular}
+\caption{The eight training examples from the slides (structure: the student
+network, $D \to G \leftarrow I$, $I \to S$, $G \to L$).}
+\label{tab:student-rows}
+\end{table}
+
+\begin{exbox}[title={Counting the CPDs}]
+\textbf{Root variables} --- plain relative frequencies:
+$\hat P(d^1) = 4/8 = 0.5$ (rows 1, 2, 4, 5) and $\hat P(i^1) = 2/8 = 0.25$
+(rows 2, 6).\par\smallskip
+\textbf{$P(S \given I)$} --- split the rows by the value of the parent $I$:
+\begin{itemize}
+  \item $i^0$: rows 1, 3, 4, 5, 7, 8, with $S = s^1, s^0, s^1, s^1, s^0, s^1$
+    $\Rightarrow$ $\hat P(s^1 \given i^0) = 4/6 \approx 0.67$;
+  \item $i^1$: rows 2, 6, both $s^0$ $\Rightarrow$ $\hat P(s^1 \given i^1) = 0/2 = 0$.
+\end{itemize}
+\textbf{$P(G \given D, I)$} --- four parent combinations:
+\begin{itemize}
+  \item $d^0, i^0$: rows 3, 7, 8 $\to$ $g^3, g^1, g^2$ $\Rightarrow$ $(1/3, 1/3, 1/3)$;
+  \item $d^0, i^1$: row 6 $\to$ $g^1$ $\Rightarrow$ $(1, 0, 0)$;
+  \item $d^1, i^0$: rows 1, 4, 5 $\to$ $g^2, g^1, g^2$ $\Rightarrow$ $(1/3, 2/3, 0)$;
+  \item $d^1, i^1$: row 2 $\to$ $g^1$ $\Rightarrow$ $(1, 0, 0)$.
+\end{itemize}
+\textbf{$P(L \given G)$}: $g^1$: rows 2, 4, 6, 7, all $l^1$; $g^2$: rows 1, 5, 8,
+all $l^0$; $g^3$: row 3, $l^1$. So $\hat P(l^1 \given g^1) = 1$,
+$\hat P(l^1 \given g^2) = 0$, $\hat P(l^1 \given g^3) = 1$.
+\end{exbox}
+
+Now compare with the true CPDs (from \cref{fig:student}, repeated here so you
+do not have to flip back):
+\begin{center}
+\small
+\begin{tabular}{@{}lccl@{}}
+\toprule
+parameter & learned from 8 rows & true value & comment \\
+\midrule
+$P(d^1)$ & 0.5 & 0.4 & close \\
+$P(i^1)$ & 0.25 & 0.3 & close \\
+$P(s^1 \given i^0)$ & 0.67 & 0.05 & badly wrong (6 examples) \\
+$P(s^1 \given i^1)$ & \textbf{0} & 0.8 & ``impossible'' (2 examples) \\
+$P(G \given d^1, i^1)$ & $(1, 0, 0)$ & $(0.5, 0.3, 0.2)$ & from a single example \\
+$P(l^1 \given g^3)$ & \textbf{1} & 0.01 & from a single example \\
+\bottomrule
+\end{tabular}
+\end{center}
+The root distributions, estimated from all eight rows, are reasonable. The
+deeper we go into the CPDs, the fewer examples each row gets, and the wilder
+the estimates become: zeros and ones everywhere. Under this model, any new
+student with high motivation and a high SAT score has probability exactly zero.
+That is the topic of the next section.
+
+% ----------------------------------------------------------
+\section{Data Fragmentation and Smoothing}
+\label{sec:smoothing}
+% ----------------------------------------------------------
+
+\paragraph{The data fragmentation problem} The estimate $\hat\theta_{x \given
+\mathbf{u}} = N[x, \mathbf{u}] / N[\mathbf{u}]$ is based on only the
+$N[\mathbf{u}]$ examples that match the parent values $\mathbf{u}$. As the
+number of parents grows, the number of parent combinations grows
+exponentially, so the number of examples per combination \emph{shrinks}
+exponentially. A binary variable with 10 binary parents has $2^{10} = 1024$
+rows; even with 10\,000 examples that is fewer than 10 per row on average, and
+many rows get none at all. The result:
+\begin{itemize}
+  \item rows with $N[\mathbf{u}] = 0$: the distribution is simply undefined;
+  \item entries with $N[x, \mathbf{u}] = 0$: zeros, declaring events impossible
+    just because they did not happen to occur;
+  \item very brittle behaviour and poor generalisation.
+\end{itemize}
+Two consequences: \textbf{keep the number of parents per variable as small as
+possible}, and \textbf{avoid zeros by smoothing} the estimates.
+
+\begin{thmbox}[title={Laplace correction (additive smoothing)}, unbreakable]
+\[
+\hat\theta_{x \given \mathbf{u}} = \hat P(x \given \mathbf{u}) = \frac{N[x, \mathbf{u}] + \alpha}{N[\mathbf{u}] + \alpha k},
+\]
+where $k = |\Val(X)|$ and $\alpha > 0$ is a smoothing parameter. The most
+common choice, $\alpha = 1$: $\hat P(x \given \mathbf{u}) = \dfrac{N[x, \mathbf{u}] + 1}{N[\mathbf{u}] + k}$.
+\end{thmbox}
+
+\begin{itemize}
+  \item It avoids zero estimates (and undefined rows: with no data at all, it
+    gives the uniform distribution).
+  \item It slightly decreases high estimates and increases low ones.
+  \item Interpretation as \emph{pseudocounts}: we pretend we have seen every
+    value $\alpha$ extra times (``virtual observations'') before looking at the
+    data.
+  \item It can be understood as the result of Bayesian estimation with a uniform
+    prior and posterior-mean selection --- see \cref{sec:uniform-laplace}.
+\end{itemize}
+
+\begin{exbox}[title={Laplace-smoothed CPDs for the eight student rows}]
+With $\alpha = 1$:
+\begin{center}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+parameter & counts & ML & Laplace ($\alpha = 1$) \\
+\midrule
+$P(s^1 \given i^1)$ & 0 of 2 & 0 & $(0+1)/(2+2) = 0.25$ \\
+$P(s^1 \given i^0)$ & 4 of 6 & 0.67 & $(4+1)/(6+2) = 0.625$ \\
+$P(G \given d^1, i^1)$ & $(1, 0, 0)$ of 1 & $(1, 0, 0)$ & $(2, 1, 1)/(1+3) = (0.5, 0.25, 0.25)$ \\
+$P(G \given d^1, i^0)$ & $(1, 2, 0)$ of 3 & $(0.33, 0.67, 0)$ & $(2, 3, 1)/6 = (0.33, 0.5, 0.17)$ \\
+$P(l^1 \given g^2)$ & 0 of 3 & 0 & $(0+1)/(3+2) = 0.2$ \\
+$P(l^1 \given g^3)$ & 1 of 1 & 1 & $(1+1)/(1+2) = 0.67$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+No more zeros and ones. Rows with many examples (here: none really) are barely
+changed; rows with one or two examples are pulled strongly towards uniform ---
+which is exactly the right amount of caution when you know almost nothing.
+\end{exbox}
+
+\begin{intbox}[title={Laplace's sunrise problem}, unbreakable]
+The slides suggest looking up ``Laplace's rule of succession''. Laplace asked:
+if the sun has risen on each of the last $n$ days, what is the probability that
+it rises tomorrow? Pure ML says $n/n = 1$ --- certainty. Laplace's answer,
+$(n + 1)/(n + 2)$, is the formula above with $k = 2$, $\alpha = 1$. With about
+five thousand years of recorded sunrises ($n \approx 1.8$ million days) that
+is $0.9999995$: extremely confident, but never certain. The same reasoning is
+what keeps a learned model from declaring an event impossible just because it
+has not been seen yet.
+\end{intbox}
+
+\subsection{Bias and variance, measured}
+
+Data fragmentation is the variance side of the bias--variance trade-off
+(\cref{sec:bias-variance}) in action. \Cref{fig:bias-variance} makes this
+concrete. We draw training sets of different sizes from the true student
+network and fit three structures to them (all with Laplace smoothing), then
+measure how far each learned distribution is from the truth:
+\begin{itemize}
+  \item \textbf{no edges} (all five variables independent, 6 parameters):
+    \emph{bias}. Even with 10\,000 examples it never gets closer than a fixed
+    floor, because it cannot represent the dependencies that exist;
+  \item \textbf{fully connected} (one table over all $2 \cdot 2 \cdot 3 \cdot 2 \cdot 2
+    = 48$ events, 47 parameters): no bias --- it can represent anything --- but
+    \emph{variance}: it needs far more data, because its parameters are spread
+    over many rarely seen events;
+  \item \textbf{the true structure} (15 parameters): the sweet spot, best at
+    every training set size.
+\end{itemize}
+Without smoothing, the fully connected model would be infinitely far from the
+truth at all these sizes: in a typical sample of 1000 students, 7 of the 48
+possible events never occur, and plain ML declares them impossible. (The
+rarest one, $(d^0, i^1, g^3, s^0, l^1)$, has true probability $7 \cdot
+10^{-6}$.)
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/bias-variance-structures.png}
+\caption{Learning the student network from $M$ examples with three different
+structures (median over 40 training sets; bands: 10--90\,\% of runs). The
+distance to the true distribution is the KL divergence (0 = perfect). The
+no-edge model is stuck at its bias floor; the fully connected model has no
+floor but converges slowly; the true structure is best throughout.}
+\label{fig:bias-variance}
+\end{figure}
+
+% ----------------------------------------------------------
+\section{Maximum Likelihood for Gaussian Distributions}
+\label{sec:ml-gaussian}
+% ----------------------------------------------------------
+
+In worlds with real-valued variables, CPDs become conditional densities, and
+the convenient (if restricted) choice was the linear Gaussian model
+(\cref{sec:bn-continuous}). It will return in the Kalman filter
+(\cref{ch:kalman}). So we need to be able to estimate the parameters of
+Gaussians from data.
+
+Recall the normal distribution $X \sim \Normal(\mu, \sigma^2)$ with density
+$p(x) = \frac{1}{\sqrt{2\pi}\sigma} e^{-(x-\mu)^2/(2\sigma^2)}$
+(\cref{sec:continuous}). Task: given data $\dataset = \{x_1, \ldots, x_M\}$
+assumed to be normally distributed, find the ML estimates of $\params = \{\mu,
+\sigma^2\}$. The recipe is the same as for the thumbtack.
+
+\paragraph{1. Write down the (log-)likelihood}
+\[
+L(\params : \dataset) = \prod_{i=1}^{M} \frac{1}{\sqrt{2\pi}\sigma} e^{-\frac{(x_i - \mu)^2}{2\sigma^2}},
+\qquad
+\ell(\params : \dataset) = -M\big(\log\sqrt{2\pi} + \log\sigma\big) - \sum_{i=1}^{M} \frac{(x_i - \mu)^2}{2\sigma^2}.
+\]
+
+\paragraph{2. Differentiate with respect to the parameters and set to zero}
+\[
+\frac{\partial \ell}{\partial \mu} = \frac{1}{\sigma^2}\sum_{i=1}^{M}(x_i - \mu) = 0,
+\qquad
+\frac{\partial \ell}{\partial \sigma} = -\frac{M}{\sigma} + \frac{1}{\sigma^3}\sum_{i=1}^{M}(x_i - \mu)^2 = 0.
+\]
+
+\paragraph{3. Solve} The first equation gives the mean, and plugging it into the
+second gives the standard deviation:
+
+\begin{thmbox}[title={ML estimates for a Gaussian}, unbreakable]
+\[
+\hat\mu = \frac{1}{M}\sum_{i=1}^{M} x_i, \qquad
+\hat\sigma = \sqrt{\frac{1}{M}\sum_{i=1}^{M} (x_i - \hat\mu)^2}.
+\]
+For a multivariate Gaussian $\bX \sim \Normal(\bm{\mu}, \bm{\Sigma})$
+(\cref{sec:continuous}), by a similar but longer calculation:
+\[
+\hat{\bm{\mu}} = \frac{1}{M}\sum_{i} \bx_i, \qquad
+\hat{\bm{\Sigma}} = \frac{1}{M}\sum_{i} (\bx_i - \hat{\bm{\mu}})(\bx_i - \hat{\bm{\mu}})^\top.
+\]
+\end{thmbox}
+
+In words: the ML estimate of the mean is the sample average; the ML estimate
+of the standard deviation is the square root of the average squared deviation
+from it. Not very surprising --- but, as with relative frequencies, we now know
+in what sense these are optimal.
+
+\begin{exbox}[title={Two small Gaussian fits}]
+\textbf{1-D:} $\dataset = \{2, 4, 4, 4, 5, 5, 7, 9\}$.
+$\hat\mu = 40/8 = 5$; squared deviations $9, 1, 1, 1, 0, 0, 4, 16$, sum $32$;
+$\hat\sigma^2 = 32/8 = 4$, $\hat\sigma = 2$.\par\smallskip
+\textbf{2-D:} three points $(0,0)$, $(2,1)$, $(4,5)$.
+$\hat{\bm\mu} = (2, 2)$; deviations $(-2,-2)$, $(0,-1)$, $(2,3)$;
+\[
+\hat{\bm\Sigma} = \frac{1}{3}\left[
+\begin{pmatrix} 4 & 4 \\ 4 & 4 \end{pmatrix} +
+\begin{pmatrix} 0 & 0 \\ 0 & 1 \end{pmatrix} +
+\begin{pmatrix} 4 & 6 \\ 6 & 9 \end{pmatrix}\right]
+= \begin{pmatrix} 2.67 & 3.33 \\ 3.33 & 4.67 \end{pmatrix}.
+\]
+The positive off-diagonal entry says: when $x_1$ is large, $x_2$ tends to be
+large too.
+\end{exbox}
+
+\begin{notebox}[title={$1/M$ or $1/(M-1)$?}]
+Statistics courses often define the sample variance with $1/(M-1)$ instead of
+$1/M$ (here: $32/7 \approx 4.57$ instead of $4$). That version is
+\emph{unbiased}, i.e.\ correct on average; the ML estimate with $1/M$ is
+slightly too small on average. Both are legitimate --- they answer different
+questions --- and for large $M$ the difference vanishes. In this course, ML
+means $1/M$. (Not on the slides; just so the two formulas do not confuse you.)
+\end{notebox}
+
+% ----------------------------------------------------------
+\section{Bayesian Parameter Estimation}
+\label{sec:bayes-estimation}
+% ----------------------------------------------------------
+
+\subsection{What is wrong with maximum likelihood?}
+
+Consider four experiments:
+\begin{enumerate}
+  \item a thumbtack, tossed 10 times: 3 heads, 7 tails;
+  \item a \emph{coin}, tossed 10 times: 3 heads, 7 tails;
+  \item a coin, tossed 1\,000\,000 times: 300\,000 heads, 700\,000 tails;
+  \item a thumbtack, tossed 10 times: 0 heads, 10 tails.
+\end{enumerate}
+Maximum likelihood gives $\hat\theta = 0.3$ in the first three cases. But
+intuitively they are very different. In case 1, $0.3$ is plausible --- we
+know nothing about thumbtacks. In case 2 we know a lot about coins, and ten
+tosses are few; we would rather believe the coin is fair and the result was a
+fluke, $\theta \approx 0.5$. In case 3 the evidence is overwhelming; now we
+are willing to believe it is a trick coin with $\theta = 0.3$. And case 4 is
+outright problematic: ML says $\hat\theta = 0$, ``heads is impossible''. Would
+you bet all your money on tails for the next toss?
+
+The problems with ML in a nutshell:
+\begin{itemize}
+  \item it ignores the \emph{amount} of evidence and hence how uncertain the
+    estimate is;
+  \item it ignores prior knowledge and expectations;
+  \item it bases its decision on the likelihood $P(\dataset \given \theta)$
+    alone, and returns a single \emph{point estimate} (``best guess'').
+\end{itemize}
+
+\subsection{The idea: learn a distribution over the parameter}
+
+Bayesian parameter estimation does not commit to a single value. It treats the
+unknown parameter $\theta$ as a random variable and learns a whole
+\emph{probability distribution} over all its possible values: everything is
+possible, but with different probabilities. Bayes' rule does the work:
+\[
+p(\theta \given \dataset) = \frac{P(\dataset \given \theta)\; p(\theta)}{P(\dataset)} .
+\]
+This is precisely the coin example of \cref{sec:likelihood}, now as a learning
+method. The posterior combines
+\begin{itemize}
+  \item the strength of the evidence, via the \emph{likelihood} $P(\dataset
+    \given \theta)$, which we can compute for any $\dataset$ and $\theta$;
+  \item our subjective expectations about plausible parameter values, via the
+    \emph{prior} $p(\theta)$, which we choose.
+\end{itemize}
+The denominator $P(\dataset) = \int p(\theta) P(\dataset \given \theta)\,
+d\theta$ is hard to compute (an integral!), but it does not depend on
+$\theta$ --- it is the normalising constant of \cref{sec:likelihood}. If we only
+care about the \emph{shape} of the posterior, its maximum or its mean, we do not
+need it.
+
+\begin{defbox}[title={Three ways to pick one number}]
+If in the end we need a single estimate $\hat\theta$:
+\begin{itemize}
+  \item \textbf{Maximum likelihood (ML):} $\hat\theta = \argmax_\theta P(\dataset \given \theta)$ --- the mode of the likelihood;
+  \item \textbf{Maximum a posteriori (MAP):} $\hat\theta = \argmax_\theta p(\theta \given \dataset)$ --- the mode of the posterior;
+  \item \textbf{Posterior mean:} $\hat\theta = \int \theta \cdot p(\theta \given \dataset)\, d\theta$ --- the expected value of the posterior.
+\end{itemize}
+\end{defbox}
+
+\subsection{A binary variable: the Beta prior}
+
+Back to the thumbtack: one parameter $\theta = P(h)$, $N$ tosses, $k$ heads.
+The likelihood is (\cref{sec:thumbtack})
+\[
+P(\dataset \given \theta) = \theta^k (1-\theta)^{N-k}.
+\]
+Which prior? It must live on the interval $[0, 1]$, and ideally it should have
+a functional form that is \emph{compatible} with the likelihood, so that the
+posterior has the same form again. That suggests a prior of the shape $p(\theta)
+\propto \theta^{\gamma_1} (1-\theta)^{\gamma_2}$. Then the posterior is
+obtained by simply adding exponents:
+\[
+p(\theta \given \dataset) \propto
+\underbrace{\theta^{k} (1-\theta)^{N-k}}_{\text{likelihood}}\;
+\underbrace{\theta^{\gamma_1} (1-\theta)^{\gamma_2}}_{\text{prior}}
+= \theta^{k + \gamma_1} (1-\theta)^{N - k + \gamma_2}.
+\]
+A prior with this property --- prior and posterior from the same family --- is
+called a \emph{conjugate prior} for the likelihood. For the Bernoulli
+likelihood it is the Beta distribution.
+
+\begin{defbox}[title={Beta distribution}]
+\[
+\mathrm{Beta}(\theta \given a, b) \propto \theta^{a-1} (1-\theta)^{b-1}, \qquad \theta \in [0, 1],\ a, b > 0.
+\]
+The \emph{hyperparameters} $a$ and $b$ determine the shape and are used to
+encode our prior belief about $\theta$. Special case: $a = b = 1$ is the
+uniform distribution on $[0, 1]$.
+\end{defbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.72\linewidth]{figures/beta-shapes.png}
+\caption{Some Beta distributions. $a = b = 1$: uniform, no preference.
+$a = b < 1$: ``the parameter is probably near 0 or near 1''. $a = 2, b = 3$:
+a gentle preference for values below $0.5$. $a = 8, b = 4$: a fairly confident
+belief around $0.7$. Larger $a + b$ means a more confident (narrower) prior.}
+\label{fig:beta-shapes}
+\end{figure}
+
+\begin{thmbox}[title={Beta prior + Bernoulli data $\Rightarrow$ Beta posterior}, unbreakable]
+\begin{align*}
+p(\theta \given \dataset) &\;\propto\; \theta^{k} (1-\theta)^{N-k} \cdot \mathrm{Beta}(\theta \given a, b)
+\;\propto\; \theta^{k+a-1} (1-\theta)^{N-k+b-1} \\
+&\;=\; \mathrm{Beta}(\theta \given k + a,\; N - k + b).
+\end{align*}
+Learning = adding the observed counts to the hyperparameters.
+\end{thmbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/beta-prior-posterior.png}
+\caption{Bayesian updating (the examples of the lecture's figure, after
+Murphy 2012). (a) A broad prior $\mathrm{Beta}(2,2)$ and 3 heads in 20 tosses:
+the posterior $\mathrm{Beta}(5, 19)$ lies close to the likelihood --- the data
+wins. (b) A prior that expects a high $\theta$, $\mathrm{Beta}(5, 2)$, and 11
+heads in 24 tosses: the posterior $\mathrm{Beta}(16, 15)$ is a compromise
+between the prior and what the data alone would say.}
+\label{fig:beta-posterior}
+\end{figure}
+
+\begin{intbox}[title={Hyperparameters are imaginary tosses}, unbreakable]
+Compare $\mathrm{Beta}(a, b)$ with the posterior $\mathrm{Beta}(k + a, N - k +
+b)$: the prior acts exactly as if we had already seen some heads and tails
+before the experiment started (roughly $a$ heads and $b$ tails; precisely
+$a-1$ and $b-1$ if you look at the mode). The sum $a + b$ says how many
+imaginary tosses the prior is worth --- its \emph{strength}. A
+$\mathrm{Beta}(50, 50)$ prior for a coin says ``I have effectively seen 100
+fair tosses already''; ten real tosses barely move it, a million do.
+\end{intbox}
+
+\paragraph{Updating step by step} Conjugacy also allows incremental learning:
+today's posterior is tomorrow's prior. Start with the uniform
+$\mathrm{Beta}(1, 1)$ and observe $h, t, t, h, h$ one toss at a time; each
+heads adds one to $a$, each tails one to $b$:
+\[
+\mathrm{Beta}(1,1) \xrightarrow{h} \mathrm{Beta}(2,1) \xrightarrow{t} \mathrm{Beta}(2,2)
+\xrightarrow{t} \mathrm{Beta}(2,3) \xrightarrow{h} \mathrm{Beta}(3,3) \xrightarrow{h} \mathrm{Beta}(4,3),
+\]
+the same result as processing all five tosses at once ($k = 3$, $N - k = 2$).
+The order of the observations does not matter.
+
+\subsection{Choosing a single estimate}
+
+For the Beta--Bernoulli case, the three options have closed forms:
+\begin{thmbox}[title={Point estimates for the thumbtack with a $\mathrm{Beta}(a, b)$ prior}, unbreakable]
+\[
+\hat\theta_{\text{ML}} = \frac{k}{N}, \qquad
+\hat\theta_{\text{MAP}} = \frac{k + a - 1}{N + a + b - 2}, \qquad
+\hat\theta_{\text{mean}} = \frac{k + a}{N + a + b}.
+\]
+\end{thmbox}
+
+\begin{exbox}[title={The four experiments revisited}]
+For the thumbtacks we know nothing and use the uniform prior
+$\mathrm{Beta}(1,1)$; for the coin we use a strong prior around fairness,
+$\mathrm{Beta}(50, 50)$.
+\begin{center}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+experiment & data & prior & ML & MAP & post.\ mean \\
+\midrule
+1 thumbtack & 3 of 10 & $\mathrm{Beta}(1,1)$ & 0.30 & 0.30 & 0.33 \\
+2 coin & 3 of 10 & $\mathrm{Beta}(50,50)$ & 0.30 & 0.48 & 0.48 \\
+3 coin & 300\,000 of $10^6$ & $\mathrm{Beta}(50,50)$ & 0.30 & 0.30 & 0.30 \\
+4 thumbtack & 0 of 10 & $\mathrm{Beta}(1,1)$ & 0.00 & 0.00 & 0.08 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Exactly the intuitive answers. Ten coin tosses barely move a strong prior
+(experiment 2); a million tosses overwhelm it (experiment 3). And in
+experiment 4, the posterior mean says ``heads is unlikely, but not
+impossible'' ($1/12$). Note that with a uniform prior the MAP estimate equals
+the ML estimate --- the prior is flat, so it cannot shift the peak.
+\end{exbox}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/bayes-evidence-amount.png}
+\caption{What ML ignores. (a) Three thumbtack experiments with the same
+fraction of heads: ML says $0.3$ every time, but the posterior shows how much
+more certain we become with more data. (b) A coin with a strong fairness prior:
+10 tosses hardly change our belief, 1000 tosses move it to about $0.32$.}
+\label{fig:bayes-evidence}
+\end{figure}
+
+\subsection{The uniform prior and Laplace smoothing}
+\label{sec:uniform-laplace}
+
+With a uniform prior, $a = b = 1$:
+\[
+\hat\theta_{\text{ML}} = \frac{k}{N}, \qquad
+\hat\theta_{\text{MAP}} = \frac{k + 1 - 1}{N + 2 - 2} = \frac{k}{N}, \qquad
+\hat\theta_{\text{mean}} = \frac{k + 1}{N + 2}.
+\]
+MAP equals ML (logical: a flat prior does not prefer anything). But the
+posterior mean is exactly the Laplace correction with $\alpha = 1$ and $k = 2$
+values (\cref{sec:smoothing}). So Laplace smoothing is not an ad-hoc hack: it
+is what Bayesian estimation with a uniform prior gives you if you report the
+posterior mean. (For variables with more than two values, the conjugate prior
+is the \emph{Dirichlet} distribution, and the same reasoning yields
+$(N[x] + \alpha)/(N + \alpha k)$. Not on the slides.)
+
+\subsection{The full Bayesian approach: model averaging}
+
+In Bayesian parameter estimation, the final estimate depends on three choices:
+the prior (possibly uniform), the strength of the evidence (likelihood), and
+how we pick one number from the posterior (mode or mean). But why pick one
+number at all? A true Bayesian considers \emph{all} parameter values possible,
+with different probabilities, and uses all of them for inference.
+
+\begin{thmbox}[title={Bayesian model averaging}, unbreakable]
+The result of learning is not a single $\hat\theta$ but the posterior
+$p(\theta \given \dataset)$ over all possible parameter settings (i.e.\ over all
+models with the given graph). Instead of answering queries with one model,
+$P(x \given \mathcal{M}_{\hat\theta})$, average over all of them, weighted by
+their posterior probability:
+\[
+P(x \given \dataset) = \int_\theta P(x \given \mathcal{M}_\theta)\; p(\theta \given \dataset)\, d\theta .
+\]
+\end{thmbox}
+
+The lecture calls this the ``true Bayesian approach'', but too complex to
+pursue further in general. In the simplest case it is easy, though, and gives
+a nice closing of the circle (not on the slides): for the probability that the
+\emph{next} thumbtack toss lands heads,
+\[
+P(\text{next} = h \given \dataset) = \int_0^1 \theta \cdot p(\theta \given \dataset)\, d\theta = \hat\theta_{\text{mean}} = \frac{k + a}{N + a + b}.
+\]
+For a single binary variable, averaging over all models gives exactly the
+posterior mean --- and with a uniform prior, Laplace smoothing.
+
+% ----------------------------------------------------------
+\section{Structure Learning}
+\label{sec:structure-learning}
+% ----------------------------------------------------------
+\planned{Slide set 5b (not yet available). Expected: score-based structure
+learning --- likelihood score (and why it always prefers more edges),
+penalised scores (BIC/MDL), Bayesian score; local search over graphs
+(add/delete/reverse an edge); decomposability of scores.}
+
+% ----------------------------------------------------------
+\section{Chapter Checklist}
+% ----------------------------------------------------------
+
+From the lecture's lists for parts 5 and 5a:
+\begin{itemize}
+  \item the general setting: model learning as an optimisation problem, the
+    i.i.d.\ assumption;
+  \item objective functions: the likelihood and the log-likelihood, and how to
+    compute them for i.i.d.\ data;
+  \item generalisation vs.\ overfitting, and why maximising the likelihood over
+    arbitrarily complex models overfits;
+  \item bias vs.\ variance, hard and soft constraints, and the trade-off;
+  \item how to compute ML estimates for discrete distributions (relative
+    frequencies) and for Gaussians (sample mean, sample variance);
+  \item the complete procedure for learning the parameters of a BN: one
+    counting problem per CPD row, thanks to the decomposition of the likelihood;
+  \item the data fragmentation problem and the idea of smoothing (Laplace
+    correction, pseudocounts);
+  \item the basic idea of Bayesian parameter estimation and why it matters:
+    prior, likelihood, posterior;
+  \item concepts such as conjugate prior, MAP estimate, posterior mean, and
+    Bayesian model averaging. (The lecture says: no need to remember the
+    detailed formulas for the exam.)
+\end{itemize}
+
+
+% ==========================================================
+%  CHAPTERS 6--8 — OUTLINES
 %  Section lists follow the lecture titles in the course schedule
 %  and the standard treatment in Koller & Friedman / Russell & Norvig.
 %  Replace \planned{...} blocks with real text once the slides of the
 %  corresponding units are available, and adapt the sections to them.
 % ==========================================================
-
-% ==========================================================
-%  CHAPTER 5 — LEARNING BAYESIAN NETWORKS   (VO 6--8)
-% ==========================================================
-\chapter{Learning Bayesian Networks}
-\label{ch:learning}
-
-So far somebody handed us the graph and all the CPDs. In reality, the numbers
---- and often the structure --- have to come from data. This chapter addresses
-the third of the complexity problems from \cref{ch:intro}, modelling
-complexity: given a set of observations, find the parameters (and maybe the
-structure) of a Bayesian network that explains them well. Two schools of
-parameter estimation appear --- maximum likelihood and Bayesian --- followed by
-the question of how to avoid overfitting and how to search over structures.
-
-\planned{Lecture units VO~6 (``Learning (1): General Issues \& ML Parameter
-Learning''), VO~7 (``Learning (2): Bayesian Parameter Learning'') and VO~8
-(``Learning (3): Overfitting, Regularisation, Structure Learning''). Expected
-structure below; adapt it to the slides.}
-
-\section{The Learning Problem}
-\planned{What is given and what is learned (parameters vs.\ structure);
-complete vs.\ incomplete data; the i.i.d.\ assumption; goals of learning
-(density estimation, prediction, knowledge discovery).}
-
-\section{Maximum-Likelihood Parameter Learning}
-\planned{The likelihood function; ML estimation for a single Bernoulli/
-multinomial variable (``counting''); decomposition of the BN likelihood into
-independent per-CPD problems; sufficient statistics; worked example with a
-small data table; the zero-count problem.}
-
-\section{Bayesian Parameter Learning}
-\planned{Parameters as random variables; prior, posterior and predictive
-distribution; Beta and Dirichlet priors; conjugacy; pseudo-counts and their
-intuition; MAP vs.\ full Bayesian prediction; worked coin example. Figure
-(pgfplots, to be drawn): Beta priors and how the posterior sharpens with
-data.}
-
-
-\section{Overfitting and Regularisation}
-\planned{Why maximum likelihood overfits, especially for CPDs with many
-parents and little data; priors as regularisers; the bias--variance view;
-model complexity.}
-
-\section{Structure Learning}
-\planned{Score-based structure learning: likelihood score (and why it always
-prefers more edges), penalised scores (BIC/MDL), Bayesian score; local search
-over graphs (add/delete/reverse an edge); decomposability of scores.}
-
-\section{Chapter Checklist}
-\planned{To be written together with the chapter.}
-
 
 % ==========================================================
 %  CHAPTER 6 — TEMPORAL MODELS: DYNAMIC BAYESIAN NETWORKS   (VO 9)
